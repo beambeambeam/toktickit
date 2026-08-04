@@ -4,6 +4,9 @@ import ReactDOM from "react-dom/client";
 
 import { routeTree } from "@/routeTree.gen";
 
+import "bootstrap/dist/css/bootstrap.min.css";
+import "bootstrap/dist/js/bootstrap.bundle.min.js";
+
 import "@/styles.css";
 
 const router = createRouter({

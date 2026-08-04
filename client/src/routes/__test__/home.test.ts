@@ -9,3 +9,10 @@ it("renders the home heading", () => {
 
   expect(markup).toContain("<h1>Welcome Home!</h1>");
 });
+
+it("renders Bootstrap layout classes", () => {
+  const markup = renderToStaticMarkup(createElement(HomePage));
+
+  expect(markup).toContain('class="container py-5 text-center"');
+  expect(markup).toContain('class="lead"');
+});

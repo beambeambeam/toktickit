@@ -13,6 +13,7 @@
     "@t3-oss/env-core": "catalog:",
     "@tanstack/react-router": "^1.170.18",
     "@tanstack/react-router-devtools": "^1.167.0",
+    "bootstrap": "^5.3.8",
     "react": "^19.2.8",
     "react-dom": "^19.2.8",
     "zod": "catalog:"

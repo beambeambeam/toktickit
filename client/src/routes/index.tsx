@@ -2,7 +2,9 @@ import { createFileRoute } from "@tanstack/react-router";
 
 export const HomePage = () => (
   <main className="page">
-    <h1>Welcome Home!</h1>
+    <div className="container py-5 text-center">
+      <h1>Welcome Home!</h1>
+    </div>
   </main>
 );
 
