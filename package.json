@@ -1,19 +1,24 @@
 {
   "name": "toktickit",
   "private": true,
-  "packageManager": "pnpm@11.13.0",
-  "engines": {
-    "node": ">=20.19.0"
-  },
+  "type": "module",
   "scripts": {
     "dev": "pnpm --filter @toktickit/client dev",
     "build": "pnpm --filter @toktickit/client build",
     "typecheck": "pnpm --filter @toktickit/client typecheck",
-    "preview": "pnpm --filter @toktickit/client preview"
+    "preview": "pnpm --filter @toktickit/client preview",
+    "check": "oxfmt --config oxfmt.config.ts --check . && oxlint --config oxlint.config.ts .",
+    "fix": "oxfmt --config oxfmt.config.ts --write . && oxlint --config oxlint.config.ts --fix ."
   },
   "devDependencies": {
+    "@types/node": "^26.1.2",
     "oxfmt": "^0.61.0",
     "oxlint": "^1.76.0",
+    "oxlint-tsgolint": "7.0.2001",
     "ultracite": "^7.10.0"
-  }
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "packageManager": "pnpm@11.13.0"
 }
