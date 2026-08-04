@@ -4,9 +4,9 @@ These rules apply to all files under `/server`.
 
 ## Structure
 
-- `src/index.ts` is the process entrypoint. It owns environment parsing and the HTTP listener lifecycle.
+- `src/index.ts` is the process entrypoint. It consumes validated environment configuration from `src/env.ts` and owns the HTTP listener lifecycle.
 - `src/app.ts` creates and composes the Express application. It must not start the listener.
-- `src/config` owns configuration parsing and defaults.
+- `src/config` owns server-specific configuration parsing and defaults not covered by the shared environment schema.
 - `src/middlewares` contains reusable Express middleware.
 - `src/routes` composes HTTP routes.
 - `src/controllers` translates HTTP requests and responses.

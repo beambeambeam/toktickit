@@ -9,7 +9,10 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "express": "^5.2.1"
+    "@t3-oss/env-core": "catalog:",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "zod": "catalog:"
   },
   "devDependencies": {
     "@types/express": "^5.0.6",
