@@ -8,10 +8,17 @@
     "typecheck": "pnpm --filter @toktickit/client typecheck",
     "preview": "pnpm --filter @toktickit/client preview",
     "check": "oxfmt --config oxfmt.config.ts --check . && oxlint --config oxlint.config.ts .",
-    "fix": "oxfmt --config oxfmt.config.ts --write . && oxlint --config oxlint.config.ts --fix ."
+    "fix": "oxfmt --config oxfmt.config.ts --write . && oxlint --config oxlint.config.ts --fix .",
+    "commit": "commit",
+    "commitlint": "commitlint --edit",
+    "prepare": "lefthook install"
   },
   "devDependencies": {
+    "@commitlint/cli": "^20.5.3",
+    "@commitlint/config-conventional": "^20.5.3",
+    "@commitlint/prompt-cli": "^20.5.3",
     "@types/node": "^26.1.2",
+    "lefthook": "^2.1.10",
     "oxfmt": "^0.61.0",
     "oxlint": "^1.76.0",
     "oxlint-tsgolint": "7.0.2001",
