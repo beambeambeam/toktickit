@@ -1,0 +1,14 @@
+{
+  "name": "toktickit",
+  "private": true,
+  "packageManager": "pnpm@11.13.0",
+  "engines": {
+    "node": ">=20.19.0"
+  },
+  "scripts": {
+    "dev": "pnpm --filter @toktickit/client dev",
+    "build": "pnpm --filter @toktickit/client build",
+    "typecheck": "pnpm --filter @toktickit/client typecheck",
+    "preview": "pnpm --filter @toktickit/client preview"
+  }
+}
