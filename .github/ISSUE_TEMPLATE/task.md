@@ -6,10 +6,6 @@ labels: ""
 assignees: ""
 ---
 
-## Parent Issue
-
-<!-- Link the parent issue, for example: #1 -->
-
 ## Description
 
 <!-- Describe what needs to be done and why. -->
