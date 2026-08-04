@@ -15,5 +15,6 @@ export default defineConfig({
     "**/.alchemy/**",
     "**/wrangler.jsonc",
     "**/convex/_generated/**",
+    "**/src/generated/**",
   ],
 });

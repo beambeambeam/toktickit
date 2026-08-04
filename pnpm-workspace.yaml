@@ -5,5 +5,7 @@ catalog:
   "@t3-oss/env-core": ^0.13.11
   zod: ^4.4.3
 allowBuilds:
+  "@prisma/engines": true
   esbuild: true
   lefthook: true
+  prisma: true
