@@ -29,4 +29,4 @@ Keep dependency direction flowing from `routes` to `controllers`, then to `servi
 - Server uses Node.js ESM.
 - Relative imports use explicit `.js` extensions.
 - Keep process startup in `src/index.ts` and application composition in `src/app.ts`.
-- Run package scripts through pnpm: `dev`, `typecheck`, `build`, and `start`.
+- Run package scripts through pnpm: `dev`, `typecheck`, `build`, `start`, and `test`.
