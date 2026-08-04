@@ -22,6 +22,14 @@ export default defineConfig({
     typeAware: true,
     typeCheck: false,
   },
+  overrides: [
+    {
+      files: ["server/**/*.ts"],
+      rules: {
+        "no-restricted-imports": "off",
+      },
+    },
+  ],
   rules: {
     "func-style": ["error", "expression", { allowArrowFunctions: true }],
     "jsx-a11y/no-noninteractive-element-interactions": "off",
