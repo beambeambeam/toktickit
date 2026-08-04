@@ -4,6 +4,15 @@ settings:
   autoInstallPeers: true
   excludeLinksFromLockfile: false
 
+catalogs:
+  default:
+    '@t3-oss/env-core':
+      specifier: ^0.13.11
+      version: 0.13.11
+    zod:
+      specifier: ^4.4.3
+      version: 4.4.3
+
 importers:
 
   .:
@@ -38,6 +47,9 @@ importers:
 
   client:
     dependencies:
+      '@t3-oss/env-core':
+        specifier: 'catalog:'
+        version: 0.13.11(typescript@7.0.2)(zod@4.4.3)
       '@tanstack/react-router':
         specifier: ^1.170.18
         version: 1.170.18(react-dom@19.2.8(react@19.2.8))(react@19.2.8)
@@ -50,6 +62,9 @@ importers:
       react-dom:
         specifier: ^19.2.8
         version: 19.2.8(react@19.2.8)
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
     devDependencies:
       '@tanstack/router-plugin':
         specifier: ^1.168.23
@@ -72,9 +87,18 @@ importers:
 
   server:
     dependencies:
+      '@t3-oss/env-core':
+        specifier: 'catalog:'
+        version: 0.13.11(typescript@7.0.2)(zod@4.4.3)
+      dotenv:
+        specifier: ^17.4.2
+        version: 17.4.2
       express:
         specifier: ^5.2.1
         version: 5.2.1
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
     devDependencies:
       '@types/express':
         specifier: ^5.0.6
@@ -889,6 +913,23 @@ packages:
     resolution: {integrity: sha512-KxXvfapcixpz6rVEB6HPjOUZT22yN6v0vI0urQSk1L8MlEWPDFCZkhw2xmkyoTGYeFw7tWTZd7e3lVzRZRN/EA==}
     engines: {node: '>=18'}
 
+  '@t3-oss/env-core@0.13.11':
+    resolution: {integrity: sha512-sM7GYY+KL7H/Hl0BE0inWfk3nRHZOLhmVn7sHGxaZt9FAR6KqREXAE+6TqKfiavfXmpRxO/OZ2QgKRd+oiBYRQ==}
+    peerDependencies:
+      arktype: ^2.1.0
+      typescript: '>=5.0.0'
+      valibot: ^1.0.0-beta.7 || ^1.0.0
+      zod: ^3.24.0 || ^4.0.0
+    peerDependenciesMeta:
+      arktype:
+        optional: true
+      typescript:
+        optional: true
+      valibot:
+        optional: true
+      zod:
+        optional: true
+
   '@tanstack/history@1.162.0':
     resolution: {integrity: sha512-79pf/RkhteYZTRgcR4F9kbk84P2N8rugQJswxfIqovlbRiT3yI7eBE+5QorIrZaOKktsgzRlXh1l/du/xpl4iA==}
     engines: {node: '>=20.19'}
@@ -1432,6 +1473,10 @@ packages:
   dot-prop@5.3.0:
     resolution: {integrity: sha512-QM8q3zDe58hqUqjraQOmzZ1LIH9SWQJTlEKCH4kJ2oQvLZk7RbQXvtDM2XEq3fwkV9CCvvH4LA0AV+ogFsBM2Q==}
     engines: {node: '>=8'}
+
+  dotenv@17.4.2:
+    resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
+    engines: {node: '>=12'}
 
   dunder-proto@1.0.1:
     resolution: {integrity: sha512-KIN/nDJBQRcXw0MLVhZE9iQHmG68qAVIBg9CqmUYjmQIhgij9U5MFvrqkUL5FbtyyzZuOeOt0zdeRe4UY7ct+A==}
@@ -3125,6 +3170,11 @@ snapshots:
 
   '@simple-libs/stream-utils@1.2.0': {}
 
+  '@t3-oss/env-core@0.13.11(typescript@7.0.2)(zod@4.4.3)':
+    optionalDependencies:
+      typescript: 7.0.2
+      zod: 4.4.3
+
   '@tanstack/history@1.162.0': {}
 
   '@tanstack/react-router-devtools@1.167.0(@tanstack/react-router@1.170.18(react-dom@19.2.8(react@19.2.8))(react@19.2.8))(@tanstack/router-core@1.171.15)(csstype@3.2.3)(react-dom@19.2.8(react@19.2.8))(react@19.2.8)':
@@ -3624,6 +3674,8 @@ snapshots:
   dot-prop@5.3.0:
     dependencies:
       is-obj: 2.0.0
+
+  dotenv@17.4.2: {}
 
   dunder-proto@1.0.1:
     dependencies:
