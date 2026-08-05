@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "projectName": "client",
+  "framework": "react",
+  "mode": "file-router",
+  "typescript": true,
+  "tailwind": false,
+  "packageManager": "pnpm",
+  "chosenAddOns": []
+}
