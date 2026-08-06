@@ -6,6 +6,7 @@ catalog:
   zod: ^4.4.3
 allowBuilds:
   "@prisma/engines": true
+  "@scarf/scarf": false
   esbuild: true
   lefthook: true
   prisma: true

@@ -4,6 +4,7 @@ export const HomePage = () => (
   <main className="page">
     <div className="container py-5 text-center">
       <h1>Welcome Home!</h1>
+      <p className="lead">TokTickIT</p>
     </div>
   </main>
 );
