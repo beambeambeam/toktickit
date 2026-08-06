@@ -24,6 +24,7 @@ export default defineConfig({
       "__test__/**/*.test.ts",
       "src/api/__test__/**/*.test.tsx",
       "src/routes/__test__/**/*.test.ts",
+      "src/routes/__test__/**/*.test.tsx",
     ],
   },
 });
