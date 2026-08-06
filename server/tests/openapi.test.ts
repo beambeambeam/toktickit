@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
 import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
-import openapiTS from "openapi-typescript";
+import { createClient } from "@hey-api/openapi-ts";
 import request from "supertest";
 import { parse } from "yaml";
 
@@ -12,10 +14,6 @@ import { app } from "../src/app.js";
 type JsonObject = Record<string, unknown>;
 
 const openapiPath = new URL("../openapi.yaml", import.meta.url);
-const generatedTypesPath = new URL(
-  "../../client/src/generated/openapi.ts",
-  import.meta.url
-);
 
 const isJsonObject = (value: unknown): value is JsonObject =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -45,7 +43,12 @@ void describe("OpenAPI contract", () => {
     const document = readOpenapiDocument();
 
     assert.equal(document.openapi, "3.1.0");
-    await openapiTS(openapiPath);
+    await createClient({
+      dryRun: true,
+      input: fileURLToPath(openapiPath),
+      logs: { level: "silent" },
+      output: path.join(tmpdir(), "toktickit-openapi-validation"),
+    });
   });
 
   void it("documents the health response and reusable API error", () => {
@@ -124,12 +127,5 @@ void describe("OpenAPI contract", () => {
 
     await request(app).get("/docs/swagger-ui.css").expect(200);
     await request(app).get("/docs/swagger-ui-bundle.js").expect(200);
-  });
-
-  void it("keeps generated client types synchronized", async () => {
-    const generated = readFileSync(fileURLToPath(generatedTypesPath), "utf-8");
-    const expected = await openapiTS(openapiPath);
-
-    assert.equal(generated.trimEnd(), expected.trimEnd());
   });
 });

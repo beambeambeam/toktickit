@@ -20,6 +20,10 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["__test__/**/*.test.ts", "src/routes/__test__/**/*.test.ts"],
+    include: [
+      "__test__/**/*.test.ts",
+      "src/api/__test__/**/*.test.tsx",
+      "src/routes/__test__/**/*.test.ts",
+    ],
   },
 });
