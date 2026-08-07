@@ -9,6 +9,7 @@ import { act, renderHook, waitFor } from "@testing-library/react";
 import type { PropsWithChildren } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
+import { ApiConnectionError } from "@/api/client";
 import { healthQueryOptions } from "@/api/health";
 
 const healthResponse = {
@@ -107,7 +108,7 @@ describe("health query", () => {
     expect(error.message).toBe("Health service unavailable");
   });
 
-  it("preserves connection failures without an API message", async () => {
+  it("normalizes connection failures as API connection errors", async () => {
     const connectionError = new TypeError("Failed to fetch");
     fetchMock.mockRejectedValueOnce(connectionError);
 
@@ -123,7 +124,11 @@ describe("health query", () => {
     await waitFor(() => {
       expect(result.current.isError).toBe(true);
     });
-    expect(result.current.error).toBe(connectionError);
+    expect(result.current.error).toBeInstanceOf(ApiConnectionError);
+    expect(result.current.error).toMatchObject({
+      cause: connectionError,
+      message: "Unable to connect to TokTickIT API",
+    });
   });
 
   it("keeps non-JSON error details available", async () => {

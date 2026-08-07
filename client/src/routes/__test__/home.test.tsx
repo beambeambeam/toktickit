@@ -134,6 +134,30 @@ describe("home health status card", () => {
     expect(screen.getByText("Unable to connect to TokTickIT API")).toBeTruthy();
   });
 
+  it("preserves internal TypeError messages", async () => {
+    const responseError = new TypeError("Response parsing failed");
+    const malformedResponse = new Response("", {
+      headers: { "Content-Type": "application/json" },
+    });
+    Object.defineProperty(malformedResponse, "text", {
+      value: () => {
+        throw responseError;
+      },
+    });
+    fetchMock.mockResolvedValue(malformedResponse);
+    renderHomePage();
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "[ Check System ]" }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("System Status: Offline")).toBeTruthy();
+    });
+    expect(screen.getByText("Response parsing failed")).toBeTruthy();
+    expect(screen.queryByText("Unable to connect to TokTickIT API")).toBeNull();
+  });
+
   it("shows the returned API error message", async () => {
     fetchMock
       .mockResolvedValueOnce(

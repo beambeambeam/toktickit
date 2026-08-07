@@ -2,10 +2,11 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { ApiConnectionError } from "@/api/client";
 import { healthQueryOptions } from "@/api/health";
 
 const getHealthErrorMessage = (error: unknown) => {
-  if (error instanceof TypeError) {
+  if (error instanceof ApiConnectionError) {
     return "Unable to connect to TokTickIT API";
   }
 
