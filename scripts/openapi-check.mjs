@@ -67,7 +67,11 @@ try {
       expectedPath,
       "--silent",
     ],
-    { cwd: rootDirectory, stdio: "ignore" }
+    {
+      cwd: rootDirectory,
+      shell: process.platform === "win32",
+      stdio: "ignore",
+    }
   );
 
   await stat(generatedDirectory);
