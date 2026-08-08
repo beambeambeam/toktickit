@@ -4,7 +4,7 @@ TokTickit is a pnpm workspace containing the client and server applications.
 
 ## Requirements
 
-- Node.js `>=20.19.0`
+- Node.js `>=22.18.0`
 - pnpm `11.13.0`
 
 Check installed versions:
