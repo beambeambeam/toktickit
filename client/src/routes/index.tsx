@@ -23,6 +23,7 @@ export const HomePage = () => {
   const healthQuery = useQuery(healthQueryOptions());
 
   let statusContent: ReactNode = null;
+  let categoryContent: ReactNode = null;
 
   if (healthQuery.isFetching) {
     statusContent = <p className="mb-0">System Status: Checking...</p>;
@@ -42,6 +43,23 @@ export const HomePage = () => {
     );
   }
 
+  if (categoriesQuery.isFetching) {
+    categoryContent = (
+      <p className="mb-0 mt-3">Loading supported request categories...</p>
+    );
+  } else if (categoriesQuery.isSuccess) {
+    categoryContent = (
+      <section className="mt-3">
+        <h2>Supported Request Categories</h2>
+        <ol>
+          {categoriesQuery.data.map((category) => (
+            <li key={category.id}>{category.name}</li>
+          ))}
+        </ol>
+      </section>
+    );
+  }
+
   const checkSystem = () => {
     void healthQuery.refetch();
     void categoriesQuery.refetch();
@@ -55,7 +73,7 @@ export const HomePage = () => {
             <h1 className="card-title">TokTickIT IT Service Desk</h1>
             <button
               className="btn btn-primary"
-              disabled={healthQuery.isFetching}
+              disabled={healthQuery.isFetching || categoriesQuery.isFetching}
               onClick={checkSystem}
               type="button"
             >
@@ -68,17 +86,8 @@ export const HomePage = () => {
               role="status"
             >
               {statusContent}
+              {categoryContent}
             </div>
-            {categoriesQuery.isSuccess && (
-              <section className="mt-3">
-                <h2>Supported Request Categories</h2>
-                <ol>
-                  {categoriesQuery.data.map((category) => (
-                    <li key={category.id}>{category.name}</li>
-                  ))}
-                </ol>
-              </section>
-            )}
           </div>
         </section>
       </div>
