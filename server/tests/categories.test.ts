@@ -89,4 +89,30 @@ void describe("Categories API", () => {
       { id: 30, name: "Network" },
     ]);
   });
+
+  void it("returns an empty array when no Categories are stored", async () => {
+    await request(app)
+      .get("/api/categories")
+      .expect("Content-Type", /json/u)
+      .expect(200, []);
+  });
+
+  void it("returns a safe message when the Category query fails", async () => {
+    await prisma.$executeRawUnsafe(
+      'ALTER TABLE "Category" RENAME TO "UnavailableCategory"'
+    );
+
+    try {
+      await request(app)
+        .get("/api/categories")
+        .expect("Content-Type", /json/u)
+        .expect(500, {
+          message: "Unable to retrieve request categories",
+        });
+    } finally {
+      await prisma.$executeRawUnsafe(
+        'ALTER TABLE "UnavailableCategory" RENAME TO "Category"'
+      );
+    }
+  });
 });

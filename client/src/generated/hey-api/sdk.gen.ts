@@ -2,7 +2,7 @@
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { GetApiCategoriesData, GetApiCategoriesResponses, GetApiHealthData, GetApiHealthErrors, GetApiHealthResponses } from './types.gen';
+import type { GetApiCategoriesData, GetApiCategoriesErrors, GetApiCategoriesResponses, GetApiHealthData, GetApiHealthErrors, GetApiHealthResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -23,7 +23,7 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
  *
  * Returns every supported request category in ascending ID order.
  */
-export const getApiCategories = <ThrowOnError extends boolean = false>(options?: Options<GetApiCategoriesData, ThrowOnError>): RequestResult<GetApiCategoriesResponses, unknown, ThrowOnError> => (options?.client ?? client).get<GetApiCategoriesResponses, unknown, ThrowOnError>({ url: '/api/categories', ...options });
+export const getApiCategories = <ThrowOnError extends boolean = false>(options?: Options<GetApiCategoriesData, ThrowOnError>): RequestResult<GetApiCategoriesResponses, GetApiCategoriesErrors, ThrowOnError> => (options?.client ?? client).get<GetApiCategoriesResponses, GetApiCategoriesErrors, ThrowOnError>({ url: '/api/categories', ...options });
 
 /**
  * Check API liveness

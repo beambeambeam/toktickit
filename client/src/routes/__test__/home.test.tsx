@@ -26,6 +26,10 @@ const categoryResponse = [
 const createResponse = (body: unknown, status = 200) =>
   Response.json(body, { status });
 
+const throwConnectionFailure = (): never => {
+  throw new TypeError("Failed to fetch");
+};
+
 type MockFetchImplementation = (
   ...arguments_: Parameters<typeof fetch>
 ) => Promise<Response> | Response;
@@ -214,7 +218,55 @@ describe("home health status card", () => {
     expect(categoryRequest.url).toBe("http://localhost:3000/api/categories");
   });
 
-  it("shows a connection failure message when the API cannot be reached", async () => {
+  it("shows the empty Category message after a successful empty response", async () => {
+    mockHealthAndCategories(
+      fetchMock,
+      () => createResponse(healthResponse),
+      () => createResponse([])
+    );
+    renderHomePage();
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "[ Check System ]" }));
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("No supported request categories are available.")
+      ).toBeTruthy();
+    });
+    expect(
+      screen.getByRole("heading", { name: "Supported Request Categories" })
+    ).toBeTruthy();
+    expect(screen.queryByRole("list")).toBeNull();
+  });
+
+  it("keeps health online when the Category request fails", async () => {
+    mockHealthAndCategories(
+      fetchMock,
+      () => createResponse(healthResponse),
+      () =>
+        createResponse(
+          { message: "Unable to retrieve request categories" },
+          500
+        )
+    );
+    renderHomePage();
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "[ Check System ]" }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("System Status: Online")).toBeTruthy();
+      expect(
+        screen.getByText("Unable to retrieve request categories")
+      ).toBeTruthy();
+    });
+    expect(screen.queryByRole("list")).toBeNull();
+  });
+
+  it("keeps the Category list when the health request fails", async () => {
     mockHealthAndCategories(fetchMock, () => {
       throw new TypeError("Failed to fetch");
     });
@@ -228,6 +280,115 @@ describe("home health status card", () => {
       expect(screen.getByText("System Status: Offline")).toBeTruthy();
     });
     expect(screen.getByText("Unable to connect to TokTickIT API")).toBeTruthy();
+    expect(screen.getByText("Account and Access")).toBeTruthy();
+  });
+
+  it("shows one connection message when both API requests are unreachable", async () => {
+    mockHealthAndCategories(
+      fetchMock,
+      throwConnectionFailure,
+      throwConnectionFailure
+    );
+    renderHomePage();
+
+    const button = screen.getByRole("button", { name: "[ Check System ]" });
+    act(() => {
+      fireEvent.click(button);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("System Status: Offline")).toBeTruthy();
+      expect(button).toHaveProperty("disabled", false);
+    });
+    expect(
+      screen.getAllByText("Unable to connect to TokTickIT API")
+    ).toHaveLength(1);
+    expect(
+      screen.queryByRole("heading", { name: "Supported Request Categories" })
+    ).toBeNull();
+  });
+
+  it("uses the Category fallback when the server has no valid message", async () => {
+    mockHealthAndCategories(
+      fetchMock,
+      () => createResponse(healthResponse),
+      () => createResponse({ message: "" }, 500)
+    );
+    renderHomePage();
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "[ Check System ]" }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("System Status: Online")).toBeTruthy();
+      expect(
+        screen.getByText("Unable to load supported request categories.")
+      ).toBeTruthy();
+    });
+  });
+
+  it("clears a Category error while retrying both requests", async () => {
+    const retriedCategoryResponse = createDeferred<Response>();
+    const healthFetch = vi
+      .fn<MockFetchImplementation>()
+      .mockImplementation(() => createResponse(healthResponse));
+    const categoryFetch = vi
+      .fn<MockFetchImplementation>()
+      .mockReturnValueOnce(
+        createResponse(
+          { message: "Unable to retrieve request categories" },
+          500
+        )
+      )
+      .mockReturnValueOnce(
+        createResponse(
+          { message: "Unable to retrieve request categories" },
+          500
+        )
+      )
+      .mockReturnValueOnce(retriedCategoryResponse.promise);
+    mockHealthAndCategories(fetchMock, healthFetch, categoryFetch);
+    renderHomePage();
+
+    const button = screen.getByRole("button", { name: "[ Check System ]" });
+    act(() => {
+      fireEvent.click(button);
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Unable to retrieve request categories")
+      ).toBeTruthy();
+      expect(button).toHaveProperty("disabled", false);
+    });
+
+    act(() => {
+      fireEvent.click(button);
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Loading supported request categories...")
+      ).toBeTruthy();
+    });
+    expect(
+      screen.queryByText("Unable to retrieve request categories")
+    ).toBeNull();
+    expect(button).toHaveProperty("disabled", true);
+
+    act(() => {
+      retriedCategoryResponse.resolve(
+        createResponse([{ id: 3, name: "Software" }])
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Software")).toBeTruthy();
+      expect(button).toHaveProperty("disabled", false);
+    });
+    expect(healthFetch).toHaveBeenCalledTimes(2);
+    expect(categoryFetch).toHaveBeenCalledTimes(3);
   });
 
   it("preserves internal TypeError messages", async () => {

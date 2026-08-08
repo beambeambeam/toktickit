@@ -75,9 +75,6 @@ void describe("OpenAPI contract", () => {
     const healthSchema = requireJsonObject(schemas.HealthResponse);
     const errorSchema = requireJsonObject(schemas.ApiError);
     const errorResponse = requireJsonObject(responses["500"]);
-    const errorContent = requireJsonObject(errorResponse.content);
-    const errorJson = requireJsonObject(errorContent["application/json"]);
-    const errorResponseSchema = requireJsonObject(errorJson.schema);
 
     assert.deepEqual(requireJsonObject(document.info), {
       description: "API contract for the TokTickIT service.",
@@ -108,7 +105,7 @@ void describe("OpenAPI contract", () => {
       required: ["message"],
       type: "object",
     });
-    assert.equal(errorResponseSchema.$ref, "#/components/schemas/ApiError");
+    assert.equal(errorResponse.$ref, "#/components/responses/ApiErrorResponse");
   });
 
   void it("documents the populated Category list response", () => {
@@ -122,6 +119,8 @@ void describe("OpenAPI contract", () => {
     const successJson = requireJsonObject(successContent["application/json"]);
     const successSchema = requireJsonObject(successJson.schema);
     const items = requireJsonObject(successSchema.items);
+    const examples = requireJsonObject(successJson.examples);
+    const populatedExample = requireJsonObject(examples.populated);
     const components = requireJsonObject(document.components);
     const schemas = requireJsonObject(components.schemas);
     const categorySchema = requireJsonObject(schemas.Category);
@@ -129,7 +128,7 @@ void describe("OpenAPI contract", () => {
     assert.equal(getCategories.operationId, "getApiCategories");
     assert.equal(successSchema.type, "array");
     assert.equal(items.$ref, "#/components/schemas/Category");
-    assert.deepEqual(successJson.example, [
+    assert.deepEqual(populatedExample.value, [
       { id: 1, name: "Account and Access" },
       { id: 2, name: "Hardware" },
     ]);
@@ -142,6 +141,30 @@ void describe("OpenAPI contract", () => {
       required: ["id", "name"],
       type: "object",
     });
+  });
+
+  void it("documents empty Categories and the reusable API error response", () => {
+    const document = readOpenapiDocument();
+    const paths = requireJsonObject(document.paths);
+    const categoriesPath = requireJsonObject(paths["/api/categories"]);
+    const getCategories = requireJsonObject(categoriesPath.get);
+    const responses = requireJsonObject(getCategories.responses);
+    const successResponse = requireJsonObject(responses["200"]);
+    const successContent = requireJsonObject(successResponse.content);
+    const successJson = requireJsonObject(successContent["application/json"]);
+    const examples = requireJsonObject(successJson.examples);
+    const emptyExample = requireJsonObject(examples.empty);
+    const errorResponse = requireJsonObject(responses["500"]);
+    const components = requireJsonObject(document.components);
+    const reusableResponses = requireJsonObject(components.responses);
+    const reusableError = requireJsonObject(reusableResponses.ApiErrorResponse);
+    const errorContent = requireJsonObject(reusableError.content);
+    const errorJson = requireJsonObject(errorContent["application/json"]);
+    const errorSchema = requireJsonObject(errorJson.schema);
+
+    assert.deepEqual(emptyExample.value, []);
+    assert.equal(errorResponse.$ref, "#/components/responses/ApiErrorResponse");
+    assert.equal(errorSchema.$ref, "#/components/schemas/ApiError");
   });
 
   void it("serves the canonical document as JSON", async () => {

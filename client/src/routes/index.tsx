@@ -21,6 +21,11 @@ const getHealthErrorMessage = (error: unknown) => {
 export const HomePage = () => {
   const categoriesQuery = useQuery(categoriesQueryOptions());
   const healthQuery = useQuery(healthQueryOptions());
+  const hasDuplicateConnectionError =
+    categoriesQuery.isError &&
+    categoriesQuery.error instanceof ApiConnectionError &&
+    healthQuery.isError &&
+    healthQuery.error instanceof ApiConnectionError;
 
   let statusContent: ReactNode = null;
   let categoryContent: ReactNode = null;
@@ -51,11 +56,22 @@ export const HomePage = () => {
     categoryContent = (
       <section className="mt-3">
         <h2>Supported Request Categories</h2>
-        <ol>
-          {categoriesQuery.data.map((category) => (
-            <li key={category.id}>{category.name}</li>
-          ))}
-        </ol>
+        {categoriesQuery.data.length === 0 ? (
+          <p className="mb-0">No supported request categories are available.</p>
+        ) : (
+          <ol>
+            {categoriesQuery.data.map((category) => (
+              <li key={category.id}>{category.name}</li>
+            ))}
+          </ol>
+        )}
+      </section>
+    );
+  } else if (categoriesQuery.isError && !hasDuplicateConnectionError) {
+    categoryContent = (
+      <section className="mt-3">
+        <h2>Supported Request Categories</h2>
+        <p className="mb-0">{categoriesQuery.error.message}</p>
       </section>
     );
   }

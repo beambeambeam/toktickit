@@ -25,6 +25,15 @@ export type GetApiCategoriesData = {
     url: '/api/categories';
 };
 
+export type GetApiCategoriesErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiCategoriesError = GetApiCategoriesErrors[keyof GetApiCategoriesErrors];
+
 export type GetApiCategoriesResponses = {
     /**
      * The supported request categories.

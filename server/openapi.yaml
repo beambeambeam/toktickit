@@ -21,11 +21,19 @@ paths:
                 type: array
                 items:
                   $ref: "#/components/schemas/Category"
-              example:
-                - id: 1
-                  name: Account and Access
-                - id: 2
-                  name: Hardware
+              examples:
+                populated:
+                  summary: Supported request categories are available
+                  value:
+                    - id: 1
+                      name: Account and Access
+                    - id: 2
+                      name: Hardware
+                empty:
+                  summary: No supported request categories are available
+                  value: []
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
   /api/health:
     get:
       operationId: getApiHealth
@@ -48,12 +56,15 @@ paths:
                 status: ok
                 service: TokTickIT API
         "500":
-          description: The API could not complete the request.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiError"
+          $ref: "#/components/responses/ApiErrorResponse"
 components:
+  responses:
+    ApiErrorResponse:
+      description: The API could not complete the request.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
   schemas:
     Category:
       type: object
