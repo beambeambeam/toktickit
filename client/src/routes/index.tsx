@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { categoriesQueryOptions } from "@/api/categories";
 import { ApiConnectionError } from "@/api/client";
 import { healthQueryOptions } from "@/api/health";
 
@@ -18,6 +19,7 @@ const getHealthErrorMessage = (error: unknown) => {
 };
 
 export const HomePage = () => {
+  const categoriesQuery = useQuery(categoriesQueryOptions());
   const healthQuery = useQuery(healthQueryOptions());
 
   let statusContent: ReactNode = null;
@@ -40,6 +42,11 @@ export const HomePage = () => {
     );
   }
 
+  const checkSystem = () => {
+    void healthQuery.refetch();
+    void categoriesQuery.refetch();
+  };
+
   return (
     <main className="page">
       <div className="container py-5">
@@ -49,7 +56,7 @@ export const HomePage = () => {
             <button
               className="btn btn-primary"
               disabled={healthQuery.isFetching}
-              onClick={() => void healthQuery.refetch()}
+              onClick={checkSystem}
               type="button"
             >
               [ Check System ]
@@ -62,6 +69,16 @@ export const HomePage = () => {
             >
               {statusContent}
             </div>
+            {categoriesQuery.isSuccess && (
+              <section className="mt-3">
+                <h2>Supported Request Categories</h2>
+                <ol>
+                  {categoriesQuery.data.map((category) => (
+                    <li key={category.id}>{category.name}</li>
+                  ))}
+                </ol>
+              </section>
+            )}
           </div>
         </section>
       </div>

@@ -7,6 +7,25 @@ servers:
   - url: http://localhost:3000
     description: Local development server
 paths:
+  /api/categories:
+    get:
+      operationId: getApiCategories
+      summary: List supported request categories
+      description: Returns every supported request category in ascending ID order.
+      responses:
+        "200":
+          description: The supported request categories.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+              example:
+                - id: 1
+                  name: Account and Access
+                - id: 2
+                  name: Hardware
   /api/health:
     get:
       operationId: getApiHealth
@@ -36,6 +55,17 @@ paths:
                 $ref: "#/components/schemas/ApiError"
 components:
   schemas:
+    Category:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
     HealthResponse:
       type: object
       additionalProperties: false

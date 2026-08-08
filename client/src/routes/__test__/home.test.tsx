@@ -18,8 +18,33 @@ const healthResponse = {
   status: "ok",
 } as const;
 
+const categoryResponse = [
+  { id: 1, name: "Account and Access" },
+  { id: 2, name: "Hardware" },
+] as const;
+
 const createResponse = (body: unknown, status = 200) =>
   Response.json(body, { status });
+
+type MockFetchImplementation = (
+  ...arguments_: Parameters<typeof fetch>
+) => Promise<Response> | Response;
+
+const mockHealthAndCategories = (
+  fetchMock: ReturnType<typeof vi.fn<typeof fetch>>,
+  healthImplementation: MockFetchImplementation
+) => {
+  fetchMock.mockImplementation(async (...arguments_) => {
+    const [input] = arguments_;
+    const requestUrl = input instanceof Request ? input.url : input.toString();
+
+    if (new URL(requestUrl).pathname === "/api/categories") {
+      return createResponse(categoryResponse);
+    }
+
+    return await healthImplementation(...arguments_);
+  });
+};
 
 const createDeferred = <T,>() => {
   let deferredResolve!: (value: T | PromiseLike<T>) => void;
@@ -80,7 +105,10 @@ describe("home health status card", () => {
 
   it("shows a disabled checking state while the request is pending", async () => {
     const pendingResponse = createDeferred<Response>();
-    fetchMock.mockReturnValueOnce(pendingResponse.promise);
+    mockHealthAndCategories(
+      fetchMock,
+      async () => await pendingResponse.promise
+    );
     renderHomePage();
 
     const button = screen.getByRole("button", { name: "[ Check System ]" });
@@ -104,7 +132,7 @@ describe("home health status card", () => {
   });
 
   it("shows online status and the API service after a successful check", async () => {
-    fetchMock.mockResolvedValueOnce(createResponse(healthResponse));
+    mockHealthAndCategories(fetchMock, () => createResponse(healthResponse));
     renderHomePage();
 
     act(() => {
@@ -120,8 +148,41 @@ describe("home health status card", () => {
     ).toHaveProperty("disabled", false);
   });
 
+  it("renders the Categories returned by the API after a system check", async () => {
+    mockHealthAndCategories(fetchMock, () => createResponse(healthResponse));
+    renderHomePage();
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "[ Check System ]" }));
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", {
+          name: "Supported Request Categories",
+        })
+      ).toBeTruthy();
+    });
+
+    const categoryList = screen.getByRole("list");
+    expect(categoryList.tagName).toBe("OL");
+    expect(
+      screen.getAllByRole("listitem").map((item) => item.textContent)
+    ).toEqual(["Account and Access", "Hardware"]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    const categoryRequest = fetchMock.mock.calls[1]?.[0];
+    expect(categoryRequest).toBeInstanceOf(Request);
+    if (!(categoryRequest instanceof Request)) {
+      throw new TypeError("Expected the Category request to be a Request");
+    }
+    expect(categoryRequest.url).toBe("http://localhost:3000/api/categories");
+  });
+
   it("shows a connection failure message when the API cannot be reached", async () => {
-    fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
+    mockHealthAndCategories(fetchMock, () => {
+      throw new TypeError("Failed to fetch");
+    });
     renderHomePage();
 
     act(() => {
@@ -144,7 +205,7 @@ describe("home health status card", () => {
         throw responseError;
       },
     });
-    fetchMock.mockResolvedValue(malformedResponse);
+    mockHealthAndCategories(fetchMock, () => malformedResponse);
     renderHomePage();
 
     act(() => {
@@ -159,13 +220,9 @@ describe("home health status card", () => {
   });
 
   it("shows the returned API error message", async () => {
-    fetchMock
-      .mockResolvedValueOnce(
-        createResponse({ message: "Health service unavailable" }, 500)
-      )
-      .mockResolvedValueOnce(
-        createResponse({ message: "Health service unavailable" }, 500)
-      );
+    mockHealthAndCategories(fetchMock, () =>
+      createResponse({ message: "Health service unavailable" }, 500)
+    );
     renderHomePage();
 
     act(() => {
@@ -179,9 +236,10 @@ describe("home health status card", () => {
   });
 
   it("shows the client error message when the response has no JSON message", async () => {
-    fetchMock
-      .mockResolvedValueOnce(new Response("Gateway timeout", { status: 500 }))
-      .mockResolvedValueOnce(new Response("Gateway timeout", { status: 500 }));
+    mockHealthAndCategories(
+      fetchMock,
+      () => new Response("Gateway timeout", { status: 500 })
+    );
     renderHomePage();
 
     act(() => {
@@ -195,10 +253,12 @@ describe("home health status card", () => {
   });
 
   it("performs another health check after a failed check", async () => {
-    fetchMock
+    const healthFetch = vi
+      .fn<typeof fetch>()
       .mockRejectedValueOnce(new TypeError("Failed to fetch"))
       .mockRejectedValueOnce(new TypeError("Failed to fetch"))
       .mockResolvedValueOnce(createResponse(healthResponse));
+    mockHealthAndCategories(fetchMock, healthFetch);
     renderHomePage();
 
     const button = screen.getByRole("button", { name: "[ Check System ]" });
@@ -216,14 +276,16 @@ describe("home health status card", () => {
     await waitFor(() => {
       expect(screen.getByText("System Status: Online")).toBeTruthy();
     });
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(healthFetch).toHaveBeenCalledTimes(3);
   });
 
   it("performs another health check after a successful check", async () => {
     const secondResponse = createDeferred<Response>();
-    fetchMock
+    const healthFetch = vi
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(createResponse(healthResponse))
       .mockReturnValueOnce(secondResponse.promise);
+    mockHealthAndCategories(fetchMock, healthFetch);
     renderHomePage();
 
     const button = screen.getByRole("button", { name: "[ Check System ]" });
@@ -249,6 +311,6 @@ describe("home health status card", () => {
     await waitFor(() => {
       expect(screen.getByText("System Status: Online")).toBeTruthy();
     });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(healthFetch).toHaveBeenCalledTimes(2);
   });
 });

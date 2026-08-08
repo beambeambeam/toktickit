@@ -111,6 +111,39 @@ void describe("OpenAPI contract", () => {
     assert.equal(errorResponseSchema.$ref, "#/components/schemas/ApiError");
   });
 
+  void it("documents the populated Category list response", () => {
+    const document = readOpenapiDocument();
+    const paths = requireJsonObject(document.paths);
+    const categoriesPath = requireJsonObject(paths["/api/categories"]);
+    const getCategories = requireJsonObject(categoriesPath.get);
+    const responses = requireJsonObject(getCategories.responses);
+    const successResponse = requireJsonObject(responses["200"]);
+    const successContent = requireJsonObject(successResponse.content);
+    const successJson = requireJsonObject(successContent["application/json"]);
+    const successSchema = requireJsonObject(successJson.schema);
+    const items = requireJsonObject(successSchema.items);
+    const components = requireJsonObject(document.components);
+    const schemas = requireJsonObject(components.schemas);
+    const categorySchema = requireJsonObject(schemas.Category);
+
+    assert.equal(getCategories.operationId, "getApiCategories");
+    assert.equal(successSchema.type, "array");
+    assert.equal(items.$ref, "#/components/schemas/Category");
+    assert.deepEqual(successJson.example, [
+      { id: 1, name: "Account and Access" },
+      { id: 2, name: "Hardware" },
+    ]);
+    assert.deepEqual(categorySchema, {
+      additionalProperties: false,
+      properties: {
+        id: { type: "integer" },
+        name: { type: "string" },
+      },
+      required: ["id", "name"],
+      type: "object",
+    });
+  });
+
   void it("serves the canonical document as JSON", async () => {
     const response = await request(app).get("/openapi.json").expect(200);
 
