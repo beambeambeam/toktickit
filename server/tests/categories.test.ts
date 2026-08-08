@@ -28,12 +28,22 @@ testDatabaseUrl.pathname = `/${testDatabaseName}`;
 testDatabaseUrl.searchParams.set("schema", "public");
 
 const adminClient = new Client({ connectionString: adminDatabaseUrl.href });
+let adminClientConnected = false;
 
 let app: Express;
-let prisma: PrismaClient;
+let prisma: PrismaClient | undefined;
+
+const getPrisma = (): PrismaClient => {
+  if (prisma === undefined) {
+    throw new Error("Category integration database is not initialized");
+  }
+
+  return prisma;
+};
 
 before(async () => {
   await adminClient.connect();
+  adminClientConnected = true;
   await adminClient.query(
     `CREATE DATABASE ${escapeIdentifier(testDatabaseName)}`
   );
@@ -52,25 +62,41 @@ before(async () => {
 });
 
 beforeEach(async () => {
-  await prisma.category.deleteMany();
+  await getPrisma().category.deleteMany();
 });
 
 after(async () => {
-  await prisma.$disconnect();
-  await adminClient.query(
-    "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1 AND pid <> pg_backend_pid()",
-    [testDatabaseName]
-  );
-  await adminClient.query(
-    `DROP DATABASE IF EXISTS ${escapeIdentifier(testDatabaseName)}`
-  );
-  await adminClient.end();
-  process.env.DATABASE_URL = originalDatabaseUrl;
+  try {
+    if (prisma !== undefined) {
+      await prisma.$disconnect();
+    }
+  } finally {
+    try {
+      if (adminClientConnected) {
+        try {
+          await adminClient.query(
+            "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = $1 AND pid <> pg_backend_pid()",
+            [testDatabaseName]
+          );
+        } finally {
+          try {
+            await adminClient.query(
+              `DROP DATABASE IF EXISTS ${escapeIdentifier(testDatabaseName)}`
+            );
+          } finally {
+            await adminClient.end();
+          }
+        }
+      }
+    } finally {
+      process.env.DATABASE_URL = originalDatabaseUrl;
+    }
+  }
 });
 
 void describe("Categories API", () => {
   void it("returns every stored Category ordered by ascending ID", async () => {
-    await prisma.category.createMany({
+    await getPrisma().category.createMany({
       data: [
         { id: 30, name: "Network" },
         { id: 10, name: "Account and Access" },
@@ -98,7 +124,7 @@ void describe("Categories API", () => {
   });
 
   void it("returns a safe message when the Category query fails", async () => {
-    await prisma.$executeRawUnsafe(
+    await getPrisma().$executeRawUnsafe(
       'ALTER TABLE "Category" RENAME TO "UnavailableCategory"'
     );
 
@@ -110,7 +136,7 @@ void describe("Categories API", () => {
           message: "Unable to retrieve request categories",
         });
     } finally {
-      await prisma.$executeRawUnsafe(
+      await getPrisma().$executeRawUnsafe(
         'ALTER TABLE "UnavailableCategory" RENAME TO "Category"'
       );
     }
