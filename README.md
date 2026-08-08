@@ -40,7 +40,8 @@ pnpm db:start
 pnpm db:status
 pnpm db:generate
 pnpm db:validate
-pnpm db:push
+pnpm db:migrate
+pnpm db:seed
 ```
 
 Open Prisma Studio with `pnpm db:studio`. Stop PostgreSQL with `pnpm db:stop`. For full database and Prisma instructions, see [server/README.md](server/README.md).
