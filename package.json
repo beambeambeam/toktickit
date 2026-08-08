@@ -6,7 +6,6 @@
     "dev": "pnpm --parallel --filter @toktickit/client --filter @toktickit/server dev",
     "db:generate": "pnpm --filter @toktickit/server db:generate",
     "db:migrate": "pnpm --filter @toktickit/server db:migrate",
-    "db:push": "pnpm --filter @toktickit/server db:push",
     "db:start": "pnpm --filter @toktickit/server db:start",
     "db:status": "pnpm --filter @toktickit/server db:status",
     "db:stop": "pnpm --filter @toktickit/server db:stop",

@@ -40,7 +40,7 @@ pnpm db:start
 pnpm db:status
 pnpm db:generate
 pnpm db:validate
-pnpm db:push
+pnpm db:migrate
 pnpm db:seed
 ```
 

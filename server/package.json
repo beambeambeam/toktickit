@@ -7,7 +7,6 @@
     "build": "tsc",
     "db:generate": "prisma generate",
     "db:migrate": "prisma migrate dev",
-    "db:push": "prisma db push",
     "db:start": "docker compose up -d",
     "db:status": "docker compose ps",
     "db:stop": "docker compose down",

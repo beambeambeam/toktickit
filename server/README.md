@@ -24,10 +24,10 @@ pnpm db:generate
 pnpm db:validate
 ```
 
-Apply the current schema directly to the local database:
+Apply the committed migrations:
 
 ```sh
-pnpm db:push
+pnpm db:migrate
 ```
 
 Seed the canonical request categories:
@@ -38,7 +38,7 @@ pnpm db:seed
 
 The seed is safe to run repeatedly. It uses category names as the idempotency key and preserves unrelated categories.
 
-When a data model is added, create and apply a development migration instead:
+When a data model is changed, create and apply a named development migration:
 
 ```sh
 pnpm db:migrate -- --name describe-change
