@@ -1,0 +1,61 @@
+openapi: 3.1.0
+info:
+  title: TokTickIT API
+  version: 1.0.0
+  description: API contract for the TokTickIT service.
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+paths:
+  /api/health:
+    get:
+      operationId: getApiHealth
+      summary: Check API liveness
+      description: Returns a static response when the API process is alive.
+      responses:
+        "200":
+          description: The API process is alive.
+          headers:
+            Cache-Control:
+              required: true
+              schema:
+                type: string
+                const: no-store
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/HealthResponse"
+              example:
+                status: ok
+                service: TokTickIT API
+        "500":
+          description: The API could not complete the request.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ApiError"
+components:
+  schemas:
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required:
+        - status
+        - service
+      properties:
+        status:
+          type: string
+          const: ok
+        service:
+          type: string
+          const: TokTickIT API
+    ApiError:
+      type: object
+      additionalProperties: false
+      required:
+        - message
+      properties:
+        message:
+          type: string
+      example:
+        message: Example error message
