@@ -11,6 +11,7 @@
     "db:status": "pnpm --filter @toktickit/server db:status",
     "db:stop": "pnpm --filter @toktickit/server db:stop",
     "db:studio": "pnpm --filter @toktickit/server db:studio",
+    "db:seed": "pnpm --filter @toktickit/server db:seed",
     "db:validate": "pnpm --filter @toktickit/server db:validate",
     "openapi:check": "node scripts/openapi-check.mjs",
     "openapi:generate": "openapi-ts --file openapi-ts.config.mjs",

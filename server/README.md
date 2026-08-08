@@ -30,6 +30,14 @@ Apply the current schema directly to the local database:
 pnpm db:push
 ```
 
+Seed the canonical request categories:
+
+```sh
+pnpm db:seed
+```
+
+The seed is safe to run repeatedly. It uses category names as the idempotency key and preserves unrelated categories.
+
 When a data model is added, create and apply a development migration instead:
 
 ```sh
