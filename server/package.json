@@ -14,7 +14,7 @@
     "db:seed": "prisma db seed",
     "db:validate": "prisma validate",
     "start": "node dist/index.js",
-    "test": "node --import tsx --test tests/app.test.ts tests/health.test.ts tests/openapi.test.ts",
+    "test": "node --import tsx --test tests/app.test.ts tests/categories.test.ts tests/health.test.ts tests/openapi.test.ts",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {

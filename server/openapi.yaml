@@ -7,6 +7,33 @@ servers:
   - url: http://localhost:3000
     description: Local development server
 paths:
+  /api/categories:
+    get:
+      operationId: getApiCategories
+      summary: List supported request categories
+      description: Returns every supported request category in ascending ID order.
+      responses:
+        "200":
+          description: The supported request categories.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Category"
+              examples:
+                populated:
+                  summary: Supported request categories are available
+                  value:
+                    - id: 1
+                      name: Account and Access
+                    - id: 2
+                      name: Hardware
+                empty:
+                  summary: No supported request categories are available
+                  value: []
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
   /api/health:
     get:
       operationId: getApiHealth
@@ -29,13 +56,27 @@ paths:
                 status: ok
                 service: TokTickIT API
         "500":
-          description: The API could not complete the request.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/ApiError"
+          $ref: "#/components/responses/ApiErrorResponse"
 components:
+  responses:
+    ApiErrorResponse:
+      description: The API could not complete the request.
+      content:
+        application/json:
+          schema:
+            $ref: "#/components/schemas/ApiError"
   schemas:
+    Category:
+      type: object
+      additionalProperties: false
+      required:
+        - id
+        - name
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
     HealthResponse:
       type: object
       additionalProperties: false
