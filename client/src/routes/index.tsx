@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import type { ReactNode } from "react";
 
+import { categoriesQueryOptions } from "@/api/categories";
 import { ApiConnectionError } from "@/api/client";
 import { healthQueryOptions } from "@/api/health";
 
@@ -18,9 +19,16 @@ const getHealthErrorMessage = (error: unknown) => {
 };
 
 export const HomePage = () => {
+  const categoriesQuery = useQuery(categoriesQueryOptions());
   const healthQuery = useQuery(healthQueryOptions());
+  const hasDuplicateConnectionError =
+    categoriesQuery.isError &&
+    categoriesQuery.error instanceof ApiConnectionError &&
+    healthQuery.isError &&
+    healthQuery.error instanceof ApiConnectionError;
 
   let statusContent: ReactNode = null;
+  let categoryContent: ReactNode = null;
 
   if (healthQuery.isFetching) {
     statusContent = <p className="mb-0">System Status: Checking...</p>;
@@ -40,6 +48,39 @@ export const HomePage = () => {
     );
   }
 
+  if (categoriesQuery.isFetching) {
+    categoryContent = (
+      <p className="mb-0 mt-3">Loading supported request categories...</p>
+    );
+  } else if (categoriesQuery.isSuccess) {
+    categoryContent = (
+      <section className="mt-3">
+        <h2>Supported Request Categories</h2>
+        {categoriesQuery.data.length === 0 ? (
+          <p className="mb-0">No supported request categories are available.</p>
+        ) : (
+          <ol>
+            {categoriesQuery.data.map((category) => (
+              <li key={category.id}>{category.name}</li>
+            ))}
+          </ol>
+        )}
+      </section>
+    );
+  } else if (categoriesQuery.isError && !hasDuplicateConnectionError) {
+    categoryContent = (
+      <section className="mt-3">
+        <h2>Supported Request Categories</h2>
+        <p className="mb-0">{categoriesQuery.error.message}</p>
+      </section>
+    );
+  }
+
+  const checkSystem = () => {
+    void healthQuery.refetch();
+    void categoriesQuery.refetch();
+  };
+
   return (
     <main className="page">
       <div className="container py-5">
@@ -48,8 +89,8 @@ export const HomePage = () => {
             <h1 className="card-title">TokTickIT IT Service Desk</h1>
             <button
               className="btn btn-primary"
-              disabled={healthQuery.isFetching}
-              onClick={() => void healthQuery.refetch()}
+              disabled={healthQuery.isFetching || categoriesQuery.isFetching}
+              onClick={checkSystem}
               type="button"
             >
               [ Check System ]
@@ -61,6 +102,7 @@ export const HomePage = () => {
               role="status"
             >
               {statusContent}
+              {categoryContent}
             </div>
           </div>
         </section>

@@ -4,6 +4,11 @@ export type ClientOptions = {
     baseUrl: 'http://localhost:3000' | (string & {});
 };
 
+export type Category = {
+    id: number;
+    name: string;
+};
+
 export type HealthResponse = {
     status: 'ok';
     service: 'TokTickIT API';
@@ -12,6 +17,31 @@ export type HealthResponse = {
 export type ApiError = {
     message: string;
 };
+
+export type GetApiCategoriesData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/categories';
+};
+
+export type GetApiCategoriesErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiCategoriesError = GetApiCategoriesErrors[keyof GetApiCategoriesErrors];
+
+export type GetApiCategoriesResponses = {
+    /**
+     * The supported request categories.
+     */
+    200: Array<Category>;
+};
+
+export type GetApiCategoriesResponse = GetApiCategoriesResponses[keyof GetApiCategoriesResponses];
 
 export type GetApiHealthData = {
     body?: never;

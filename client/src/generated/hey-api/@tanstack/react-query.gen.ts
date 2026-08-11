@@ -3,8 +3,8 @@
 import { queryOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { getApiHealth, type Options } from '../sdk.gen';
-import type { GetApiHealthData, GetApiHealthError, GetApiHealthResponse } from '../types.gen';
+import { getApiCategories, getApiHealth, type Options } from '../sdk.gen';
+import type { GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse } from '../types.gen';
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -38,6 +38,26 @@ const createQueryKey = <TOptions extends Options>(id: string, options?: TOptions
     }
     return [params];
 };
+
+export const getApiCategoriesQueryKey = (options?: Options<GetApiCategoriesData>) => createQueryKey('getApiCategories', options);
+
+/**
+ * List supported request categories
+ *
+ * Returns every supported request category in ascending ID order.
+ */
+export const getApiCategoriesOptions = (options?: Options<GetApiCategoriesData>) => queryOptions<GetApiCategoriesResponse, GetApiCategoriesError, GetApiCategoriesResponse, ReturnType<typeof getApiCategoriesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiCategories({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiCategoriesQueryKey(options)
+});
 
 export const getApiHealthQueryKey = (options?: Options<GetApiHealthData>) => createQueryKey('getApiHealth', options);
 

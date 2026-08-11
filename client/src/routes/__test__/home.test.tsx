@@ -18,8 +18,39 @@ const healthResponse = {
   status: "ok",
 } as const;
 
+const categoryResponse = [
+  { id: 1, name: "Account and Access" },
+  { id: 2, name: "Hardware" },
+] as const;
+
 const createResponse = (body: unknown, status = 200) =>
   Response.json(body, { status });
+
+const throwConnectionFailure = (): never => {
+  throw new TypeError("Failed to fetch");
+};
+
+type MockFetchImplementation = (
+  ...arguments_: Parameters<typeof fetch>
+) => Promise<Response> | Response;
+
+const mockHealthAndCategories = (
+  fetchMock: ReturnType<typeof vi.fn<typeof fetch>>,
+  healthImplementation: MockFetchImplementation,
+  categoryImplementation: MockFetchImplementation = () =>
+    createResponse(categoryResponse)
+) => {
+  fetchMock.mockImplementation(async (...arguments_) => {
+    const [input] = arguments_;
+    const requestUrl = input instanceof Request ? input.url : input.toString();
+
+    if (new URL(requestUrl).pathname === "/api/categories") {
+      return await categoryImplementation(...arguments_);
+    }
+
+    return await healthImplementation(...arguments_);
+  });
+};
 
 const createDeferred = <T,>() => {
   let deferredResolve!: (value: T | PromiseLike<T>) => void;
@@ -64,7 +95,7 @@ describe("home health status card", () => {
     vi.unstubAllGlobals();
   });
 
-  it("renders the service desk card without requesting health initially", () => {
+  it("renders the service desk card without making initial API requests", () => {
     renderHomePage();
 
     expect(
@@ -78,9 +109,14 @@ describe("home health status card", () => {
     expect(fetchMock).not.toHaveBeenCalled();
   });
 
-  it("shows a disabled checking state while the request is pending", async () => {
-    const pendingResponse = createDeferred<Response>();
-    fetchMock.mockReturnValueOnce(pendingResponse.promise);
+  it("starts both checks together and waits for both to settle", async () => {
+    const pendingHealthResponse = createDeferred<Response>();
+    const pendingCategoryResponse = createDeferred<Response>();
+    mockHealthAndCategories(
+      fetchMock,
+      async () => await pendingHealthResponse.promise,
+      async () => await pendingCategoryResponse.promise
+    );
     renderHomePage();
 
     const button = screen.getByRole("button", { name: "[ Check System ]" });
@@ -91,20 +127,51 @@ describe("home health status card", () => {
 
     await waitFor(() => {
       expect(screen.getByText("System Status: Checking...")).toBeTruthy();
+      expect(
+        screen.getByText("Loading supported request categories...")
+      ).toBeTruthy();
       expect(button).toHaveProperty("disabled", true);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
     });
+
+    expect(
+      fetchMock.mock.calls.map(
+        ([input]) =>
+          new URL(input instanceof Request ? input.url : input.toString())
+            .pathname
+      )
+    ).toEqual(["/api/health", "/api/categories"]);
 
     const statusRegion = screen.getByRole("status");
     expect(statusRegion.getAttribute("aria-live")).toBe("polite");
     expect(statusRegion.getAttribute("aria-atomic")).toBe("true");
 
     act(() => {
-      pendingResponse.resolve(createResponse(healthResponse));
+      pendingHealthResponse.resolve(createResponse(healthResponse));
     });
+
+    await waitFor(() => {
+      expect(screen.getByText("System Status: Online")).toBeTruthy();
+    });
+    expect(
+      screen.getByText("Loading supported request categories...")
+    ).toBeTruthy();
+    expect(button).toHaveProperty("disabled", true);
+
+    act(() => {
+      pendingCategoryResponse.resolve(createResponse(categoryResponse));
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", { name: "Supported Request Categories" })
+      ).toBeTruthy();
+    });
+    expect(button).toHaveProperty("disabled", false);
   });
 
   it("shows online status and the API service after a successful check", async () => {
-    fetchMock.mockResolvedValueOnce(createResponse(healthResponse));
+    mockHealthAndCategories(fetchMock, () => createResponse(healthResponse));
     renderHomePage();
 
     act(() => {
@@ -120,8 +187,89 @@ describe("home health status card", () => {
     ).toHaveProperty("disabled", false);
   });
 
-  it("shows a connection failure message when the API cannot be reached", async () => {
-    fetchMock.mockRejectedValue(new TypeError("Failed to fetch"));
+  it("renders the Categories returned by the API after a system check", async () => {
+    mockHealthAndCategories(fetchMock, () => createResponse(healthResponse));
+    renderHomePage();
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "[ Check System ]" }));
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByRole("heading", {
+          name: "Supported Request Categories",
+        })
+      ).toBeTruthy();
+    });
+
+    const categoryList = screen.getByRole("list");
+    expect(categoryList.tagName).toBe("OL");
+    expect(
+      screen.getAllByRole("listitem").map((item) => item.textContent)
+    ).toEqual(["Account and Access", "Hardware"]);
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+
+    const categoryRequest = fetchMock.mock.calls[1]?.[0];
+    expect(categoryRequest).toBeInstanceOf(Request);
+    if (!(categoryRequest instanceof Request)) {
+      throw new TypeError("Expected the Category request to be a Request");
+    }
+    expect(categoryRequest.url).toBe("http://localhost:3000/api/categories");
+  });
+
+  it("shows the empty Category message after a successful empty response", async () => {
+    mockHealthAndCategories(
+      fetchMock,
+      () => createResponse(healthResponse),
+      () => createResponse([])
+    );
+    renderHomePage();
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "[ Check System ]" }));
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("No supported request categories are available.")
+      ).toBeTruthy();
+    });
+    expect(
+      screen.getByRole("heading", { name: "Supported Request Categories" })
+    ).toBeTruthy();
+    expect(screen.queryByRole("list")).toBeNull();
+  });
+
+  it("keeps health online when the Category request fails", async () => {
+    mockHealthAndCategories(
+      fetchMock,
+      () => createResponse(healthResponse),
+      () =>
+        createResponse(
+          { message: "Unable to retrieve request categories" },
+          500
+        )
+    );
+    renderHomePage();
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "[ Check System ]" }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("System Status: Online")).toBeTruthy();
+      expect(
+        screen.getByText("Unable to retrieve request categories")
+      ).toBeTruthy();
+    });
+    expect(screen.queryByRole("list")).toBeNull();
+  });
+
+  it("keeps the Category list when the health request fails", async () => {
+    mockHealthAndCategories(fetchMock, () => {
+      throw new TypeError("Failed to fetch");
+    });
     renderHomePage();
 
     act(() => {
@@ -132,6 +280,139 @@ describe("home health status card", () => {
       expect(screen.getByText("System Status: Offline")).toBeTruthy();
     });
     expect(screen.getByText("Unable to connect to TokTickIT API")).toBeTruthy();
+    expect(screen.getByText("Account and Access")).toBeTruthy();
+  });
+
+  it("shows one connection message when both API requests are unreachable", async () => {
+    mockHealthAndCategories(
+      fetchMock,
+      throwConnectionFailure,
+      throwConnectionFailure
+    );
+    renderHomePage();
+
+    const button = screen.getByRole("button", { name: "[ Check System ]" });
+    act(() => {
+      fireEvent.click(button);
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("System Status: Offline")).toBeTruthy();
+      expect(button).toHaveProperty("disabled", false);
+    });
+    expect(
+      screen.getAllByText("Unable to connect to TokTickIT API")
+    ).toHaveLength(1);
+    expect(
+      screen.queryByRole("heading", { name: "Supported Request Categories" })
+    ).toBeNull();
+  });
+
+  it("uses the Category fallback when the server has no valid message", async () => {
+    mockHealthAndCategories(
+      fetchMock,
+      () => createResponse(healthResponse),
+      () => createResponse({ message: "" }, 500)
+    );
+    renderHomePage();
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "[ Check System ]" }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("System Status: Online")).toBeTruthy();
+      expect(
+        screen.getByText("Unable to load supported request categories.")
+      ).toBeTruthy();
+    });
+  });
+
+  it("uses the Category fallback when the response is not valid JSON", async () => {
+    mockHealthAndCategories(
+      fetchMock,
+      () => createResponse(healthResponse),
+      () =>
+        new Response("not valid JSON", {
+          headers: { "Content-Type": "application/json" },
+        })
+    );
+    renderHomePage();
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "[ Check System ]" }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("System Status: Online")).toBeTruthy();
+      expect(
+        screen.getByText("Unable to load supported request categories.")
+      ).toBeTruthy();
+    });
+    expect(screen.queryByText("Unexpected token")).toBeNull();
+  });
+
+  it("clears a Category error while retrying both requests", async () => {
+    const retriedCategoryResponse = createDeferred<Response>();
+    const healthFetch = vi
+      .fn<MockFetchImplementation>()
+      .mockImplementation(() => createResponse(healthResponse));
+    const categoryFetch = vi
+      .fn<MockFetchImplementation>()
+      .mockReturnValueOnce(
+        createResponse(
+          { message: "Unable to retrieve request categories" },
+          500
+        )
+      )
+      .mockReturnValueOnce(
+        createResponse(
+          { message: "Unable to retrieve request categories" },
+          500
+        )
+      )
+      .mockReturnValueOnce(retriedCategoryResponse.promise);
+    mockHealthAndCategories(fetchMock, healthFetch, categoryFetch);
+    renderHomePage();
+
+    const button = screen.getByRole("button", { name: "[ Check System ]" });
+    act(() => {
+      fireEvent.click(button);
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Unable to retrieve request categories")
+      ).toBeTruthy();
+      expect(button).toHaveProperty("disabled", false);
+    });
+
+    act(() => {
+      fireEvent.click(button);
+    });
+
+    await waitFor(() => {
+      expect(
+        screen.getByText("Loading supported request categories...")
+      ).toBeTruthy();
+    });
+    expect(
+      screen.queryByText("Unable to retrieve request categories")
+    ).toBeNull();
+    expect(button).toHaveProperty("disabled", true);
+
+    act(() => {
+      retriedCategoryResponse.resolve(
+        createResponse([{ id: 3, name: "Software" }])
+      );
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("Software")).toBeTruthy();
+      expect(button).toHaveProperty("disabled", false);
+    });
+    expect(healthFetch).toHaveBeenCalledTimes(2);
+    expect(categoryFetch).toHaveBeenCalledTimes(3);
   });
 
   it("preserves internal TypeError messages", async () => {
@@ -144,7 +425,7 @@ describe("home health status card", () => {
         throw responseError;
       },
     });
-    fetchMock.mockResolvedValue(malformedResponse);
+    mockHealthAndCategories(fetchMock, () => malformedResponse);
     renderHomePage();
 
     act(() => {
@@ -159,13 +440,9 @@ describe("home health status card", () => {
   });
 
   it("shows the returned API error message", async () => {
-    fetchMock
-      .mockResolvedValueOnce(
-        createResponse({ message: "Health service unavailable" }, 500)
-      )
-      .mockResolvedValueOnce(
-        createResponse({ message: "Health service unavailable" }, 500)
-      );
+    mockHealthAndCategories(fetchMock, () =>
+      createResponse({ message: "Health service unavailable" }, 500)
+    );
     renderHomePage();
 
     act(() => {
@@ -179,9 +456,10 @@ describe("home health status card", () => {
   });
 
   it("shows the client error message when the response has no JSON message", async () => {
-    fetchMock
-      .mockResolvedValueOnce(new Response("Gateway timeout", { status: 500 }))
-      .mockResolvedValueOnce(new Response("Gateway timeout", { status: 500 }));
+    mockHealthAndCategories(
+      fetchMock,
+      () => new Response("Gateway timeout", { status: 500 })
+    );
     renderHomePage();
 
     act(() => {
@@ -195,10 +473,12 @@ describe("home health status card", () => {
   });
 
   it("performs another health check after a failed check", async () => {
-    fetchMock
+    const healthFetch = vi
+      .fn<typeof fetch>()
       .mockRejectedValueOnce(new TypeError("Failed to fetch"))
       .mockRejectedValueOnce(new TypeError("Failed to fetch"))
       .mockResolvedValueOnce(createResponse(healthResponse));
+    mockHealthAndCategories(fetchMock, healthFetch);
     renderHomePage();
 
     const button = screen.getByRole("button", { name: "[ Check System ]" });
@@ -216,14 +496,21 @@ describe("home health status card", () => {
     await waitFor(() => {
       expect(screen.getByText("System Status: Online")).toBeTruthy();
     });
-    expect(fetchMock).toHaveBeenCalledTimes(3);
+    expect(healthFetch).toHaveBeenCalledTimes(3);
   });
 
   it("performs another health check after a successful check", async () => {
-    const secondResponse = createDeferred<Response>();
-    fetchMock
+    const secondHealthResponse = createDeferred<Response>();
+    const secondCategoryResponse = createDeferred<Response>();
+    const healthFetch = vi
+      .fn<typeof fetch>()
       .mockResolvedValueOnce(createResponse(healthResponse))
-      .mockReturnValueOnce(secondResponse.promise);
+      .mockReturnValueOnce(secondHealthResponse.promise);
+    const categoryFetch = vi
+      .fn<MockFetchImplementation>()
+      .mockReturnValueOnce(createResponse(categoryResponse))
+      .mockReturnValueOnce(secondCategoryResponse.promise);
+    mockHealthAndCategories(fetchMock, healthFetch, categoryFetch);
     renderHomePage();
 
     const button = screen.getByRole("button", { name: "[ Check System ]" });
@@ -234,21 +521,32 @@ describe("home health status card", () => {
     await waitFor(() => {
       expect(screen.getByText("System Status: Online")).toBeTruthy();
     });
+    expect(screen.getByText("Account and Access")).toBeTruthy();
 
     act(() => {
       fireEvent.click(button);
     });
     await waitFor(() => {
       expect(screen.getByText("System Status: Checking...")).toBeTruthy();
+      expect(
+        screen.getByText("Loading supported request categories...")
+      ).toBeTruthy();
       expect(button).toHaveProperty("disabled", true);
     });
+    expect(screen.queryByText("Account and Access")).toBeNull();
 
     act(() => {
-      secondResponse.resolve(createResponse(healthResponse));
+      secondHealthResponse.resolve(createResponse(healthResponse));
+      secondCategoryResponse.resolve(
+        createResponse([{ id: 3, name: "Software" }])
+      );
     });
     await waitFor(() => {
       expect(screen.getByText("System Status: Online")).toBeTruthy();
     });
-    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(screen.getByText("Software")).toBeTruthy();
+    expect(screen.queryByText("Account and Access")).toBeNull();
+    expect(healthFetch).toHaveBeenCalledTimes(2);
+    expect(categoryFetch).toHaveBeenCalledTimes(2);
   });
 });
