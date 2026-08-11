@@ -15,6 +15,7 @@ type CategoryQueryContext = Parameters<
 const isApiError = (error: unknown): error is ApiError =>
   typeof error === "object" &&
   error !== null &&
+  !(error instanceof Error) &&
   "message" in error &&
   typeof error.message === "string" &&
   error.message.trim().length > 0;

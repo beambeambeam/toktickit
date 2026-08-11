@@ -328,6 +328,30 @@ describe("home health status card", () => {
     });
   });
 
+  it("uses the Category fallback when the response is not valid JSON", async () => {
+    mockHealthAndCategories(
+      fetchMock,
+      () => createResponse(healthResponse),
+      () =>
+        new Response("not valid JSON", {
+          headers: { "Content-Type": "application/json" },
+        })
+    );
+    renderHomePage();
+
+    act(() => {
+      fireEvent.click(screen.getByRole("button", { name: "[ Check System ]" }));
+    });
+
+    await waitFor(() => {
+      expect(screen.getByText("System Status: Online")).toBeTruthy();
+      expect(
+        screen.getByText("Unable to load supported request categories.")
+      ).toBeTruthy();
+    });
+    expect(screen.queryByText("Unexpected token")).toBeNull();
+  });
+
   it("clears a Category error while retrying both requests", async () => {
     const retriedCategoryResponse = createDeferred<Response>();
     const healthFetch = vi
