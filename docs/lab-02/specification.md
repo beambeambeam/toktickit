@@ -115,11 +115,13 @@ The selected Requester is represented by a client-held context and an `X-Develop
 - Allowed types are JPG/JPEG, PNG, WEBP, and PDF. Each file is limited to 5 MB. Each Ticket has at most five active Attachments.
 - Validate extension, declared media type, byte size, and server-side content signature where practical. Never use the original filename as a storage path or as an authorization decision.
 - Normalize displayed filenames for control characters and unsafe markup. Store content under generated opaque keys outside the public static directory. Persist metadata separately from content.
-- Stage and validate all creation uploads before committing the Ticket. A rejected or failed upload must not silently report a successful Ticket. Use cleanup/compensation for staged or stored files when a database operation fails.
-- For later uploads, check ownership and active-count limits before storing the Attachment. Failed persistence cleans up staged content and returns a safe error.
+- Validate every creation upload before any persistence. Write each accepted file to a generated opaque key in non-public final storage before starting the database transaction. If a file write fails, delete every file written for that attempt and do not create the Ticket.
+- Create the Ticket and all Attachment metadata in one database transaction, referencing the already-written opaque keys. If the transaction fails, delete every file written for that attempt and return a safe failure; never report a Ticket success with incomplete Attachment metadata.
+- Do not perform a post-commit file move. After the transaction commits, the files referenced by the committed metadata are already in their final non-public storage locations.
+- For later uploads, check ownership and active-count limits before storing the Attachment, use the same file-write/database-compensation ordering, and return a safe error when persistence fails.
 - Attachment metadata may show `Active` or `Removed`, original filename, type, size, upload time, and removal time/reason according to the UI contract.
 - Download and preview are available only for active owned Attachments. Removed content is never streamed or previewed.
-- Removal is soft: retain the metadata and mark removal time/reason. Require a confirmation in the UI and a trimmed non-empty removal reason within the documented length limit on the API.
+- Removal is soft: retain the metadata and mark removal time/reason. Require UI confirmation and a removal reason containing 3–500 characters after trimming; the API rejects values outside this inclusive range.
 
 ### UI and interaction
 
@@ -146,7 +148,7 @@ The selected Requester is represented by a client-held context and an `X-Develop
 - Test observable behavior at the highest practical seam. Prefer a complete browser flow for user outcomes, API integration for persistence/ownership/query contracts, and focused client tests for local field and feedback behavior. Do not assert private implementation details, component structure, database query syntax, or incidental CSS implementation.
 - Reuse the existing server Vitest + Supertest boundary for HTTP behavior and the existing client Vitest + React Testing Library boundary for UI behavior. Extend the current OpenAPI validation coverage for the new contract. Add a browser E2E runner only for the required full flow, viewport checks, and screenshots.
 - Unit tests cover Ticket Number generation, trimming/validation helpers, query parsing, Attachment rules, filename normalization, and deterministic ordering helpers.
-- API/integration tests cover seeded reference data, active/inactive Requesters, valid and invalid Ticket creation, backend defaults, validation, safe errors, list ownership, query behavior, invalid query parameters, Ticket Detail ownership, Attachment limits/types/sizes, upload failure compensation, active download, soft removal, removed download blocking, and cross-Requester access.
+- API/integration tests cover seeded reference data, active/inactive Requesters, valid and invalid Ticket creation, backend defaults, validation, safe errors, list ownership, query behavior, invalid query parameters, Ticket Detail ownership, Attachment limits/types/sizes, removal-reason boundaries, upload failure compensation ordering, active download, soft removal, removed download blocking, and cross-Requester access.
 - Client UI tests cover selector states and context switching, reference-data loading, required fields and field-level errors, busy/duplicate-submit prevention, successful Ticket Number display, preserved form values after failure, Attachment validation, My Tickets filters/pagination/empty/no-results/error states, read-only Detail, and Attachment controls.
 - Style/accessibility tests cover required labels and asterisks, accessible names, visible focus, non-color feedback, badge states, disabled/busy controls, read-only field styling, and the required Zen Green tokens.
 - Responsive tests and manual visual inspection cover desktop, tablet, and mobile Create Ticket, My Tickets, and Ticket Detail layouts, including no clipping, overlap, horizontal overflow, or hidden Attachment names/actions.
@@ -163,12 +165,12 @@ The selected Requester is represented by a client-held context and an `X-Develop
 - **AC-06:** A valid Ticket creates exactly one persisted Ticket with the selected Requester, backend Ticket Number, Ticket Date, required relationships, trimmed requester fields, Requested Priority, and Current Status `New`.
 - **AC-07:** Frontend and backend validation reject missing, whitespace-only, over-limit, invalid, or mismatched values; invalid submission creates no partial Ticket and shows field-level messages.
 - **AC-08:** Create submission is disabled and visibly busy while processing; a recoverable failure preserves valid entered values and reports a safe error.
-- **AC-09:** Creation Attachments obey allowed types, 5 MB per-file limit, five active-file limit, safe metadata/storage behavior, and documented compensation on failure.
+- **AC-09:** Creation Attachments obey allowed types, 5 MB per-file limit, five active-file limit, and safe metadata/storage behavior. All files are validated and written to opaque storage before one Ticket/Attachment database transaction; any write or transaction failure cleans up the attempt and cannot report success.
 - **AC-10:** My Tickets returns only Tickets owned by the selected Requester and provides documented search, filters, sorting, pagination, deterministic ordering, and pagination metadata.
 - **AC-11:** Invalid Ticket-list parameters return the documented safe validation response; an empty Ticket list is visually distinct from a valid no-results query.
 - **AC-12:** Switching between two seeded Requesters removes the first Requester's Tickets from view and loads the second Requester's data.
 - **AC-13:** Owned Ticket Detail displays read-only Ticket information and Attachment metadata. Missing, unowned, or invalid resources return the documented safe ownership response.
-- **AC-14:** An owned Requester can add a permitted Attachment, download an active Attachment, and soft-remove an Attachment with confirmation and a valid reason.
+- **AC-14:** An owned Requester can add a permitted Attachment, download an active Attachment, and soft-remove an Attachment with confirmation and a 3–500 character trimmed reason.
 - **AC-15:** Removed Attachment metadata remains available as documented, while removed content cannot be downloaded or previewed.
 - **AC-16:** All API errors are predictable and safe; they do not expose stack traces, database details, local paths, or secrets.
 - **AC-17:** Create Ticket, My Tickets, and Ticket Detail satisfy the Zen Green visual contract, accessible naming/focus rules, non-color feedback rules, and desktop/tablet/mobile layout requirements.
