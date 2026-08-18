@@ -16,5 +16,6 @@ export default defineConfig({
     "**/wrangler.jsonc",
     "**/convex/_generated/**",
     "**/src/generated/**",
+    "reports/**",
   ],
 });
