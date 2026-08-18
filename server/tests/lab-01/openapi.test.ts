@@ -2,18 +2,18 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import { describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import { createClient } from "@hey-api/openapi-ts";
 import request from "supertest";
+import { describe, it } from "vitest";
 import { parse } from "yaml";
 
-import { app } from "../src/app.js";
+import { app } from "../../src/app.js";
 
 type JsonObject = Record<string, unknown>;
 
-const openapiPath = new URL("../openapi.yaml", import.meta.url);
+const openapiPath = new URL("../../openapi.yaml", import.meta.url);
 
 const isJsonObject = (value: unknown): value is JsonObject =>
   typeof value === "object" && value !== null && !Array.isArray(value);
@@ -38,8 +38,8 @@ const requireJsonObject = (value: unknown): JsonObject => {
   return value;
 };
 
-void describe("OpenAPI contract", () => {
-  void it("validates the canonical OpenAPI document", async () => {
+describe("OpenAPI contract", () => {
+  it("validates the canonical OpenAPI document", async () => {
     const document = readOpenapiDocument();
 
     assert.equal(document.openapi, "3.1.0");
@@ -51,7 +51,7 @@ void describe("OpenAPI contract", () => {
     });
   });
 
-  void it("documents the health response and reusable API error", () => {
+  it("documents the health response and reusable API error", () => {
     const document = readOpenapiDocument();
     const paths = requireJsonObject(document.paths);
     const healthPath = requireJsonObject(paths["/api/health"]);
@@ -108,7 +108,7 @@ void describe("OpenAPI contract", () => {
     assert.equal(errorResponse.$ref, "#/components/responses/ApiErrorResponse");
   });
 
-  void it("documents the populated Category list response", () => {
+  it("documents the populated Category list response", () => {
     const document = readOpenapiDocument();
     const paths = requireJsonObject(document.paths);
     const categoriesPath = requireJsonObject(paths["/api/categories"]);
@@ -143,7 +143,7 @@ void describe("OpenAPI contract", () => {
     });
   });
 
-  void it("documents empty Categories and the reusable API error response", () => {
+  it("documents empty Categories and the reusable API error response", () => {
     const document = readOpenapiDocument();
     const paths = requireJsonObject(document.paths);
     const categoriesPath = requireJsonObject(paths["/api/categories"]);
@@ -167,14 +167,14 @@ void describe("OpenAPI contract", () => {
     assert.equal(errorSchema.$ref, "#/components/schemas/ApiError");
   });
 
-  void it("serves the canonical document as JSON", async () => {
+  it("serves the canonical document as JSON", async () => {
     const response = await request(app).get("/openapi.json").expect(200);
 
     assert.match(response.headers["content-type"], /application\/json/u);
     assert.deepEqual(response.body, readOpenapiDocument());
   });
 
-  void it("serves interactive documentation and its assets", async () => {
+  it("serves interactive documentation and its assets", async () => {
     const documentation = await request(app).get("/docs").expect(200);
 
     assert.match(documentation.headers["content-type"], /html/u);

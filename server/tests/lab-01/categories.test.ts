@@ -2,17 +2,44 @@ import "dotenv/config";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { after, before, beforeEach, describe, it } from "node:test";
 import { fileURLToPath } from "node:url";
 
 import type { Express } from "express";
 import { Client, escapeIdentifier } from "pg";
 import request from "supertest";
+import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
 
-import type { PrismaClient } from "../src/generated/prisma/client.js";
+import type { PrismaClient } from "../../src/generated/prisma/client.js";
 
-const serverDirectory = fileURLToPath(new URL("..", import.meta.url));
+const serverDirectory = fileURLToPath(new URL("../..", import.meta.url));
 const originalDatabaseUrl = process.env.DATABASE_URL;
+const canonicalCategoryNames = [
+  "Account and Access",
+  "Hardware",
+  "Software",
+  "Network",
+] as const;
+
+interface CategoryResponse {
+  id: number;
+  name: string;
+}
+
+const isCategoryResponse = (value: unknown): value is CategoryResponse =>
+  typeof value === "object" &&
+  value !== null &&
+  "id" in value &&
+  typeof value.id === "number" &&
+  "name" in value &&
+  typeof value.name === "string";
+
+const getCategoryNames = (value: unknown): string[] => {
+  if (!Array.isArray(value) || !value.every(isCategoryResponse)) {
+    throw new TypeError("Expected a category response");
+  }
+
+  return value.map((category) => category.name);
+};
 
 if (originalDatabaseUrl === undefined || originalDatabaseUrl.length === 0) {
   throw new Error("DATABASE_URL is required for Category integration tests");
@@ -41,7 +68,15 @@ const getPrisma = (): PrismaClient => {
   return prisma;
 };
 
-before(async () => {
+const runSeed = (): void => {
+  execFileSync("pnpm", ["exec", "prisma", "db", "seed"], {
+    cwd: serverDirectory,
+    env: { ...process.env, DATABASE_URL: testDatabaseUrl.href },
+    stdio: "pipe",
+  });
+};
+
+beforeAll(async () => {
   await adminClient.connect();
   adminClientConnected = true;
   await adminClient.query(
@@ -55,8 +90,8 @@ before(async () => {
     stdio: "pipe",
   });
 
-  const { app: importedApp } = await import("../src/app.js");
-  const { prisma: importedPrisma } = await import("../src/db/client.js");
+  const { app: importedApp } = await import("../../src/app.js");
+  const { prisma: importedPrisma } = await import("../../src/db/client.js");
   app = importedApp;
   prisma = importedPrisma;
 });
@@ -65,7 +100,7 @@ beforeEach(async () => {
   await getPrisma().category.deleteMany();
 });
 
-after(async () => {
+afterAll(async () => {
   try {
     if (prisma !== undefined) {
       await prisma.$disconnect();
@@ -94,8 +129,35 @@ after(async () => {
   }
 });
 
-void describe("Categories API", () => {
-  void it("returns every stored Category ordered by ascending ID", async () => {
+describe("Categories API", () => {
+  it("returns the four seeded categories in canonical order", async () => {
+    runSeed();
+
+    const response = await request(app)
+      .get("/api/categories")
+      .expect("Content-Type", /json/u)
+      .expect(200);
+
+    assert.deepEqual(getCategoryNames(response.body), canonicalCategoryNames);
+  });
+
+  it("keeps seeding idempotent", async () => {
+    runSeed();
+    runSeed();
+
+    const categories = await getPrisma().category.findMany({
+      orderBy: { id: "asc" },
+      select: { id: true, name: true },
+    });
+
+    assert.equal(categories.length, canonicalCategoryNames.length);
+    assert.deepEqual(
+      categories.map((category) => category.name),
+      canonicalCategoryNames
+    );
+  });
+
+  it("returns every stored Category ordered by ascending ID", async () => {
     await getPrisma().category.createMany({
       data: [
         { id: 30, name: "Network" },
@@ -116,14 +178,14 @@ void describe("Categories API", () => {
     ]);
   });
 
-  void it("returns an empty array when no Categories are stored", async () => {
+  it("returns an empty array when no Categories are stored", async () => {
     await request(app)
       .get("/api/categories")
       .expect("Content-Type", /json/u)
       .expect(200, []);
   });
 
-  void it("returns a safe message when the Category query fails", async () => {
+  it("returns a safe message when the Category query fails", async () => {
     await getPrisma().$executeRawUnsafe(
       'ALTER TABLE "Category" RENAME TO "UnavailableCategory"'
     );

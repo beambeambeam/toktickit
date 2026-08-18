@@ -1,12 +1,12 @@
 import { strictEqual } from "node:assert";
-import { describe, it } from "node:test";
 
 import express from "express";
 import type { ErrorRequestHandler } from "express";
 import request from "supertest";
+import { describe, it } from "vitest";
 
-import { app } from "../src/app.js";
-import { apiErrorHandler } from "../src/middlewares/api-errors.js";
+import { app } from "../../src/app.js";
+import { apiErrorHandler } from "../../src/middlewares/api-errors.js";
 
 const errorApiRouter = express.Router();
 
@@ -47,8 +47,8 @@ errorApiRouter.use(delegatedErrorHandler);
 const errorApp = express();
 errorApp.use("/api", errorApiRouter);
 
-void describe("Health API", () => {
-  void it("returns the documented health response without caching", async () => {
+describe("Health API", () => {
+  it("returns the documented health response without caching", async () => {
     await request(app)
       .get("/api/health")
       .expect("Content-Type", /json/u)
@@ -59,7 +59,7 @@ void describe("Health API", () => {
       });
   });
 
-  void it("allows the configured client origin", async () => {
+  it("allows the configured client origin", async () => {
     await request(app)
       .get("/api/health")
       .set("Origin", "http://localhost:5173")
@@ -67,7 +67,7 @@ void describe("Health API", () => {
       .expect(200);
   });
 
-  void it("does not allow a different origin", async () => {
+  it("does not allow a different origin", async () => {
     const response = await request(app)
       .get("/api/health")
       .set("Origin", "https://attacker.example")
@@ -82,7 +82,7 @@ void describe("Health API", () => {
     }
   });
 
-  void it("handles CORS preflight requests", async () => {
+  it("handles CORS preflight requests", async () => {
     await request(app)
       .options("/api/health")
       .set("Origin", "http://localhost:5173")
@@ -94,7 +94,7 @@ void describe("Health API", () => {
       .expect(204);
   });
 
-  void it("keeps CORS scoped to API routes", async () => {
+  it("keeps CORS scoped to API routes", async () => {
     const documentationResponse = await request(app)
       .get("/openapi.json")
       .set("Origin", "http://localhost:5173")
@@ -111,21 +111,21 @@ void describe("Health API", () => {
     strictEqual(rootResponse.headers["access-control-allow-origin"], undefined);
   });
 
-  void it("returns a JSON 404 for unknown API routes", async () => {
+  it("returns a JSON 404 for unknown API routes", async () => {
     await request(app)
       .get("/api/unknown")
       .expect("Content-Type", /json/u)
       .expect(404, { message: "Not Found" });
   });
 
-  void it("returns thrown error messages as JSON 500 responses", async () => {
+  it("returns thrown error messages as JSON 500 responses", async () => {
     await request(errorApp)
       .get("/api/error")
       .expect("Content-Type", /json/u)
       .expect(500, { message: "Something went wrong" });
   });
 
-  void it("supports structural error messages and fallback messages", async () => {
+  it("supports structural error messages and fallback messages", async () => {
     await request(errorApp)
       .get("/api/object-error")
       .expect(500, { message: "Something went wrong" });
@@ -135,7 +135,7 @@ void describe("Health API", () => {
       .expect(500, { message: "Internal Server Error" });
   });
 
-  void it("delegates errors when response headers were sent", async () => {
+  it("delegates errors when response headers were sent", async () => {
     await request(errorApp)
       .get("/api/headers-sent")
       .expect(200, "partialdelegated");
