@@ -13,7 +13,7 @@ Current implementation status:
 - Local browser flow: manually checked through Requester selection, Ticket creation, My Tickets, Detail, and Attachment lifecycle at desktop and mobile viewport sizes.
 - Browser E2E flow: pass across desktop, tablet, and mobile Chromium projects.
 - Screenshot artifacts: captured under all three required Lab 2 evidence directories.
-- Issue #37 focused list/API suites: pass; client 7 files/40 tests and server 6 files/34 tests.
+- Issue #37 focused list/API suites: pass; client 7 files/40 tests and server 6 files/38 tests after the human-review test split.
 - Final PDF and human approval: Pending.
 
 ## 2. Strategy
@@ -95,6 +95,8 @@ Expected repository commands:
 | `2026-09-02` — `pnpm run build` | Client/server production build | Pass |
 | `2026-09-02` — local T3 preview | Desktop/mobile manual flow | Pass for selection, creation, list, Detail, upload/download/remove |
 | `2026-09-02` — `pnpm test:e2e` | Full requester flow and smoke test across desktop/tablet/mobile Chromium | Pass: 6/6 tests; 30 PNG evidence artifacts captured; direct unauthorized Ticket and removed-download requests rejected |
+| `2026-09-03` — `pnpm --filter @toktickit/server exec vitest run tests/lab-02/requester-ticketing.test.ts --reporter=dot` | Human-review follow-up: independent list search, filter, sort, pagination, and validation cases | Pass: 12 tests in the requester Ticket API file |
+| `2026-09-03` — `pnpm test:e2e` | Human-review follow-up: empty and no-results screenshot evidence plus mobile pagination layout | Pass: 6/6 tests; 36 PNG evidence artifacts present; direct unauthorized Ticket and removed-download requests rejected |
 
 Update this table with date, exact command, result, and environment after each vertical slice. Record database setup and any limitation; do not hide skipped or flaky tests.
 

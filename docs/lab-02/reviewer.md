@@ -19,6 +19,7 @@ Supawit's Lab 2 work was reviewed by Kiatisak in the following Issue-backed PRs.
 | --- | --- | --- | --- |
 | [#39](https://github.com/beambeambeam/toktickit/pull/39) | Issue #35: Lab 2 specification | Numbered FR and BR sections were required. `356cec9` added them and the companion documents; `70362f6` resolved two automated contract findings. | Approved and merged by Kiatisak on 2026-08-28. |
 | [#42](https://github.com/beambeambeam/toktickit/pull/42) | Issue #36: requester context and ticketing flow | Two blocking evidence gaps and two Greptile P1 Attachment findings were resolved in `dc87ecd` and `9988016`; Kiatisak re-reviewed with `LGTM`. | Approved and merged by Kiatisak on 2026-09-02. |
+| [#43](https://github.com/beambeambeam/toktickit/pull/43) | Issue #37: My Tickets discovery and ownership | Kiatisak found no blocking defects and requested independent API contract cases, 44px/wrapping mobile pagination controls, and empty/no-results screenshot evidence. Follow-up changes address all requested items. | Follow-up human review pending. |
 
 ## Reviews completed for Kiatisak
 
@@ -67,6 +68,11 @@ The review also recorded non-blocking notes: §8.8 had no browser computed-colou
 
 Follow-up verification reported `pnpm run fix`, `pnpm run check-types`, `pnpm run test`, `pnpm test:e2e` (6/6 across desktop, tablet, and mobile), `pnpm run build`, and `pnpm run check` passing.
 
+### PR #43 — My Tickets discovery and ownership
+
+Kiatisak found no blocking defects. The review requested separate API contract cases for search, filters, sorting, pagination, and invalid-query validation; explicit 44px mobile pagination controls and wrapping page buttons; and screenshots for the empty-owned-list and valid no-results states. The follow-up splits the server suite, uses the shared control-height token with wrapping pagination, and captures both states at desktop, tablet, and mobile viewports.
+
 ## Current limitations
 
 - Kiatisak's Issues [#20](https://github.com/Kiatisakk/toktickit/issues/20) and [#21](https://github.com/Kiatisakk/toktickit/issues/21) remain open, so no review can yet be recorded for final report/submission or the Lab 2 release PR.
+- PR #43's follow-up human review remains pending after the requested changes.

@@ -197,7 +197,7 @@ Capture desktop, tablet, and mobile views plus required validation, failure, emp
 - No clipping, overlap, horizontal overflow, or hidden actions.
 - Correct Lab 2 scope: Requested Priority and Current Status only.
 
-Evidence captured on 2026-09-02 with `pnpm test:e2e`: Create Ticket (12 PNGs), My Tickets (9 PNGs), and Ticket Detail (9 PNGs) under the required directories. The artifacts cover desktop, tablet, mobile, validation, ownership isolation, direct unauthorized Ticket refusal, active Attachment, and removed Attachment states. The E2E flow also verifies that removed Attachment content returns 404. Final checklist completion and human visual approval remain Pending.
+Initial evidence captured on 2026-09-02 with `pnpm test:e2e`: Create Ticket (12 PNGs), My Tickets (9 PNGs), and Ticket Detail (9 PNGs). On 2026-09-03, the human-review follow-up added empty-list and no-results My Tickets captures for all three viewports; the current artifact set contains Create Ticket (12 PNGs), My Tickets (15 PNGs), and Ticket Detail (9 PNGs). The artifacts cover desktop, tablet, mobile, validation, empty/no-results, ownership isolation, direct unauthorized Ticket refusal, active Attachment, and removed Attachment states. The E2E flow also verifies that removed Attachment content returns 404. Final checklist completion and human visual approval remain Pending.
 
 ## 9. Issue #37 implementation decisions and evidence
 

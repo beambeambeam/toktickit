@@ -856,12 +856,14 @@ button:disabled,
 
 .pagination-pages {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   gap: 0.35rem;
 }
 
 .pagination-page {
-  min-width: 2.5rem;
+  min-width: var(--control-height);
+  min-height: var(--control-height);
   padding-right: 0.55rem;
   padding-left: 0.55rem;
 }
