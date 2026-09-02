@@ -15,7 +15,7 @@ Generated text is a draft until it is checked against the PDF, reference images,
 | Ticket skill | to-tickets; this is the local skill name for the requested to-ticket workflow |
 | Primary source | Lab 2 PDF/labsheet and supplied reference images |
 | Repository inputs | Existing code, tests, AGENTS.md guidance, PR #39, and Kiatisakk’s review |
-| Main outputs | Lab 2 specification, vertical-slice tickets, and six living Lab 2 documents |
+| Main outputs | Lab 2 specification, vertical-slice tickets, six living Lab 2 documents, and the Issue #36 implementation |
 | Human responsibility | Review every requirement, decision, ticket, generated file, test, and evidence claim |
 
 ## 3. Workflow
@@ -27,6 +27,7 @@ Generated text is a draft until it is checked against the PDF, reference images,
 5. Review ticket granularity and blocking edges before publishing or implementing tickets.
 6. Ask the coding agent to write the base Lab 2 documents from the approved specification and ticket breakdown.
 7. Update the documents after each vertical slice with actual paths, results, review evidence, and AI-use reflection.
+8. Implement Issue #36 after checking its discussion and the UI reference at `reports/lab02/tickets/09.png`; verify the result against the Lab 2 contract and repository checks.
 
 The workflow is document-first. It must not claim that implementation, tests, screenshots, or ticket publication are complete when they are only planned.
 
@@ -92,7 +93,13 @@ The workflow is document-first. It must not claim that implementation, tests, sc
 | reviewer.md | PR #39 finding and response recorded; reviewer re-check Pending |
 | ai-use.md | This workflow record; student reflection review Pending |
 
-## 7. Reflection draft
+## 7. Implementation update
+
+Issue #36 implementation used the GitHub issue acceptance criteria, its UI-reference comment, the Lab 2 specification/API/UI contracts, repository guidance, and the report reference images under `reports/lab02`. The implementation added the Prisma model/migration/seed, requester-context middleware, active reference-data APIs, ownership-scoped Ticket and Attachment services, OpenAPI/generated client updates, Requester selection/Create Ticket/My Tickets/Detail screens, validation, and focused tests.
+
+Verification recorded on 2026-09-02: formatting/lint fix, client/server type checks, client tests (27), server tests (31), and OpenAPI synchronization pass. A local browser preview covered the end-to-end requester flow and Attachment lifecycle. Production build, independent review, screenshot/PDF evidence, and human approval remain Pending until run or supplied.
+
+## 8. Reflection draft
 
 The PDF-first workflow made the long handout actionable. to-spec helped turn stakeholder language and reference images into a coherent contract; to-tickets then exposed the dependency order and kept implementation work vertical instead of splitting it into disconnected database, API, and UI tasks. The second prompt made the contract easier to use by putting specification, tests, UI, API, review, and AI-use records in one consistent document set.
 
@@ -100,7 +107,7 @@ The main risk is accepting generated scope or decisions without checking the sou
 
 Student review required: edit this reflection if needed, then approve the final wording before PDF submission.
 
-## 8. Ongoing updates
+## 9. Ongoing updates
 
 After each vertical slice, record:
 

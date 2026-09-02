@@ -243,4 +243,12 @@ Use the same ownership check for list, detail, metadata, upload, download, and r
 
 ## 7. OpenAPI and implementation sync
 
-The implementation must update server/openapi.yaml and generated client types when this contract becomes executable. Run pnpm openapi:check after changes. Every status and error listed here needs an API/integration test in docs/lab-02/tests.md. Any deviation is recorded in this document before the relevant Issue is complete.
+Implemented on the Lab 2 feature branch:
+
+- `server/openapi.yaml` documents the active reference-data, requester-scoped Ticket, and Attachment endpoints.
+- Generated client types and SDK files are synchronized from the OpenAPI document.
+- Prisma migration and idempotent seed add Categories, Related Systems, active/inactive Development Requesters, Tickets, and Attachments.
+- Attachment content is stored under `ATTACHMENT_STORAGE_DIR` using generated opaque keys; the directory is not public web storage.
+- `pnpm openapi:check` passes, and the implemented API behavior is covered by `server/tests/lab-02/rules.test.ts` and `server/tests/lab-02/requester-ticketing.test.ts`.
+
+The contract remains broader than the current automated boundary suite in a few areas, including exhaustive query permutations, failure-injection cases, and a browser E2E harness. Those gaps remain visible in [tests.md](./tests.md); no unverified status is claimed here.

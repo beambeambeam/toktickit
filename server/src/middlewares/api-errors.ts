@@ -1,21 +1,25 @@
 import type { ErrorRequestHandler, RequestHandler } from "express";
 
-const getErrorMessage = (error: unknown): string | undefined => {
-  if (
-    typeof error !== "object" ||
-    error === null ||
-    !("message" in error) ||
-    typeof error.message !== "string" ||
-    error.message.length === 0
-  ) {
-    return undefined;
-  }
+import { ApiError } from "../errors/api-error.js";
 
-  return error.message;
-};
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const createErrorBody = (error: ApiError) => ({
+  error: {
+    code: error.code,
+    ...(error.details === undefined ? {} : { details: error.details }),
+    message: error.message,
+  },
+});
 
 export const apiNotFound: RequestHandler = (_request, response) => {
-  response.status(404).json({ message: "Not Found" });
+  response.status(404).json({
+    error: {
+      code: "NOT_FOUND",
+      message: "Resource not found.",
+    },
+  });
 };
 
 export const apiErrorHandler: ErrorRequestHandler = (
@@ -29,7 +33,25 @@ export const apiErrorHandler: ErrorRequestHandler = (
     return;
   }
 
-  const message = getErrorMessage(error) ?? "Internal Server Error";
+  if (error instanceof ApiError) {
+    response.status(error.statusCode).json(createErrorBody(error));
+    return;
+  }
 
-  response.status(500).json({ message });
+  if (isRecord(error) && error.type === "entity.parse.failed") {
+    response.status(400).json({
+      error: {
+        code: "INVALID_JSON",
+        message: "Request body must contain valid JSON.",
+      },
+    });
+    return;
+  }
+
+  response.status(500).json({
+    error: {
+      code: "INTERNAL_ERROR",
+      message: "Unexpected server error.",
+    },
+  });
 };
