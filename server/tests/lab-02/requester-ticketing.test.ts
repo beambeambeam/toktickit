@@ -138,6 +138,24 @@ const createTicket = async (requesterId: number, summary: string) =>
     )
     .expect(201);
 
+const createListTicketRecord = async (input: {
+  categoryId: number;
+  description: string;
+  relatedSystemId: number;
+  requestedPriority: "Low" | "Medium" | "High" | "Urgent";
+  requesterId: number;
+  summary: string;
+  ticketDate: Date;
+  ticketNumber: string;
+  updatedAt: Date;
+}) =>
+  await prisma.ticket.create({
+    data: {
+      ...input,
+      currentStatus: "New",
+    },
+  });
+
 beforeAll(async () => {
   await adminClient.connect();
   adminClientConnected = true;
@@ -361,6 +379,182 @@ describe("Lab 2 requester Ticket API", () => {
         const error = getJsonObject(parseJson(response), "error");
         assert.equal(getJsonString(error, "code"), "VALIDATION_ERROR");
       });
+
+    const emptyRequester = await prisma.developmentRequester.create({
+      data: {
+        displayName: "Empty Requester",
+        email: `empty-${randomUUID()}@example.test`,
+      },
+    });
+    const emptyList = await request(app)
+      .get("/api/tickets")
+      .set("X-Development-Requester-Id", emptyRequester.id.toString())
+      .expect(200);
+    const emptyListBody = parseJson(emptyList);
+    assert.deepEqual(getJsonArray(emptyListBody, "items"), []);
+    assert.equal(getJsonNumber(emptyListBody, "page"), 1);
+    assert.equal(getJsonNumber(emptyListBody, "pageSize"), 10);
+    assert.equal(getJsonNumber(emptyListBody, "totalItems"), 0);
+    assert.equal(getJsonNumber(emptyListBody, "totalPages"), 0);
+
+    const noResults = await request(app)
+      .get("/api/tickets?search=does-not-exist")
+      .set("X-Development-Requester-Id", ownerId.toString())
+      .expect(200);
+    const noResultsBody = parseJson(noResults);
+    assert.deepEqual(getJsonArray(noResultsBody, "items"), []);
+    assert.equal(getJsonNumber(noResultsBody, "totalItems"), 0);
+    assert.equal(getJsonNumber(noResultsBody, "totalPages"), 0);
+  });
+
+  it("supports documented list search, filters, deterministic sorting, and pagination", async () => {
+    const secondCategory = await prisma.category.create({
+      data: { displayOrder: 2, name: "Hardware" },
+    });
+    const secondRelatedSystem = await prisma.relatedSystem.create({
+      data: { displayOrder: 2, name: "Printer" },
+    });
+    const fixedTimestamp = new Date("2026-09-02T10:00:00.000Z");
+    const records = await Promise.all(
+      Array.from(
+        { length: 12 },
+        async (_, index) =>
+          await createListTicketRecord({
+            categoryId,
+            description: `Description marker ${index + 1}`,
+            relatedSystemId,
+            requestedPriority: "High",
+            requesterId: ownerId,
+            summary: "Same summary",
+            ticketDate: fixedTimestamp,
+            ticketNumber: `TKT-20260902-${(index + 1).toString().padStart(6, "0")}`,
+            updatedAt: fixedTimestamp,
+          })
+      )
+    );
+    const filteredRecord = await createListTicketRecord({
+      categoryId: secondCategory.id,
+      description: "Filtered description marker",
+      relatedSystemId: secondRelatedSystem.id,
+      requestedPriority: "Urgent",
+      requesterId: ownerId,
+      summary: "Filtered summary",
+      ticketDate: fixedTimestamp,
+      ticketNumber: "TKT-20260902-FILTER1",
+      updatedAt: fixedTimestamp,
+    });
+
+    const pageOne = await request(app)
+      .get(
+        "/api/tickets?page=1&pageSize=10&sortBy=updatedAt&sortDirection=desc"
+      )
+      .set("X-Development-Requester-Id", ownerId.toString())
+      .expect(200);
+    const pageOneBody = parseJson(pageOne);
+    const pageOneItems = getJsonArray(pageOneBody, "items");
+    assert.equal(getJsonNumber(pageOneBody, "page"), 1);
+    assert.equal(getJsonNumber(pageOneBody, "pageSize"), 10);
+    assert.equal(getJsonNumber(pageOneBody, "totalItems"), 13);
+    assert.equal(getJsonNumber(pageOneBody, "totalPages"), 2);
+    assert.equal(pageOneItems.length, 10);
+
+    const pageTwo = await request(app)
+      .get(
+        "/api/tickets?page=2&pageSize=10&sortBy=updatedAt&sortDirection=desc"
+      )
+      .set("X-Development-Requester-Id", ownerId.toString())
+      .expect(200);
+    const pageTwoBody = parseJson(pageTwo);
+    const pageTwoItems = getJsonArray(pageTwoBody, "items");
+    assert.equal(getJsonNumber(pageTwoBody, "page"), 2);
+    assert.equal(getJsonNumber(pageTwoBody, "pageSize"), 10);
+    assert.equal(getJsonNumber(pageTwoBody, "totalItems"), 13);
+    assert.equal(getJsonNumber(pageTwoBody, "totalPages"), 2);
+    assert.equal(pageTwoItems.length, 3);
+
+    const allRecords = [...records, filteredRecord];
+    // oxlint-disable-next-line unicorn/no-array-sort -- expected API ordering is asserted against immutable test records.
+    allRecords.sort((left, right) => right.id - left.id);
+    const allPageItems = [...pageOneItems, ...pageTwoItems];
+    assert.deepEqual(
+      allPageItems.map((_, index) =>
+        getJsonNumber(getJsonObjectAt(allPageItems, index), "id")
+      ),
+      allRecords.map(({ id }) => id)
+    );
+
+    const ticketNumberSearch = await request(app)
+      .get(`/api/tickets?search=${records[0]?.ticketNumber}`)
+      .set("X-Development-Requester-Id", ownerId.toString())
+      .expect(200);
+    assert.equal(getJsonNumber(parseJson(ticketNumberSearch), "totalItems"), 1);
+
+    const descriptionSearch = await request(app)
+      .get("/api/tickets?search=marker%207")
+      .set("X-Development-Requester-Id", ownerId.toString())
+      .expect(200);
+    assert.equal(getJsonNumber(parseJson(descriptionSearch), "totalItems"), 1);
+
+    const summarySearch = await request(app)
+      .get("/api/tickets?search=Same%20summary")
+      .set("X-Development-Requester-Id", ownerId.toString())
+      .expect(200);
+    assert.equal(getJsonNumber(parseJson(summarySearch), "totalItems"), 12);
+
+    const filtered = await request(app)
+      .get(
+        `/api/tickets?categoryId=${secondCategory.id}&relatedSystemId=${secondRelatedSystem.id}&requestedPriority=Urgent&currentStatus=New`
+      )
+      .set("X-Development-Requester-Id", ownerId.toString())
+      .expect(200);
+    const filteredBody = parseJson(filtered);
+    assert.equal(getJsonNumber(filteredBody, "totalItems"), 1);
+    assert.equal(
+      getJsonString(
+        getJsonObjectAt(getJsonArray(filteredBody, "items"), 0),
+        "ticketNumber"
+      ),
+      filteredRecord.ticketNumber
+    );
+
+    const sameSummaryAscending = await request(app)
+      .get(
+        `/api/tickets?categoryId=${categoryId}&pageSize=25&sortBy=summary&sortDirection=asc`
+      )
+      .set("X-Development-Requester-Id", ownerId.toString())
+      .expect(200);
+    const sameSummaryItems = getJsonArray(
+      parseJson(sameSummaryAscending),
+      "items"
+    );
+    const ascendingRecords = [...records];
+    // oxlint-disable-next-line unicorn/no-array-sort -- expected API ordering is asserted against immutable test records.
+    ascendingRecords.sort((left, right) => left.id - right.id);
+    assert.deepEqual(
+      sameSummaryItems.map((_, index) =>
+        getJsonNumber(getJsonObjectAt(sameSummaryItems, index), "id")
+      ),
+      ascendingRecords.map(({ id }) => id)
+    );
+
+    for (const invalidQuery of [
+      "pageSize=010",
+      "pageSize=20",
+      "page=1.0",
+      "page=1&page=2",
+      "sortBy%5Bfield%5D=updatedAt",
+      "unsupported=value",
+    ]) {
+      // oxlint-disable-next-line no-await-in-loop -- each response proves the public validation boundary.
+      await request(app)
+        .get(`/api/tickets?${invalidQuery}`)
+        .set("X-Development-Requester-Id", ownerId.toString())
+        .expect(400)
+        .expect((response) => {
+          const error = getJsonObject(parseJson(response), "error");
+          assert.equal(getJsonString(error, "code"), "VALIDATION_ERROR");
+        });
+    }
   });
 
   it("supports active download and soft removal without exposing removed content", async () => {

@@ -12,6 +12,8 @@ import type { TicketListParams } from "@/api/requester";
 import { AppShell, RequesterRequired } from "@/components/app-shell";
 import { StatusBadge } from "@/components/status-badge";
 import { useRequester } from "@/context/requester";
+import type { DevelopmentRequester } from "@/generated/hey-api/types.gen";
+import { isRequestedPriority } from "@/lib/ticket-priorities";
 
 const initialParams: TicketListParams = {
   page: 1,
@@ -26,15 +28,8 @@ const formatDate = (value: string) =>
     timeStyle: "short",
   }).format(new Date(value));
 
-type RequestedPriority = NonNullable<TicketListParams["requestedPriority"]>;
 type TicketSortField = NonNullable<TicketListParams["sortBy"]>;
 type TicketSortDirection = NonNullable<TicketListParams["sortDirection"]>;
-
-const isRequestedPriority = (value: string): value is RequestedPriority =>
-  value === "Low" ||
-  value === "Medium" ||
-  value === "High" ||
-  value === "Urgent";
 
 const isTicketSortField = (value: string): value is TicketSortField =>
   value === "ticketNumber" ||
@@ -83,23 +78,61 @@ const hasTicketFilters = (params: TicketListParams) =>
   params.requestedPriority !== undefined ||
   params.currentStatus !== undefined;
 
+type PageToken = number | "ellipsis-before" | "ellipsis-after";
+
+const getPageTokens = (
+  totalPages: number,
+  currentPage: number
+): PageToken[] => {
+  if (totalPages <= 0) {
+    return [];
+  }
+
+  if (totalPages <= 7) {
+    return Array.from({ length: totalPages }, (_, index) => index + 1);
+  }
+
+  const firstVisiblePage = Math.max(2, currentPage - 1);
+  const lastVisiblePage = Math.min(totalPages - 1, currentPage + 1);
+  const pages: PageToken[] = [1];
+
+  if (firstVisiblePage > 2) {
+    pages.push("ellipsis-before");
+  }
+
+  for (
+    let pageNumber = firstVisiblePage;
+    pageNumber <= lastVisiblePage;
+    pageNumber += 1
+  ) {
+    pages.push(pageNumber);
+  }
+
+  if (lastVisiblePage < totalPages - 1) {
+    pages.push("ellipsis-after");
+  }
+
+  pages.push(totalPages);
+  return pages;
+};
+
 // oxlint-disable-next-line complexity -- this route renders the documented loading, error, empty, and data states.
-export const MyTicketsPage = () => {
+const MyTicketsContent = ({
+  requester,
+}: {
+  requester: DevelopmentRequester;
+}) => {
   const navigate = useNavigate();
-  const { requester } = useRequester();
   const [params, setParams] = useState<TicketListParams>(initialParams);
   const [searchDraft, setSearchDraft] = useState("");
+  const requesterId = requester.id;
 
   const categoriesQuery = useQuery(activeCategoriesQueryOptions());
   const relatedSystemsQuery = useQuery(relatedSystemsQueryOptions());
   const ticketsQuery = useQuery({
-    ...ticketsQueryOptions(requester?.id ?? 0, params),
-    enabled: requester !== null,
+    ...ticketsQueryOptions(requesterId ?? 0, params),
+    enabled: requesterId !== undefined,
   });
-
-  if (requester === null) {
-    return <RequesterRequired />;
-  }
 
   const updateParams = (change: Partial<TicketListParams>) => {
     setParams((current) => ({ ...current, ...change, page: 1 }));
@@ -116,12 +149,36 @@ export const MyTicketsPage = () => {
     updateParams({ search: search.length > 0 ? search : undefined });
   };
 
-  const { data } = ticketsQuery;
+  const data = ticketsQuery.isError ? undefined : ticketsQuery.data;
   const hasFilters = hasTicketFilters(params);
-  const showEmpty = data?.items.length === 0 && !hasFilters;
-  const showNoResults = data?.items.length === 0 && hasFilters;
+  const hasActiveFilters = hasFilters || searchDraft.trim().length > 0;
+  const showEmpty =
+    data !== undefined &&
+    !ticketsQuery.isError &&
+    data.totalItems === 0 &&
+    !hasFilters;
+  const showNoResults =
+    data !== undefined &&
+    !ticketsQuery.isError &&
+    data.totalItems === 0 &&
+    hasFilters;
+  const showPageEmpty =
+    data !== undefined &&
+    !ticketsQuery.isError &&
+    data.items.length === 0 &&
+    data.totalItems > 0;
+  const showLoadedTickets =
+    data !== undefined && !ticketsQuery.isError && data.items.length > 0;
   const page = data?.page ?? params.page ?? 1;
   const totalPages = data?.totalPages ?? 0;
+  const pageTokens = getPageTokens(totalPages, page);
+  const hasFilterDataError =
+    categoriesQuery.isError || relatedSystemsQuery.isError;
+
+  const retryFilterData = () => {
+    void categoriesQuery.refetch();
+    void relatedSystemsQuery.refetch();
+  };
 
   return (
     <AppShell eyebrow="Requester workspace" title="My Tickets">
@@ -132,7 +189,7 @@ export const MyTicketsPage = () => {
         <div className="button-row">
           <button
             className="button button-tertiary"
-            disabled={!hasFilters}
+            disabled={!hasActiveFilters}
             onClick={clearFilters}
             type="button"
           >
@@ -262,11 +319,17 @@ export const MyTicketsPage = () => {
               <option value="ticketDate:desc">Ticket Date (newest)</option>
               <option value="ticketDate:asc">Ticket Date (oldest)</option>
               <option value="ticketNumber:asc">Ticket Number (A–Z)</option>
+              <option value="ticketNumber:desc">Ticket Number (Z–A)</option>
               <option value="summary:asc">Summary (A–Z)</option>
+              <option value="summary:desc">Summary (Z–A)</option>
               <option value="requestedPriority:asc">
-                Requested Priority (A–Z)
+                Requested Priority (Low–Urgent)
+              </option>
+              <option value="requestedPriority:desc">
+                Requested Priority (Urgent–Low)
               </option>
               <option value="currentStatus:asc">Current Status (A–Z)</option>
+              <option value="currentStatus:desc">Current Status (Z–A)</option>
             </select>
           </div>
           <div className="filter-field">
@@ -292,10 +355,29 @@ export const MyTicketsPage = () => {
             Search
           </button>
         </form>
+        {hasFilterDataError ? (
+          <div
+            className="feedback feedback-warning filter-feedback"
+            role="alert"
+          >
+            <strong>Some filter options are unavailable.</strong>
+            <span>
+              Retry to load the latest Category and Related System options.
+            </span>
+            <button
+              className="button button-secondary"
+              onClick={retryFilterData}
+              type="button"
+            >
+              Retry filter options
+            </button>
+          </div>
+        ) : null}
       </section>
 
       <section
         className="surface-card ticket-list-card"
+        aria-busy={ticketsQuery.isFetching}
         aria-labelledby="ticket-list-heading"
       >
         <div className="section-heading list-heading">
@@ -308,12 +390,20 @@ export const MyTicketsPage = () => {
           ) : null}
         </div>
 
-        <div aria-live="polite" className="list-status" role="status">
+        <div
+          aria-atomic="true"
+          aria-live="polite"
+          className="list-status"
+          role="status"
+        >
           {ticketsQuery.isPending ? (
             <p className="loading-line">Loading your Tickets…</p>
           ) : null}
           {ticketsQuery.isFetching && !ticketsQuery.isPending ? (
             <p className="loading-line">Updating results…</p>
+          ) : null}
+          {data && !ticketsQuery.isFetching ? (
+            <p className="visually-hidden">{data.totalItems} Tickets loaded.</p>
           ) : null}
         </div>
 
@@ -369,7 +459,27 @@ export const MyTicketsPage = () => {
           </div>
         ) : null}
 
-        {data && data.items.length > 0 ? (
+        {showPageEmpty ? (
+          <div className="empty-state">
+            <div aria-hidden="true" className="empty-icon">
+              ▤
+            </div>
+            <h3>No Tickets on this page</h3>
+            <p>Use the page controls to return to a page with Tickets.</p>
+            <button
+              className="button button-secondary"
+              disabled={page <= 1}
+              onClick={() => {
+                setParams((current) => ({ ...current, page: page - 1 }));
+              }}
+              type="button"
+            >
+              ← Previous page
+            </button>
+          </div>
+        ) : null}
+
+        {showLoadedTickets ? (
           <>
             <div className="ticket-table-wrap">
               <table className="ticket-table">
@@ -471,7 +581,7 @@ export const MyTicketsPage = () => {
                 </article>
               ))}
             </div>
-            <div className="pagination" aria-label="Ticket pages">
+            <nav className="pagination" aria-label="Ticket pages">
               <button
                 className="button button-secondary"
                 disabled={page <= 1}
@@ -485,6 +595,35 @@ export const MyTicketsPage = () => {
               <span>
                 Page {page} of {totalPages > 0 ? totalPages : 1}
               </span>
+              <div className="pagination-pages">
+                {pageTokens.map((pageToken) =>
+                  typeof pageToken === "number" ? (
+                    <button
+                      aria-current={pageToken === page ? "page" : undefined}
+                      aria-label={`Go to page ${pageToken}`}
+                      className="button button-secondary pagination-page"
+                      key={pageToken}
+                      onClick={() => {
+                        setParams((current) => ({
+                          ...current,
+                          page: pageToken,
+                        }));
+                      }}
+                      type="button"
+                    >
+                      {pageToken}
+                    </button>
+                  ) : (
+                    <span
+                      aria-hidden="true"
+                      className="pagination-ellipsis"
+                      key={pageToken}
+                    >
+                      …
+                    </span>
+                  )
+                )}
+              </div>
               <button
                 className="button button-secondary"
                 disabled={page >= totalPages}
@@ -495,12 +634,22 @@ export const MyTicketsPage = () => {
               >
                 Next →
               </button>
-            </div>
+            </nav>
           </>
         ) : null}
       </section>
     </AppShell>
   );
+};
+
+export const MyTicketsPage = () => {
+  const { requester } = useRequester();
+
+  if (requester === null) {
+    return <RequesterRequired />;
+  }
+
+  return <MyTicketsContent key={requester.id} requester={requester} />;
 };
 
 export const Route = createFileRoute("/tickets/")({

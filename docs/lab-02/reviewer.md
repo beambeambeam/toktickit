@@ -82,3 +82,22 @@ The 11 findings included a race that could exceed the five-attachment limit, con
 
 - Kiatisak's Issues [#20](https://github.com/Kiatisakk/toktickit/issues/20) and [#21](https://github.com/Kiatisakk/toktickit/issues/21) remain open, so no review can yet be recorded for final report/submission or the Lab 2 release PR.
 - PR #42 has received changes-requested feedback; its follow-up review and approval remain pending.
+
+## Issue #37 implementation review record
+
+Date: 2026-09-02. Branch: `feature/37-my-tickets`. Fixed point: `lab2-staging`.
+
+The local two-axis `$code-review` inspected `git diff lab2-staging...HEAD` against the repository guidance and the Issue #37/Lab 2 contract. Initial reports found five Standards breaches and one Standards smell judgement, plus four Spec findings:
+
+- Tests inspected request query syntax and duplicate table/card DOM nodes instead of public behavior.
+- The list status region announced loading but not successful result counts; the priority predicate was duplicated.
+- `reviewer.md` lacked the Issue #37 record.
+- UI tests lacked explicit initial/background loading assertions.
+- API tests omitted Summary search and page/page-size metadata assertions.
+- Unrelated Create Ticket and Ticket Detail screenshot artifacts were regenerated.
+
+The first follow-up Spec review also identified missing explicit empty-owned-list and API zero-result coverage.
+
+Resolutions: tests now assert visible page state and rendered ownership text; loading/refetch and `aria-busy` are covered; successful result counts are announced; the priority predicate is shared in `client/src/lib/ticket-priorities.ts`; Summary, empty-list/no-results, and pagination metadata are asserted; this review record is appended; and only My Tickets screenshot evidence remains changed.
+
+Final follow-up reports are clear on both axes: Standards PASS (no hard breaches or smell findings) and Spec PASS (no missing, out-of-scope, or incorrect behavior findings). Verification after the corrections: `pnpm run fix`, `pnpm run check-types`, `pnpm run test`, and `pnpm run build` pass; the requester E2E suite previously passed 6/6 across desktop, tablet, and mobile Chromium. No GitHub PR or peer approval is claimed by this local record.
