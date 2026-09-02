@@ -1,19 +1,15 @@
-import { prisma } from "../db/client.js";
 import { ApiError } from "../errors/api-error.js";
 import { Prisma } from "../generated/prisma/client.js";
 import { findActiveCategory } from "../repositories/categories.js";
 import { findActiveRelatedSystem } from "../repositories/related-systems.js";
 import {
   countActiveAttachments,
-  countActiveAttachmentsInTransaction,
+  createAttachments,
+  createTicket,
   findOwnedAttachment,
-  findOwnedAttachmentMetadata,
   findOwnedTicket,
   findTicketSummaries,
-  insertAttachments,
-  insertTicket,
   removeAttachment,
-  touchTicket,
 } from "../repositories/tickets.js";
 import type { TicketFields, TicketListQuery } from "../types/tickets.js";
 import {
@@ -69,7 +65,16 @@ const storeAttachments = async (
 
     return stored;
   } catch {
-    await removeAttachmentFiles(stored.map(({ storageKey }) => storageKey));
+    try {
+      await removeAttachmentFiles(stored.map(({ storageKey }) => storageKey));
+    } catch {
+      throw new ApiError(
+        500,
+        "ATTACHMENT_CLEANUP_FAILURE",
+        "Unable to clean up Attachment storage."
+      );
+    }
+
     throw new ApiError(
       500,
       "ATTACHMENT_STORAGE_FAILURE",
@@ -81,7 +86,17 @@ const storeAttachments = async (
 const cleanupStoredAttachments = async (
   attachments: readonly StoredAttachment[]
 ) => {
-  await removeAttachmentFiles(attachments.map(({ storageKey }) => storageKey));
+  try {
+    await removeAttachmentFiles(
+      attachments.map(({ storageKey }) => storageKey)
+    );
+  } catch {
+    throw new ApiError(
+      500,
+      "ATTACHMENT_CLEANUP_FAILURE",
+      "Unable to clean up Attachment storage."
+    );
+  }
 };
 
 const requireActiveReferences = async (fields: TicketFields) => {
@@ -126,16 +141,12 @@ export const createTicketForRequester = async (
       try {
         // Retry only the generated identity; the transaction remains atomic.
         // oxlint-disable-next-line no-await-in-loop
-        const ticket = await prisma.$transaction(
-          async (database) =>
-            await insertTicket(
-              database,
-              requesterId,
-              ticketDate,
-              ticketNumber,
-              fields,
-              storedAttachments
-            )
+        const ticket = await createTicket(
+          requesterId,
+          ticketDate,
+          ticketNumber,
+          fields,
+          storedAttachments
         );
 
         return toTicketDetail(ticket);
@@ -245,31 +256,19 @@ export const addAttachmentsForRequester = async (
   const storedAttachments = await storeAttachments(attachments);
 
   try {
-    const created = await prisma.$transaction(async (database) => {
-      const currentActiveCount = await countActiveAttachmentsInTransaction(
-        database,
-        ticketId
-      );
+    const created = await createAttachments(
+      ticketId,
+      storedAttachments,
+      MAX_ACTIVE_ATTACHMENTS
+    );
 
-      if (
-        currentActiveCount + storedAttachments.length >
-        MAX_ACTIVE_ATTACHMENTS
-      ) {
-        throw new ApiError(
-          409,
-          "ATTACHMENT_LIMIT_EXCEEDED",
-          "Attachment limit exceeded."
-        );
-      }
-
-      const records = await insertAttachments(
-        database,
-        ticketId,
-        storedAttachments
+    if (created === null) {
+      throw new ApiError(
+        409,
+        "ATTACHMENT_LIMIT_EXCEEDED",
+        "Attachment limit exceeded."
       );
-      await touchTicket(database, ticketId);
-      return records;
-    });
+    }
 
     return created.map(toAttachmentMetadata);
   } catch (error: unknown) {
@@ -332,25 +331,27 @@ export const removeAttachmentForRequester = async (
   attachmentId: number,
   reason: string
 ) => {
-  const attachment = await findOwnedAttachmentMetadata(
-    requesterId,
-    ticketId,
-    attachmentId
-  );
-
-  if (attachment === null || attachment.removedAt !== null) {
-    throw notFound("Attachment");
-  }
-
-  const removedAt = new Date();
   const removed = await removeAttachment(
     requesterId,
     ticketId,
     attachmentId,
     reason,
-    removedAt
+    new Date()
   );
 
-  await removeAttachmentFiles([attachment.storageKey]);
+  if (removed === null) {
+    throw notFound("Attachment");
+  }
+
+  try {
+    await removeAttachmentFiles([removed.storageKey]);
+  } catch {
+    throw new ApiError(
+      500,
+      "ATTACHMENT_CLEANUP_FAILURE",
+      "Unable to clean up Attachment storage."
+    );
+  }
+
   return toAttachmentMetadata(removed);
 };

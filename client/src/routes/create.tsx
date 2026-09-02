@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { SubmitEvent } from "react";
 
 import {
-  categoriesQueryOptionsV2,
+  activeCategoriesQueryOptions,
   relatedSystemsQueryOptions,
 } from "@/api/lab2-options";
 import { createTicket } from "@/api/requester";
@@ -36,11 +36,12 @@ const initialValues: TicketFormValues = {
 const apiErrorMessage = (error: unknown, fallback: string) =>
   error instanceof Error && error.message ? error.message : fallback;
 
+// oxlint-disable-next-line complexity -- this route renders the documented form and submission states.
 export const CreateTicketPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { requester } = useRequester();
-  const categoriesQuery = useQuery(categoriesQueryOptionsV2());
+  const categoriesQuery = useQuery(activeCategoriesQueryOptions());
   const relatedSystemsQuery = useQuery(relatedSystemsQueryOptions());
   const [values, setValues] = useState<TicketFormValues>(initialValues);
   const [fieldErrors, setFieldErrors] = useState<TicketFieldErrors>({});
@@ -127,6 +128,9 @@ export const CreateTicketPage = () => {
     categoriesQuery.isPending || relatedSystemsQuery.isPending;
   const referencesFailed =
     categoriesQuery.isError || relatedSystemsQuery.isError;
+  const referencesEmpty =
+    categoriesQuery.data?.length === 0 ||
+    relatedSystemsQuery.data?.length === 0;
 
   return (
     <AppShell eyebrow="Requester workspace" title="Create Ticket">
@@ -214,6 +218,26 @@ export const CreateTicketPage = () => {
               </div>
             ) : null}
 
+            {referencesEmpty ? (
+              <div className="feedback feedback-warning" role="alert">
+                <strong>Required reference data is unavailable.</strong>
+                <span>
+                  An active Category and Related System are required before a
+                  Ticket can be created.
+                </span>
+                <button
+                  className="button button-secondary"
+                  onClick={() => {
+                    void categoriesQuery.refetch();
+                    void relatedSystemsQuery.refetch();
+                  }}
+                  type="button"
+                >
+                  Retry reference data
+                </button>
+              </div>
+            ) : null}
+
             {referencesLoading ? (
               <p aria-live="polite" className="loading-line" role="status">
                 Loading Categories and Related Systems…
@@ -233,7 +257,9 @@ export const CreateTicketPage = () => {
                     Boolean(fieldErrors.categoryId)
                   )}
                   aria-invalid={Boolean(fieldErrors.categoryId)}
-                  disabled={referencesLoading || categoriesQuery.isError}
+                  disabled={
+                    referencesLoading || referencesFailed || referencesEmpty
+                  }
                   id="categoryId"
                   onChange={(event) => {
                     updateValue("categoryId", event.target.value);
@@ -261,7 +287,9 @@ export const CreateTicketPage = () => {
                     Boolean(fieldErrors.relatedSystemId)
                   )}
                   aria-invalid={Boolean(fieldErrors.relatedSystemId)}
-                  disabled={referencesLoading || relatedSystemsQuery.isError}
+                  disabled={
+                    referencesLoading || referencesFailed || referencesEmpty
+                  }
                   id="relatedSystemId"
                   onChange={(event) => {
                     updateValue("relatedSystemId", event.target.value);
@@ -381,7 +409,8 @@ export const CreateTicketPage = () => {
                 disabled={
                   createMutation.isPending ||
                   referencesLoading ||
-                  referencesFailed
+                  referencesFailed ||
+                  referencesEmpty
                 }
                 type="submit"
               >

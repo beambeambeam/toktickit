@@ -14,6 +14,7 @@ import { AttachmentPicker } from "@/components/attachment-picker";
 import { FormField, ReadOnlyField } from "@/components/form-field";
 import { StatusBadge } from "@/components/status-badge";
 import { useRequester } from "@/context/requester";
+import { cn } from "@/lib/class-names";
 import { validateSelectedFiles } from "@/lib/ticket-rules";
 
 const formatDate = (value: string) =>
@@ -321,7 +322,10 @@ export const RequesterTicketDetailPage = () => {
             <div className="attachment-list">
               {ticket.attachments.map((attachment) => (
                 <article
-                  className={`attachment-item ${attachment.state.toLowerCase()}`}
+                  className={cn(
+                    "attachment-item",
+                    attachment.state.toLowerCase()
+                  )}
                   key={attachment.id}
                 >
                   <div className="attachment-item-main">
@@ -348,7 +352,10 @@ export const RequesterTicketDetailPage = () => {
                   </div>
                   <div className="attachment-item-actions">
                     <span
-                      className={`state-label ${attachment.state.toLowerCase()}`}
+                      className={cn(
+                        "state-label",
+                        attachment.state.toLowerCase()
+                      )}
                     >
                       <span aria-hidden="true">
                         {attachment.state === "Active" ? "●" : "×"}
@@ -398,8 +405,9 @@ export const RequesterTicketDetailPage = () => {
         <div
           aria-labelledby="remove-attachment-title"
           aria-modal="true"
+          aria-describedby="remove-attachment-description"
           className="dialog-backdrop"
-          role="dialog"
+          role="alertdialog"
         >
           <form
             className="surface-card confirmation-dialog"
@@ -407,7 +415,7 @@ export const RequesterTicketDetailPage = () => {
           >
             <p className="eyebrow">Confirm action</p>
             <h2 id="remove-attachment-title">Remove Attachment?</h2>
-            <p>
+            <p id="remove-attachment-description">
               The file will become unavailable, but its metadata will remain in
               Ticket history.
             </p>
@@ -426,6 +434,7 @@ export const RequesterTicketDetailPage = () => {
                 aria-invalid={Boolean(removalError)}
                 id="removal-reason"
                 maxLength={500}
+                autoFocus
                 onChange={(event) => {
                   setRemovalReason(event.target.value);
                 }}

@@ -57,24 +57,17 @@ const normalizeCategoryError = (error: unknown): Error => {
   });
 };
 
-const getCategoryItems = (
-  response: CategoryListResponse | Category[]
-): Category[] => {
-  if (Array.isArray(response)) {
-    return response;
-  }
+const getCategoryItems = (response: CategoryListResponse): Category[] =>
+  response.items;
 
-  return response.items;
-};
-
-export const categoriesQueryOptions = () =>
+export const categoriesQueryOptions = (options: { enabled?: boolean } = {}) =>
   queryOptions<
     Category[],
     Error,
     Category[],
     ReturnType<typeof getApiCategoriesQueryKey>
   >({
-    enabled: false,
+    enabled: options.enabled ?? false,
     queryFn: async (context: CategoryQueryContext) => {
       const { queryFn } = generatedCategoryOptions;
 

@@ -11,6 +11,7 @@ app.use(
   "/api",
   cors({
     allowedHeaders: ["Content-Type", "X-Development-Requester-Id"],
+    exposedHeaders: ["Content-Disposition"],
     origin: corsConfig.CORS_ORIGIN,
   }),
   apiRouter

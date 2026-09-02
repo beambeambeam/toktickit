@@ -1,16 +1,18 @@
-import { ApiConnectionError } from "@/api/client";
-import { env } from "@/env";
+import { ApiConnectionError, apiClient } from "@/api/client";
+import {
+  createApiTicket,
+  createApiTicketAttachments,
+  getApiDevelopmentRequesters,
+  getApiRelatedSystems,
+  getApiTicket,
+  getApiTicketAttachmentContent,
+  getApiTickets,
+  removeApiTicketAttachment,
+} from "@/generated/hey-api/sdk.gen";
 import type {
-  AttachmentListResponse,
   AttachmentMetadata,
-  Category,
-  CategoryListResponse,
-  CreateTicketResponse,
   DevelopmentRequester,
-  DevelopmentRequesterListResponse,
   RelatedSystem,
-  RelatedSystemListResponse,
-  RemoveAttachmentResponse,
   TicketDetail,
   TicketListResponse,
 } from "@/generated/hey-api/types.gen";
@@ -67,71 +69,67 @@ export class ApiRequestError extends Error {
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
 
-const getApiUrl = (path: string): string =>
-  new URL(path, env.VITE_API_URL).toString();
+interface GeneratedResult<T> {
+  data?: T;
+  error?: unknown;
+  response?: Response;
+}
 
-const readResponseBody = async (response: Response): Promise<unknown> => {
-  const text = await response.text();
-
-  if (text.length === 0) {
-    return undefined;
+const toApiRequestError = (error: unknown, status = 500): Error => {
+  if (error instanceof ApiConnectionError || error instanceof ApiRequestError) {
+    return error;
   }
 
+  const errorBody =
+    isRecord(error) && isRecord(error.error) ? error.error : undefined;
+  const message =
+    errorBody !== undefined && typeof errorBody.message === "string"
+      ? errorBody.message
+      : "The API request failed.";
+  const code =
+    errorBody !== undefined && typeof errorBody.code === "string"
+      ? errorBody.code
+      : undefined;
+  const details =
+    errorBody !== undefined && isRecord(errorBody.details)
+      ? errorBody.details
+      : undefined;
+
+  return new ApiRequestError(status, message, code, details);
+};
+
+const unwrap = async <T>(result: Promise<GeneratedResult<T>>): Promise<T> => {
   try {
-    return JSON.parse(text) as unknown;
-  } catch {
-    return text;
+    const response = await result;
+
+    if (response.error !== undefined || response.data === undefined) {
+      throw toApiRequestError(response.error, response.response?.status);
+    }
+
+    return response.data;
+  } catch (error: unknown) {
+    throw toApiRequestError(error);
   }
 };
 
-const request = async <T>(path: string, init: RequestInit = {}): Promise<T> => {
-  let response: Response;
-  const headers = new Headers(init.headers);
-  const acceptHeader = headers.get("Accept");
-  headers.set(
-    "Accept",
-    acceptHeader !== null && acceptHeader.length > 0
-      ? acceptHeader
-      : "application/json"
-  );
-
+const unwrapWithResponse = async <T>(
+  result: Promise<GeneratedResult<T>>
+): Promise<{ data: T; response: Response }> => {
   try {
-    response = await globalThis.fetch(getApiUrl(path), {
-      ...init,
-      headers,
-    });
-  } catch (error: unknown) {
-    if (error instanceof ApiConnectionError) {
-      throw error;
+    const response = await result;
+
+    if (response.error !== undefined || response.data === undefined) {
+      throw toApiRequestError(response.error, response.response?.status);
     }
 
-    throw new ApiConnectionError(error);
+    if (response.response === undefined) {
+      throw new ApiRequestError(500, "The API returned no response metadata.");
+    }
+
+    return { data: response.data, response: response.response };
+  } catch (error: unknown) {
+    throw toApiRequestError(error);
   }
-
-  const body = await readResponseBody(response);
-
-  if (!response.ok) {
-    const errorBody =
-      isRecord(body) && isRecord(body.error) ? body.error : undefined;
-    const message =
-      errorBody !== undefined && typeof errorBody.message === "string"
-        ? errorBody.message
-        : "The API request failed.";
-    const code =
-      errorBody !== undefined && typeof errorBody.code === "string"
-        ? errorBody.code
-        : undefined;
-    const details =
-      errorBody !== undefined && isRecord(errorBody.details)
-        ? errorBody.details
-        : undefined;
-
-    throw new ApiRequestError(response.status, message, code, details);
-  }
-
-  // The endpoint response type is selected by each caller's generated contract.
-  // oxlint-disable-next-line typescript/no-unsafe-type-assertion
-  return body as T;
 };
 
 const isUnknownArray = (value: unknown): value is unknown[] =>
@@ -171,55 +169,53 @@ export const getDevelopmentRequesters = async (
   signal?: AbortSignal
 ): Promise<DevelopmentRequester[]> =>
   requireItems<DevelopmentRequester>(
-    await request<DevelopmentRequesterListResponse>(
-      "/api/development-requesters",
-      { signal }
+    await unwrap(
+      getApiDevelopmentRequesters({
+        client: apiClient,
+        signal,
+      })
     ),
     isDevelopmentRequester
-  );
-
-export const getCategories = async (
-  signal?: AbortSignal
-): Promise<Category[]> =>
-  requireItems<Category>(
-    await request<CategoryListResponse>("/api/categories", { signal }),
-    isNamedReference
   );
 
 export const getRelatedSystems = async (
   signal?: AbortSignal
 ): Promise<RelatedSystem[]> =>
   requireItems<RelatedSystem>(
-    await request<RelatedSystemListResponse>("/api/related-systems", {
-      signal,
-    }),
+    await unwrap(
+      getApiRelatedSystems({
+        client: apiClient,
+        signal,
+      })
+    ),
     isNamedReference
   );
 
-const requesterHeaders = (requesterId: number): Headers =>
-  new Headers([[REQUESTER_HEADER, requesterId.toString()]]);
+const requesterHeaders = (
+  requesterId: number
+): { "X-Development-Requester-Id": number } => ({
+  [REQUESTER_HEADER]: requesterId,
+});
 
 export const createTicket = async (
   input: CreateTicketInput,
   signal?: AbortSignal
 ): Promise<TicketDetail> => {
-  const formData = new FormData();
-  formData.set("categoryId", input.categoryId.toString());
-  formData.set("relatedSystemId", input.relatedSystemId.toString());
-  formData.set("summary", input.summary);
-  formData.set("description", input.description);
-  formData.set("requestedPriority", input.requestedPriority);
-
-  for (const attachment of input.attachments) {
-    formData.append("attachments", attachment);
-  }
-
-  const body = await request<CreateTicketResponse>("/api/tickets", {
-    body: formData,
-    headers: requesterHeaders(input.requesterId),
-    method: "POST",
-    signal,
-  });
+  const body = await unwrap(
+    createApiTicket({
+      body: {
+        attachments: [...input.attachments],
+        categoryId: input.categoryId,
+        description: input.description,
+        relatedSystemId: input.relatedSystemId,
+        requestedPriority: input.requestedPriority,
+        summary: input.summary,
+      },
+      client: apiClient,
+      headers: requesterHeaders(input.requesterId),
+      signal,
+    })
+  );
 
   return body.ticket;
 };
@@ -228,47 +224,29 @@ export const getTickets = async (
   requesterId: number,
   params: TicketListParams,
   signal?: AbortSignal
-): Promise<TicketListResponse> => {
-  const query = new URLSearchParams();
-
-  const addQueryParameter = (
-    key: string,
-    value: number | string | undefined
-  ) => {
-    if (value !== undefined && value !== "") {
-      query.set(key, String(value));
-    }
-  };
-
-  addQueryParameter("categoryId", params.categoryId);
-  addQueryParameter("currentStatus", params.currentStatus);
-  addQueryParameter("page", params.page);
-  addQueryParameter("pageSize", params.pageSize);
-  addQueryParameter("relatedSystemId", params.relatedSystemId);
-  addQueryParameter("requestedPriority", params.requestedPriority);
-  addQueryParameter("search", params.search);
-  addQueryParameter("sortBy", params.sortBy);
-  addQueryParameter("sortDirection", params.sortDirection);
-
-  const queryString = query.toString();
-  return await request<TicketListResponse>(
-    `/api/tickets${queryString.length > 0 ? `?${queryString}` : ""}`,
-    {
+): Promise<TicketListResponse> =>
+  await unwrap(
+    getApiTickets({
+      client: apiClient,
       headers: requesterHeaders(requesterId),
+      query: params,
       signal,
-    }
+    })
   );
-};
 
 export const getTicket = async (
   requesterId: number,
   ticketId: number,
   signal?: AbortSignal
 ): Promise<TicketDetail> =>
-  await request<TicketDetail>(`/api/tickets/${ticketId}`, {
-    headers: requesterHeaders(requesterId),
-    signal,
-  });
+  await unwrap(
+    getApiTicket({
+      client: apiClient,
+      headers: requesterHeaders(requesterId),
+      path: { ticketId },
+      signal,
+    })
+  );
 
 export const uploadTicketAttachments = async (
   requesterId: number,
@@ -276,20 +254,14 @@ export const uploadTicketAttachments = async (
   attachments: readonly File[],
   signal?: AbortSignal
 ): Promise<AttachmentMetadata[]> => {
-  const formData = new FormData();
-
-  for (const attachment of attachments) {
-    formData.append("attachments", attachment);
-  }
-
-  const body = await request<AttachmentListResponse>(
-    `/api/tickets/${ticketId}/attachments`,
-    {
-      body: formData,
+  const body = await unwrap(
+    createApiTicketAttachments({
+      body: { attachments: [...attachments] },
+      client: apiClient,
       headers: requesterHeaders(requesterId),
-      method: "POST",
+      path: { ticketId },
       signal,
-    }
+    })
   );
 
   return body.attachments;
@@ -301,34 +273,15 @@ export const downloadTicketAttachment = async (
   attachmentId: number,
   signal?: AbortSignal
 ): Promise<{ blob: Blob; filename: string }> => {
-  let response: Response;
-
-  try {
-    response = await globalThis.fetch(
-      getApiUrl(`/api/tickets/${ticketId}/attachments/${attachmentId}/content`),
-      {
-        headers: requesterHeaders(requesterId),
-        signal,
-      }
-    );
-  } catch (error: unknown) {
-    throw new ApiConnectionError(error);
-  }
-
-  if (!response.ok) {
-    const body = await readResponseBody(response);
-    const errorBody =
-      isRecord(body) && isRecord(body.error) ? body.error : undefined;
-    throw new ApiRequestError(
-      response.status,
-      errorBody !== undefined && typeof errorBody.message === "string"
-        ? errorBody.message
-        : "The Attachment could not be downloaded.",
-      errorBody !== undefined && typeof errorBody.code === "string"
-        ? errorBody.code
-        : undefined
-    );
-  }
+  const { data: blob, response } = await unwrapWithResponse(
+    getApiTicketAttachmentContent({
+      client: apiClient,
+      headers: requesterHeaders(requesterId),
+      parseAs: "blob",
+      path: { attachmentId, ticketId },
+      signal,
+    })
+  );
 
   const disposition = response.headers.get("Content-Disposition") ?? "";
   const filenameMatch = /filename\*=UTF-8''(?<filename>[^;]+)/u.exec(
@@ -340,7 +293,7 @@ export const downloadTicketAttachment = async (
       ? decodeURIComponent(encodedFilename)
       : "attachment";
 
-  return { blob: await response.blob(), filename };
+  return { blob, filename };
 };
 
 export const removeTicketAttachment = async (
@@ -350,16 +303,14 @@ export const removeTicketAttachment = async (
   reason: string,
   signal?: AbortSignal
 ): Promise<AttachmentMetadata> => {
-  const headers = requesterHeaders(requesterId);
-  headers.set("Content-Type", "application/json");
-  const body = await request<RemoveAttachmentResponse>(
-    `/api/tickets/${ticketId}/attachments/${attachmentId}`,
-    {
-      body: JSON.stringify({ reason }),
-      headers,
-      method: "DELETE",
+  const body = await unwrap(
+    removeApiTicketAttachment({
+      body: { reason },
+      client: apiClient,
+      headers: requesterHeaders(requesterId),
+      path: { attachmentId, ticketId },
       signal,
-    }
+    })
   );
 
   return body.attachment;

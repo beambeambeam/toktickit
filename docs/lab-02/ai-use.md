@@ -97,7 +97,7 @@ The workflow is document-first. It must not claim that implementation, tests, sc
 
 Issue #36 implementation used the GitHub issue acceptance criteria, its UI-reference comment, the Lab 2 specification/API/UI contracts, repository guidance, and the report reference images under `reports/lab02`. The implementation added the Prisma model/migration/seed, requester-context middleware, active reference-data APIs, ownership-scoped Ticket and Attachment services, OpenAPI/generated client updates, Requester selection/Create Ticket/My Tickets/Detail screens, validation, and focused tests.
 
-Verification recorded on 2026-09-02: formatting/lint fix, client/server type checks, client tests (27), server tests (31), and OpenAPI synchronization pass. A local browser preview covered the end-to-end requester flow and Attachment lifecycle. Production build, independent review, screenshot/PDF evidence, and human approval remain Pending until run or supplied.
+Verification recorded on 2026-09-02: formatting/lint fix, client/server type checks, client tests (32), server tests (31), OpenAPI synchronization, and production build pass. A local browser preview covered the end-to-end requester flow and Attachment lifecycle. Internal standards/spec review findings were addressed. Screenshot/PDF evidence and human approval remain Pending until supplied.
 
 ## 8. Reflection draft
 

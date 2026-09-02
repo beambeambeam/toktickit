@@ -9,6 +9,7 @@ import { healthQueryOptions } from "@/api/health";
 import { developmentRequestersQueryOptions } from "@/api/lab2-options";
 import { AppShell } from "@/components/app-shell";
 import { useRequester } from "@/context/requester";
+import { cn } from "@/lib/class-names";
 
 const requesterErrorMessage = (error: unknown): string => {
   if (error instanceof ApiConnectionError) {
@@ -35,6 +36,12 @@ const SelectionBrand = () => (
     </div>
   </header>
 );
+
+const SelectionHeading = ({ inShell }: { inShell: boolean }) => {
+  const Heading = inShell ? "h2" : "h1";
+
+  return <Heading id="selection-title">Select Development Requester</Heading>;
+};
 
 export const RequesterSelectionPage = () => {
   const navigate = useNavigate();
@@ -71,13 +78,14 @@ export const RequesterSelectionPage = () => {
     clearRequester();
   };
 
+  const inShell = requester !== null;
   const content = (
     <section className="selection-card" aria-labelledby="selection-title">
       <div className="selection-card-header">
         <div aria-hidden="true" className="selection-icon">
           ♙
         </div>
-        <h1 id="selection-title">Select Development Requester</h1>
+        <SelectionHeading inShell={inShell} />
         <p>
           Choose a Development Requester to simulate the current requester
           context for Lab 2.
@@ -88,7 +96,10 @@ export const RequesterSelectionPage = () => {
 
       <div className="selection-card-body">
         <div
-          className={`form-field${hasSubmitted && selectedRequester === undefined ? " has-error" : ""}`}
+          className={cn(
+            "form-field",
+            hasSubmitted && selectedRequester === undefined && "has-error"
+          )}
         >
           <label htmlFor="development-requester">
             Development Requester{" "}
@@ -144,9 +155,10 @@ export const RequesterSelectionPage = () => {
             ◇
           </span>
           <div>
-            <strong>Authentication comes in Lab 3</strong>
+            <strong>Lab 3 identity flow</strong>
             <p>
-              This selection will be replaced by secure authentication in Lab 3.
+              This temporary context will be replaced by the Lab 3 identity
+              flow.
             </p>
           </div>
         </div>

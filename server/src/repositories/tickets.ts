@@ -68,22 +68,6 @@ export const findOwnedAttachment = async (
     },
   });
 
-export const findOwnedAttachmentMetadata = async (
-  requesterId: number,
-  ticketId: number,
-  attachmentId: number
-) =>
-  await prisma.attachment.findFirst({
-    select: {
-      ...attachmentSelection,
-      ticketId: true,
-    },
-    where: {
-      id: attachmentId,
-      ticket: { id: ticketId, requesterId },
-    },
-  });
-
 export const countActiveAttachments = async (ticketId: number) =>
   await prisma.attachment.count({
     where: { removedAt: null, ticketId },
@@ -178,6 +162,30 @@ export const insertTicket = async (
     include: ticketDetailInclude,
   });
 
+export const createTicket = async (
+  requesterId: number,
+  ticketDate: Date,
+  ticketNumber: string,
+  fields: TicketFields,
+  attachments: readonly {
+    byteSize: number;
+    mediaType: string;
+    originalFilename: string;
+    storageKey: string;
+  }[]
+) =>
+  await prisma.$transaction(
+    async (database) =>
+      await insertTicket(
+        database,
+        requesterId,
+        ticketDate,
+        ticketNumber,
+        fields,
+        attachments
+      )
+  );
+
 export const insertAttachments = async (
   database: TicketDatabase,
   ticketId: number,
@@ -221,6 +229,31 @@ export const touchTicket = async (database: TicketDatabase, ticketId: number) =>
     where: { id: ticketId },
   });
 
+export const createAttachments = async (
+  ticketId: number,
+  attachments: readonly {
+    byteSize: number;
+    mediaType: string;
+    originalFilename: string;
+    storageKey: string;
+  }[],
+  maxActiveAttachments: number
+) =>
+  await prisma.$transaction(async (database) => {
+    const currentActiveCount = await countActiveAttachmentsInTransaction(
+      database,
+      ticketId
+    );
+
+    if (currentActiveCount + attachments.length > maxActiveAttachments) {
+      return null;
+    }
+
+    const records = await insertAttachments(database, ticketId, attachments);
+    await touchTicket(database, ticketId);
+    return records;
+  });
+
 export const removeAttachment = async (
   requesterId: number,
   ticketId: number,
@@ -228,12 +261,26 @@ export const removeAttachment = async (
   reason: string,
   removedAt: Date
 ) =>
-  await prisma.attachment.update({
-    data: {
-      removalReason: reason,
-      removedAt,
-      removedByRequesterId: requesterId,
-    },
-    select: attachmentSelection,
-    where: { id: attachmentId, ticketId },
+  await prisma.$transaction(async (database) => {
+    const result = await database.attachment.updateMany({
+      data: {
+        removalReason: reason,
+        removedAt,
+        removedByRequesterId: requesterId,
+      },
+      where: {
+        id: attachmentId,
+        removedAt: null,
+        ticket: { id: ticketId, requesterId },
+      },
+    });
+
+    if (result.count === 0) {
+      return null;
+    }
+
+    return await database.attachment.findUnique({
+      select: attachmentSelection,
+      where: { id: attachmentId },
+    });
   });

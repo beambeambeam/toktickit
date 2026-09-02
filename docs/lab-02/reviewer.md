@@ -56,8 +56,8 @@ Add one subsection per implementation/release PR with reviewer, date, link, comm
 | --- | --- |
 | Branch | `feature/36-requester-context-create-ticket` |
 | Scope | Requester context, Ticket creation, ownership-aware Ticket views, Attachments, API contract, tests, and Zen Green UI |
-| Automated checks | `pnpm run fix`, `pnpm run check-types`, client/server tests, and `pnpm openapi:check` pass; production build pending final run |
+| Automated checks | `pnpm run fix`, `pnpm run check-types`, client/server tests, `pnpm openapi:check`, and `pnpm run build` pass |
 | Manual evidence | Local browser flow checked at desktop and mobile viewport sizes through selection, creation, My Tickets, Detail, and Attachment lifecycle |
-| Current status | Pending independent code review, final build, screenshots/PDF, and human approval |
+| Current status | Internal standards/spec review complete; screenshots/PDF and human approval remain pending |
 
 Implementation notes: the selected Requester is a Lab 2 testing context, not authentication. The server validates the active context and derives Ticket ownership; client-supplied requester identifiers do not override it. Lab 2 intentionally excludes the later-lab IT Priority, comments, staff actions, event log, resolution, and status-transition controls shown in the reference illustration.

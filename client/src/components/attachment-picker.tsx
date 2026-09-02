@@ -23,6 +23,12 @@ export const AttachmentPicker = ({
     <label htmlFor="attachments">Attachments (optional)</label>
     <input
       accept=".jpg,.jpeg,.png,.webp,.pdf,image/jpeg,image/png,image/webp,application/pdf"
+      aria-describedby={
+        errors.length > 0
+          ? "attachments-help attachments-error"
+          : "attachments-help"
+      }
+      aria-invalid={errors.length > 0}
       disabled={disabled}
       id="attachments"
       multiple
@@ -31,11 +37,11 @@ export const AttachmentPicker = ({
       }}
       type="file"
     />
-    <p className="field-help">
+    <p className="field-help" id="attachments-help">
       JPG, JPEG, PNG, WEBP, or PDF. Maximum 5 MB per file and 5 active files.
     </p>
     {errors.length > 0 ? (
-      <ul className="attachment-errors" role="alert">
+      <ul className="attachment-errors" id="attachments-error" role="alert">
         {errors.map((error, index) => (
           <li key={`${error}-${index}`}>{error}</li>
         ))}

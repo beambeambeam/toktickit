@@ -140,7 +140,7 @@ button:disabled,
 }
 
 .app-shell {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--page-background);
 }
 
@@ -1002,7 +1002,9 @@ button:disabled,
   display: grid;
   place-items: center;
   overflow: auto;
-  padding: 1rem;
+  padding: max(1rem, env(safe-area-inset-top))
+    max(1rem, env(safe-area-inset-right)) max(1rem, env(safe-area-inset-bottom))
+    max(1rem, env(safe-area-inset-left));
   background: rgb(24 49 40 / 42%);
 }
 
@@ -1037,7 +1039,7 @@ button:disabled,
 
 .standalone-message {
   display: grid;
-  min-height: 100vh;
+  min-height: 100dvh;
   place-items: center;
 }
 
@@ -1047,7 +1049,7 @@ button:disabled,
 }
 
 .selection-page {
-  min-height: 100vh;
+  min-height: 100dvh;
   background: var(--page-background);
 }
 

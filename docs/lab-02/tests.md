@@ -7,7 +7,7 @@ The Lab 2 implementation now has focused unit, API/integration, and UI tests. Th
 Current implementation status:
 
 - Existing Lab 1 client and server tests: pass.
-- Lab 2 client rules and Requester-selection tests: pass.
+- Lab 2 client rules, Requester-selection, and Create Ticket UI tests: pass.
 - Lab 2 server rules and PostgreSQL integration tests: pass.
 - OpenAPI synchronization check: pass.
 - Local browser flow: manually checked through Requester selection, Ticket creation, My Tickets, Detail, and Attachment lifecycle at desktop and mobile viewport sizes.
@@ -34,6 +34,7 @@ Do not assert private component structure, query syntax, database implementation
 | API-02 | API/integration | server/tests/lab-02/requester-ticketing.test.ts | Active reference data, active-context enforcement, server-derived ownership, valid creation/defaults, validation, list isolation/query errors, Detail isolation, Attachment upload/download/removal, and safe failures |
 | UI-01 | UI | client/tests/lab-02/requester-selection.test.tsx | Active Requester loading, inactive exclusion, Continue/context persistence, navigation, and recoverable empty state |
 | UI-02 | Unit | client/tests/lab-02/ticket-rules.test.ts | Form validation, Attachment type/count/size validation, and safe API field-error mapping |
+| UI-03 | UI | client/tests/lab-02/create-ticket.test.tsx | Empty-reference blocking, field-level validation without submission, invalid Attachment feedback, preserved values after API failure, busy duplicate-submit prevention, and saved Ticket Number display |
 
 The implementation also contains the My Tickets and Requester Ticket Detail flows; their interaction coverage is currently represented by the API integration suite and the manual browser pass. A dedicated browser E2E harness and the expanded UI/style suites remain follow-up work.
 
@@ -46,14 +47,14 @@ If implementation needs additional test files, add them here before implementati
 | AC-01, AC-02 | UI-01, manual browser pass |
 | AC-03, AC-12 | UI-01, API-02, manual browser pass |
 | AC-04, AC-05 | API-01, API-02, UI-01, UI-02 |
-| AC-06, AC-07, AC-08 | API-01, API-02, UI-02, manual browser pass |
+| AC-06, AC-07, AC-08 | API-01, API-02, UI-02, UI-03, manual browser pass |
 | AC-09 | API-01, API-02, UI-02 |
 | AC-10, AC-11 | API-01, API-02, manual browser pass |
 | AC-13 | API-02, manual browser pass |
 | AC-14, AC-15 | API-01, API-02, UI-02, manual browser pass |
 | AC-16 | API-01, API-02, UI-02 |
 | AC-17 | manual browser pass; expanded visual checklist Pending |
-| AC-18 | API-01, API-02, UI-01, UI-02, manual browser pass |
+| AC-18 | API-01, API-02, UI-01, UI-02, UI-03, manual browser pass |
 | AC-19 | This document plus ui-spec.md, api-spec.md, reviewer.md, and ai-use.md |
 | AC-20 | Repository checks pass; final PDF and human evidence Pending |
 
@@ -82,8 +83,8 @@ Expected repository commands:
 | --- | --- | --- |
 | `2026-09-02` — `pnpm run fix` | CI formatting/lint write step | Pass |
 | `2026-09-02` — `pnpm run check-types` | Client/server type checking | Pass |
-| `2026-09-02` — `pnpm run test` | Client, OpenAPI, and server tests | Pass: client 27, server 31, OpenAPI check pass |
-| `2026-09-02` — `pnpm run build` | Client/server production build | Pending final run |
+| `2026-09-02` — `pnpm run test` | Client, OpenAPI, and server tests | Pass: client 32, server 31, OpenAPI check pass |
+| `2026-09-02` — `pnpm run build` | Client/server production build | Pass |
 | `2026-09-02` — local T3 preview | Desktop/mobile manual flow | Pass for selection, creation, list, Detail, upload/download/remove; no evidence artifact committed |
 | Browser E2E command | Full requester flow and screenshots | Pending E2E setup |
 

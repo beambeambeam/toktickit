@@ -4,7 +4,7 @@ import { useState } from "react";
 import type { SubmitEvent } from "react";
 
 import {
-  categoriesQueryOptionsV2,
+  activeCategoriesQueryOptions,
   relatedSystemsQueryOptions,
   ticketsQueryOptions,
 } from "@/api/lab2-options";
@@ -90,7 +90,7 @@ export const MyTicketsPage = () => {
   const [params, setParams] = useState<TicketListParams>(initialParams);
   const [searchDraft, setSearchDraft] = useState("");
 
-  const categoriesQuery = useQuery(categoriesQueryOptionsV2());
+  const categoriesQuery = useQuery(activeCategoriesQueryOptions());
   const relatedSystemsQuery = useQuery(relatedSystemsQueryOptions());
   const ticketsQuery = useQuery({
     ...ticketsQueryOptions(requester?.id ?? 0, params),
@@ -263,6 +263,10 @@ export const MyTicketsPage = () => {
               <option value="ticketDate:asc">Ticket Date (oldest)</option>
               <option value="ticketNumber:asc">Ticket Number (A–Z)</option>
               <option value="summary:asc">Summary (A–Z)</option>
+              <option value="requestedPriority:asc">
+                Requested Priority (A–Z)
+              </option>
+              <option value="currentStatus:asc">Current Status (A–Z)</option>
             </select>
           </div>
           <div className="filter-field">

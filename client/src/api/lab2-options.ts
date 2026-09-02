@@ -1,7 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 
+import { categoriesQueryOptions } from "@/api/categories";
 import {
-  getCategories,
   getDevelopmentRequesters,
   getRelatedSystems,
   getTicket,
@@ -16,12 +16,8 @@ export const developmentRequestersQueryOptions = () =>
     retry: 1,
   });
 
-export const categoriesQueryOptionsV2 = () =>
-  queryOptions({
-    queryFn: async ({ signal }) => await getCategories(signal),
-    queryKey: ["lab2-categories"],
-    retry: 1,
-  });
+export const activeCategoriesQueryOptions = () =>
+  categoriesQueryOptions({ enabled: true });
 
 export const relatedSystemsQueryOptions = () =>
   queryOptions({

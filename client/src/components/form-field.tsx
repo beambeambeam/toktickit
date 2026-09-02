@@ -1,5 +1,7 @@
 import type { ReactNode } from "react";
 
+import { cn } from "@/lib/class-names";
+
 interface FormFieldProps {
   children: ReactNode;
   error?: string;
@@ -19,7 +21,10 @@ export const FormField = ({
 
   return (
     <div
-      className={`form-field${error !== undefined && error.length > 0 ? " has-error" : ""}`}
+      className={cn(
+        "form-field",
+        error !== undefined && error.length > 0 && "has-error"
+      )}
     >
       <label htmlFor={htmlFor}>
         {label}{" "}
