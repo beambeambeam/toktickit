@@ -27,7 +27,7 @@ The same pair reviewed in both directions. Kiatisak reviewed Supawit's work in [
 
 Two automated inline findings were also resolved in commit `70362f6`: attachment removal reasons now share a 3–500 character limit across the specification, API, UI, Issues, and planned tests; attachment creation now defines file-write, database-transaction, and cleanup ordering so failed requests do not leave persisted metadata or orphan files.
 
-Result: the blocking human finding and both automated contract findings were resolved before merge. PR #42 now has a recorded implementation review; its follow-up approval remains pending.
+Result: the blocking human finding and both automated contract findings were resolved before merge. PR #42's follow-up approval and merge are recorded below.
 
 ### PR #42 — Issue #36 requester ticketing flow
 
@@ -35,9 +35,21 @@ Result: the blocking human finding and both automated contract findings were res
 
 | Event | GitHub evidence |
 | --- | --- |
-| Changes requested | Kiatisak, 2026-09-02: direct cross-Requester access and blocked removed-Attachment download evidence were missing. |
-| Response | Commit `dc87ecd` added both browser-boundary assertions and unauthorized-detail screenshots; the follow-up also addresses Greptile's P1 concurrency and cleanup findings. |
-| Current status | Re-review and approval pending. |
+| Changes requested | Kiatisak, 2026-09-02, against commit `d5bebe9`: direct cross-Requester access and blocked removed-Attachment download evidence were missing. |
+| Automated review | Greptile identified two P1 Attachment findings: the active-count limit could race under concurrent uploads, and failed file cleanup could leave removed metadata with unreclaimable content. |
+| Human-review response | Commit `dc87ecd` added direct unauthorized Ticket navigation, blocked removed-Attachment URL evidence, and the unauthorized-detail screenshots. |
+| Automated-review response | Commit `9988016` serializes the active-Attachment check with a parent-Ticket row lock; removal now deletes content before soft-removal metadata commits and remains retryable after cleanup failure. Integration tests cover both cases. |
+| Follow-up review | Kiatisak approved with `LGTM`, 2026-09-02, on commit `9988016`. |
+| Merge | Kiatisak merged commit `c6524ed` into `lab2-staging`, 2026-09-02. |
+| Final status | Approved and merged. Issue #36 is linked in the PR Development panel. |
+
+#### Conversation details
+
+The two blocking findings were evidence gaps, not missing authorization logic. The original E2E only proved that a Ticket link was absent from Requester 2's list; the follow-up captures the Requester 1 Ticket URL, switches requester context, navigates directly to that URL, and asserts the unavailable response. It also requests an active Attachment successfully, removes it, requests the same content URL, and asserts HTTP `404`.
+
+The review also recorded non-blocking notes: §8.8 had no browser computed-colour assertions; §8.7 had no explicit horizontal-scroll check; one large PR provided thin Part 1 branch-history evidence; the reviewer had not read every large UI file in depth; `Closes #36` required the Development panel because the base branch was `lab2-staging`; and the `TKT-\\d{8}-[A-Z0-9]{6}` identifier shape differed from the approved illustration and was flagged as a submission risk, not a requested change. The reviewer separately confirmed the parameterized ownership queries, deterministic secondary sort key, and `ai-use.md` record were sound.
+
+Follow-up verification reported `pnpm run fix`, `pnpm run check-types`, `pnpm run test`, `pnpm test:e2e` (6/6 across desktop, tablet, and mobile), `pnpm run build`, and `pnpm run check` passing.
 
 ## Reviews completed for Kiatisak
 
@@ -81,7 +93,6 @@ The 11 findings included a race that could exceed the five-attachment limit, con
 ## Current limitations
 
 - Kiatisak's Issues [#20](https://github.com/Kiatisakk/toktickit/issues/20) and [#21](https://github.com/Kiatisakk/toktickit/issues/21) remain open, so no review can yet be recorded for final report/submission or the Lab 2 release PR.
-- PR #42 has received changes-requested feedback; its follow-up review and approval remain pending.
 
 ## Issue #37 implementation review record
 
