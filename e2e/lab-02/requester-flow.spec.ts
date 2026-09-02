@@ -102,9 +102,14 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
   });
 
   await page.getByRole("button", { name: "Go to My Tickets" }).click();
-  await expect(
-    page.getByRole("link", { name: createdTicketNumber })
-  ).toBeVisible();
+  const createdTicketLink = page.getByRole("link", {
+    name: createdTicketNumber,
+  });
+  await expect(createdTicketLink).toBeVisible();
+  const createdTicketHref = await createdTicketLink.getAttribute("href");
+  if (createdTicketHref === null) {
+    throw new Error("Created Ticket link did not include a detail URL.");
+  }
   await page.screenshot({
     fullPage: true,
     path: evidencePath("my-tickets", `${slug}-owned.png`),
@@ -126,10 +131,19 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
     path: evidencePath("ticket-detail", `${slug}-active.png`),
   });
 
+  const attachmentContentRequestPromise = page.waitForRequest((request) =>
+    /\/api\/tickets\/\d+\/attachments\/\d+\/content$/u.test(
+      new URL(request.url()).pathname
+    )
+  );
   const downloadPromise = page.waitForEvent("download");
   await page.getByRole("button", { name: "Download" }).click();
-  const download = await downloadPromise;
+  const [attachmentContentRequest, download] = await Promise.all([
+    attachmentContentRequestPromise,
+    downloadPromise,
+  ]);
   expect(download.suggestedFilename()).toBe(attachmentName);
+  const attachmentContentUrl = attachmentContentRequest.url();
 
   await page.getByRole("button", { name: "Remove" }).click();
   const removalDialog = page.getByRole("alertdialog");
@@ -144,6 +158,10 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
     )
   ).toBeVisible();
   await expect(attachmentRow.locator(".state-label")).toHaveText(/Removed/u);
+  const removedDownloadResponse = await page.request.get(attachmentContentUrl, {
+    headers: { "X-Development-Requester-Id": "1" },
+  });
+  expect(removedDownloadResponse.status()).toBe(404);
   await page.screenshot({
     fullPage: true,
     path: evidencePath("ticket-detail", `${slug}-removed.png`),
@@ -159,5 +177,15 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
   await page.screenshot({
     fullPage: true,
     path: evidencePath("my-tickets", `${slug}-ownership.png`),
+  });
+
+  await page.goto(createdTicketHref);
+  await expect(
+    page.getByRole("heading", { name: "Ticket unavailable" })
+  ).toBeVisible();
+  await expect(page.getByText("Ticket was not found.")).toBeVisible();
+  await page.screenshot({
+    fullPage: true,
+    path: evidencePath("ticket-detail", `${slug}-unauthorized.png`),
   });
 });

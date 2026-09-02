@@ -37,7 +37,7 @@ Do not assert private component structure, query syntax, database implementation
 | UI-01 | UI | client/tests/lab-02/requester-selection.test.tsx | Active Requester loading, inactive exclusion, Continue/context persistence, navigation, and recoverable empty state |
 | UI-02 | Unit | client/tests/lab-02/ticket-rules.test.ts | Form validation, Attachment type/count/size validation, and safe API field-error mapping |
 | UI-03 | UI | client/tests/lab-02/create-ticket.test.tsx | Empty-reference blocking, field-level validation without submission, invalid Attachment feedback, preserved values after API failure, busy duplicate-submit prevention, and saved Ticket Number display |
-| E2E-01 | Browser E2E | e2e/lab-02/requester-flow.spec.ts | Three-viewport requester selection, Ticket creation with Attachment, generated Ticket Number, My Tickets discovery, Detail, download, soft removal, and cross-Requester ownership isolation; captures required screenshots |
+| E2E-01 | Browser E2E | e2e/lab-02/requester-flow.spec.ts | Three-viewport requester selection, Ticket creation with Attachment, generated Ticket Number, My Tickets discovery, direct cross-Requester Ticket access rejection, Detail, active download, soft removal, blocked removed download, and cross-Requester ownership isolation; captures required screenshots |
 
 The implementation also contains the My Tickets and Requester Ticket Detail flows; their interaction coverage is represented by the API integration suite, the manual browser pass, and E2E-01. Expanded UI/style suites remain follow-up work.
 
@@ -89,7 +89,7 @@ Expected repository commands:
 | `2026-09-02` — `pnpm run test` | Client, OpenAPI, and server tests | Pass: client 32, server 31, OpenAPI check pass |
 | `2026-09-02` — `pnpm run build` | Client/server production build | Pass |
 | `2026-09-02` — local T3 preview | Desktop/mobile manual flow | Pass for selection, creation, list, Detail, upload/download/remove |
-| `2026-09-02` — `pnpm test:e2e` | Full requester flow and smoke test across desktop/tablet/mobile Chromium | Pass: 6/6 tests; 27 PNG evidence artifacts captured |
+| `2026-09-02` — `pnpm test:e2e` | Full requester flow and smoke test across desktop/tablet/mobile Chromium | Pass: 6/6 tests; 30 PNG evidence artifacts captured; direct unauthorized Ticket and removed-download requests rejected |
 
 Update this table with date, exact command, result, and environment after each vertical slice. Record database setup and any limitation; do not hide skipped or flaky tests.
 
