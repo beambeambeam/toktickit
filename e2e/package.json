@@ -1,0 +1,19 @@
+{
+  "name": "@toktickit/e2e",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "playwright test",
+    "test:headed": "playwright test --headed",
+    "test:ui": "playwright test --ui",
+    "typecheck": "tsc --noEmit"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@types/node": "^26.1.2",
+    "typescript": "^7.0.2"
+  },
+  "engines": {
+    "node": ">=22.18.0"
+  }
+}
