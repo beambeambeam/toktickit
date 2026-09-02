@@ -27,7 +27,17 @@ The same pair reviewed in both directions. Kiatisak reviewed Supawit's work in [
 
 Two automated inline findings were also resolved in commit `70362f6`: attachment removal reasons now share a 3–500 character limit across the specification, API, UI, Issues, and planned tests; attachment creation now defines file-write, database-transaction, and cleanup ordering so failed requests do not leave persisted metadata or orphan files.
 
-Result: the blocking human finding and both automated contract findings were resolved before merge. No Lab 2 implementation review has yet been received in this repository.
+Result: the blocking human finding and both automated contract findings were resolved before merge. PR #42 now has a recorded implementation review; its follow-up approval remains pending.
+
+### PR #42 — Issue #36 requester ticketing flow
+
+[beambeambeam/toktickit#42](https://github.com/beambeambeam/toktickit/pull/42) · `feature/36-requester-context-create-ticket` into `lab2-staging` · linked to Issue #36
+
+| Event | GitHub evidence |
+| --- | --- |
+| Changes requested | Kiatisak, 2026-09-02: direct cross-Requester access and blocked removed-Attachment download evidence were missing. |
+| Response | Commit `dc87ecd` added both browser-boundary assertions and unauthorized-detail screenshots; the follow-up also addresses Greptile's P1 concurrency and cleanup findings. |
+| Current status | Re-review and approval pending. |
 
 ## Reviews completed for Kiatisak
 
@@ -70,5 +80,5 @@ The 11 findings included a race that could exceed the five-attachment limit, con
 
 ## Current limitations
 
-- Kiatisak's Issues [#20](https://github.com/Kiatisakk/toktickit/issues/20) and [#21](https://github.com/Kiatisakk/toktickit/issues/21) remain open, so no review can yet be recorded for end-to-end evidence, final report/submission, or the Lab 2 release PR.
-- This repository currently has one merged Lab 2 PR (#39). Later implementation and release reviews must be appended when their GitHub PRs exist and receive human review.
+- Kiatisak's Issues [#20](https://github.com/Kiatisakk/toktickit/issues/20) and [#21](https://github.com/Kiatisakk/toktickit/issues/21) remain open, so no review can yet be recorded for final report/submission or the Lab 2 release PR.
+- PR #42 has received changes-requested feedback; its follow-up review and approval remain pending.

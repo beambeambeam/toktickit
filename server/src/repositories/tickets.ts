@@ -1,5 +1,5 @@
 import { prisma } from "../db/client.js";
-import type { Prisma } from "../generated/prisma/client.js";
+import { Prisma } from "../generated/prisma/client.js";
 import type { TicketFields, TicketListQuery } from "../types/tickets.js";
 
 const categorySelection = {
@@ -223,6 +223,15 @@ export const countActiveAttachmentsInTransaction = async (
     where: { removedAt: null, ticketId },
   });
 
+const lockTicketForAttachmentMutation = async (
+  database: TicketDatabase,
+  ticketId: number
+) => {
+  await database.$queryRaw(
+    Prisma.sql`SELECT "id" FROM "Ticket" WHERE "id" = ${ticketId} FOR UPDATE`
+  );
+};
+
 export const touchTicket = async (database: TicketDatabase, ticketId: number) =>
   await database.ticket.update({
     data: { updatedAt: new Date() },
@@ -240,6 +249,7 @@ export const createAttachments = async (
   maxActiveAttachments: number
 ) =>
   await prisma.$transaction(async (database) => {
+    await lockTicketForAttachmentMutation(database, ticketId);
     const currentActiveCount = await countActiveAttachmentsInTransaction(
       database,
       ticketId

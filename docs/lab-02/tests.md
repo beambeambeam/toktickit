@@ -33,7 +33,7 @@ Do not assert private component structure, query syntax, database implementation
 | ID | Level | File path | Coverage |
 | --- | --- | --- | --- |
 | API-01 | Unit | server/tests/lab-02/rules.test.ts | Ticket Number format, field trimming/validation, list-query defaults, filename normalization, signed-file limits, and active-Attachment count |
-| API-02 | API/integration | server/tests/lab-02/requester-ticketing.test.ts | Active reference data, active-context enforcement, server-derived ownership, valid creation/defaults, validation, list isolation/query errors, Detail isolation, Attachment upload/download/removal, and safe failures |
+| API-02 | API/integration | server/tests/lab-02/requester-ticketing.test.ts | Active reference data, active-context enforcement, server-derived ownership, valid creation/defaults, validation, list isolation/query errors, Detail isolation, Attachment upload/download/removal, concurrent active-limit enforcement, cleanup retry recovery, and safe failures |
 | UI-01 | UI | client/tests/lab-02/requester-selection.test.tsx | Active Requester loading, inactive exclusion, Continue/context persistence, navigation, and recoverable empty state |
 | UI-02 | Unit | client/tests/lab-02/ticket-rules.test.ts | Form validation, Attachment type/count/size validation, and safe API field-error mapping |
 | UI-03 | UI | client/tests/lab-02/create-ticket.test.tsx | Empty-reference blocking, field-level validation without submission, invalid Attachment feedback, preserved values after API failure, busy duplicate-submit prevention, and saved Ticket Number display |
@@ -70,6 +70,7 @@ The final tests must include:
 - One create request while another is still processing.
 - File types at and beyond the allowed set, content-signature mismatch, exactly 5 MB, over 5 MB, exactly five active files, and a sixth active file.
 - File-write failure, database-transaction failure, cleanup, and no false-success behavior.
+- Concurrent Attachment additions to the same Ticket at the five-active limit.
 - Removal reasons of 2, 3, 500, and 501 trimmed characters.
 - Missing, invalid, unowned, removed, and already-removed resource access.
 - Search/filter/sort/page boundary values and invalid query parameters.
@@ -86,7 +87,7 @@ Expected repository commands:
 | --- | --- | --- |
 | `2026-09-02` — `pnpm run fix` | CI formatting/lint write step | Pass |
 | `2026-09-02` — `pnpm run check-types` | Client/server type checking | Pass |
-| `2026-09-02` — `pnpm run test` | Client, OpenAPI, and server tests | Pass: client 32, server 31, OpenAPI check pass |
+| `2026-09-02` — `pnpm run test` | Client, OpenAPI, and server tests | Pass: client 32, server 33, OpenAPI check pass |
 | `2026-09-02` — `pnpm run build` | Client/server production build | Pass |
 | `2026-09-02` — local T3 preview | Desktop/mobile manual flow | Pass for selection, creation, list, Detail, upload/download/remove |
 | `2026-09-02` — `pnpm test:e2e` | Full requester flow and smoke test across desktop/tablet/mobile Chromium | Pass: 6/6 tests; 30 PNG evidence artifacts captured; direct unauthorized Ticket and removed-download requests rejected |

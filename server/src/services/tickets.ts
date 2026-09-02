@@ -331,6 +331,27 @@ export const removeAttachmentForRequester = async (
   attachmentId: number,
   reason: string
 ) => {
+  const attachment = await findOwnedAttachment(
+    requesterId,
+    ticketId,
+    attachmentId
+  );
+
+  if (attachment === null) {
+    throw notFound("Attachment");
+  }
+
+  try {
+    // Remove content before committing metadata so cleanup failures remain retryable.
+    await removeAttachmentFiles([attachment.storageKey]);
+  } catch {
+    throw new ApiError(
+      500,
+      "ATTACHMENT_CLEANUP_FAILURE",
+      "Unable to clean up Attachment storage."
+    );
+  }
+
   const removed = await removeAttachment(
     requesterId,
     ticketId,
@@ -341,16 +362,6 @@ export const removeAttachmentForRequester = async (
 
   if (removed === null) {
     throw notFound("Attachment");
-  }
-
-  try {
-    await removeAttachmentFiles([removed.storageKey]);
-  } catch {
-    throw new ApiError(
-      500,
-      "ATTACHMENT_CLEANUP_FAILURE",
-      "Unable to clean up Attachment storage."
-    );
   }
 
   return toAttachmentMetadata(removed);

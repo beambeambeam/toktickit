@@ -2,7 +2,7 @@ import "dotenv/config";
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
-import { mkdir, rm } from "node:fs/promises";
+import { mkdir, rm, writeFile } from "node:fs/promises";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
@@ -406,5 +406,110 @@ describe("Lab 2 requester Ticket API", () => {
       .get(`/api/tickets/${ticketId}/attachments/${attachmentId}/content`)
       .set("X-Development-Requester-Id", ownerId.toString())
       .expect(404);
+  });
+
+  it("serializes concurrent Attachment additions at the active limit", async () => {
+    const created = await request(app)
+      .post("/api/tickets")
+      .set("X-Development-Requester-Id", ownerId.toString())
+      .field("categoryId", categoryId.toString())
+      .field("relatedSystemId", relatedSystemId.toString())
+      .field("requestedPriority", "Medium")
+      .field("summary", "Concurrent Attachment limit test")
+      .field(
+        "description",
+        "The Ticket must never exceed five active Attachments during concurrent uploads."
+      )
+      .attach("attachments", pdf(), "existing-1.pdf")
+      .attach("attachments", pdf(), "existing-2.pdf")
+      .attach("attachments", pdf(), "existing-3.pdf")
+      .attach("attachments", pdf(), "existing-4.pdf")
+      .expect(201);
+    const ticketId = getJsonNumber(
+      getJsonObject(parseJson(created), "ticket"),
+      "id"
+    );
+
+    const upload = (filename: string) =>
+      request(app)
+        .post(`/api/tickets/${ticketId}/attachments`)
+        .set("X-Development-Requester-Id", ownerId.toString())
+        .attach("attachments", pdf(), filename);
+
+    const responses = await Promise.all([
+      upload("concurrent-5.pdf"),
+      upload("concurrent-6.pdf"),
+    ]);
+
+    assert.equal(responses.filter(({ status }) => status === 201).length, 1);
+    assert.equal(responses.filter(({ status }) => status === 409).length, 1);
+    assert.equal(
+      await prisma.attachment.count({
+        where: { removedAt: null, ticketId },
+      }),
+      5
+    );
+  });
+
+  it("keeps removal retryable when Attachment cleanup fails", async () => {
+    const created = await request(app)
+      .post("/api/tickets")
+      .set("X-Development-Requester-Id", ownerId.toString())
+      .field("categoryId", categoryId.toString())
+      .field("relatedSystemId", relatedSystemId.toString())
+      .field("requestedPriority", "Low")
+      .field("summary", "Attachment cleanup retry test")
+      .field(
+        "description",
+        "A storage cleanup failure must leave the Attachment available for a later retry."
+      )
+      .attach("attachments", pdf(), "retryable.pdf")
+      .expect(201);
+    const createdBody = getJsonObject(parseJson(created), "ticket");
+    const ticketId = getJsonNumber(createdBody, "id");
+    const attachmentId = getJsonNumber(
+      getJsonObjectAt(getJsonArray(createdBody, "attachments"), 0),
+      "id"
+    );
+    const attachment = await prisma.attachment.findUnique({
+      where: { id: attachmentId },
+    });
+    if (attachment === null) {
+      throw new Error("Expected the test Attachment to exist.");
+    }
+
+    const attachmentPath = path.join(storageDirectory, attachment.storageKey);
+    await rm(attachmentPath);
+    await mkdir(attachmentPath);
+
+    const failedRemoval = await request(app)
+      .delete(`/api/tickets/${ticketId}/attachments/${attachmentId}`)
+      .set("X-Development-Requester-Id", ownerId.toString())
+      .send({ reason: "Retry after storage failure" })
+      .expect(500);
+    assert.equal(
+      getJsonString(getJsonObject(parseJson(failedRemoval), "error"), "code"),
+      "ATTACHMENT_CLEANUP_FAILURE"
+    );
+
+    const afterFailure = await prisma.attachment.findUnique({
+      where: { id: attachmentId },
+    });
+    assert.notEqual(afterFailure, null);
+    assert.equal(afterFailure?.removedAt, null);
+    assert.equal(afterFailure?.removalReason, null);
+
+    await rm(attachmentPath, { force: true, recursive: true });
+    await writeFile(attachmentPath, pdf());
+
+    const removed = await request(app)
+      .delete(`/api/tickets/${ticketId}/attachments/${attachmentId}`)
+      .set("X-Development-Requester-Id", ownerId.toString())
+      .send({ reason: "Retry after storage failure" })
+      .expect(200);
+    assert.equal(
+      getJsonString(getJsonObject(parseJson(removed), "attachment"), "state"),
+      "Removed"
+    );
   });
 });
