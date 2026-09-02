@@ -1,112 +1,28 @@
-# Lab 2 AI-Use Record
+# Lab 2 AI Use and Reflection
 
-## 1. Purpose and responsibility
+## Tool and model
 
-AI was used as a specification and planning assistant. The student remains responsible for interpreting the Lab 2 PDF, choosing scope, approving the design, reviewing generated documents, implementing the tickets, running tests, and approving the final submission.
+- Coding agent: Codex in T3 Code
+- LLM/model: GPT-5.6-Luna
+- Account or platform: T3 Code
+- Main use: requirements clarification, specification and ticket planning, implementation support, debugging, test review, code review, and documentation review.
 
-Generated text is a draft until it is checked against the PDF, reference images, repository guidance, codebase, review comments, and test evidence.
+## Selected key prompts
 
-## 2. Tools and source material
+The workflow moved from the Lab 2 source material to a reviewed specification, vertical-slice tickets, implementation, browser evidence, and submission preparation. `$implement` and `$code-review` below mean the local skills used for the relevant work.
 
-| Item | Record |
-| --- | --- |
-| Assistant | OpenAI Codex coding agent |
-| Specification skill | to-spec |
-| Ticket skill | to-tickets; this is the local skill name for the requested to-ticket workflow |
-| Primary source | Lab 2 PDF/labsheet and supplied reference images |
-| Repository inputs | Existing code, tests, AGENTS.md guidance, PR #39, and Kiatisakk’s review |
-| Main outputs | Lab 2 specification, vertical-slice tickets, and six living Lab 2 documents |
-| Human responsibility | Review every requirement, decision, ticket, generated file, test, and evidence claim |
+| Prompt name | Actual prompt text | Result / reflection |
+| --- | --- | --- |
+| Convert Lab 2 source material to a specification and tickets | `$to-spec` followed by `$to-tickets`<br><br>Read the Lab 2 PDF, labsheet, reference images, repository guidance, existing code/tests, and current discussion. Produce a complete specification, then break it into independently demonstrable vertical slices with blockers and observable acceptance criteria. Do not implement code. | The source material became a numbered Lab 2 contract and three vertical slices: requester creation, My Tickets discovery, and Ticket Detail/Attachment lifecycle. Reflection: making dependencies explicit prevented disconnected database, API, and UI work. |
+| Write the Lab 2 living documents | Use the approved specification and ticket breakdown to write `specification.md`, `tests.md`, `ui-spec.md`, `api-spec.md`, `reviewer.md`, and `ai-use.md` under `docs/lab-02`. Keep requirements, decisions, tests, evidence, and pending status consistent. | The six required documents recorded the domain model, UI states, API contracts, planned tests, review notes, and AI-use workflow. Reflection: a shared document contract made later implementation decisions easier to trace. |
+| Audit reference images and boundaries | Compare the supplied Requester Selection, My Tickets, and Ticket Detail images with the written Lab 2 scope. Keep Lab 2 fields and exclude later-lab or staff-only controls. | Requested Priority and Current Status were retained; IT Priority, Ticket Owner, comments, service actions, event log, resolution, and authentication fields stayed excluded. Reflection: treating images as visual direction avoided copying unrelated workflow into the MVP. |
+| Implement Issue #36 | `$implement https://github.com/beambeambeam/toktickit/issues/36`<br><br>Read the issue discussion and the UI reference comment. Use additional context from `reports/lab02`. Create a feature branch, implement the requester context and Create Ticket flow, add tests, verify the repository, and commit the work. | Added the Prisma migration/seed, active reference-data APIs, requester-context middleware, ownership-scoped Ticket and Attachment services, OpenAPI/generated client updates, Zen Green requester/Create Ticket/My Tickets/Detail screens, validation, and focused tests. Reflection: the report context clarified the temporary requester-selector UX and the full Lab 2 screen contract. |
+| Review the implementation | `$code-review lab2-staging`<br><br>Review the branch on Standards and Spec axes using repository guidance, the Lab 2 specification, tests, UI/API contracts, and report context. Report exact findings and do not invent approval or evidence. | The review caught service transaction-boundary issues, generated-client bypasses, stale compatibility paths, missing field-level Attachment feedback, accessibility gaps, and incomplete reference-data failure handling. Fixes were applied and rechecked. Reflection: separate Standards and Spec reviews distinguished implementation defects from submission evidence gaps. |
+| Resolve automated review findings | Inspect the Greptile P1 findings on PR #42. Fix concurrent Attachment limit races and storage-cleanup failures without weakening ownership or retry behavior. Add regression coverage and rerun the repository checks. | Parent-Ticket row locking serializes active-Attachment capacity checks; content cleanup now happens before the soft-removal commit, leaving failed removals retryable. Added API tests for concurrent limit enforcement and cleanup recovery. Reflection: the automated review exposed database/filesystem boundary cases that ordinary happy-path tests did not cover. |
+| Run browser E2E and capture evidence | `pnpm test:e2e`<br><br>Run the real client/API requester flow across desktop, tablet, and mobile Chromium. Capture the required Create Ticket, My Tickets, and Ticket Detail screenshots, including validation, ownership, direct unauthorized Ticket access, active Attachment, and removed Attachment states. Verify active download and blocked removed download. | Playwright passed all 6 tests and captured 30 PNG artifacts in the required Lab 2 directories. Reflection: making evidence capture part of the executable flow tied screenshots to a repeatable scenario instead of a one-off manual state. Final PDF and human approval remain pending. |
 
-## 3. Workflow
+## Final brief reflection
 
-1. Drop the Lab 2 PDF and reference images into the conversation.
-2. Use to-spec to turn the PDF, images, repository, and existing discussion into a complete feature specification.
-3. Review the proposed test seams, scope boundaries, ambiguities, and implementation decisions.
-4. Use to-tickets to break the approved specification into tracer-bullet vertical slices. Each ticket must deliver a demonstrable end-to-end behavior, list its blockers, and include observable acceptance criteria.
-5. Review ticket granularity and blocking edges before publishing or implementing tickets.
-6. Ask the coding agent to write the base Lab 2 documents from the approved specification and ticket breakdown.
-7. Update the documents after each vertical slice with actual paths, results, review evidence, and AI-use reflection.
+The PDF-first workflow made the long Lab 2 handout actionable. Specification and ticket planning exposed the dependency order before implementation, while the report images supplied concrete UI direction without overriding written scope. Implementing the requester flow through database, API, client, tests, browser E2E, and documentation kept the behavior demonstrable end to end.
 
-The workflow is document-first. It must not claim that implementation, tests, screenshots, or ticket publication are complete when they are only planned.
-
-## 4. Core reusable prompts
-
-### Prompt 1 — PDF to specification to tickets
-
-    I uploaded the Lab 2 PDF and its reference images. Use the to-spec skill first, then use the to-tickets skill.
-
-    Treat the PDF, images, repository guidance, existing code/tests, and current conversation as source material. Inspect the repository before drafting. Use the project domain vocabulary. Do not interview me; synthesize what is already known.
-
-    First produce a complete Lab 2 specification with:
-    - Problem Statement
-    - Solution
-    - extensive numbered User Stories
-    - Implementation Decisions
-    - Testing Decisions using the highest practical existing seams
-    - Out of Scope
-    - Further Notes
-
-    Resolve ambiguity explicitly. Audit the reference images against the written scope so later-lab or staff-only fields are not added accidentally.
-
-    Then propose tracer-bullet tickets from the approved specification. Every ticket must cut through the required layers, be independently demoable, list genuine blockers, and contain observable acceptance criteria. Put blockers before dependent tickets. Show the proposed breakdown for review before publishing anything to the issue tracker.
-
-    Return the specification summary, proposed ticket list, blocking edges, unresolved decisions, and risks. Do not implement code.
-
-### Prompt 2 — Approved specification to base documents
-
-    Using the approved Lab 2 specification and ticket breakdown, write the base documentation under docs/lab-02:
-
-    - specification.md
-    - tests.md
-    - ui-spec.md
-    - api-spec.md
-    - reviewer.md
-    - ai-use.md
-
-    Keep all documents internally consistent. Number Functional Requirements, Business Rules, and Acceptance Criteria. Define UI tokens, screen states, responsive/accessibility behavior, data decisions, API endpoints, request/response shapes, validation, ownership, safe errors, planned test paths, and Definition of Done.
-
-    Map every Acceptance Criterion to at least one planned test. Mark implementation results, screenshots, approvals, and final PDF evidence as Pending when they do not exist yet. Record review comments and responses without inventing approval. Include this two-stage PDF-to-spec-to-tickets workflow in ai-use.md and keep a six-to-ten prompt record.
-
-    Use the supplied images as visual direction only. Preserve explicit Lab 2 exclusions. Do not write implementation code, fabricate test results, or claim that an issue is complete.
-
-## 5. Supporting prompts and verification
-
-| # | Supporting prompt objective | Output used | Verification |
-| --- | --- | --- | --- |
-| 3 | Audit the PDF and reference images for included/excluded behavior | Kept Requested Priority and Current Status; excluded IT Priority, staff controls, comments, event log, and resolution fields | Compared every image-derived feature with the written Lab 2 scope |
-| 4 | Challenge the specification for ambiguous ownership, context, Attachment, validation, and failure behavior | Added explicit requester-context, ownership, storage compensation, limits, removal reason, and safe-error decisions | Cross-checked against the labsheet and Kiatisakk’s review |
-| 5 | Build a test plan from the approved Acceptance Criteria | Added planned unit, API, UI, accessibility, responsive, visual, and E2E paths | Confirmed every AC has a planned test path |
-| 6 | Check the Lab 2 repository contract | Added the six required documents and the required numbered sections | Compared with labsheet sections 4, 15, 16, 19, and 20 |
-| 7 | Review generated documentation for traceability and unsupported claims | Added reviewer status, Pending markers, and human-review responsibility | Checked links, counts, headings, and repository state |
-
-## 6. Generated outputs and current status
-
-| Output | Status |
-| --- | --- |
-| Numbered specification with FR-01–FR-15, BR-01–BR-20, and AC-01–AC-20 | Drafted and repository-checked |
-| Vertical-slice ticket breakdown | Requires review before tracker publication |
-| tests.md | Base plan drafted; implementation paths/results Pending |
-| ui-spec.md | Base UI contract drafted; screenshots/checklist Pending |
-| api-spec.md | Base API contract drafted; OpenAPI implementation Pending |
-| reviewer.md | PR #39 finding and response recorded; reviewer re-check Pending |
-| ai-use.md | This workflow record; student reflection review Pending |
-
-## 7. Reflection draft
-
-The PDF-first workflow made the long handout actionable. to-spec helped turn stakeholder language and reference images into a coherent contract; to-tickets then exposed the dependency order and kept implementation work vertical instead of splitting it into disconnected database, API, and UI tasks. The second prompt made the contract easier to use by putting specification, tests, UI, API, review, and AI-use records in one consistent document set.
-
-The main risk is accepting generated scope or decisions without checking the source. I reduced that risk by comparing the images with the written scope, recording explicit exclusions, marking unknown results as Pending, and keeping human approval before ticket publication and implementation.
-
-Student review required: edit this reflection if needed, then approve the final wording before PDF submission.
-
-## 8. Ongoing updates
-
-After each vertical slice, record:
-
-- Prompt or task summary.
-- Files changed with AI assistance.
-- Human corrections and decisions.
-- Tests and evidence that verified the result.
-- Review comments, responses, and approval state.
-- Any generated suggestion rejected and why.
+I still had to inspect the generated code, verify ownership and failure behavior, run the checks, review the branch, inspect the generated screenshots, and mark final PDF evidence and human approval as Pending rather than treating generated output as proof. The student remains responsible for the final requirements review, reflection, evidence, and submission approval.

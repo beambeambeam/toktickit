@@ -7,8 +7,92 @@ datasource db {
   provider = "postgresql"
 }
 
+enum RequestedPriority {
+  Low
+  Medium
+  High
+  Urgent
+}
+
+enum CurrentStatus {
+  New
+}
+
 model Category {
-  id        Int      @id @default(autoincrement())
-  name      String   @unique
-  createdAt DateTime @default(now())
+  id            Int      @id @default(autoincrement())
+  name          String   @unique
+  isActive      Boolean  @default(true)
+  displayOrder  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  tickets       Ticket[]
+
+  @@index([isActive, displayOrder])
+}
+
+model RelatedSystem {
+  id            Int      @id @default(autoincrement())
+  name          String   @unique
+  isActive      Boolean  @default(true)
+  displayOrder  Int      @default(0)
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  tickets       Ticket[]
+
+  @@index([isActive, displayOrder])
+}
+
+model DevelopmentRequester {
+  id                  Int          @id @default(autoincrement())
+  displayName         String
+  email               String       @unique
+  isActive            Boolean      @default(true)
+  createdAt           DateTime     @default(now())
+  updatedAt           DateTime     @updatedAt
+  tickets             Ticket[]
+  removedAttachments  Attachment[] @relation("RemovedAttachmentRequester")
+
+  @@index([isActive, displayName])
+}
+
+model Ticket {
+  id                 Int              @id @default(autoincrement())
+  ticketNumber       String           @unique
+  ticketDate         DateTime         @default(now())
+  requesterId        Int
+  categoryId         Int
+  relatedSystemId    Int
+  summary            String
+  description        String
+  requestedPriority  RequestedPriority
+  currentStatus      CurrentStatus    @default(New)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  requester          DevelopmentRequester @relation(fields: [requesterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  category           Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  relatedSystem      RelatedSystem    @relation(fields: [relatedSystemId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  attachments        Attachment[]
+
+  @@index([requesterId, updatedAt])
+  @@index([requesterId, currentStatus])
+  @@index([requesterId, requestedPriority])
+  @@index([requesterId, categoryId])
+  @@index([requesterId, relatedSystemId])
+}
+
+model Attachment {
+  id                  Int                   @id @default(autoincrement())
+  ticketId            Int
+  originalFilename    String
+  storageKey          String                @unique
+  mediaType           String
+  byteSize            Int
+  uploadedAt          DateTime              @default(now())
+  removedAt           DateTime?
+  removalReason       String?
+  removedByRequesterId Int?
+  ticket              Ticket                @relation(fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  removedByRequester  DevelopmentRequester? @relation("RemovedAttachmentRequester", fields: [removedByRequesterId], references: [id], onDelete: SetNull, onUpdate: Restrict)
+
+  @@index([ticketId, removedAt])
 }

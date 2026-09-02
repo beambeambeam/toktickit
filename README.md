@@ -29,7 +29,7 @@ cp client/.env.example client/.env
 cp server/.env.example server/.env
 ```
 
-The server environment file contains PostgreSQL credentials and `DATABASE_URL`. Use local development values or your own uncommitted values.
+The server environment file contains PostgreSQL credentials, `DATABASE_URL`, and optional `ATTACHMENT_STORAGE_DIR`. Use local development values or your own uncommitted values.
 
 ## Database setup
 
@@ -70,6 +70,8 @@ pnpm db:stop
 ```
 
 Start PostgreSQL before starting the server. The server verifies its Prisma connection before opening the HTTP listener.
+
+The web app starts with a testing-only Development Requester selection. After selection, requester-scoped calls use the validated `X-Development-Requester-Id` context to create and view owned Tickets. Authentication is intentionally deferred to Lab 3. Ticket Attachments are written to the server's non-public `ATTACHMENT_STORAGE_DIR` (default: `server/.data/attachments`).
 
 ## Verification
 

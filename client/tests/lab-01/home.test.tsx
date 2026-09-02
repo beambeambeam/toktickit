@@ -18,10 +18,12 @@ const healthResponse = {
   status: "ok",
 } as const;
 
-const categoryResponse = [
-  { id: 1, name: "Account and Access" },
-  { id: 2, name: "Hardware" },
-] as const;
+const categoryResponse = {
+  items: [
+    { id: 1, name: "Account and Access" },
+    { id: 2, name: "Hardware" },
+  ],
+} as const;
 
 const createResponse = (body: unknown, status = 200) =>
   Response.json(body, { status });
@@ -222,7 +224,7 @@ describe("home health status card", () => {
     mockHealthAndCategories(
       fetchMock,
       () => createResponse(healthResponse),
-      () => createResponse([])
+      () => createResponse({ items: [] })
     );
     renderHomePage();
 
@@ -403,7 +405,7 @@ describe("home health status card", () => {
 
     act(() => {
       retriedCategoryResponse.resolve(
-        createResponse([{ id: 3, name: "Software" }])
+        createResponse({ items: [{ id: 3, name: "Software" }] })
       );
     });
 
@@ -538,7 +540,7 @@ describe("home health status card", () => {
     act(() => {
       secondHealthResponse.resolve(createResponse(healthResponse));
       secondCategoryResponse.resolve(
-        createResponse([{ id: 3, name: "Software" }])
+        createResponse({ items: [{ id: 3, name: "Software" }] })
       );
     });
     await waitFor(() => {

@@ -20,6 +20,11 @@ export default defineConfig({
   },
   test: {
     environment: "node",
-    include: ["tests/lab-01/**/*.test.ts", "tests/lab-01/**/*.test.tsx"],
+    include: [
+      "tests/lab-01/**/*.test.ts",
+      "tests/lab-01/**/*.test.tsx",
+      "tests/lab-02/**/*.test.ts",
+      "tests/lab-02/**/*.test.tsx",
+    ],
   },
 });

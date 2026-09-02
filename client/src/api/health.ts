@@ -3,7 +3,7 @@ import { queryOptions } from "@tanstack/react-query";
 import { apiClient } from "@/api/client";
 import { getApiHealthOptions } from "@/generated/hey-api/@tanstack/react-query.gen";
 import type { getApiHealthQueryKey } from "@/generated/hey-api/@tanstack/react-query.gen";
-import type { ApiError, HealthResponse } from "@/generated/hey-api/types.gen";
+import type { HealthResponse } from "@/generated/hey-api/types.gen";
 
 export type { ApiError, HealthResponse } from "@/generated/hey-api/types.gen";
 
@@ -14,19 +14,41 @@ type HealthQueryContext = Parameters<
   NonNullable<typeof generatedHealthOptions.queryFn>
 >[0];
 
-const isApiError = (error: unknown): error is ApiError =>
-  typeof error === "object" &&
-  error !== null &&
-  "message" in error &&
-  typeof error.message === "string";
+const getApiErrorMessage = (error: unknown): string | undefined => {
+  if (typeof error !== "object" || error === null || error instanceof Error) {
+    return undefined;
+  }
+
+  if (
+    "error" in error &&
+    typeof error.error === "object" &&
+    error.error !== null &&
+    "message" in error.error &&
+    typeof error.error.message === "string" &&
+    error.error.message.trim().length > 0
+  ) {
+    return error.error.message;
+  }
+
+  if (
+    "message" in error &&
+    typeof error.message === "string" &&
+    error.message.trim().length > 0
+  ) {
+    return error.message;
+  }
+
+  return undefined;
+};
 
 const normalizeHealthError = (error: unknown): HealthQueryError => {
   if (error instanceof Error) {
     return error;
   }
 
-  if (isApiError(error)) {
-    return new Error(error.message, { cause: error });
+  const apiErrorMessage = getApiErrorMessage(error);
+  if (apiErrorMessage !== undefined) {
+    return new Error(apiErrorMessage, { cause: error });
   }
 
   if (typeof error === "string") {

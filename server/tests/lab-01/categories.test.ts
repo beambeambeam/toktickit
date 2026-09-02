@@ -33,12 +33,19 @@ const isCategoryResponse = (value: unknown): value is CategoryResponse =>
   "name" in value &&
   typeof value.name === "string";
 
+const isJsonObject = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
 const getCategoryNames = (value: unknown): string[] => {
-  if (!Array.isArray(value) || !value.every(isCategoryResponse)) {
+  if (
+    !isJsonObject(value) ||
+    !Array.isArray(value.items) ||
+    !value.items.every(isCategoryResponse)
+  ) {
     throw new TypeError("Expected a category response");
   }
 
-  return value.map((category) => category.name);
+  return value.items.map((category) => category.name);
 };
 
 if (originalDatabaseUrl === undefined || originalDatabaseUrl.length === 0) {
@@ -171,18 +178,20 @@ describe("Categories API", () => {
       .expect("Content-Type", /json/u)
       .expect(200);
 
-    assert.deepEqual(response.body, [
-      { id: 10, name: "Account and Access" },
-      { id: 20, name: "Hardware" },
-      { id: 30, name: "Network" },
-    ]);
+    assert.deepEqual(response.body, {
+      items: [
+        { id: 10, name: "Account and Access" },
+        { id: 20, name: "Hardware" },
+        { id: 30, name: "Network" },
+      ],
+    });
   });
 
   it("returns an empty array when no Categories are stored", async () => {
     await request(app)
       .get("/api/categories")
       .expect("Content-Type", /json/u)
-      .expect(200, []);
+      .expect(200, { items: [] });
   });
 
   it("returns a safe message when the Category query fails", async () => {
@@ -195,7 +204,10 @@ describe("Categories API", () => {
         .get("/api/categories")
         .expect("Content-Type", /json/u)
         .expect(500, {
-          message: "Unable to retrieve request categories",
+          error: {
+            code: "REFERENCE_DATA_UNAVAILABLE",
+            message: "Unable to load Categories.",
+          },
         });
     } finally {
       await getPrisma().$executeRawUnsafe(

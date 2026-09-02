@@ -4,7 +4,6 @@ import * as z from "zod";
 
 const DEFAULT_PORT = 3000;
 const MAX_PORT = 65_535;
-
 export const env = createEnv({
   emptyStringAsUndefined: true,
   runtimeEnvStrict: {

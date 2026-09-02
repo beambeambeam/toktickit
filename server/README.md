@@ -30,13 +30,15 @@ Apply the committed migrations:
 pnpm db:migrate
 ```
 
-Seed the canonical request categories:
+Seed the canonical Lab 2 reference data:
 
 ```sh
 pnpm db:seed
 ```
 
-The seed is safe to run repeatedly. It uses category names as the idempotency key and preserves unrelated categories.
+The seed is safe to run repeatedly. It uses reference-data names/emails as idempotency keys and preserves unrelated records. It creates the Lab 2 Categories, Related Systems, four active Development Requesters, and one inactive Requester used to verify active-only selection.
+
+Ticket Attachments are stored outside the public application bundle under `ATTACHMENT_STORAGE_DIR`. The default is `server/.data/attachments`; override it for local/test storage. Files use generated opaque storage keys and are removed on failed persistence attempts.
 
 When a data model is changed, create and apply a named development migration:
 
