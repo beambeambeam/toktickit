@@ -280,3 +280,16 @@ The response shapes use these fields:
 - The primary test seam is the browser flow; API and client seams make failures, ownership, validation, and feedback deterministic and fast.
 - The development selector must never be described as a login screen in the UI, API, documentation, screenshots, or final PDF.
 - The repository and final `main` branch remain the source of truth. GitHub Issues, PRs, rendered documents, test output, screenshots, and the final PDF provide traceable evidence of the work.
+
+## 12. Issue #37 implementation addendum — My Tickets discovery
+
+Issue #37 hardens the existing requester-scoped My Tickets slice. The selected Development Requester remains the temporary context boundary; switching context clears the visible list and reloads it under the new requester before any replacement rows are shown.
+
+Resolved implementation decisions:
+
+- `GET /api/tickets` searches Ticket Number, Summary, and Description; filters Category, Related System, Requested Priority, and Current Status; supports the documented sort fields and directions; and returns page, page size, total item count, and total page count.
+- The server rejects repeated, nested, malformed, unsupported, and out-of-range query values with the safe validation envelope. Ownership is applied in the database query, not by client-side filtering.
+- The client validates the list response at the API boundary and refuses malformed payloads as safe errors. Failed refetches do not leave stale rows or stale pagination metadata visible.
+- The UI provides draft-aware Clear Filters, numbered pagination with a current-page indicator, empty versus no-results messaging, retryable list/filter-data failures, and responsive table/card presentation aligned to the supplied My Tickets reference. IT Priority and Ticket Owner remain outside Lab 2 scope.
+
+Traceability: Issue #37 acceptance is covered by `server/tests/lab-02/requester-ticketing.test.ts`, `client/tests/lab-02/requester-api.test.ts`, and `client/tests/lab-02/my-tickets.test.tsx`. These tests cover ownership isolation, search/filter/sort/pagination, invalid queries, malformed responses, draft clearing, empty/no-results states, retry, and requester-context switching.

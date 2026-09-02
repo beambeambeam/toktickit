@@ -251,4 +251,12 @@ Implemented on the Lab 2 feature branch:
 - Attachment content is stored under `ATTACHMENT_STORAGE_DIR` using generated opaque keys; the directory is not public web storage.
 - `pnpm openapi:check` passes, and the implemented API behavior is covered by `server/tests/lab-02/rules.test.ts` and `server/tests/lab-02/requester-ticketing.test.ts`.
 
-The contract remains broader than the current automated boundary suite in a few areas, including exhaustive query permutations, failure-injection cases, and a browser E2E harness. Those gaps remain visible in [tests.md](./tests.md); no unverified status is claimed here.
+The contract remains broader than the current automated boundary suite in a few areas, including exhaustive failure-injection permutations. Those gaps remain visible in [tests.md](./tests.md); no unverified status is claimed here.
+
+## 8. Issue #37 implementation decisions and evidence
+
+The existing `GET /api/tickets` contract is implemented as a requester-owned, paginated list. Search covers `ticketNumber`, `summary`, and `description`. Category, Related System, Requested Priority, and Current Status are independent filters. Supported sort fields use the requested direction and an immutable Ticket `id` secondary key for deterministic ordering. The response includes `page`, `pageSize`, `totalItems`, and `totalPages`.
+
+Query parsing is strict: repeated parameters, nested keys, non-decimal integers, unsupported fields, invalid enum values, and invalid page-size values return `400 VALIDATION_ERROR`; invalid input never silently falls back to defaults. The client adapter also validates the response shape before exposing it to the UI and returns a safe `ApiRequestError` for malformed payloads.
+
+Issue #37 API coverage: `server/tests/lab-02/requester-ticketing.test.ts` verifies search across documented fields, all list filters, deterministic ascending/descending pagination, metadata, ownership, and invalid query forms. `client/tests/lab-02/requester-api.test.ts` verifies malformed list-response rejection.

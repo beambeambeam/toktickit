@@ -115,6 +115,20 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
     path: evidencePath("my-tickets", `${slug}-owned.png`),
   });
 
+  await page.getByLabel("Search").fill(`no-results-${uniqueId}`);
+  await page.getByRole("button", { exact: true, name: "Search" }).click();
+  await expect(page.getByText("No matching Tickets")).toBeVisible();
+  await page.screenshot({
+    fullPage: true,
+    path: evidencePath("my-tickets", `${slug}-no-results.png`),
+  });
+  await page
+    .getByRole("button", { exact: true, name: "Clear Filters" })
+    .click();
+  await expect(
+    page.getByRole("link", { name: createdTicketNumber })
+  ).toBeVisible();
+
   await page.getByRole("link", { name: createdTicketNumber }).click();
   await expect(
     page.getByRole("heading", { name: "Ticket Detail" })
@@ -171,9 +185,14 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
   await page.locator("#development-requester").selectOption("2");
   await page.getByRole("button", { name: "Continue" }).click();
   await expect(page).toHaveURL(/\/tickets$/u);
+  await expect(page.getByText("No Tickets yet")).toBeVisible();
   await expect(
     page.getByRole("link", { name: createdTicketNumber })
   ).toHaveCount(0);
+  await page.screenshot({
+    fullPage: true,
+    path: evidencePath("my-tickets", `${slug}-empty.png`),
+  });
   await page.screenshot({
     fullPage: true,
     path: evidencePath("my-tickets", `${slug}-ownership.png`),

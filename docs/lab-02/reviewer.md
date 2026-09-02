@@ -13,31 +13,13 @@ The same pair reviewed in both directions. Kiatisak reviewed Supawit's work in [
 
 ## Review received
 
-### PR #39 — Lab 2 specification
+Supawit's Lab 2 work was reviewed by Kiatisak in the following Issue-backed PRs.
 
-[beambeambeam/toktickit#39](https://github.com/beambeambeam/toktickit/pull/39) · `feature/5-requester-create` into `lab2-staging` · linked to Issue #35
-
-| Event | GitHub evidence |
-| --- | --- |
-| Changes requested | Kiatisak, 2026-08-19 07:09 UTC |
-| Finding | Functional Requirements and Business Rules were not numbered as required by labsheet §§4.3 and 8.10 and Part 2 submission evidence. |
-| Response | Commit `356cec9` added numbered FR and BR sections and the companion API, UI, test, review, and AI-use documents. |
-| Follow-up review | Kiatisak approved with `LGTM`, 2026-08-22 17:18 UTC. |
-| Merge | Kiatisak merged the approved PR, 2026-08-28 16:12 UTC. |
-
-Two automated inline findings were also resolved in commit `70362f6`: attachment removal reasons now share a 3–500 character limit across the specification, API, UI, Issues, and planned tests; attachment creation now defines file-write, database-transaction, and cleanup ordering so failed requests do not leave persisted metadata or orphan files.
-
-Result: the blocking human finding and both automated contract findings were resolved before merge. PR #42 now has a recorded implementation review; its follow-up approval remains pending.
-
-### PR #42 — Issue #36 requester ticketing flow
-
-[beambeambeam/toktickit#42](https://github.com/beambeambeam/toktickit/pull/42) · `feature/36-requester-context-create-ticket` into `lab2-staging` · linked to Issue #36
-
-| Event | GitHub evidence |
-| --- | --- |
-| Changes requested | Kiatisak, 2026-09-02: direct cross-Requester access and blocked removed-Attachment download evidence were missing. |
-| Response | Commit `dc87ecd` added both browser-boundary assertions and unauthorized-detail screenshots; the follow-up also addresses Greptile's P1 concurrency and cleanup findings. |
-| Current status | Re-review and approval pending. |
+| PR | Scope | Review and response | Final state |
+| --- | --- | --- | --- |
+| [#39](https://github.com/beambeambeam/toktickit/pull/39) | Issue #35: Lab 2 specification | Numbered FR and BR sections were required. `356cec9` added them and the companion documents; `70362f6` resolved two automated contract findings. | Approved and merged by Kiatisak on 2026-08-28. |
+| [#42](https://github.com/beambeambeam/toktickit/pull/42) | Issue #36: requester context and ticketing flow | Two blocking evidence gaps and two Greptile P1 Attachment findings were resolved in `dc87ecd` and `9988016`; Kiatisak re-reviewed with `LGTM`. | Approved and merged by Kiatisak on 2026-09-02. |
+| [#43](https://github.com/beambeambeam/toktickit/pull/43) | Issue #37: My Tickets discovery and ownership | Kiatisak found no blocking defects and requested independent API contract cases, 44px/wrapping mobile pagination controls, and empty/no-results screenshot evidence. Follow-up changes address all requested items. | Follow-up human review pending. |
 
 ## Reviews completed for Kiatisak
 
@@ -78,7 +60,19 @@ The 16 findings covered incomplete ticket-list response validation, repeated and
 
 The 11 findings included a race that could exceed the five-attachment limit, concurrent removals overwriting audit data, swallowed file-deletion errors, incomplete cleanup after partial writes, stale ticket-detail requests, uploaded test files accumulating on disk, ownership validation occurring after multipart buffering, and four missing attachment-row requirements: file type, uploading state, invalid state, and unavailable/retry state. Commit `8ba1072` resolved all 11 with per-ticket serialization, conditional removal, targeted cleanup, request lifecycle guards, ownership-first middleware, UI states, and regression tests.
 
+### PR #42 — requester context and ticketing flow
+
+The two blocking findings were evidence gaps, not missing authorization logic. The original E2E only proved that a Ticket link was absent from Requester 2's list; the follow-up captures the Requester 1 Ticket URL, switches requester context, navigates directly to that URL, and asserts the unavailable response. It also requests an active Attachment successfully, removes it, requests the same content URL, and asserts HTTP `404`.
+
+The review also recorded non-blocking notes: §8.8 had no browser computed-colour assertions; §8.7 had no explicit horizontal-scroll check; one large PR provided thin Part 1 branch-history evidence; the reviewer had not read every large UI file in depth; `Closes #36` required the Development panel because the base branch was `lab2-staging`; and the `TKT-\\d{8}-[A-Z0-9]{6}` identifier shape differed from the approved illustration and was flagged as a submission risk, not a requested change. The reviewer separately confirmed the parameterized ownership queries, deterministic secondary sort key, and `ai-use.md` record were sound.
+
+Follow-up verification reported `pnpm run fix`, `pnpm run check-types`, `pnpm run test`, `pnpm test:e2e` (6/6 across desktop, tablet, and mobile), `pnpm run build`, and `pnpm run check` passing.
+
+### PR #43 — My Tickets discovery and ownership
+
+Kiatisak found no blocking defects. The review requested separate API contract cases for search, filters, sorting, pagination, and invalid-query validation; explicit 44px mobile pagination controls and wrapping page buttons; and screenshots for the empty-owned-list and valid no-results states. The follow-up splits the server suite, uses the shared control-height token with wrapping pagination, and captures both states at desktop, tablet, and mobile viewports.
+
 ## Current limitations
 
 - Kiatisak's Issues [#20](https://github.com/Kiatisakk/toktickit/issues/20) and [#21](https://github.com/Kiatisakk/toktickit/issues/21) remain open, so no review can yet be recorded for final report/submission or the Lab 2 release PR.
-- PR #42 has received changes-requested feedback; its follow-up review and approval remain pending.
+- PR #43's follow-up human review remains pending after the requested changes.

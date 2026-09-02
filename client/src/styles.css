@@ -697,6 +697,10 @@ button:disabled,
   align-self: end;
 }
 
+.filter-feedback {
+  margin-bottom: 0;
+}
+
 .ticket-list-card {
   padding: clamp(1rem, 3vw, 1.5rem);
 }
@@ -841,12 +845,38 @@ button:disabled,
 
 .pagination {
   display: flex;
+  flex-wrap: wrap;
   align-items: center;
   justify-content: center;
   gap: 1rem;
   margin-top: 1rem;
   color: var(--muted);
   font-size: 0.86rem;
+}
+
+.pagination-pages {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+.pagination-page {
+  min-width: var(--control-height);
+  min-height: var(--control-height);
+  padding-right: 0.55rem;
+  padding-left: 0.55rem;
+}
+
+.pagination-page[aria-current="page"] {
+  color: #fff;
+  background: var(--primary-green);
+  border-color: var(--primary-green);
+}
+
+.pagination-ellipsis {
+  color: var(--muted);
+  font-weight: 700;
 }
 
 .attachment-list {
@@ -1349,6 +1379,12 @@ button:disabled,
   .pagination {
     justify-content: space-between;
     gap: 0.5rem;
+  }
+
+  .pagination > span {
+    flex-basis: 100%;
+    order: -1;
+    text-align: center;
   }
 
   .pagination .button {

@@ -1,4 +1,8 @@
 import { ApiRequestError } from "@/api/requester";
+import { isRequestedPriority } from "@/lib/ticket-priorities";
+
+export { isRequestedPriority } from "@/lib/ticket-priorities";
+export type { RequestedPriority } from "@/lib/ticket-priorities";
 
 export const MAX_ATTACHMENT_BYTES = 5 * 1024 * 1024;
 export const MAX_ACTIVE_ATTACHMENTS = 5;
@@ -6,8 +10,6 @@ export const MIN_SUMMARY_LENGTH = 5;
 export const MAX_SUMMARY_LENGTH = 120;
 export const MIN_DESCRIPTION_LENGTH = 20;
 export const MAX_DESCRIPTION_LENGTH = 4000;
-
-export type RequestedPriority = "Low" | "Medium" | "High" | "Urgent";
 
 export interface TicketFormValues {
   categoryId: string;
@@ -30,14 +32,6 @@ type AttachmentMediaType = keyof typeof attachmentTypes;
 
 const isAttachmentMediaType = (value: string): value is AttachmentMediaType =>
   value in attachmentTypes;
-
-export const isRequestedPriority = (
-  value: string
-): value is RequestedPriority =>
-  value === "Low" ||
-  value === "Medium" ||
-  value === "High" ||
-  value === "Urgent";
 
 const isTicketFormField = (field: string): field is keyof TicketFormValues =>
   field === "categoryId" ||

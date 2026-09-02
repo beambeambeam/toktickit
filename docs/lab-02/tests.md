@@ -13,6 +13,7 @@ Current implementation status:
 - Local browser flow: manually checked through Requester selection, Ticket creation, My Tickets, Detail, and Attachment lifecycle at desktop and mobile viewport sizes.
 - Browser E2E flow: pass across desktop, tablet, and mobile Chromium projects.
 - Screenshot artifacts: captured under all three required Lab 2 evidence directories.
+- Issue #37 focused list/API suites: pass; client 7 files/40 tests and server 6 files/38 tests after the human-review test split.
 - Final PDF and human approval: Pending.
 
 ## 2. Strategy
@@ -34,12 +35,15 @@ Do not assert private component structure, query syntax, database implementation
 | --- | --- | --- | --- |
 | API-01 | Unit | server/tests/lab-02/rules.test.ts | Ticket Number format, field trimming/validation, list-query defaults, filename normalization, signed-file limits, and active-Attachment count |
 | API-02 | API/integration | server/tests/lab-02/requester-ticketing.test.ts | Active reference data, active-context enforcement, server-derived ownership, valid creation/defaults, validation, list isolation/query errors, Detail isolation, Attachment upload/download/removal, concurrent active-limit enforcement, cleanup retry recovery, and safe failures |
+| API-03 | API/integration | server/tests/lab-02/requester-ticketing.test.ts | Issue #37 list search fields, all documented filters, deterministic sort/pagination metadata, page-size boundaries, and repeated/nested/malformed/unsupported query rejection |
 | UI-01 | UI | client/tests/lab-02/requester-selection.test.tsx | Active Requester loading, inactive exclusion, Continue/context persistence, navigation, and recoverable empty state |
 | UI-02 | Unit | client/tests/lab-02/ticket-rules.test.ts | Form validation, Attachment type/count/size validation, and safe API field-error mapping |
 | UI-03 | UI | client/tests/lab-02/create-ticket.test.tsx | Empty-reference blocking, field-level validation without submission, invalid Attachment feedback, preserved values after API failure, busy duplicate-submit prevention, and saved Ticket Number display |
+| UI-04 | UI | client/tests/lab-02/my-tickets.test.tsx | Issue #37 draft clearing, numbered pagination, empty/no-results distinction, retry, and requester-context switching |
+| UI-05 | Client API boundary | client/tests/lab-02/requester-api.test.ts | Issue #37 malformed Ticket-list response rejection |
 | E2E-01 | Browser E2E | e2e/lab-02/requester-flow.spec.ts | Three-viewport requester selection, Ticket creation with Attachment, generated Ticket Number, My Tickets discovery, direct cross-Requester Ticket access rejection, Detail, active download, soft removal, blocked removed download, and cross-Requester ownership isolation; captures required screenshots |
 
-The implementation also contains the My Tickets and Requester Ticket Detail flows; their interaction coverage is represented by the API integration suite, the manual browser pass, and E2E-01. Expanded UI/style suites remain follow-up work.
+The implementation also contains the Requester Ticket Detail flow; its interaction coverage is represented by the API integration suite, the manual browser pass, and E2E-01. Issue #37 adds focused My Tickets UI and client-boundary coverage.
 
 If implementation needs additional test files, add them here before implementation is marked complete. Do not delete a required path without recording the replacement.
 
@@ -87,10 +91,12 @@ Expected repository commands:
 | --- | --- | --- |
 | `2026-09-02` — `pnpm run fix` | CI formatting/lint write step | Pass |
 | `2026-09-02` — `pnpm run check-types` | Client/server type checking | Pass |
-| `2026-09-02` — `pnpm run test` | Client, OpenAPI, and server tests | Pass: client 32, server 33, OpenAPI check pass |
+| `2026-09-02` — `pnpm run test` | Client, OpenAPI, and server tests | Pass: client 40, server 34, OpenAPI check pass |
 | `2026-09-02` — `pnpm run build` | Client/server production build | Pass |
 | `2026-09-02` — local T3 preview | Desktop/mobile manual flow | Pass for selection, creation, list, Detail, upload/download/remove |
 | `2026-09-02` — `pnpm test:e2e` | Full requester flow and smoke test across desktop/tablet/mobile Chromium | Pass: 6/6 tests; 30 PNG evidence artifacts captured; direct unauthorized Ticket and removed-download requests rejected |
+| `2026-09-03` — `pnpm --filter @toktickit/server exec vitest run tests/lab-02/requester-ticketing.test.ts --reporter=dot` | Human-review follow-up: independent list search, filter, sort, pagination, and validation cases | Pass: 12 tests in the requester Ticket API file |
+| `2026-09-03` — `pnpm test:e2e` | Human-review follow-up: empty and no-results screenshot evidence plus mobile pagination layout | Pass: 6/6 tests; 36 PNG evidence artifacts present; direct unauthorized Ticket and removed-download requests rejected |
 
 Update this table with date, exact command, result, and environment after each vertical slice. Record database setup and any limitation; do not hide skipped or flaky tests.
 
@@ -102,3 +108,15 @@ Update this table with date, exact command, result, and environment after each v
 - Visual checklist: artifacts/lab-02/visual-checklist.md.
 - Final PDF: report area using the exact Part 1 through Part 9 headings from the labsheet.
 - Review traceability: reviewer.md.
+
+## 8. Issue #37 result record
+
+| Command | Result |
+| --- | --- |
+| `pnpm --filter @toktickit/client test -- --run` | Pass: 7 files, 40 tests |
+| `pnpm --filter @toktickit/server test -- --run` | Pass: 6 files, 34 tests |
+| `pnpm --filter @toktickit/client exec vitest run tests/lab-02/requester-api.test.ts` | Pass: malformed response guard |
+| `pnpm --filter @toktickit/client exec vitest run tests/lab-02/my-tickets.test.tsx --reporter=dot` | Pass: 7 My Tickets interaction tests |
+| `pnpm --filter @toktickit/server exec vitest run tests/lab-02/requester-ticketing.test.ts --testNamePattern 'supports documented list' --reporter=dot` | Pass: Issue #37 list contract integration test |
+
+Issue #37 tests run against the repository's jsdom client harness and PostgreSQL-backed server harness. `pnpm run fix`, `pnpm run check-types`, `pnpm run test`, `pnpm run build`, and `pnpm test:e2e` pass on this branch; the two-axis code-review record is appended in `reviewer.md`. Peer/human approval remains pending.

@@ -15,7 +15,9 @@ import type {
   RelatedSystem,
   TicketDetail,
   TicketListResponse,
+  TicketSummary,
 } from "@/generated/hey-api/types.gen";
+import { isRequestedPriority } from "@/lib/ticket-priorities";
 
 export const REQUESTER_HEADER = "X-Development-Requester-Id";
 
@@ -142,6 +144,43 @@ const isNamedReference = (
   typeof value.id === "number" &&
   typeof value.name === "string";
 
+const isCurrentStatus = (
+  value: unknown
+): value is TicketSummary["currentStatus"] => value === "New";
+
+const isPageSize = (value: unknown): value is TicketListResponse["pageSize"] =>
+  value === 10 || value === 25 || value === 50;
+
+const isPositiveSafeInteger = (value: unknown): value is number =>
+  typeof value === "number" && Number.isSafeInteger(value) && value > 0;
+
+const isNonNegativeSafeInteger = (value: unknown): value is number =>
+  typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+
+const isTicketSummary = (value: unknown): value is TicketSummary =>
+  isRecord(value) &&
+  isPositiveSafeInteger(value.id) &&
+  typeof value.ticketNumber === "string" &&
+  typeof value.ticketDate === "string" &&
+  typeof value.summary === "string" &&
+  isNamedReference(value.category) &&
+  isNamedReference(value.relatedSystem) &&
+  isRequestedPriority(value.requestedPriority) &&
+  isCurrentStatus(value.currentStatus) &&
+  typeof value.updatedAt === "string";
+
+const isTicketListResponse = (value: unknown): value is TicketListResponse =>
+  isRecord(value) &&
+  isUnknownArray(value.items) &&
+  value.items.every(isTicketSummary) &&
+  isPositiveSafeInteger(value.page) &&
+  isPageSize(value.pageSize) &&
+  isNonNegativeSafeInteger(value.totalItems) &&
+  isNonNegativeSafeInteger(value.totalPages);
+
+const invalidApiResponse = (message: string): ApiRequestError =>
+  new ApiRequestError(500, message);
+
 const isDevelopmentRequester = (
   value: unknown
 ): value is DevelopmentRequester =>
@@ -159,7 +198,9 @@ const requireItems = <T>(
     !isUnknownArray(body.items) ||
     !body.items.every(isItem)
   ) {
-    throw new Error("The API returned an invalid reference-data response.");
+    throw invalidApiResponse(
+      "The API returned an invalid reference-data response."
+    );
   }
 
   return body.items;
@@ -224,8 +265,8 @@ export const getTickets = async (
   requesterId: number,
   params: TicketListParams,
   signal?: AbortSignal
-): Promise<TicketListResponse> =>
-  await unwrap(
+): Promise<TicketListResponse> => {
+  const body = await unwrap(
     getApiTickets({
       client: apiClient,
       headers: requesterHeaders(requesterId),
@@ -233,6 +274,15 @@ export const getTickets = async (
       signal,
     })
   );
+
+  if (!isTicketListResponse(body)) {
+    throw invalidApiResponse(
+      "The API returned an invalid Ticket-list response."
+    );
+  }
+
+  return body;
+};
 
 export const getTicket = async (
   requesterId: number,

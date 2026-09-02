@@ -197,4 +197,12 @@ Capture desktop, tablet, and mobile views plus required validation, failure, emp
 - No clipping, overlap, horizontal overflow, or hidden actions.
 - Correct Lab 2 scope: Requested Priority and Current Status only.
 
-Evidence captured on 2026-09-02 with `pnpm test:e2e`: Create Ticket (12 PNGs), My Tickets (9 PNGs), and Ticket Detail (9 PNGs) under the required directories. The artifacts cover desktop, tablet, mobile, validation, ownership isolation, direct unauthorized Ticket refusal, active Attachment, and removed Attachment states. The E2E flow also verifies that removed Attachment content returns 404. Final checklist completion and human visual approval remain Pending.
+Initial evidence captured on 2026-09-02 with `pnpm test:e2e`: Create Ticket (12 PNGs), My Tickets (9 PNGs), and Ticket Detail (9 PNGs). On 2026-09-03, the human-review follow-up added empty-list and no-results My Tickets captures for all three viewports; the current artifact set contains Create Ticket (12 PNGs), My Tickets (15 PNGs), and Ticket Detail (9 PNGs). The artifacts cover desktop, tablet, mobile, validation, empty/no-results, ownership isolation, direct unauthorized Ticket refusal, active Attachment, and removed Attachment states. The E2E flow also verifies that removed Attachment content returns 404. Final checklist completion and human visual approval remain Pending.
+
+## 9. Issue #37 implementation decisions and evidence
+
+The My Tickets implementation follows the supplied `reports/lab02/tickets/11.png` direction while retaining only the Lab 2 contract fields. It keeps the green application shell, search/filter row, Create Ticket action, readable list fields, and responsive table-to-card behavior; IT Priority and Ticket Owner are intentionally excluded.
+
+Pagination uses the API's total metadata, previous/next controls, numbered page buttons, an explicit current-page state, and the permitted page-size values. Clear Filters considers both committed query values and the current search draft. Empty owned data and a valid no-results query use different messages. List failures and unavailable filter options expose safe retry actions; loading and refetching are announced with busy/status semantics, and stale rows are hidden after a failed refetch or context switch.
+
+Issue #37 UI coverage is in `client/tests/lab-02/my-tickets.test.tsx`: draft clearing, numbered pagination, empty/no-results distinction, retry, and requester-context switching. API-boundary coverage is in `client/tests/lab-02/requester-api.test.ts`.
