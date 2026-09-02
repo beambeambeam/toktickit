@@ -2,7 +2,7 @@
 
 ## 1. Status
 
-The Lab 2 implementation now has focused unit, API/integration, and UI tests. The larger boundary matrix below remains the contract for future coverage expansion; unautomated visual and human-review evidence is marked explicitly.
+The Lab 2 implementation now has focused unit, API/integration, UI, and browser E2E tests. The larger boundary matrix below remains the contract for future coverage expansion; unautomated visual and human-review evidence is marked explicitly.
 
 Current implementation status:
 
@@ -11,7 +11,9 @@ Current implementation status:
 - Lab 2 server rules and PostgreSQL integration tests: pass.
 - OpenAPI synchronization check: pass.
 - Local browser flow: manually checked through Requester selection, Ticket creation, My Tickets, Detail, and Attachment lifecycle at desktop and mobile viewport sizes.
-- Screenshot artifacts, browser E2E harness, final PDF, and human approval: Pending.
+- Browser E2E flow: pass across desktop, tablet, and mobile Chromium projects.
+- Screenshot artifacts: captured under all three required Lab 2 evidence directories.
+- Final PDF and human approval: Pending.
 
 ## 2. Strategy
 
@@ -35,8 +37,9 @@ Do not assert private component structure, query syntax, database implementation
 | UI-01 | UI | client/tests/lab-02/requester-selection.test.tsx | Active Requester loading, inactive exclusion, Continue/context persistence, navigation, and recoverable empty state |
 | UI-02 | Unit | client/tests/lab-02/ticket-rules.test.ts | Form validation, Attachment type/count/size validation, and safe API field-error mapping |
 | UI-03 | UI | client/tests/lab-02/create-ticket.test.tsx | Empty-reference blocking, field-level validation without submission, invalid Attachment feedback, preserved values after API failure, busy duplicate-submit prevention, and saved Ticket Number display |
+| E2E-01 | Browser E2E | e2e/lab-02/requester-flow.spec.ts | Three-viewport requester selection, Ticket creation with Attachment, generated Ticket Number, My Tickets discovery, Detail, download, soft removal, and cross-Requester ownership isolation; captures required screenshots |
 
-The implementation also contains the My Tickets and Requester Ticket Detail flows; their interaction coverage is currently represented by the API integration suite and the manual browser pass. A dedicated browser E2E harness and the expanded UI/style suites remain follow-up work.
+The implementation also contains the My Tickets and Requester Ticket Detail flows; their interaction coverage is represented by the API integration suite, the manual browser pass, and E2E-01. Expanded UI/style suites remain follow-up work.
 
 If implementation needs additional test files, add them here before implementation is marked complete. Do not delete a required path without recording the replacement.
 
@@ -53,10 +56,10 @@ If implementation needs additional test files, add them here before implementati
 | AC-13 | API-02, manual browser pass |
 | AC-14, AC-15 | API-01, API-02, UI-02, manual browser pass |
 | AC-16 | API-01, API-02, UI-02 |
-| AC-17 | manual browser pass; expanded visual checklist Pending |
-| AC-18 | API-01, API-02, UI-01, UI-02, UI-03, manual browser pass |
+| AC-17 | E2E-01, manual browser pass, screenshot artifacts; expanded visual checklist Pending |
+| AC-18 | API-01, API-02, UI-01, UI-02, UI-03, E2E-01, manual browser pass |
 | AC-19 | This document plus ui-spec.md, api-spec.md, reviewer.md, and ai-use.md |
-| AC-20 | Repository checks pass; final PDF and human evidence Pending |
+| AC-20 | Repository checks and screenshot artifacts pass; final PDF and human approval Pending |
 
 ## 5. Boundary and failure matrix
 
@@ -85,8 +88,8 @@ Expected repository commands:
 | `2026-09-02` — `pnpm run check-types` | Client/server type checking | Pass |
 | `2026-09-02` — `pnpm run test` | Client, OpenAPI, and server tests | Pass: client 32, server 31, OpenAPI check pass |
 | `2026-09-02` — `pnpm run build` | Client/server production build | Pass |
-| `2026-09-02` — local T3 preview | Desktop/mobile manual flow | Pass for selection, creation, list, Detail, upload/download/remove; no evidence artifact committed |
-| Browser E2E command | Full requester flow and screenshots | Pending E2E setup |
+| `2026-09-02` — local T3 preview | Desktop/mobile manual flow | Pass for selection, creation, list, Detail, upload/download/remove |
+| `2026-09-02` — `pnpm test:e2e` | Full requester flow and smoke test across desktop/tablet/mobile Chromium | Pass: 6/6 tests; 27 PNG evidence artifacts captured |
 
 Update this table with date, exact command, result, and environment after each vertical slice. Record database setup and any limitation; do not hide skipped or flaky tests.
 
@@ -94,6 +97,7 @@ Update this table with date, exact command, result, and environment after each v
 
 - Automated output: repository PR/CI checks and this result log.
 - Screenshots: artifacts/lab-02/screenshots/create-ticket/, my-tickets/, and ticket-detail/.
+- E2E source: e2e/lab-02/smoke.spec.ts and e2e/lab-02/requester-flow.spec.ts.
 - Visual checklist: artifacts/lab-02/visual-checklist.md.
 - Final PDF: report area using the exact Part 1 through Part 9 headings from the labsheet.
 - Review traceability: reviewer.md.

@@ -197,4 +197,4 @@ Capture desktop, tablet, and mobile views plus required validation, failure, emp
 - No clipping, overlap, horizontal overflow, or hidden actions.
 - Correct Lab 2 scope: Requested Priority and Current Status only.
 
-Update the checklist and screenshot paths after implementation. Until then, evidence status is Pending.
+Evidence captured on 2026-09-02 with `pnpm test:e2e`: Create Ticket (12 PNGs), My Tickets (9 PNGs), and Ticket Detail (6 PNGs) under the required directories. The artifacts cover desktop, tablet, mobile, validation, ownership isolation, active Attachment, and removed Attachment states. Final checklist completion and human visual approval remain Pending.
