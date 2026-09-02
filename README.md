@@ -92,3 +92,31 @@ pnpm run typecheck
 pnpm run test
 pnpm run build
 ```
+
+## Browser E2E setup
+
+Playwright tests live separately from client and server tests under `e2e/`. Install the Chromium browser once after installing workspace dependencies:
+
+```sh
+pnpm e2e:install
+```
+
+E2E uses the real client and API. Start PostgreSQL and apply the current database setup before running it:
+
+```sh
+pnpm db:start
+pnpm db:migrate
+pnpm db:seed
+pnpm test:e2e
+```
+
+Playwright starts the client and API automatically. Override their addresses with `E2E_BASE_URL` and `E2E_API_URL` when those services already run elsewhere.
+
+Interactive commands:
+
+```sh
+pnpm test:e2e:headed
+pnpm test:e2e:ui
+```
+
+Failure screenshots, traces, videos, and the HTML report are generated under `e2e/test-results/` and `e2e/playwright-report/`; both are ignored by Git. Required course evidence belongs under `artifacts/lab-02/screenshots/` and is committed separately from temporary Playwright diagnostics.
