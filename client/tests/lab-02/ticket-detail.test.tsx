@@ -247,6 +247,15 @@ describe("Requester Ticket Detail page", () => {
   });
 
   it("uploads a valid Attachment and confirms success", async () => {
+    const uploadedAttachment = {
+      ...activeAttachment,
+      id: 103,
+      originalFilename: "extra.png",
+    };
+    getTicketMock.mockResolvedValueOnce(ticket).mockResolvedValue({
+      ...ticket,
+      attachments: [...ticket.attachments, uploadedAttachment],
+    });
     renderTicketDetail();
 
     await screen.findByText("network-error.png");
@@ -266,6 +275,7 @@ describe("Requester Ticket Detail page", () => {
     await screen.findByText("Attachment(s) added successfully.", {
       exact: false,
     });
+    await screen.findByText("extra.png");
   });
 
   it("disables Attachment selection once five active Attachments exist", async () => {
@@ -339,6 +349,9 @@ describe("Requester Ticket Detail page", () => {
       );
     });
     await screen.findByText("Attachment removed.", { exact: false });
+    await waitFor(() => {
+      expect(screen.queryByText("network-error.png")).toBeNull();
+    });
   });
 
   it("downloads an active Attachment through the detail action", async () => {
