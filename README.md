@@ -112,7 +112,7 @@ pnpm db:seed
 pnpm test:e2e
 ```
 
-Playwright starts the client and API automatically. Override their addresses with `E2E_BASE_URL` and `E2E_API_URL` when those services already run elsewhere.
+Playwright starts the client and API automatically. Override their addresses with `E2E_BASE_URL` and `E2E_API_URL` when those services already run elsewhere. The E2E global setup removes tickets created by previous E2E runs (E2E-pattern summaries only) so the empty-state evidence holds on every run; it never touches reference data.
 
 Interactive commands:
 
@@ -121,4 +121,4 @@ pnpm test:e2e:headed
 pnpm test:e2e:ui
 ```
 
-Failure screenshots, traces, videos, and the HTML report are generated under `e2e/test-results/` and `e2e/playwright-report/`; both are ignored by Git. Required course evidence belongs under `artifacts/lab-02/screenshots/` and is committed separately from temporary Playwright diagnostics.
+Failure screenshots, traces, videos, and the HTML report are generated under `e2e/test-results/` and `e2e/playwright-report/`; both are ignored by Git. Required course evidence belongs under `artifacts/lab-02/screenshots/` with the comparison record in `artifacts/lab-02/visual-checklist.md`, and is committed separately from temporary Playwright diagnostics.

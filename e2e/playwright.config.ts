@@ -11,6 +11,7 @@ export default defineConfig({
   expect: { timeout: 10_000 },
   forbidOnly: isCI,
   fullyParallel: false,
+  globalSetup: "./global-setup.ts",
   outputDir: "test-results",
   projects: [
     {
