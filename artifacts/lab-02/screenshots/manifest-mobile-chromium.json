@@ -1,18 +1,30 @@
 {
   "files": [
+    "artifacts/lab-02/screenshots/requester-selection/mobile-chromium-initial.png",
+    "artifacts/lab-02/screenshots/requester-selection/mobile-chromium-selected.png",
     "artifacts/lab-02/screenshots/my-tickets/mobile-chromium-initial.png",
     "artifacts/lab-02/screenshots/create-ticket/mobile-chromium-initial.png",
     "artifacts/lab-02/screenshots/create-ticket/mobile-chromium-validation.png",
+    "artifacts/lab-02/screenshots/create-ticket/mobile-chromium-invalid-attachment.png",
     "artifacts/lab-02/screenshots/create-ticket/mobile-chromium-filled.png",
+    "artifacts/lab-02/screenshots/create-ticket/mobile-chromium-api-failure.png",
+    "artifacts/lab-02/screenshots/create-ticket/mobile-chromium-busy.png",
     "artifacts/lab-02/screenshots/create-ticket/mobile-chromium-success.png",
     "artifacts/lab-02/screenshots/my-tickets/mobile-chromium-owned.png",
+    "artifacts/lab-02/screenshots/my-tickets/mobile-chromium-failure.png",
+    "artifacts/lab-02/screenshots/my-tickets/mobile-chromium-loading.png",
+    "artifacts/lab-02/screenshots/my-tickets/mobile-chromium-filter-failure.png",
     "artifacts/lab-02/screenshots/my-tickets/mobile-chromium-no-results.png",
     "artifacts/lab-02/screenshots/ticket-detail/mobile-chromium-active.png",
+    "artifacts/lab-02/screenshots/ticket-detail/mobile-chromium-invalid-attachment.png",
+    "artifacts/lab-02/screenshots/ticket-detail/mobile-chromium-uploading.png",
+    "artifacts/lab-02/screenshots/ticket-detail/mobile-chromium-uploaded.png",
+    "artifacts/lab-02/screenshots/ticket-detail/mobile-chromium-removal-confirmation.png",
     "artifacts/lab-02/screenshots/ticket-detail/mobile-chromium-removed.png",
     "artifacts/lab-02/screenshots/my-tickets/mobile-chromium-empty.png",
     "artifacts/lab-02/screenshots/my-tickets/mobile-chromium-ownership.png",
     "artifacts/lab-02/screenshots/ticket-detail/mobile-chromium-unauthorized.png"
   ],
-  "generatedAt": "2026-09-03T10:45:01.878Z",
+  "generatedAt": "2026-09-03T15:34:39.569Z",
   "project": "mobile-chromium"
 }
