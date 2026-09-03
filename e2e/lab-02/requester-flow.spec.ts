@@ -2,7 +2,7 @@ import { writeFile } from "node:fs/promises";
 import path from "node:path";
 
 import { expect, test } from "@playwright/test";
-import type { Page } from "@playwright/test";
+import type { Page, Route } from "@playwright/test";
 
 const tinyPng = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=",
@@ -43,6 +43,16 @@ const expectPrimaryHeaderToken = async (page: Page) => {
   );
 
   expect(backgroundColor).toBe("rgb(0, 107, 60)");
+};
+
+const createDeferred = () => {
+  let release!: () => void;
+  // oxlint-disable-next-line promise/avoid-new -- Route gate controls a browser loading state.
+  const promise = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+
+  return { promise, resolve: release };
 };
 
 const isSeedTicketBody = (
@@ -89,7 +99,9 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
   await expect(
     page.getByRole("heading", { name: "Select Development Requester" })
   ).toBeVisible();
+  await capture("requester-selection", `${slug}-initial.png`);
   await page.locator("#development-requester").selectOption("1");
+  await capture("requester-selection", `${slug}-selected.png`);
   await page.getByRole("button", { name: "Continue" }).click();
 
   await expect(page).toHaveURL(/\/tickets$/u);
@@ -110,6 +122,16 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
   ).toBeVisible();
   await capture("create-ticket", `${slug}-validation.png`);
 
+  await page.locator("#attachments").setInputFiles({
+    buffer: Buffer.from("not permitted"),
+    mimeType: "text/plain",
+    name: "notes.txt",
+  });
+  await expect(
+    page.getByText("notes.txt: use JPG, JPEG, PNG, WEBP, or PDF.")
+  ).toBeVisible();
+  await capture("create-ticket", `${slug}-invalid-attachment.png`);
+
   await page.locator("#categoryId").selectOption("1");
   await page.locator("#relatedSystemId").selectOption("1");
   await page.getByLabel("Ticket Summary").fill(summary);
@@ -128,12 +150,48 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
   await capture("create-ticket", `${slug}-filled.png`);
   await expectNoHorizontalOverflow(page);
 
+  const createRoutePattern = /\/api\/tickets$/u;
+  let failNextCreate = true;
+  const createFailureRoute = async (route: Route) => {
+    if (failNextCreate && route.request().method() === "POST") {
+      failNextCreate = false;
+      await route.abort("failed");
+      return;
+    }
+
+    await route.continue();
+  };
+  await page.route(createRoutePattern, createFailureRoute);
   await page
     .getByRole("button", { exact: true, name: "Create Ticket" })
     .click();
+  await expect(page.getByRole("alert")).toContainText(
+    "Unable to connect to TokTickIT API"
+  );
+  await capture("create-ticket", `${slug}-api-failure.png`);
+  await page.unroute(createRoutePattern, createFailureRoute);
+
+  const createGate = createDeferred();
+  let holdNextCreate = true;
+  const createBusyRoute = async (route: Route) => {
+    if (holdNextCreate && route.request().method() === "POST") {
+      holdNextCreate = false;
+      await createGate.promise;
+    }
+
+    await route.continue();
+  };
+  await page.route(createRoutePattern, createBusyRoute);
+  await page
+    .getByRole("button", { exact: true, name: "Create Ticket" })
+    .click();
+  await expect(page.getByText("Creating your Ticket…")).toBeVisible();
+  await capture("create-ticket", `${slug}-busy.png`);
+  createGate.resolve();
   await expect(
     page.getByRole("heading", { name: "Ticket created" })
   ).toBeVisible();
+  await page.unroute(createRoutePattern, createBusyRoute);
   const ticketNumber = page.locator(".created-ticket-number strong");
   await expect(ticketNumber).toHaveText(/^TKT-\d{8}-[A-Z0-9]{6}$/u);
   const createdTicketNumber = await ticketNumber.textContent();
@@ -154,6 +212,67 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
   await capture("my-tickets", `${slug}-owned.png`);
   await expectNoHorizontalOverflow(page);
   await expectPrimaryHeaderToken(page);
+
+  const ticketsRoutePattern = /\/api\/tickets(?:\?.*)?$/u;
+  let failListRequests = true;
+  const listFailureRoute = async (route: Route) => {
+    if (failListRequests && route.request().method() === "GET") {
+      await route.abort("failed");
+      return;
+    }
+
+    await route.continue();
+  };
+  await page.route(ticketsRoutePattern, listFailureRoute);
+  await page.reload();
+  await expect(page.getByText("Could not load My Tickets.")).toBeVisible();
+  await capture("my-tickets", `${slug}-failure.png`);
+  failListRequests = false;
+  await page.unroute(ticketsRoutePattern, listFailureRoute);
+  await page.getByRole("button", { exact: true, name: "Retry" }).click();
+  await expect(createdTicketLink).toBeVisible();
+
+  const listGate = createDeferred();
+  let holdNextList = true;
+  const listLoadingRoute = async (route: Route) => {
+    if (holdNextList && route.request().method() === "GET") {
+      holdNextList = false;
+      await listGate.promise;
+    }
+
+    await route.continue();
+  };
+  await page.route(ticketsRoutePattern, listLoadingRoute);
+  const reloadPromise = page.reload();
+  await expect(page.getByText("Loading your Tickets…")).toBeVisible();
+  await capture("my-tickets", `${slug}-loading.png`);
+  listGate.resolve();
+  await reloadPromise;
+  await expect(createdTicketLink).toBeVisible();
+  await page.unroute(ticketsRoutePattern, listLoadingRoute);
+
+  const categoriesRoutePattern = /\/api\/categories$/u;
+  let failCategoryRequests = true;
+  const categoryFailureRoute = async (route: Route) => {
+    if (failCategoryRequests && route.request().method() === "GET") {
+      await route.abort("failed");
+      return;
+    }
+
+    await route.continue();
+  };
+  await page.route(categoriesRoutePattern, categoryFailureRoute);
+  await page.reload();
+  await expect(
+    page.getByText("Some filter options are unavailable.")
+  ).toBeVisible();
+  await capture("my-tickets", `${slug}-filter-failure.png`);
+  failCategoryRequests = false;
+  await page.unroute(categoriesRoutePattern, categoryFailureRoute);
+  await page.getByRole("button", { name: "Retry filter options" }).click();
+  await expect(page.locator("#ticket-category-filter")).toContainText(
+    "Account and Access"
+  );
 
   await page.getByLabel("Search").fill(`no-results-${uniqueId}`);
   await page.getByRole("button", { exact: true, name: "Search" }).click();
@@ -180,13 +299,54 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
   await capture("ticket-detail", `${slug}-active.png`);
   await expectNoHorizontalOverflow(page);
 
+  await page.locator("#attachments").setInputFiles({
+    buffer: Buffer.from("not permitted"),
+    mimeType: "text/plain",
+    name: "notes.txt",
+  });
+  await expect(
+    page.getByText("notes.txt: use JPG, JPEG, PNG, WEBP, or PDF.")
+  ).toBeVisible();
+  await capture("ticket-detail", `${slug}-invalid-attachment.png`);
+
+  const additionalAttachmentName = `additional-evidence-${slug}.png`;
+  await page.locator("#attachments").setInputFiles({
+    buffer: tinyPng,
+    mimeType: "image/png",
+    name: additionalAttachmentName,
+  });
+  const uploadGate = createDeferred();
+  let holdNextUpload = true;
+  const uploadRoutePattern = /\/api\/tickets\/\d+\/attachments$/u;
+  const uploadRoute = async (route: Route) => {
+    if (holdNextUpload && route.request().method() === "POST") {
+      holdNextUpload = false;
+      await uploadGate.promise;
+    }
+
+    await route.continue();
+  };
+  await page.route(uploadRoutePattern, uploadRoute);
+  await page.getByRole("button", { name: "Add Attachment(s)" }).click();
+  await expect(page.getByRole("button", { name: "Uploading…" })).toBeVisible();
+  await capture("ticket-detail", `${slug}-uploading.png`);
+  uploadGate.resolve();
+  await expect(
+    page.getByText("Attachment(s) added successfully.")
+  ).toBeVisible();
+  await expect(
+    page.getByRole("heading", { name: additionalAttachmentName })
+  ).toBeVisible();
+  await capture("ticket-detail", `${slug}-uploaded.png`);
+  await page.unroute(uploadRoutePattern, uploadRoute);
+
   const attachmentContentRequestPromise = page.waitForRequest((request) =>
     /\/api\/tickets\/\d+\/attachments\/\d+\/content$/u.test(
       new URL(request.url()).pathname
     )
   );
   const downloadPromise = page.waitForEvent("download");
-  await page.getByRole("button", { name: "Download" }).click();
+  await attachmentRow.getByRole("button", { name: "Download" }).click();
   const [attachmentContentRequest, download] = await Promise.all([
     attachmentContentRequestPromise,
     downloadPromise,
@@ -199,9 +359,10 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
   });
   expect(foreignRead.status()).toBe(404);
 
-  await page.getByRole("button", { name: "Remove" }).click();
+  await attachmentRow.getByRole("button", { name: "Remove" }).click();
   const removalDialog = page.getByRole("alertdialog");
   await expect(removalDialog).toBeVisible();
+  await capture("ticket-detail", `${slug}-removal-confirmation.png`);
   await removalDialog
     .getByLabel("Removal reason")
     .fill("Duplicate evidence file");
