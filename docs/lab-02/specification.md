@@ -306,7 +306,7 @@ Resolved implementation decisions:
 - Removal deletes file content before committing removal metadata, so a cleanup failure stays retryable and never leaves metadata claiming removal while content remains. A second removal of the same Attachment returns the safe not-found response.
 - Removal requires UI confirmation and a trimmed reason of 3–500 characters on both client and server. The dialog states that metadata remains in Ticket history.
 - Download streams active owned Attachments only; removed, missing, or unowned content returns the safe not-found response and has no download or preview action in the UI.
-- The Detail screen follows `reports/lab02/tickets/02.png` as visual direction while keeping only the Lab 2 contract fields; comments, service actions, event log, resolution, IT Priority, and Ticket Owner remain excluded.
+- The Detail screen follows the labsheet Requester Ticket Detail figure (§12.6, `Lab_02_labsheet_2.png`, p. 2) as visual direction while keeping only the Lab 2 contract fields; comments, service actions, event log, resolution, IT Priority, and Ticket Owner remain excluded.
 - Responsive behavior reuses the app breakpoints: two-column detail grid on tablet (768–991 px), stacked fields with full-width Attachment actions on mobile (below 768 px), no horizontal page scrolling or hidden actions.
 - Submission evidence comprises 36 E2E-captured PNGs under `artifacts/lab-02/screenshots/` (Create Ticket, My Tickets, Ticket Detail across desktop/tablet/mobile), the `artifacts/lab-02/visual-checklist.md` comparison record, the six living documents, and the final PDF using exactly the Answer Part 1 through Part 9 headings.
 

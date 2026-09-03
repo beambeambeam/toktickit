@@ -201,7 +201,7 @@ Initial evidence captured on 2026-09-02 with `pnpm test:e2e`: Create Ticket (12 
 
 ## 9. Issue #37 implementation decisions and evidence
 
-The My Tickets implementation follows the supplied `reports/lab02/tickets/11.png` direction while retaining only the Lab 2 contract fields. It keeps the green application shell, search/filter row, Create Ticket action, readable list fields, and responsive table-to-card behavior; IT Priority and Ticket Owner are intentionally excluded.
+The My Tickets implementation follows the labsheet My Tickets figure (§12.5, `Lab_02_labsheet_10.png`, p. 10) as visual direction while retaining only the Lab 2 contract fields. It keeps the green application shell, search/filter row, Create Ticket action, readable list fields, and responsive table-to-card behavior; IT Priority and Ticket Owner are intentionally excluded.
 
 Pagination uses the API's total metadata, previous/next controls, numbered page buttons, an explicit current-page state, and the permitted page-size values. Clear Filters considers both committed query values and the current search draft. Empty owned data and a valid no-results query use different messages. List failures and unavailable filter options expose safe retry actions; loading and refetching are announced with busy/status semantics, and stale rows are hidden after a failed refetch or context switch.
 
@@ -211,7 +211,7 @@ Issue #37 UI coverage is in `client/tests/lab-02/my-tickets.test.tsx`: draft cle
 
 Issue #38 confirms the Ticket Detail screen implemented under Issue #36 against the §4.4 contract; no excluded concept was added.
 
-- The screen follows the supplied `reports/lab02/tickets/02.png` direction while retaining only Lab 2 fields: Ticket Number, Ticket Date, Requester, Category, Related System, Requested Priority, Current Status, Summary, Description, and Last Updated, all read-only and visually separated from Attachment actions.
+- The screen follows the labsheet Requester Ticket Detail figure (§12.6, `Lab_02_labsheet_2.png`, p. 2) as visual direction while retaining only Lab 2 fields: Ticket Number, Ticket Date, Requester, Category, Related System, Requested Priority, Current Status, Summary, Description, and Last Updated, all read-only and visually separated from Attachment actions.
 - Attachment rows show filename, type, size, upload time, and an explicit `Active` (`●`) or `Removed` (`×`) state label with text, never color alone. Active rows offer Download and Remove; removed rows retain metadata and reason with no download or preview action.
 - The picker reports `Uploading` (disabled busy button), `Invalid` (inline reason beside the control, file never submitted), and unavailable picker state once five active Attachments exist. Removal uses a confirmation `alertdialog` that explains metadata retention and requires a trimmed 3–500 character reason with the message beside the field.
 - Responsive behavior: two-column detail grid on tablet, stacked fields with full-width Attachment actions on mobile, long filenames and reasons wrapping without breaking actions.

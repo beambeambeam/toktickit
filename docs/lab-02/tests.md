@@ -100,7 +100,7 @@ Expected repository commands:
 | `2026-09-02` — `pnpm test:e2e` | Full requester flow and smoke test across desktop/tablet/mobile Chromium | Pass: 6/6 tests; 30 PNG evidence artifacts captured; direct unauthorized Ticket and removed-download requests rejected |
 | `2026-09-03` — `pnpm --filter @toktickit/server exec vitest run tests/lab-02/requester-ticketing.test.ts --reporter=dot` | Human-review follow-up: independent list search, filter, sort, pagination, and validation cases | Pass: 12 tests in the requester Ticket API file |
 | `2026-09-03` — `pnpm test:e2e` | Human-review follow-up: empty and no-results screenshot evidence plus mobile pagination layout | Pass: 6/6 tests; 36 PNG evidence artifacts present; direct unauthorized Ticket and removed-download requests rejected |
-| `2026-09-03` — `pnpm run fix`, `pnpm run check-types`, `pnpm run test`, `pnpm run build`, `pnpm test:e2e` | Issue #38 full verification on `feature/38-ticket-detail-attachments-evidence` | Pass: lint clean; types pass; client 8 files/50 tests; server 6 files/38 tests; OpenAPI check pass; build pass; E2E 6/6 with 36 PNGs present (27 regenerated, 9 byte-identical static states) |
+| `2026-09-03` — `pnpm run fix`, `pnpm run check-types`, `pnpm run test`, `pnpm run build`, `pnpm test:e2e` | Issue #38 full verification on `feature/38-ticket-detail-attachments-evidence` | Pass: lint clean; types pass; client 8 files/50 tests; server 6 files/38 tests; OpenAPI check pass; build pass; E2E 6/6 with 36 PNGs plus per-project run manifests; cross-requester attachment 404, seeded isolation list, overflow, and header-token assertions green; repeat runs verified back-to-back |
 
 Update this table with date, exact command, result, and environment after each vertical slice. Record database setup and any limitation; do not hide skipped or flaky tests.
 
@@ -108,8 +108,10 @@ Update this table with date, exact command, result, and environment after each v
 
 - Automated output: repository PR/CI checks and this result log.
 - Screenshots: artifacts/lab-02/screenshots/create-ticket/, my-tickets/, and ticket-detail/.
+- Run manifests: artifacts/lab-02/screenshots/manifest-<project>.json records the timestamp and every screenshot file its run produced.
 - E2E source: e2e/lab-02/smoke.spec.ts and e2e/lab-02/requester-flow.spec.ts.
-- Visual checklist: artifacts/lab-02/visual-checklist.md.
+- E2E repeatability: e2e/global-setup.ts runs server/scripts/reset-e2e-tickets.ts before the suite, removing only E2E-pattern tickets so the empty-state captures hold on every run. Each viewport isolates against its own seeded Requester (desktop 2, tablet 3, mobile 4).
+- Visual checklist: artifacts/lab-02/visual-checklist.md, with each row marked machine-asserted or human-judged.
 - Final PDF: report area using the exact Part 1 through Part 9 headings from the labsheet.
 - Review traceability: reviewer.md.
 
@@ -134,6 +136,6 @@ Issue #37 tests run against the repository's jsdom client harness and PostgreSQL
 | `pnpm run test` | Pass: client 8 files/50 tests, OpenAPI check pass, server 6 files/38 tests |
 | `pnpm --filter @toktickit/client exec vitest run tests/lab-02/ticket-detail.test.tsx` | Pass: 10 Ticket Detail interaction tests |
 | `pnpm run build` | Pass: client and server production build |
-| `2026-09-03` — `pnpm test:e2e` | Pass: 6/6 tests across desktop/tablet/mobile Chromium; 36 PNG evidence artifacts present (27 regenerated, 9 byte-identical static states); direct unauthorized Ticket and removed-download requests rejected |
+| `2026-09-03` — `pnpm test:e2e` | Pass: 6/6 tests across desktop/tablet/mobile Chromium; 36 PNG evidence artifacts present plus per-project run manifests; direct unauthorized Ticket, cross-requester Attachment, and removed-download requests rejected; seeded isolation lists verified; back-to-back runs green |
 
 Issue #38 tests run against the repository's jsdom client harness and PostgreSQL-backed server harness (local PostgreSQL 17 via Docker). No test was skipped, disabled, or commented out. Peer review of this slice is pending in `reviewer.md`. The final PDF under `reports/lab02/` already uses the exact Answer Part 1 through Part 9 headings but is git-ignored build output; regenerating it from the finalized sources and human approval remain pending.
