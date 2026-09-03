@@ -4,9 +4,114 @@ export type ClientOptions = {
     baseUrl: 'http://localhost:3000' | (string & {});
 };
 
+export type ApiError = {
+    error: ApiErrorBody;
+};
+
+export type ApiErrorBody = {
+    code: string;
+    message: string;
+    details?: {
+        [key: string]: unknown;
+    };
+};
+
 export type Category = {
     id: number;
     name: string;
+};
+
+export type CategoryListResponse = {
+    items: Array<Category>;
+};
+
+export type RelatedSystem = {
+    id: number;
+    name: string;
+};
+
+export type RelatedSystemListResponse = {
+    items: Array<RelatedSystem>;
+};
+
+export type DevelopmentRequester = {
+    id: number;
+    displayName: string;
+    email: string;
+};
+
+export type DevelopmentRequesterListResponse = {
+    items: Array<DevelopmentRequester>;
+};
+
+export type RequestedPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
+
+export type CurrentStatus = 'New';
+
+export type AttachmentMetadata = {
+    id: number;
+    originalFilename: string;
+    mediaType: string;
+    byteSize: number;
+    uploadedAt: string;
+    state: 'Active' | 'Removed';
+    removedAt: string | null;
+    removalReason: string | null;
+};
+
+export type AttachmentListResponse = {
+    attachments: Array<AttachmentMetadata>;
+};
+
+export type TicketSummary = {
+    id: number;
+    ticketNumber: string;
+    ticketDate: string;
+    summary: string;
+    category: Category;
+    relatedSystem: RelatedSystem;
+    requestedPriority: RequestedPriority;
+    currentStatus: CurrentStatus;
+    updatedAt: string;
+};
+
+export type TicketDetail = TicketSummary & {
+    requester: DevelopmentRequester;
+    description: string;
+    attachments: Array<AttachmentMetadata>;
+};
+
+export type TicketListResponse = {
+    items: Array<TicketSummary>;
+    page: number;
+    pageSize: 10 | 25 | 50;
+    totalItems: number;
+    totalPages: number;
+};
+
+export type CreateTicketRequest = {
+    categoryId: number;
+    relatedSystemId: number;
+    summary: string;
+    description: string;
+    requestedPriority: RequestedPriority;
+    attachments?: Array<Blob | File>;
+};
+
+export type CreateTicketResponse = {
+    ticket: TicketDetail;
+};
+
+export type AttachmentUploadRequest = {
+    attachments: Array<Blob | File>;
+};
+
+export type RemoveAttachmentRequest = {
+    reason: string;
+};
+
+export type RemoveAttachmentResponse = {
+    attachment: AttachmentMetadata;
 };
 
 export type HealthResponse = {
@@ -14,9 +119,32 @@ export type HealthResponse = {
     service: 'TokTickIT API';
 };
 
-export type ApiError = {
-    message: string;
-};
+/**
+ * Temporary Lab 2 test context; not authentication.
+ */
+export type DevelopmentRequesterId = number;
+
+export type TicketId = number;
+
+export type AttachmentId = number;
+
+export type Search = string;
+
+export type CategoryId = number;
+
+export type RelatedSystemId = number;
+
+export type RequestedPriority2 = RequestedPriority;
+
+export type CurrentStatus2 = CurrentStatus;
+
+export type SortBy = 'ticketNumber' | 'ticketDate' | 'summary' | 'requestedPriority' | 'currentStatus' | 'updatedAt';
+
+export type SortDirection = 'asc' | 'desc';
+
+export type Page = number;
+
+export type PageSize = 10 | 25 | 50;
 
 export type GetApiCategoriesData = {
     body?: never;
@@ -36,12 +164,62 @@ export type GetApiCategoriesError = GetApiCategoriesErrors[keyof GetApiCategorie
 
 export type GetApiCategoriesResponses = {
     /**
-     * The supported request categories.
+     * The active Categories.
      */
-    200: Array<Category>;
+    200: CategoryListResponse;
 };
 
 export type GetApiCategoriesResponse = GetApiCategoriesResponses[keyof GetApiCategoriesResponses];
+
+export type GetApiRelatedSystemsData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/related-systems';
+};
+
+export type GetApiRelatedSystemsErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiRelatedSystemsError = GetApiRelatedSystemsErrors[keyof GetApiRelatedSystemsErrors];
+
+export type GetApiRelatedSystemsResponses = {
+    /**
+     * The active Related Systems.
+     */
+    200: RelatedSystemListResponse;
+};
+
+export type GetApiRelatedSystemsResponse = GetApiRelatedSystemsResponses[keyof GetApiRelatedSystemsResponses];
+
+export type GetApiDevelopmentRequestersData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/development-requesters';
+};
+
+export type GetApiDevelopmentRequestersErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiDevelopmentRequestersError = GetApiDevelopmentRequestersErrors[keyof GetApiDevelopmentRequestersErrors];
+
+export type GetApiDevelopmentRequestersResponses = {
+    /**
+     * The active Development Requesters.
+     */
+    200: DevelopmentRequesterListResponse;
+};
+
+export type GetApiDevelopmentRequestersResponse = GetApiDevelopmentRequestersResponses[keyof GetApiDevelopmentRequestersResponses];
 
 export type GetApiHealthData = {
     body?: never;
@@ -67,3 +245,318 @@ export type GetApiHealthResponses = {
 };
 
 export type GetApiHealthResponse = GetApiHealthResponses[keyof GetApiHealthResponses];
+
+export type GetApiTicketsData = {
+    body?: never;
+    headers: {
+        /**
+         * Temporary Lab 2 test context; not authentication.
+         */
+        'X-Development-Requester-Id': number;
+    };
+    path?: never;
+    query?: {
+        search?: string;
+        categoryId?: number;
+        relatedSystemId?: number;
+        requestedPriority?: RequestedPriority;
+        currentStatus?: CurrentStatus;
+        sortBy?: 'ticketNumber' | 'ticketDate' | 'summary' | 'requestedPriority' | 'currentStatus' | 'updatedAt';
+        sortDirection?: 'asc' | 'desc';
+        page?: number;
+        pageSize?: 10 | 25 | 50;
+    };
+    url: '/api/tickets';
+};
+
+export type GetApiTicketsErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiTicketsError = GetApiTicketsErrors[keyof GetApiTicketsErrors];
+
+export type GetApiTicketsResponses = {
+    /**
+     * The owned Ticket page.
+     */
+    200: TicketListResponse;
+};
+
+export type GetApiTicketsResponse = GetApiTicketsResponses[keyof GetApiTicketsResponses];
+
+export type CreateApiTicketData = {
+    body: CreateTicketRequest;
+    headers: {
+        /**
+         * Temporary Lab 2 test context; not authentication.
+         */
+        'X-Development-Requester-Id': number;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/tickets';
+};
+
+export type CreateApiTicketErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    413: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    415: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type CreateApiTicketError = CreateApiTicketErrors[keyof CreateApiTicketErrors];
+
+export type CreateApiTicketResponses = {
+    /**
+     * The created Ticket.
+     */
+    201: CreateTicketResponse;
+};
+
+export type CreateApiTicketResponse = CreateApiTicketResponses[keyof CreateApiTicketResponses];
+
+export type GetApiTicketData = {
+    body?: never;
+    headers: {
+        /**
+         * Temporary Lab 2 test context; not authentication.
+         */
+        'X-Development-Requester-Id': number;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}';
+};
+
+export type GetApiTicketErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiTicketError = GetApiTicketErrors[keyof GetApiTicketErrors];
+
+export type GetApiTicketResponses = {
+    /**
+     * The owned Ticket Detail.
+     */
+    200: TicketDetail;
+};
+
+export type GetApiTicketResponse = GetApiTicketResponses[keyof GetApiTicketResponses];
+
+export type GetApiTicketAttachmentsData = {
+    body?: never;
+    headers: {
+        /**
+         * Temporary Lab 2 test context; not authentication.
+         */
+        'X-Development-Requester-Id': number;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/attachments';
+};
+
+export type GetApiTicketAttachmentsErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiTicketAttachmentsError = GetApiTicketAttachmentsErrors[keyof GetApiTicketAttachmentsErrors];
+
+export type GetApiTicketAttachmentsResponses = {
+    /**
+     * Attachment metadata for the owned Ticket.
+     */
+    200: AttachmentListResponse;
+};
+
+export type GetApiTicketAttachmentsResponse = GetApiTicketAttachmentsResponses[keyof GetApiTicketAttachmentsResponses];
+
+export type CreateApiTicketAttachmentsData = {
+    body: AttachmentUploadRequest;
+    headers: {
+        /**
+         * Temporary Lab 2 test context; not authentication.
+         */
+        'X-Development-Requester-Id': number;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/attachments';
+};
+
+export type CreateApiTicketAttachmentsErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    413: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    415: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type CreateApiTicketAttachmentsError = CreateApiTicketAttachmentsErrors[keyof CreateApiTicketAttachmentsErrors];
+
+export type CreateApiTicketAttachmentsResponses = {
+    /**
+     * The created Attachment metadata.
+     */
+    201: AttachmentListResponse;
+};
+
+export type CreateApiTicketAttachmentsResponse = CreateApiTicketAttachmentsResponses[keyof CreateApiTicketAttachmentsResponses];
+
+export type GetApiTicketAttachmentContentData = {
+    body?: never;
+    headers: {
+        /**
+         * Temporary Lab 2 test context; not authentication.
+         */
+        'X-Development-Requester-Id': number;
+    };
+    path: {
+        ticketId: number;
+        attachmentId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/attachments/{attachmentId}/content';
+};
+
+export type GetApiTicketAttachmentContentErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiTicketAttachmentContentError = GetApiTicketAttachmentContentErrors[keyof GetApiTicketAttachmentContentErrors];
+
+export type GetApiTicketAttachmentContentResponses = {
+    /**
+     * The Attachment content.
+     */
+    200: Blob | File;
+};
+
+export type GetApiTicketAttachmentContentResponse = GetApiTicketAttachmentContentResponses[keyof GetApiTicketAttachmentContentResponses];
+
+export type RemoveApiTicketAttachmentData = {
+    body: RemoveAttachmentRequest;
+    headers: {
+        /**
+         * Temporary Lab 2 test context; not authentication.
+         */
+        'X-Development-Requester-Id': number;
+    };
+    path: {
+        ticketId: number;
+        attachmentId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/attachments/{attachmentId}';
+};
+
+export type RemoveApiTicketAttachmentErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type RemoveApiTicketAttachmentError = RemoveApiTicketAttachmentErrors[keyof RemoveApiTicketAttachmentErrors];
+
+export type RemoveApiTicketAttachmentResponses = {
+    /**
+     * The retained removed Attachment metadata.
+     */
+    200: RemoveAttachmentResponse;
+};
+
+export type RemoveApiTicketAttachmentResponse = RemoveApiTicketAttachmentResponses[keyof RemoveApiTicketAttachmentResponses];

@@ -89,7 +89,10 @@ describe("Health API", () => {
       .set("Access-Control-Request-Method", "GET")
       .set("Access-Control-Request-Headers", "X-Not-Allowed")
       .expect("Access-Control-Allow-Origin", "http://localhost:5173")
-      .expect("Access-Control-Allow-Headers", "Content-Type")
+      .expect(
+        "Access-Control-Allow-Headers",
+        "Content-Type,X-Development-Requester-Id"
+      )
       .expect("Access-Control-Allow-Methods", /GET/u)
       .expect(204);
   });
@@ -115,24 +118,32 @@ describe("Health API", () => {
     await request(app)
       .get("/api/unknown")
       .expect("Content-Type", /json/u)
-      .expect(404, { message: "Not Found" });
+      .expect(404, {
+        error: { code: "NOT_FOUND", message: "Resource not found." },
+      });
   });
 
   it("returns thrown error messages as JSON 500 responses", async () => {
     await request(errorApp)
       .get("/api/error")
       .expect("Content-Type", /json/u)
-      .expect(500, { message: "Something went wrong" });
+      .expect(500, {
+        error: { code: "INTERNAL_ERROR", message: "Unexpected server error." },
+      });
   });
 
   it("supports structural error messages and fallback messages", async () => {
     await request(errorApp)
       .get("/api/object-error")
-      .expect(500, { message: "Something went wrong" });
+      .expect(500, {
+        error: { code: "INTERNAL_ERROR", message: "Unexpected server error." },
+      });
 
     await request(errorApp)
       .get("/api/fallback")
-      .expect(500, { message: "Internal Server Error" });
+      .expect(500, {
+        error: { code: "INTERNAL_ERROR", message: "Unexpected server error." },
+      });
   });
 
   it("delegates errors when response headers were sent", async () => {

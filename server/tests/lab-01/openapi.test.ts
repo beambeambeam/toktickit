@@ -98,11 +98,10 @@ describe("OpenAPI contract", () => {
     });
     assert.deepEqual(errorSchema, {
       additionalProperties: false,
-      example: { message: "Example error message" },
       properties: {
-        message: { type: "string" },
+        error: { $ref: "#/components/schemas/ApiErrorBody" },
       },
-      required: ["message"],
+      required: ["error"],
       type: "object",
     });
     assert.equal(errorResponse.$ref, "#/components/responses/ApiErrorResponse");
@@ -118,7 +117,6 @@ describe("OpenAPI contract", () => {
     const successContent = requireJsonObject(successResponse.content);
     const successJson = requireJsonObject(successContent["application/json"]);
     const successSchema = requireJsonObject(successJson.schema);
-    const items = requireJsonObject(successSchema.items);
     const examples = requireJsonObject(successJson.examples);
     const populatedExample = requireJsonObject(examples.populated);
     const components = requireJsonObject(document.components);
@@ -126,12 +124,16 @@ describe("OpenAPI contract", () => {
     const categorySchema = requireJsonObject(schemas.Category);
 
     assert.equal(getCategories.operationId, "getApiCategories");
-    assert.equal(successSchema.type, "array");
-    assert.equal(items.$ref, "#/components/schemas/Category");
-    assert.deepEqual(populatedExample.value, [
-      { id: 1, name: "Account and Access" },
-      { id: 2, name: "Hardware" },
-    ]);
+    assert.equal(
+      successSchema.$ref,
+      "#/components/schemas/CategoryListResponse"
+    );
+    assert.deepEqual(populatedExample.value, {
+      items: [
+        { id: 1, name: "Account and Access" },
+        { id: 2, name: "Hardware" },
+      ],
+    });
     assert.deepEqual(categorySchema, {
       additionalProperties: false,
       properties: {
@@ -162,7 +164,7 @@ describe("OpenAPI contract", () => {
     const errorJson = requireJsonObject(errorContent["application/json"]);
     const errorSchema = requireJsonObject(errorJson.schema);
 
-    assert.deepEqual(emptyExample.value, []);
+    assert.deepEqual(emptyExample.value, { items: [] });
     assert.equal(errorResponse.$ref, "#/components/responses/ApiErrorResponse");
     assert.equal(errorSchema.$ref, "#/components/schemas/ApiError");
   });

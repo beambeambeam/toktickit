@@ -10,28 +10,56 @@ paths:
   /api/categories:
     get:
       operationId: getApiCategories
-      summary: List supported request categories
-      description: Returns every supported request category in ascending ID order.
+      summary: List active Categories
+      description: Returns active Categories in display order.
       responses:
         "200":
-          description: The supported request categories.
+          description: The active Categories.
           content:
             application/json:
               schema:
-                type: array
-                items:
-                  $ref: "#/components/schemas/Category"
+                $ref: "#/components/schemas/CategoryListResponse"
               examples:
                 populated:
-                  summary: Supported request categories are available
+                  summary: Active Categories are available
                   value:
-                    - id: 1
-                      name: Account and Access
-                    - id: 2
-                      name: Hardware
+                    items:
+                      - id: 1
+                        name: Account and Access
+                      - id: 2
+                        name: Hardware
                 empty:
-                  summary: No supported request categories are available
-                  value: []
+                  summary: No active Categories are available
+                  value:
+                    items: []
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/related-systems:
+    get:
+      operationId: getApiRelatedSystems
+      summary: List active Related Systems
+      description: Returns active Related Systems in display order.
+      responses:
+        "200":
+          description: The active Related Systems.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RelatedSystemListResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/development-requesters:
+    get:
+      operationId: getApiDevelopmentRequesters
+      summary: List active Development Requesters
+      description: Returns active test-context Requesters only.
+      responses:
+        "200":
+          description: The active Development Requesters.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/DevelopmentRequesterListResponse"
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
   /api/health:
@@ -57,7 +85,296 @@ paths:
                 service: TokTickIT API
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets:
+    post:
+      operationId: createApiTicket
+      summary: Create a requester Ticket
+      description: Creates one Ticket owned by the validated Development Requester context.
+      parameters:
+        - $ref: "#/components/parameters/DevelopmentRequesterId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/CreateTicketRequest"
+      responses:
+        "201":
+          description: The created Ticket.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateTicketResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "413":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "415":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+    get:
+      operationId: getApiTickets
+      summary: List owned requester Tickets
+      description: Returns only Tickets owned by the validated Development Requester context.
+      parameters:
+        - $ref: "#/components/parameters/DevelopmentRequesterId"
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/CategoryId"
+        - $ref: "#/components/parameters/RelatedSystemId"
+        - $ref: "#/components/parameters/RequestedPriority"
+        - $ref: "#/components/parameters/CurrentStatus"
+        - $ref: "#/components/parameters/SortBy"
+        - $ref: "#/components/parameters/SortDirection"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/PageSize"
+      responses:
+        "200":
+          description: The owned Ticket page.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketListResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}:
+    get:
+      operationId: getApiTicket
+      summary: Get an owned Ticket
+      parameters:
+        - $ref: "#/components/parameters/DevelopmentRequesterId"
+        - $ref: "#/components/parameters/TicketId"
+      responses:
+        "200":
+          description: The owned Ticket Detail.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketDetail"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/attachments:
+    get:
+      operationId: getApiTicketAttachments
+      summary: List owned Ticket Attachment metadata
+      parameters:
+        - $ref: "#/components/parameters/DevelopmentRequesterId"
+        - $ref: "#/components/parameters/TicketId"
+      responses:
+        "200":
+          description: Attachment metadata for the owned Ticket.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttachmentListResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+    post:
+      operationId: createApiTicketAttachments
+      summary: Add Attachments to an owned Ticket
+      parameters:
+        - $ref: "#/components/parameters/DevelopmentRequesterId"
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              $ref: "#/components/schemas/AttachmentUploadRequest"
+      responses:
+        "201":
+          description: The created Attachment metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AttachmentListResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "413":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "415":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/attachments/{attachmentId}/content:
+    get:
+      operationId: getApiTicketAttachmentContent
+      summary: Download an active owned Attachment
+      parameters:
+        - $ref: "#/components/parameters/DevelopmentRequesterId"
+        - $ref: "#/components/parameters/TicketId"
+        - $ref: "#/components/parameters/AttachmentId"
+      responses:
+        "200":
+          description: The Attachment content.
+          content:
+            application/octet-stream:
+              schema:
+                type: string
+                format: binary
+            image/jpeg:
+              schema:
+                type: string
+                format: binary
+            image/png:
+              schema:
+                type: string
+                format: binary
+            image/webp:
+              schema:
+                type: string
+                format: binary
+            application/pdf:
+              schema:
+                type: string
+                format: binary
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/attachments/{attachmentId}:
+    delete:
+      operationId: removeApiTicketAttachment
+      summary: Soft-remove an owned Attachment
+      parameters:
+        - $ref: "#/components/parameters/DevelopmentRequesterId"
+        - $ref: "#/components/parameters/TicketId"
+        - $ref: "#/components/parameters/AttachmentId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/RemoveAttachmentRequest"
+      responses:
+        "200":
+          description: The retained removed Attachment metadata.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RemoveAttachmentResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
 components:
+  parameters:
+    DevelopmentRequesterId:
+      name: X-Development-Requester-Id
+      in: header
+      required: true
+      description: Temporary Lab 2 test context; not authentication.
+      schema:
+        type: integer
+        minimum: 1
+    TicketId:
+      name: ticketId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    AttachmentId:
+      name: attachmentId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
+    Search:
+      name: search
+      in: query
+      required: false
+      schema:
+        type: string
+    CategoryId:
+      name: categoryId
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+    RelatedSystemId:
+      name: relatedSystemId
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+    RequestedPriority:
+      name: requestedPriority
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/RequestedPriority"
+    CurrentStatus:
+      name: currentStatus
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/CurrentStatus"
+    SortBy:
+      name: sortBy
+      in: query
+      required: false
+      schema:
+        type: string
+        enum:
+          [
+            ticketNumber,
+            ticketDate,
+            summary,
+            requestedPriority,
+            currentStatus,
+            updatedAt,
+          ]
+        default: updatedAt
+    SortDirection:
+      name: sortDirection
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: desc
+    Page:
+      name: page
+      in: query
+      required: false
+      schema:
+        type: integer
+        minimum: 1
+        default: 1
+    PageSize:
+      name: pageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        enum: [10, 25, 50]
+        default: 10
   responses:
     ApiErrorResponse:
       description: The API could not complete the request.
@@ -66,23 +383,268 @@ components:
           schema:
             $ref: "#/components/schemas/ApiError"
   schemas:
+    ApiError:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          $ref: "#/components/schemas/ApiErrorBody"
+    ApiErrorBody:
+      type: object
+      additionalProperties: false
+      required: [code, message]
+      properties:
+        code:
+          type: string
+        message:
+          type: string
+        details:
+          type: object
+          additionalProperties: true
     Category:
       type: object
       additionalProperties: false
-      required:
-        - id
-        - name
+      required: [id, name]
       properties:
         id:
           type: integer
         name:
           type: string
-    HealthResponse:
+    CategoryListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Category"
+    RelatedSystem:
+      type: object
+      additionalProperties: false
+      required: [id, name]
+      properties:
+        id:
+          type: integer
+        name:
+          type: string
+    RelatedSystemListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/RelatedSystem"
+    DevelopmentRequester:
+      type: object
+      additionalProperties: false
+      required: [id, displayName, email]
+      properties:
+        id:
+          type: integer
+        displayName:
+          type: string
+        email:
+          type: string
+          format: email
+    DevelopmentRequesterListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/DevelopmentRequester"
+    RequestedPriority:
+      type: string
+      enum: [Low, Medium, High, Urgent]
+    CurrentStatus:
+      type: string
+      enum: [New]
+    AttachmentMetadata:
       type: object
       additionalProperties: false
       required:
-        - status
-        - service
+        [
+          id,
+          originalFilename,
+          mediaType,
+          byteSize,
+          uploadedAt,
+          state,
+          removedAt,
+          removalReason,
+        ]
+      properties:
+        id:
+          type: integer
+        originalFilename:
+          type: string
+        mediaType:
+          type: string
+        byteSize:
+          type: integer
+        uploadedAt:
+          type: string
+          format: date-time
+        state:
+          type: string
+          enum: [Active, Removed]
+        removedAt:
+          type: [string, "null"]
+          format: date-time
+        removalReason:
+          type: [string, "null"]
+    AttachmentListResponse:
+      type: object
+      additionalProperties: false
+      required: [attachments]
+      properties:
+        attachments:
+          type: array
+          items:
+            $ref: "#/components/schemas/AttachmentMetadata"
+    TicketSummary:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          ticketNumber,
+          ticketDate,
+          summary,
+          category,
+          relatedSystem,
+          requestedPriority,
+          currentStatus,
+          updatedAt,
+        ]
+      properties:
+        id:
+          type: integer
+        ticketNumber:
+          type: string
+          pattern: "^TKT-[0-9]{8}-[A-Z0-9]{6}$"
+        ticketDate:
+          type: string
+          format: date-time
+        summary:
+          type: string
+        category:
+          $ref: "#/components/schemas/Category"
+        relatedSystem:
+          $ref: "#/components/schemas/RelatedSystem"
+        requestedPriority:
+          $ref: "#/components/schemas/RequestedPriority"
+        currentStatus:
+          $ref: "#/components/schemas/CurrentStatus"
+        updatedAt:
+          type: string
+          format: date-time
+    TicketDetail:
+      allOf:
+        - $ref: "#/components/schemas/TicketSummary"
+        - type: object
+          additionalProperties: false
+          required: [requester, description, attachments]
+          properties:
+            requester:
+              $ref: "#/components/schemas/DevelopmentRequester"
+            description:
+              type: string
+            attachments:
+              type: array
+              items:
+                $ref: "#/components/schemas/AttachmentMetadata"
+    TicketListResponse:
+      type: object
+      additionalProperties: false
+      required: [items, page, pageSize, totalItems, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TicketSummary"
+        page:
+          type: integer
+        pageSize:
+          type: integer
+          enum: [10, 25, 50]
+        totalItems:
+          type: integer
+        totalPages:
+          type: integer
+    CreateTicketRequest:
+      type: object
+      additionalProperties: false
+      required:
+        [categoryId, relatedSystemId, summary, description, requestedPriority]
+      properties:
+        categoryId:
+          type: integer
+          minimum: 1
+        relatedSystemId:
+          type: integer
+          minimum: 1
+        summary:
+          type: string
+          minLength: 5
+          maxLength: 120
+        description:
+          type: string
+          minLength: 20
+          maxLength: 4000
+        requestedPriority:
+          $ref: "#/components/schemas/RequestedPriority"
+        attachments:
+          type: array
+          maxItems: 5
+          items:
+            type: string
+            format: binary
+    CreateTicketResponse:
+      type: object
+      additionalProperties: false
+      required: [ticket]
+      properties:
+        ticket:
+          $ref: "#/components/schemas/TicketDetail"
+    AttachmentUploadRequest:
+      type: object
+      additionalProperties: false
+      required: [attachments]
+      properties:
+        attachments:
+          type: array
+          minItems: 1
+          maxItems: 5
+          items:
+            type: string
+            format: binary
+    RemoveAttachmentRequest:
+      type: object
+      additionalProperties: false
+      required: [reason]
+      properties:
+        reason:
+          type: string
+          minLength: 3
+          maxLength: 500
+    RemoveAttachmentResponse:
+      type: object
+      additionalProperties: false
+      required: [attachment]
+      properties:
+        attachment:
+          $ref: "#/components/schemas/AttachmentMetadata"
+    HealthResponse:
+      type: object
+      additionalProperties: false
+      required: [status, service]
       properties:
         status:
           type: string
@@ -90,13 +652,3 @@ components:
         service:
           type: string
           const: TokTickIT API
-    ApiError:
-      type: object
-      additionalProperties: false
-      required:
-        - message
-      properties:
-        message:
-          type: string
-      example:
-        message: Example error message

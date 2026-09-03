@@ -1,9 +1,14 @@
+import { ApiError } from "../errors/api-error.js";
 import { findCategories } from "../repositories/categories.js";
 
 export const getCategories = async () => {
   try {
     return await findCategories();
-  } catch (error: unknown) {
-    throw new Error("Unable to retrieve request categories", { cause: error });
+  } catch {
+    throw new ApiError(
+      500,
+      "REFERENCE_DATA_UNAVAILABLE",
+      "Unable to load Categories."
+    );
   }
 };
