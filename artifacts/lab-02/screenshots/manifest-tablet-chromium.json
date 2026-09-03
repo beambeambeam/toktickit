@@ -1,0 +1,18 @@
+{
+  "files": [
+    "artifacts/lab-02/screenshots/my-tickets/tablet-chromium-initial.png",
+    "artifacts/lab-02/screenshots/create-ticket/tablet-chromium-initial.png",
+    "artifacts/lab-02/screenshots/create-ticket/tablet-chromium-validation.png",
+    "artifacts/lab-02/screenshots/create-ticket/tablet-chromium-filled.png",
+    "artifacts/lab-02/screenshots/create-ticket/tablet-chromium-success.png",
+    "artifacts/lab-02/screenshots/my-tickets/tablet-chromium-owned.png",
+    "artifacts/lab-02/screenshots/my-tickets/tablet-chromium-no-results.png",
+    "artifacts/lab-02/screenshots/ticket-detail/tablet-chromium-active.png",
+    "artifacts/lab-02/screenshots/ticket-detail/tablet-chromium-removed.png",
+    "artifacts/lab-02/screenshots/my-tickets/tablet-chromium-empty.png",
+    "artifacts/lab-02/screenshots/my-tickets/tablet-chromium-ownership.png",
+    "artifacts/lab-02/screenshots/ticket-detail/tablet-chromium-unauthorized.png"
+  ],
+  "generatedAt": "2026-09-03T10:44:57.074Z",
+  "project": "tablet-chromium"
+}

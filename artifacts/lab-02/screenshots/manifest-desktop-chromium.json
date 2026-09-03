@@ -1,0 +1,18 @@
+{
+  "files": [
+    "artifacts/lab-02/screenshots/my-tickets/desktop-chromium-initial.png",
+    "artifacts/lab-02/screenshots/create-ticket/desktop-chromium-initial.png",
+    "artifacts/lab-02/screenshots/create-ticket/desktop-chromium-validation.png",
+    "artifacts/lab-02/screenshots/create-ticket/desktop-chromium-filled.png",
+    "artifacts/lab-02/screenshots/create-ticket/desktop-chromium-success.png",
+    "artifacts/lab-02/screenshots/my-tickets/desktop-chromium-owned.png",
+    "artifacts/lab-02/screenshots/my-tickets/desktop-chromium-no-results.png",
+    "artifacts/lab-02/screenshots/ticket-detail/desktop-chromium-active.png",
+    "artifacts/lab-02/screenshots/ticket-detail/desktop-chromium-removed.png",
+    "artifacts/lab-02/screenshots/my-tickets/desktop-chromium-empty.png",
+    "artifacts/lab-02/screenshots/my-tickets/desktop-chromium-ownership.png",
+    "artifacts/lab-02/screenshots/ticket-detail/desktop-chromium-unauthorized.png"
+  ],
+  "generatedAt": "2026-09-03T10:44:52.257Z",
+  "project": "desktop-chromium"
+}

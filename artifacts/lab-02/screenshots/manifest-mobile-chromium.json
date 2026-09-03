@@ -1,0 +1,18 @@
+{
+  "files": [
+    "artifacts/lab-02/screenshots/my-tickets/mobile-chromium-initial.png",
+    "artifacts/lab-02/screenshots/create-ticket/mobile-chromium-initial.png",
+    "artifacts/lab-02/screenshots/create-ticket/mobile-chromium-validation.png",
+    "artifacts/lab-02/screenshots/create-ticket/mobile-chromium-filled.png",
+    "artifacts/lab-02/screenshots/create-ticket/mobile-chromium-success.png",
+    "artifacts/lab-02/screenshots/my-tickets/mobile-chromium-owned.png",
+    "artifacts/lab-02/screenshots/my-tickets/mobile-chromium-no-results.png",
+    "artifacts/lab-02/screenshots/ticket-detail/mobile-chromium-active.png",
+    "artifacts/lab-02/screenshots/ticket-detail/mobile-chromium-removed.png",
+    "artifacts/lab-02/screenshots/my-tickets/mobile-chromium-empty.png",
+    "artifacts/lab-02/screenshots/my-tickets/mobile-chromium-ownership.png",
+    "artifacts/lab-02/screenshots/ticket-detail/mobile-chromium-unauthorized.png"
+  ],
+  "generatedAt": "2026-09-03T10:45:01.878Z",
+  "project": "mobile-chromium"
+}
