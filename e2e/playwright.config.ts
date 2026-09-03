@@ -52,7 +52,7 @@ export default defineConfig({
       url: `${apiURL}/api/health`,
     },
     {
-      command: "pnpm dev",
+      command: "VITE_SHOW_ROUTER_DEVTOOLS=false pnpm dev",
       cwd: path.join(repositoryRoot, "client"),
       reuseExistingServer: !isCI,
       timeout: 120_000,

@@ -3,7 +3,10 @@ import { lazy, Suspense } from "react";
 
 import { RequesterProvider } from "@/context/requester";
 
-const TanStackRouterDevtools = import.meta.env.DEV
+const showRouterDevtools =
+  import.meta.env.DEV && import.meta.env.VITE_SHOW_ROUTER_DEVTOOLS !== "false";
+
+const TanStackRouterDevtools = showRouterDevtools
   ? lazy(async () => {
       const { TanStackRouterDevtools: Devtools } =
         await import("@tanstack/react-router-devtools");

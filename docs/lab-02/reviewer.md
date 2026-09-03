@@ -1,6 +1,6 @@
 # Lab 2 Peer Review Record
 
-This record was reconstructed from GitHub on 2026-09-02. It covers the review received in this repository and the completed reciprocal reviews in the reviewer's repository.
+This record was reconciled with GitHub on 2026-09-03. It covers the review received in this repository and the completed reciprocal reviews in the reviewer's repository.
 
 ## Participants
 
@@ -20,6 +20,7 @@ Supawit's Lab 2 work was reviewed by Kiatisak in the following Issue-backed PRs.
 | [#39](https://github.com/beambeambeam/toktickit/pull/39) | Issue #35: Lab 2 specification | Numbered FR and BR sections were required. `356cec9` added them and the companion documents; `70362f6` resolved two automated contract findings. | Approved and merged by Kiatisak on 2026-08-28. |
 | [#42](https://github.com/beambeambeam/toktickit/pull/42) | Issue #36: requester context and ticketing flow | Two blocking evidence gaps and two Greptile P1 Attachment findings were resolved in `dc87ecd` and `9988016`; Kiatisak re-reviewed with `LGTM`. | Approved and merged by Kiatisak on 2026-09-02. |
 | [#43](https://github.com/beambeambeam/toktickit/pull/43) | Issue #37: My Tickets discovery and ownership | Kiatisak found no blocking defects and requested independent API contract cases, 44px/wrapping mobile pagination controls, and empty/no-results screenshot evidence. Follow-up changes address all requested items. | Merged into `lab2-staging` on 2026-09-02; review discussion shows comments only, no formal approval recorded. |
+| [#44](https://github.com/beambeambeam/toktickit/pull/44) | Issue #38: Ticket Detail, Attachments, and submission evidence | Kiatisak requested evidence provenance, a clear seeded-versus-human distinction for ownership proof, a foreign-requester Attachment read check, and a machine-versus-human evidence basis. Follow-up commits `41fdb12` and `f3da063` address those points. | Approved and merged by Kiatisak into `lab2-staging` on 2026-09-03. |
 
 ## Reviews completed for Kiatisak
 
@@ -78,7 +79,8 @@ Kiatisak found no blocking defects. The review requested separate API contract c
 
 No review findings. The PR adds the Playwright E2E and visual-evidence suite closing Kiatisak's Issue #20, with server, client, Playwright, build, and lint results reported in the PR body. The suite's own value is demonstrated in the body: its first full run caught a 71 px horizontal overflow in the My Tickets pagination controls that appears only past sixty Tickets, a defect screenshot review at six pages would have missed. PR #32 re-proposes PR #31 byte-identically after the author self-merged #31 against the Part 9 reviewer-merges rule; Supawit approved the unchanged code and performed the merge.
 
-## Current limitations
+## Final-state record
 
-- Kiatisak's Issue [#21](https://github.com/Kiatisakk/toktickit/issues/21) (report and submission evidence) remains open, so no review can yet be recorded for the final report/submission or the Lab 2 release PR. Issue #20 is now reviewed through PRs #31 and #32.
-- Issue #38 (Ticket Detail, Attachments, and submission evidence) is implemented on `feature/38-ticket-detail-attachments-evidence`; peer review is pending and will be appended here with PR link, findings, and resolution.
+- PRs [#39](https://github.com/beambeambeam/toktickit/pull/39), [#42](https://github.com/beambeambeam/toktickit/pull/42), [#43](https://github.com/beambeambeam/toktickit/pull/43), and [#44](https://github.com/beambeambeam/toktickit/pull/44) are closed and merged into `lab2-staging`; PR #44 records Kiatisak's approval. Issue [#21](https://github.com/Kiatisakk/toktickit/issues/21) is closed and marked Done.
+- This report branch is `docs/lab02-final-report`, based on the merged `lab2-staging` tip `e5b8612`. The local `main` ref remains the Lab 1 baseline `f3c286a`; this report records that branch boundary explicitly instead of claiming a release commit that is not present.
+- The final report, screenshot manifests, visual checklist, and rendered living-document panels are generated from this branch snapshot. Machine-asserted results and screenshot-based visual judgments remain labeled separately in `tests.md` and `visual-checklist.md`.

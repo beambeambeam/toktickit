@@ -2,7 +2,7 @@
 
 ## 1. Status
 
-The Lab 2 implementation now has focused unit, API/integration, UI, and browser E2E tests. The larger boundary matrix below remains the contract for future coverage expansion; unautomated visual and human-review evidence is marked explicitly.
+The Lab 2 implementation has focused unit, API/integration, UI, and browser E2E tests. The boundary matrix below records required behavior and coverage limits; automated results and visual/human-review evidence are marked explicitly, without claiming that every matrix row is an automated test.
 
 Current implementation status:
 
@@ -12,11 +12,11 @@ Current implementation status:
 - OpenAPI synchronization check: pass.
 - Local browser flow: manually checked through Requester selection, Ticket creation, My Tickets, Detail, and Attachment lifecycle at desktop and mobile viewport sizes.
 - Browser E2E flow: pass across desktop, tablet, and mobile Chromium projects.
-- Screenshot artifacts: captured under all three required Lab 2 evidence directories.
+- Screenshot artifacts: captured under all four required Lab 2 evidence directories; 72 unique PNGs are listed by the three per-viewport manifests.
 - Issue #37 focused list/API suites: pass; client 7 files/40 tests and server 6 files/38 tests after the human-review test split.
 - Issue #38 Ticket Detail UI suite: `client/tests/lab-02/ticket-detail.test.tsx` with 10 interaction tests covering read-only detail, active/removed states, upload validation, removal confirmation and reason boundaries, download, and loading/failure/hidden-resource/invalid states. Full suite after Issue #38: client 8 files/50 tests, server 6 files/38 tests, OpenAPI check pass.
-- Visual comparison record: `artifacts/lab-02/visual-checklist.md` maps every required screen and viewport to its E2E screenshot evidence.
-- Final PDF and human approval: Pending.
+- Visual comparison record: `artifacts/lab-02/visual-checklist.md` maps every required screen and viewport to its E2E screenshot evidence and records the machine/human basis.
+- Final PDF: generated at `reports/lab02/report_lab02_67070501045.pdf` from `docs/lab02-final-report`, based on `lab2-staging` commit `e5b8612`.
 
 ## 2. Strategy
 
@@ -63,10 +63,10 @@ If implementation needs additional test files, add them here before implementati
 | AC-13 | API-02, UI-06, E2E-01 |
 | AC-14, AC-15 | API-01, API-02, UI-02, UI-06, E2E-01 |
 | AC-16 | API-01, API-02, UI-02 |
-| AC-17 | E2E-01, UI-06, screenshot artifacts, visual-checklist.md; final human visual approval Pending |
+| AC-17 | E2E-01, UI-06, screenshot artifacts, visual-checklist.md; visual rows record machine assertions and screenshot review basis |
 | AC-18 | API-01, API-02, UI-01, UI-02, UI-03, UI-06, E2E-01, manual browser pass |
 | AC-19 | This document plus ui-spec.md, api-spec.md, reviewer.md, and ai-use.md |
-| AC-20 | Repository checks and screenshot artifacts pass; final PDF and human approval Pending |
+| AC-20 | Repository checks pass on the final report branch; 72 screenshot artifacts, rendered documents, and the exact Part 1–Part 9 PDF are present |
 
 ## 5. Boundary and failure matrix
 
@@ -100,14 +100,14 @@ Expected repository commands:
 | `2026-09-02` — `pnpm test:e2e` | Full requester flow and smoke test across desktop/tablet/mobile Chromium | Pass: 6/6 tests; 30 PNG evidence artifacts captured; direct unauthorized Ticket and removed-download requests rejected |
 | `2026-09-03` — `pnpm --filter @toktickit/server exec vitest run tests/lab-02/requester-ticketing.test.ts --reporter=dot` | Human-review follow-up: independent list search, filter, sort, pagination, and validation cases | Pass: 12 tests in the requester Ticket API file |
 | `2026-09-03` — `pnpm test:e2e` | Human-review follow-up: empty and no-results screenshot evidence plus mobile pagination layout | Pass: 6/6 tests; 36 PNG evidence artifacts present; direct unauthorized Ticket and removed-download requests rejected |
-| `2026-09-03` — `pnpm run fix`, `pnpm run check-types`, `pnpm run test`, `pnpm run build`, `pnpm test:e2e` | Issue #38 full verification on `feature/38-ticket-detail-attachments-evidence` | Pass: lint clean; types pass; client 8 files/50 tests; server 6 files/38 tests; OpenAPI check pass; build pass; E2E 6/6 with 36 PNGs plus per-project run manifests; cross-requester attachment 404, seeded isolation list, overflow, and header-token assertions green; repeat runs verified back-to-back |
+| `2026-09-03` — `pnpm run fix`, `pnpm run check-types`, `pnpm run test`, `pnpm run build`, `pnpm test:e2e` | Final verification on `docs/lab02-final-report`, based on merged `lab2-staging` `e5b8612` | Pass: lint clean; types pass; client 8 files/50 tests; server 6 files/38 tests; OpenAPI check pass; build pass; E2E 6/6 with 72 unique PNGs plus per-project run manifests; cross-requester Ticket/Attachment access, removed-download 404, seeded isolation, overflow, and header-token assertions green |
 
-Update this table with date, exact command, result, and environment after each vertical slice. Record database setup and any limitation; do not hide skipped or flaky tests.
+This final table records date, exact command, result, environment, and any limitation. No skipped or flaky tests are hidden.
 
 ## 7. Evidence locations
 
 - Automated output: repository PR/CI checks and this result log.
-- Screenshots: artifacts/lab-02/screenshots/create-ticket/, my-tickets/, and ticket-detail/.
+- Screenshots: artifacts/lab-02/screenshots/requester-selection/, create-ticket/, my-tickets/, and ticket-detail/.
 - Run manifests: artifacts/lab-02/screenshots/manifest-<project>.json records the timestamp and every screenshot file its run produced.
 - E2E source: e2e/lab-02/smoke.spec.ts and e2e/lab-02/requester-flow.spec.ts.
 - E2E repeatability: e2e/global-setup.ts runs server/scripts/reset-e2e-tickets.ts before the suite, removing only E2E-pattern tickets so the empty-state captures hold on every run. Each viewport isolates against its own seeded Requester (desktop 2, tablet 3, mobile 4).
@@ -125,7 +125,7 @@ Update this table with date, exact command, result, and environment after each v
 | `pnpm --filter @toktickit/client exec vitest run tests/lab-02/my-tickets.test.tsx --reporter=dot` | Pass: 7 My Tickets interaction tests |
 | `pnpm --filter @toktickit/server exec vitest run tests/lab-02/requester-ticketing.test.ts --testNamePattern 'supports documented list' --reporter=dot` | Pass: Issue #37 list contract integration test |
 
-Issue #37 tests run against the repository's jsdom client harness and PostgreSQL-backed server harness. `pnpm run fix`, `pnpm run check-types`, `pnpm run test`, `pnpm run build`, and `pnpm test:e2e` pass on this branch; the two-axis code-review record is appended in `reviewer.md`. Peer/human approval remains pending.
+Issue #37 tests run against the repository's jsdom client harness and PostgreSQL-backed server harness. `pnpm run fix`, `pnpm run check-types`, `pnpm run test`, `pnpm run build`, and `pnpm test:e2e` pass on the final report branch; the two-axis code-review record is appended in `reviewer.md`. PR #43 is merged into `lab2-staging`.
 
 ## 9. Issue #38 result record
 
@@ -136,6 +136,18 @@ Issue #37 tests run against the repository's jsdom client harness and PostgreSQL
 | `pnpm run test` | Pass: client 8 files/50 tests, OpenAPI check pass, server 6 files/38 tests |
 | `pnpm --filter @toktickit/client exec vitest run tests/lab-02/ticket-detail.test.tsx` | Pass: 10 Ticket Detail interaction tests |
 | `pnpm run build` | Pass: client and server production build |
-| `2026-09-03` — `pnpm test:e2e` | Pass: 6/6 tests across desktop/tablet/mobile Chromium; 36 PNG evidence artifacts present plus per-project run manifests; direct unauthorized Ticket, cross-requester Attachment, and removed-download requests rejected; seeded isolation lists verified; back-to-back runs green |
+| `2026-09-03` — `pnpm test:e2e` | Pass: 6/6 tests across desktop/tablet/mobile Chromium; 72 unique PNG evidence artifacts present plus per-project run manifests; direct unauthorized Ticket, cross-requester Attachment, and removed-download requests rejected; seeded isolation lists verified; back-to-back runs green |
 
-Issue #38 tests run against the repository's jsdom client harness and PostgreSQL-backed server harness (local PostgreSQL 17 via Docker). No test was skipped, disabled, or commented out. Peer review of this slice is pending in `reviewer.md`. The final PDF under `reports/lab02/` already uses the exact Answer Part 1 through Part 9 headings but is git-ignored build output; regenerating it from the finalized sources and human approval remain pending.
+Issue #38 tests run against the repository's jsdom client harness and PostgreSQL-backed server harness (local PostgreSQL 17 via Docker). No test was skipped, disabled, or commented out. PR #44 is approved and merged in `reviewer.md`. The final PDF under `reports/lab02/` uses the exact Answer Part 1 through Part 9 headings and was regenerated after the final evidence/panel update.
+
+## 10. Final artifact inventory
+
+| Artifact | Final state |
+| --- | --- |
+| Requester Selection captures | 6 PNGs: initial and selected at desktop, tablet, and mobile |
+| Create Ticket captures | 21 PNGs: initial, validation, invalid Attachment, filled, API failure, busy, and success across three viewports |
+| My Tickets captures | 24 PNGs: initial, owned, failure, loading, filter failure, no-results, empty, and ownership isolation across three viewports |
+| Ticket Detail captures | 21 PNGs: active, invalid Attachment, uploading, uploaded, removal confirmation, removed, and unauthorized across three viewports |
+| Run manifests | 3 JSON files; each lists 24 screenshot paths for one viewport |
+| Rendered documents | Six living documents rendered as sequential GitHub CSS panels with no Markdown body duplicated into LaTeX |
+| Final PDF | `reports/lab02/report_lab02_67070501045.pdf`, exact Answer Part 1 through Part 9 headings |
