@@ -23,7 +23,7 @@ Supawit's Lab 2 work was reviewed by Kiatisak in the following Issue-backed PRs.
 
 ## Reviews completed for Kiatisak
 
-Supawit reviewed every completed Issue-backed Lab 2 work PR available in Kiatisak's repository: Issues #14 through #19. He also reviewed the formatter repair and the follow-up review-record PR. GitHub shows all eight PRs approved and merged by `beambeambeam`.
+Supawit reviewed every completed Issue-backed Lab 2 work PR available in Kiatisak's repository: Issues #14 through #20. He also reviewed the formatter repair and the follow-up review-record PR. GitHub shows all ten PRs approved and merged by `beambeambeam`.
 
 | Partner PR | Scope | Review and response | Final state |
 | --- | --- | --- | --- |
@@ -35,8 +35,10 @@ Supawit reviewed every completed Issue-backed Lab 2 work PR available in Kiatisa
 | [#27](https://github.com/Kiatisakk/toktickit/pull/27) | Issue #18: My Tickets | 16 inline findings. Kiatisak fixed all 16 in `64e933e`; Supawit re-checked and approved with `LGTM`. | Approved and merged by Supawit on 2026-08-31. |
 | [#29](https://github.com/Kiatisakk/toktickit/pull/29) | Issue #19: Ticket Detail and attachments | 11 inline findings. Kiatisak replied to all 11 and fixed them in `8ba1072`; Supawit approved. Kiatisak then requested another check after further layout commits. | Approved and merged by Supawit on 2026-09-01. |
 | [#30](https://github.com/Kiatisakk/toktickit/pull/30) | Follow-up record of PR #29 review; no Issue | Verified the written record against the review discussion; approved with `LGTM`. | Approved and merged by Supawit on 2026-09-02. |
+| [#31](https://github.com/Kiatisakk/toktickit/pull/31) | Issue #20: end-to-end and visual evidence | No actionable finding; approved. Kiatisak then merged it himself, which Part 9 reserves for the reviewer, so the branch was rolled back and re-proposed as PR #32 with identical code. | Approved by Supawit on 2026-09-02; merge reverted on procedural grounds. |
+| [#32](https://github.com/Kiatisakk/toktickit/pull/32) | Issue #20: end-to-end and visual evidence (re-proposal of #31) | No actionable finding; approved the unchanged code and clicked Merge as Part 9 requires. | Approved and merged by Supawit on 2026-09-03. |
 
-Across PRs #23, #24, #26, #27, and #29, Supawit submitted 50 top-level inline findings. The author addressed every finding before final approval; no finding was left unresolved or argued out of scope. PRs #22, #25, and #30 required no changes.
+Across PRs #23, #24, #26, #27, and #29, Supawit submitted 50 top-level inline findings. The author addressed every finding before final approval; no finding was left unresolved or argued out of scope. PRs #22, #25, #30, #31, and #32 required no changes.
 
 ## Significant findings and resolutions
 
@@ -72,7 +74,11 @@ Follow-up verification reported `pnpm run fix`, `pnpm run check-types`, `pnpm ru
 
 Kiatisak found no blocking defects. The review requested separate API contract cases for search, filters, sorting, pagination, and invalid-query validation; explicit 44px mobile pagination controls and wrapping page buttons; and screenshots for the empty-owned-list and valid no-results states. The follow-up splits the server suite, uses the shared control-height token with wrapping pagination, and captures both states at desktop, tablet, and mobile viewports.
 
+### PRs #31 and #32 — end-to-end and visual evidence
+
+No review findings. The PR adds the Playwright E2E and visual-evidence suite closing Kiatisak's Issue #20, with server, client, Playwright, build, and lint results reported in the PR body. The suite's own value is demonstrated in the body: its first full run caught a 71 px horizontal overflow in the My Tickets pagination controls that appears only past sixty Tickets, a defect screenshot review at six pages would have missed. PR #32 re-proposes PR #31 byte-identically after the author self-merged #31 against the Part 9 reviewer-merges rule; Supawit approved the unchanged code and performed the merge.
+
 ## Current limitations
 
-- Kiatisak's Issues [#20](https://github.com/Kiatisakk/toktickit/issues/20) and [#21](https://github.com/Kiatisakk/toktickit/issues/21) remain open, so no review can yet be recorded for final report/submission or the Lab 2 release PR.
+- Kiatisak's Issue [#21](https://github.com/Kiatisakk/toktickit/issues/21) (report and submission evidence) remains open, so no review can yet be recorded for the final report/submission or the Lab 2 release PR. Issue #20 is now reviewed through PRs #31 and #32.
 - Issue #38 (Ticket Detail, Attachments, and submission evidence) is implemented on `feature/38-ticket-detail-attachments-evidence`; peer review is pending and will be appended here with PR link, findings, and resolution.
