@@ -260,3 +260,13 @@ The existing `GET /api/tickets` contract is implemented as a requester-owned, pa
 Query parsing is strict: repeated parameters, nested keys, non-decimal integers, unsupported fields, invalid enum values, and invalid page-size values return `400 VALIDATION_ERROR`; invalid input never silently falls back to defaults. The client adapter also validates the response shape before exposing it to the UI and returns a safe `ApiRequestError` for malformed payloads.
 
 Issue #37 API coverage: `server/tests/lab-02/requester-ticketing.test.ts` verifies search across documented fields, all list filters, deterministic ascending/descending pagination, metadata, ownership, and invalid query forms. `client/tests/lab-02/requester-api.test.ts` verifies malformed list-response rejection.
+
+## 9. Issue #38 implementation decisions and evidence
+
+Issue #38 confirms the Ticket Detail and Attachment endpoints implemented under Issue #36 against the contract above; no endpoint shapes changed.
+
+- `GET /api/tickets/:ticketId` and `GET /api/tickets/:ticketId/attachments` enforce the same context-to-Ticket ownership check as the list endpoint and return the safe `404 RESOURCE_NOT_FOUND` envelope for missing or unowned Tickets.
+- `POST /api/tickets/:ticketId/attachments` validates files, checks ownership and the active count before storing, writes opaque files before the database write, re-checks the five-active limit inside the write, and compensates staged files on failure. Exceeding the limit returns `409 ATTACHMENT_LIMIT_EXCEEDED`.
+- `GET .../attachments/:attachmentId/content` streams only active owned Attachments with safe `Content-Type` and `Content-Disposition`; removed, missing, or unowned content returns `404` and missing storage content is also mapped to safe `404`.
+- `DELETE .../attachments/:attachmentId` requires the trimmed 3–500 character reason, deletes file content before committing removal metadata so cleanup failures stay retryable, and returns `200` with the retained `Removed` metadata. Repeat removal returns safe `404`.
+- Server coverage for this slice lives in `server/tests/lab-02/requester-ticketing.test.ts`: cross-requester detail hiding, active download, soft removal without exposing removed content, concurrent additions serialized at the active limit, and retryable removal when cleanup fails. Client upload/download/removal boundary coverage lives in `client/tests/lab-02/ticket-detail.test.tsx`; the full lifecycle including removed-download blocking is proven in `e2e/lab-02/requester-flow.spec.ts`.

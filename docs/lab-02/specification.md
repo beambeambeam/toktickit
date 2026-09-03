@@ -293,3 +293,21 @@ Resolved implementation decisions:
 - The UI provides draft-aware Clear Filters, numbered pagination with a current-page indicator, empty versus no-results messaging, retryable list/filter-data failures, and responsive table/card presentation aligned to the supplied My Tickets reference. IT Priority and Ticket Owner remain outside Lab 2 scope.
 
 Traceability: Issue #37 acceptance is covered by `server/tests/lab-02/requester-ticketing.test.ts`, `client/tests/lab-02/requester-api.test.ts`, and `client/tests/lab-02/my-tickets.test.tsx`. These tests cover ownership isolation, search/filter/sort/pagination, invalid queries, malformed responses, draft clearing, empty/no-results states, retry, and requester-context switching.
+
+## 13. Issue #38 implementation addendum — Ticket Detail, Attachments, and submission evidence
+
+Issue #38 completes the requester slice with owned Ticket Detail, the Attachment lifecycle, and the final Lab 2 evidence. The API and screens for this slice already existed from Issue #36; Issue #38 hardens their coverage and finishes the submission artifacts.
+
+Resolved implementation decisions:
+
+- `GET /api/tickets/:ticketId` returns one owned Ticket with active and removed Attachment metadata. Missing, malformed, or unowned identifiers receive the safe `404 RESOURCE_NOT_FOUND` response, so direct identifiers never reveal another Requester's data.
+- Attachment writes follow validate-then-store-then-commit: every file is validated, written under a generated opaque key in non-public final storage, then committed with its metadata in one database transaction. Any write or transaction failure deletes the staged files and never reports success. No post-commit file move exists.
+- Later uploads check ownership and the five-active limit before storing content; the repository re-checks the limit inside the write so concurrent additions cannot exceed five active Attachments.
+- Removal deletes file content before committing removal metadata, so a cleanup failure stays retryable and never leaves metadata claiming removal while content remains. A second removal of the same Attachment returns the safe not-found response.
+- Removal requires UI confirmation and a trimmed reason of 3–500 characters on both client and server. The dialog states that metadata remains in Ticket history.
+- Download streams active owned Attachments only; removed, missing, or unowned content returns the safe not-found response and has no download or preview action in the UI.
+- The Detail screen follows `reports/lab02/tickets/02.png` as visual direction while keeping only the Lab 2 contract fields; comments, service actions, event log, resolution, IT Priority, and Ticket Owner remain excluded.
+- Responsive behavior reuses the app breakpoints: two-column detail grid on tablet (768–991 px), stacked fields with full-width Attachment actions on mobile (below 768 px), no horizontal page scrolling or hidden actions.
+- Submission evidence comprises 36 E2E-captured PNGs under `artifacts/lab-02/screenshots/` (Create Ticket, My Tickets, Ticket Detail across desktop/tablet/mobile), the `artifacts/lab-02/visual-checklist.md` comparison record, the six living documents, and the final PDF using exactly the Answer Part 1 through Part 9 headings.
+
+Traceability: Issue #38 acceptance is covered by `server/tests/lab-02/requester-ticketing.test.ts` (detail isolation, active download, soft removal, removed-download blocking, concurrent limit, cleanup retry), `client/tests/lab-02/ticket-detail.test.tsx` (read-only detail, active/removed states, upload validation, removal confirmation and reason boundaries, download, loading/failure/invalid states), and `e2e/lab-02/requester-flow.spec.ts` (complete Requester A/B path with screenshot evidence).

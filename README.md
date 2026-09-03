@@ -121,4 +121,4 @@ pnpm test:e2e:headed
 pnpm test:e2e:ui
 ```
 
-Failure screenshots, traces, videos, and the HTML report are generated under `e2e/test-results/` and `e2e/playwright-report/`; both are ignored by Git. Required course evidence belongs under `artifacts/lab-02/screenshots/` and is committed separately from temporary Playwright diagnostics.
+Failure screenshots, traces, videos, and the HTML report are generated under `e2e/test-results/` and `e2e/playwright-report/`; both are ignored by Git. Required course evidence belongs under `artifacts/lab-02/screenshots/` with the comparison record in `artifacts/lab-02/visual-checklist.md`, and is committed separately from temporary Playwright diagnostics.
