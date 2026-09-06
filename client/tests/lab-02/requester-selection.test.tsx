@@ -14,7 +14,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { RequesterProvider } from "@/context/requester";
-import { RequesterSelectionPage } from "@/routes/index";
+import { RequesterSelectionPage } from "@/pages/requester-selection-page";
 
 const { navigateMock } = vi.hoisted(() => ({ navigateMock: vi.fn() }));
 

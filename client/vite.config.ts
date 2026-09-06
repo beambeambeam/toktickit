@@ -26,5 +26,6 @@ export default defineConfig({
       "tests/lab-02/**/*.test.ts",
       "tests/lab-02/**/*.test.tsx",
     ],
+    setupFiles: ["tests/setup.ts"],
   },
 });

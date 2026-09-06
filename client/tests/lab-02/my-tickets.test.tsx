@@ -13,7 +13,7 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import { RequesterProvider, useRequester } from "@/context/requester";
-import { MyTicketsPage } from "@/routes/tickets/index";
+import { MyTicketsPage } from "@/pages/my-tickets-page";
 
 const { navigateMock } = vi.hoisted(() => ({ navigateMock: vi.fn() }));
 
