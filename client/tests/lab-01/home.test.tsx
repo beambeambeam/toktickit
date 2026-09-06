@@ -11,7 +11,7 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { HomePage } from "@/routes/index";
+import { HomePage } from "@/pages/home-page";
 
 const healthResponse = {
   service: "TokTickIT API",
