@@ -16,7 +16,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type * as RequesterApi from "@/api/requester";
 import { ApiRequestError } from "@/api/requester";
 import { RequesterProvider } from "@/context/requester";
-import { RequesterTicketDetailPage, Route } from "@/routes/tickets/$ticketId";
+import { RequesterTicketDetailPage } from "@/pages/requester-ticket-detail-page";
 
 const {
   downloadTicketAttachmentMock,
@@ -100,8 +100,23 @@ const ticket = {
   updatedAt: "2026-09-02T10:00:00.000Z",
 };
 
-const useTicketId = (ticketId: string) => {
-  vi.spyOn(Route, "useParams").mockReturnValue({ ticketId });
+const renderTicketDetail = (ticketId = "11") => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        gcTime: 0,
+        retry: false,
+      },
+    },
+  });
+
+  return render(
+    <QueryClientProvider client={queryClient}>
+      <RequesterProvider>
+        <RequesterTicketDetailPage ticketId={ticketId} />
+      </RequesterProvider>
+    </QueryClientProvider>
+  );
 };
 
 const createDeferredTicket = () => {
@@ -119,25 +134,6 @@ const createDeferredTicket = () => {
   };
 };
 
-const renderTicketDetail = () => {
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        gcTime: 0,
-        retry: false,
-      },
-    },
-  });
-
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <RequesterProvider>
-        <RequesterTicketDetailPage />
-      </RequesterProvider>
-    </QueryClientProvider>
-  );
-};
-
 describe("Requester Ticket Detail page", () => {
   beforeEach(() => {
     sessionStorage.clear();
@@ -149,7 +145,6 @@ describe("Requester Ticket Detail page", () => {
     uploadTicketAttachmentsMock.mockReset().mockResolvedValue([]);
     removeTicketAttachmentMock.mockReset();
     downloadTicketAttachmentMock.mockReset();
-    useTicketId("11");
   });
 
   afterEach(() => {
@@ -219,8 +214,7 @@ describe("Requester Ticket Detail page", () => {
   });
 
   it("shows an invalid Ticket state without calling the API", async () => {
-    useTicketId("not-a-ticket");
-    renderTicketDetail();
+    renderTicketDetail("not-a-ticket");
 
     await screen.findByRole("heading", { name: "Invalid Ticket Number" });
     expect(getTicketMock).not.toHaveBeenCalled();

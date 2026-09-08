@@ -15,7 +15,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type * as RequesterApi from "@/api/requester";
 import { RequesterProvider } from "@/context/requester";
-import { CreateTicketPage } from "@/routes/create";
+import { CreateTicketPage } from "@/pages/create-ticket-page";
 
 const { createTicketMock, navigateMock } = vi.hoisted(() => ({
   createTicketMock: vi.fn(),
