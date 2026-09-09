@@ -46,8 +46,8 @@ TicketDetail is safe for all permitted readers: it never embeds comments, notes,
 | HTTP | Code / situation |
 | --- | --- |
 | 400 | VALIDATION_ERROR: malformed JSON, unsupported/repeated fields/queries, input bounds, client attribution or obsolete identity header supplied after authentication. |
-| 401 | AUTHENTICATION_REQUIRED: missing/expired/revoked session; INVALID_CREDENTIALS: login failure with “Unable to sign in. Check your credentials or contact your administrator.” |
-| 403 | FORBIDDEN: role restriction; PASSWORD_CHANGE_REQUIRED: restricted data access; CSRF_INVALID: missing/wrong token; ORIGIN_FORBIDDEN: disallowed/missing mutation Origin. |
+| 401 | AUTHENTICATION_REQUIRED: missing/expired/revoked session; INVALID_CREDENTIALS: unknown account or wrong password with “Unable to sign in. Check your credentials or contact your administrator.” |
+| 403 | ACCOUNT_INACTIVE: matching password for an inactive account with “This account is inactive. Contact your administrator.”; FORBIDDEN: role restriction; PASSWORD_CHANGE_REQUIRED: restricted data access; CSRF_INVALID: missing/wrong token; ORIGIN_FORBIDDEN: disallowed/missing mutation Origin. |
 | 404 | RESOURCE_NOT_FOUND: missing/unowned Ticket, Attachment, user or unavailable content; removed identity endpoint. |
 | 409 | VERSION_CONFLICT, ASSIGNMENT_CONFLICT, INVALID_TRANSITION, OWNER_REQUIRED, OWNER_INELIGIBLE, TICKET_TERMINAL, EMAIL_CONFLICT, SELF_DEACTIVATION, LAST_ADMIN_REQUIRED, ATTACHMENT_LIMIT_EXCEEDED. |
 | 413 | PAYLOAD_TOO_LARGE: file/request parser limit. |
@@ -65,7 +65,7 @@ No secrets, SQL, stack traces, local paths, storage keys or protected resource i
 - CORS allows exactly configured `CORS_ORIGIN` (default `http://localhost:5173`), credentials=true, methods GET/POST/PATCH/PUT/DELETE/OPTIONS, headers Content-Type and X-CSRF-Token; expose Content-Disposition and Retry-After. Never reflect arbitrary origins or use wildcard credentials. Preflight returns 204 for allowed origin/method/header combinations without a session; does not authorize the actual request.
 - Every mutation requires an Origin exactly matching configured client origin or configured API origin; reject absent, null or unlisted Origin. Login uses this protection even without a session. Authenticated mutations additionally require X-CSRF-Token equal to a 32-byte random synchronizer secret bound to the current session, constant-time compared. This includes multipart upload, logout and password change.
 - Login and GET `/auth/me` return the CSRF token. It is kept in memory, reused for that session and expires/revokes/rotates with it. No CSRF token in URL or cookie; it grants nothing without the session. Refetch me after reload. Do not retry a failed mutation automatically after token/identity changes.
-- Failed credential checks are counted for both normalized email and trusted source IP, including unknown/inactive accounts, with equivalent password-hash work for those cases. The first five failed account attempts (or 30 IP attempts) return the generic 401; subsequent attempts during the rolling window return 429 without verifying credentials. Failures older than 15 minutes are excluded from the count; successful login does not reset IP/account history. Atomic reservation/counting must prevent concurrent attempts exceeding the limits. Malformed login input gets 400 and remains subject to the IP abuse limit. Do not trust arbitrary X-Forwarded-For.
+- Failed credential checks are counted for both normalized email and trusted source IP, including unknown and inactive accounts when password verification fails, with equivalent password-hash work for those cases. The first five failed account attempts (or 30 IP attempts) return the generic 401; subsequent attempts during the rolling window return 429 without verifying credentials. A matching password for an inactive account completes equivalent hash work and returns 403 `ACCOUNT_INACTIVE` without creating a session; it is not a successful login. Failures older than 15 minutes are excluded from the count; successful login does not reset IP/account history. Atomic reservation/counting must prevent concurrent attempts exceeding the limits. Malformed login input gets 400 and remains subject to the IP abuse limit. Do not trust arbitrary X-Forwarded-For.
 
 | Method / path | Body | Success |
 | --- | --- | --- |
@@ -73,6 +73,8 @@ No secrets, SQL, stack traces, local paths, storage keys or protected resource i
 | GET /auth/me | None | 200 Auth; works for restricted sessions. |
 | POST /auth/change-password | `{currentPassword: string, newPassword: string}` | 200 Auth and rotated cookie; wrong current password = 400 field validation; BR-07 applies. UI confirmation is checked before sending. |
 | POST /auth/logout | `{}` | 204, cookie cleared and server token revoked. Missing/expired session = 401 with cookie cleared; invalid CSRF on valid session = 403, session retained. |
+
+A matching password for an inactive account returns 403 `ACCOUNT_INACTIVE`; an inactive account with a wrong password follows the generic 401 `INVALID_CREDENTIALS` path. Neither response creates a session.
 
 Email normalization/validation matches user creation. Passwords are untrimmed 15–128 Unicode code points; over-limit input is rejected before expensive hashing. Normal sessions may change their own password through the same operation. Failures of current-password verification use the account/IP rate limits as well. Password replacement transaction rechecks credential/session state so a concurrent reset/deactivation cannot resurrect access.
 

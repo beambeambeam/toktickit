@@ -40,7 +40,7 @@ Excluded: email delivery/invitations/reset links, MFA, social login, SSO, self-r
 
 ## 5. Business Rules
 
-- **BR-01:** Only active users with valid credentials authenticate; invalid, unknown and inactive accounts share one failure message.
+- **BR-01:** Only active users with valid credentials authenticate. Unknown accounts and wrong passwords return the same generic failure; after a matching password is verified, an inactive account returns safe `ACCOUNT_INACTIVE` feedback without a session.
 - **BR-02:** A password-change-required session accesses only current user, password change and logout.
 - **BR-03:** Authenticated identity determines submitted ownership; client identity overrides are rejected.
 - **BR-04:** Public Comments are visible to the owning Requester, IT Staff and Administrator; Internal Notes only to IT Staff and Administrator.
@@ -63,7 +63,7 @@ Excluded: email delivery/invitations/reset links, MFA, social login, SSO, self-r
 - **BR-21:** Preserve Lab 2 summary (5–120), description (20–4,000) and removal-reason (3–500) trimmed JavaScript string-length limits. Attachments allow JPEG/PNG/WEBP/PDF with signature validation, at most 5 × 1024 × 1024 bytes each and five active per Ticket. Requester upload/removal remains permitted on all statuses under these rules.
 - **BR-22:** Preserve atomic creation, opaque non-public file storage, compensation on failed writes, serialized active-file limits, retained removal metadata and blocked removed downloads. Preserve Lab 2 My Tickets query defaults separately from the queue.
 - **BR-23:** Errors are safe and role/ownership checks precede protected resource disclosure. No note content, field, count or note-derived timestamp leaks into Requester responses or caches.
-- **BR-24:** Seeds insert missing fixtures only; reruns do not reset credentials, reactivate edited users, overwrite Tickets or restore removed Attachments. Bootstrap fills only missing credentials after explicit local invocation.
+- **BR-24:** Application seeds insert missing fixtures only; reruns do not reset credentials, reactivate edited users, overwrite Tickets or restore removed Attachments. Bootstrap fills only missing credentials after explicit local invocation. Automated browser tests use disposable fixtures and do not depend on a mutable seeded `mustChangePassword` flag.
 - **BR-25:** Required tests and evidence must be actual and traceable. Agent review does not constitute student or peer approval.
 
 ### Authorization matrix
@@ -138,7 +138,7 @@ Migration sequence (implemented in #50/#51 and owning feature slices):
 
 | ID | Observable completion criterion |
 | --- | --- |
-| AC-01 | Valid active login creates a rotated session and returns safe user state; unknown/invalid/inactive login returns the same safe failure. |
+| AC-01 | Valid active login creates a rotated session and returns safe user state; unknown accounts and wrong passwords return the same safe `INVALID_CREDENTIALS` failure, while matching credentials for inactive accounts return safe `ACCOUNT_INACTIVE` feedback without a session. |
 | AC-02 | Account/IP attempt boundaries throttle concurrently with 429 and retry guidance, then recover after the window. |
 | AC-03 | Initial sessions cannot reach normal data; valid matching replacement obeys inclusive Unicode limits, rejects current-password reuse and rotates/revokes sessions. |
 | AC-04 | Missing, idle-expired, absolute-expired, restricted-expired, logged-out and revoked sessions cannot be replayed. Cookie flags and server hash-only token storage match contract. |
@@ -196,5 +196,11 @@ The contract may be prepared under #49 while external approval remains pending. 
 ## 11. Assumptions and Decisions
 
 The issue's proposed numeric authentication limits are adopted as the contract. Owner eligibility includes Administrators while mutation permission remains IT Staff only. This resolves the labsheet's optional administrative ticket powers using the explicit parent matrix. Preserve My Tickets page sizes 10/25/50; queue uses 10/20/50. Attachment mutation retains Lab 2 status-independent rules, while comments/notes close on Closed/Cancelled. Local bootstrap avoids committed real credentials. Authentication library selection is deferred to #50's runtime/type check; the security behavior is fixed here.
+
+The labsheet's §8.1 inactive-account requirement is implemented with ordered feedback: verify the submitted password first, then return `ACCOUNT_INACTIVE` only for a matching password on an inactive account. Unknown accounts and wrong passwords remain indistinguishable generic failures, so the clear inactive response does not expose account state to an unauthenticated guess.
+
+The Change Password illustration in the labsheet lists an eight-character minimum plus upper/lowercase, number and special-character rules. This contract deliberately replaces those composition rules with BR-07's 15–128 Unicode-code-point passphrase policy, including spaces and paste, because length and usable passphrases are the chosen security/usability trade-off. The UI displays the contract's rule rather than the illustration's checklist, and UNIT-01 covers the exact bounds and behavior. This is an explicit departure, not an omitted requirement.
+
+Application seeds remain insert-only and non-destructive. Browser tests use a fresh disposable database/storage fixture per run; E2E-01 provisions fresh role accounts, including a `mustChangePassword` account, so it never relies on a seeded flag that a previous run may have consumed.
 
 Delivery slices: #49 contract; #50 authentication/migration/Requester continuity; #51 queue/detail; #52 owner/priority; #53 status/indication; #54 comments; #55 notes; #56 user list/create; #57 edit/reset; #58 integrated evidence. Use `feature/<issue>-<description>` from current `lab3-staging`, reviewed back into staging, then release to main. #52–55 depend on #51; #56 depends on #50; #57 depends on #56 and #51; #58 depends on completed operational/admin slices. External approval and final submission remain explicit gates in [reviewer.md](./reviewer.md).

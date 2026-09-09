@@ -14,7 +14,7 @@ Prepared under [Issue #49](https://github.com/beambeambeam/toktickit/issues/49) 
 
 | Deliverable | PR / reviewer / comments / response / approval / merge |
 | --- | --- |
-| #49 contract → lab3-staging | Pending external PR/review evidence. |
+| #49 contract → lab3-staging | [PR #59](https://github.com/beambeambeam/toktickit/pull/59), reviewer Kiatisakk, reviewed commit `27aa9bbcbc9353e4785cf87b04e33428b495c3ed`; [changes-requested review](https://github.com/beambeambeam/toktickit/pull/59#pullrequestreview-5153448021) with inline findings on [E2E-01 seed state](https://github.com/beambeambeam/toktickit/pull/59#discussion_r3967618584), [inactive feedback](https://github.com/beambeambeam/toktickit/pull/59#discussion_r3967618595), and [password rules](https://github.com/beambeambeam/toktickit/pull/59#discussion_r3967618606) / working-tree response makes E2E-01 disposable-fixture based, documents ordered inactive feedback, and records the deliberate password-policy departure; fix commit and re-review pending / changes requested; no approval or merge. |
 | #50–57 features → lab3-staging | Pending implementation and reviewed PRs. |
 | Release lab3-staging → main | Pending release PR, reviewer and final merge SHA. |
 | Reciprocal peer review | No Lab 3 evidence recorded. |
