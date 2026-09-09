@@ -9,11 +9,15 @@ import {
   removeTicketAttachment,
   uploadTicketAttachments,
 } from "@/api/requester";
-import { AppShell, RequesterRequired } from "@/components/app-shell";
+import {
+  AppShell,
+  AuthRequired,
+  RequesterAccessDenied,
+} from "@/components/app-shell";
 import { AttachmentPicker } from "@/components/attachment-picker";
 import { FormField, ReadOnlyField } from "@/components/form-field";
 import { StatusBadge } from "@/components/status-badge";
-import { useRequester } from "@/context/requester";
+import { useAuth } from "@/context/auth";
 import { cn } from "@/lib/class-names";
 import { validateSelectedFiles } from "@/lib/ticket-rules";
 
@@ -34,14 +38,17 @@ export const RequesterTicketDetailPage = ({
 }: {
   ticketId: string;
 }) => {
-  const { requester } = useRequester();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
   const numericTicketId = Number(ticketId);
   const hasValidTicketId =
     Number.isSafeInteger(numericTicketId) && numericTicketId > 0;
   const ticketQuery = useQuery({
-    ...ticketQueryOptions(requester?.id ?? 0, numericTicketId),
-    enabled: requester !== null && hasValidTicketId,
+    ...ticketQueryOptions(numericTicketId),
+    enabled:
+      user?.role === "Requester" &&
+      !user.mustChangePassword &&
+      hasValidTicketId,
   });
   const [files, setFiles] = useState<File[]>([]);
   const [fileErrors, setFileErrors] = useState<string[]>([]);
@@ -55,15 +62,11 @@ export const RequesterTicketDetailPage = ({
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
-      if (requester === null) {
-        throw new Error("Select a Development Requester first.");
+      if (user === null) {
+        throw new Error("Sign in before adding Attachments.");
       }
 
-      return await uploadTicketAttachments(
-        requester.id,
-        numericTicketId,
-        files
-      );
+      return await uploadTicketAttachments(numericTicketId, files);
     },
     onError: (error: unknown) => {
       setOperationError(
@@ -77,7 +80,7 @@ export const RequesterTicketDetailPage = ({
       setOperationError(null);
       setSuccessMessage("Attachment(s) added successfully.");
       void queryClient.invalidateQueries({
-        queryKey: ["ticket", requester?.id, numericTicketId],
+        queryKey: ["ticket", numericTicketId],
       });
     },
   });
@@ -90,12 +93,11 @@ export const RequesterTicketDetailPage = ({
       attachmentId: number;
       reason: string;
     }) => {
-      if (requester === null) {
-        throw new Error("Select a Development Requester first.");
+      if (user === null) {
+        throw new Error("Sign in before removing Attachments.");
       }
 
       return await removeTicketAttachment(
-        requester.id,
         numericTicketId,
         attachmentId,
         reason
@@ -117,13 +119,21 @@ export const RequesterTicketDetailPage = ({
         "Attachment removed. Its metadata remains in the Ticket history."
       );
       void queryClient.invalidateQueries({
-        queryKey: ["ticket", requester?.id, numericTicketId],
+        queryKey: ["ticket", numericTicketId],
       });
     },
   });
 
-  if (requester === null) {
-    return <RequesterRequired />;
+  if (user === null) {
+    return <AuthRequired />;
+  }
+
+  if (user.mustChangePassword) {
+    return <AuthRequired />;
+  }
+
+  if (user.role !== "Requester") {
+    return <RequesterAccessDenied />;
   }
 
   const ticket = ticketQuery.data;
@@ -161,7 +171,6 @@ export const RequesterTicketDetailPage = ({
   const download = async (attachmentId: number) => {
     try {
       const result = await downloadTicketAttachment(
-        requester.id,
         numericTicketId,
         attachmentId
       );

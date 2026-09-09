@@ -14,13 +14,25 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type * as RequesterApi from "@/api/requester";
-import { RequesterProvider } from "@/context/requester";
 import { CreateTicketPage } from "@/pages/create-ticket-page";
 
-const { createTicketMock, navigateMock } = vi.hoisted(() => ({
-  createTicketMock: vi.fn(),
-  navigateMock: vi.fn(),
-}));
+const { authUser, createTicketMock, logoutMock, navigateMock } = vi.hoisted(
+  () => ({
+    authUser: {
+      createdAt: "2026-09-01T00:00:00.000Z",
+      displayName: "Ada Requester",
+      email: "ada@example.test",
+      id: 1,
+      isActive: true,
+      mustChangePassword: false,
+      role: "Requester" as const,
+      updatedAt: "2026-09-01T00:00:00.000Z",
+    },
+    createTicketMock: vi.fn(),
+    logoutMock: vi.fn(),
+    navigateMock: vi.fn(),
+  })
+);
 
 vi.mock("@/api/requester", async () => {
   const actual = await vi.importActual<typeof RequesterApi>("@/api/requester");
@@ -40,11 +52,21 @@ vi.mock("@tanstack/react-router", async () => {
   };
 });
 
-const requester = {
-  displayName: "Ada Requester",
-  email: "ada@example.test",
-  id: 1,
-} as const;
+vi.mock("@/context/auth", () => ({
+  useAuth: () => ({
+    auth: { csrfToken: "csrf", user: authUser },
+    authError: null,
+    changePassword: vi.fn(),
+    isLoading: false,
+    isRefreshing: false,
+    login: vi.fn(),
+    logout: logoutMock,
+    refetchAuth: vi.fn(),
+    user: authUser,
+  }),
+}));
+
+const requester = authUser;
 
 const category = { id: 1, name: "Network" } as const;
 const relatedSystem = { id: 2, name: "Campus Wi-Fi" } as const;
@@ -84,9 +106,7 @@ const renderCreateTicket = () => {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <RequesterProvider>
-        <CreateTicketPage />
-      </RequesterProvider>
+      <CreateTicketPage />
     </QueryClientProvider>
   );
 };
@@ -144,11 +164,6 @@ describe("Create Ticket page", () => {
   beforeEach(() => {
     navigateMock.mockReset();
     createTicketMock.mockReset();
-    sessionStorage.clear();
-    sessionStorage.setItem(
-      "toktickit.development-requester",
-      JSON.stringify(requester)
-    );
   });
 
   afterEach(() => {
@@ -276,7 +291,6 @@ describe("Create Ticket page", () => {
         "The requester cannot reach the campus network from the assigned device.",
       relatedSystemId: 2,
       requestedPriority: "High",
-      requesterId: 1,
       summary: "Wi-Fi outage",
     });
 

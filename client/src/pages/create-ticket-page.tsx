@@ -8,7 +8,11 @@ import {
   relatedSystemsQueryOptions,
 } from "@/api/lab2-options";
 import { createTicket } from "@/api/requester";
-import { AppShell, RequesterRequired } from "@/components/app-shell";
+import {
+  AppShell,
+  AuthRequired,
+  RequesterAccessDenied,
+} from "@/components/app-shell";
 import { AttachmentPicker } from "@/components/attachment-picker";
 import {
   FormField,
@@ -16,7 +20,7 @@ import {
   ReadOnlyField,
 } from "@/components/form-field";
 import { StatusBadge } from "@/components/status-badge";
-import { useRequester } from "@/context/requester";
+import { useAuth } from "@/context/auth";
 import {
   getApiFieldErrors,
   isRequestedPriority,
@@ -40,9 +44,15 @@ const apiErrorMessage = (error: unknown, fallback: string) =>
 export const CreateTicketPage = () => {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
-  const { requester } = useRequester();
-  const categoriesQuery = useQuery(activeCategoriesQueryOptions());
-  const relatedSystemsQuery = useQuery(relatedSystemsQueryOptions());
+  const { user } = useAuth();
+  const canUseRequesterWorkspace =
+    user?.role === "Requester" && !user.mustChangePassword;
+  const categoriesQuery = useQuery(
+    activeCategoriesQueryOptions({ enabled: canUseRequesterWorkspace })
+  );
+  const relatedSystemsQuery = useQuery(
+    relatedSystemsQueryOptions({ enabled: canUseRequesterWorkspace })
+  );
   const [values, setValues] = useState<TicketFormValues>(initialValues);
   const [fieldErrors, setFieldErrors] = useState<TicketFieldErrors>({});
   const [attachmentErrors, setAttachmentErrors] = useState<string[]>([]);
@@ -54,10 +64,8 @@ export const CreateTicketPage = () => {
 
   const createMutation = useMutation({
     mutationFn: async () => {
-      if (requester === null) {
-        throw new Error(
-          "Select a Development Requester before creating a Ticket."
-        );
+      if (user === null) {
+        throw new Error("Sign in before creating a Ticket.");
       }
 
       const priority = values.requestedPriority;
@@ -71,7 +79,6 @@ export const CreateTicketPage = () => {
         description: values.description.trim(),
         relatedSystemId: Number(values.relatedSystemId),
         requestedPriority: priority,
-        requesterId: requester.id,
         summary: values.summary.trim(),
       });
     },
@@ -88,13 +95,21 @@ export const CreateTicketPage = () => {
       setSubmitError(null);
       setCreatedTicket(ticket);
       void queryClient.invalidateQueries({
-        queryKey: ["tickets", requester?.id],
+        queryKey: ["tickets"],
       });
     },
   });
 
-  if (requester === null) {
-    return <RequesterRequired />;
+  if (user === null) {
+    return <AuthRequired />;
+  }
+
+  if (user.mustChangePassword) {
+    return <AuthRequired />;
+  }
+
+  if (user.role !== "Requester") {
+    return <RequesterAccessDenied />;
   }
 
   const updateValue = (field: keyof TicketFormValues, value: string) => {
@@ -136,7 +151,7 @@ export const CreateTicketPage = () => {
     <AppShell eyebrow="Requester workspace" title="Create Ticket">
       <div className="page-actions">
         <span className="context-note">
-          Creating as <strong>{requester.displayName}</strong>
+          Creating as <strong>{user.displayName}</strong>
         </span>
         <button
           className="button button-secondary"
@@ -168,7 +183,7 @@ export const CreateTicketPage = () => {
             <div className="readonly-grid">
               <ReadOnlyField
                 label="Requester"
-                value={`${requester.displayName} · ${requester.email}`}
+                value={`${user.displayName} · ${user.email}`}
               />
               <ReadOnlyField
                 label="Ticket Number"

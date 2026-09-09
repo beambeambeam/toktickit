@@ -1,78 +1,212 @@
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import type { PropsWithChildren } from "react";
 
-import { useRequester } from "@/context/requester";
+import { useAuth } from "@/context/auth";
 
 type AppShellProps = PropsWithChildren<{
   eyebrow?: string;
   title: string;
 }>;
 
-export const AppShell = ({ children, eyebrow, title }: AppShellProps) => {
-  const navigate = useNavigate();
-  const { clearRequester, requester } = useRequester();
+export const AuthLoading = () => (
+  <main className="page-content standalone-message">
+    <section aria-live="polite" className="surface-card feedback feedback-info">
+      <h1>Checking your session…</h1>
+      <p>Please wait while TokTickIT restores your signed-in session.</p>
+    </section>
+  </main>
+);
 
-  if (requester === null) {
-    return null;
+export const AuthRequired = () => {
+  const navigate = useNavigate();
+  const { authError, isLoading, refetchAuth, user } = useAuth();
+
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+
+    void navigate({
+      to: user?.mustChangePassword === true ? "/change-password" : "/login",
+    });
+  }, [isLoading, navigate, user]);
+
+  if (isLoading) {
+    return <AuthLoading />;
   }
 
-  const changeRequester = () => {
-    clearRequester();
-    void navigate({ to: "/" });
+  return (
+    <main className="page-content standalone-message">
+      <section className="surface-card feedback feedback-error" role="alert">
+        <h1>Sign in required</h1>
+        <p>
+          {authError instanceof Error
+            ? authError.message
+            : "Sign in to open this TokTickIT page."}
+        </p>
+        <button
+          className="button button-secondary"
+          onClick={() => void refetchAuth()}
+          type="button"
+        >
+          Retry session check
+        </button>
+      </section>
+    </main>
+  );
+};
+
+export const RequesterAccessDenied = () => (
+  <main className="page-content standalone-message">
+    <section className="surface-card feedback feedback-warning" role="alert">
+      <h1>Access denied</h1>
+      <p>
+        This client currently provides the Requester workspace. Your account
+        role cannot open this page.
+      </p>
+      <Link className="button button-secondary" to="/change-password">
+        Change Password
+      </Link>
+    </section>
+  </main>
+);
+
+export const AppShell = ({ children, eyebrow, title }: AppShellProps) => {
+  const navigate = useNavigate();
+  const { logout, user, isLoading } = useAuth();
+  const [logoutError, setLogoutError] = useState<string | null>(null);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
+
+  useEffect(() => {
+    if (isLoading) {
+      return;
+    }
+
+    if (user === null) {
+      void navigate({ to: "/login" });
+      return;
+    }
+
+    if (user.mustChangePassword && title !== "Change Password") {
+      void navigate({ to: "/change-password" });
+    }
+  }, [isLoading, navigate, title, user]);
+
+  if (isLoading || user === null || user.mustChangePassword) {
+    return <AuthRequired />;
+  }
+
+  if (user.role !== "Requester" && title !== "Change Password") {
+    return <RequesterAccessDenied />;
+  }
+
+  const handleLogout = async () => {
+    setLogoutError(null);
+    setIsLoggingOut(true);
+
+    try {
+      await logout();
+      await navigate({ to: "/login" });
+    } catch (error: unknown) {
+      setLogoutError(
+        error instanceof Error
+          ? error.message
+          : "Unable to sign out. Try again."
+      );
+    } finally {
+      setIsLoggingOut(false);
+    }
   };
+
+  const initial = user.displayName.slice(0, 1).toUpperCase();
 
   return (
     <div className="app-shell">
       <header className="app-header">
         <div className="app-header-inner">
-          <Link className="brand" to="/tickets">
+          <Link
+            className="brand"
+            to={user.role === "Requester" ? "/tickets" : "/change-password"}
+          >
             <span aria-hidden="true" className="brand-mark">
               ◷
             </span>
             <span>TokTickIT</span>
           </Link>
           <nav aria-label="Primary navigation" className="desktop-nav">
+            {user.role === "Requester" ? (
+              <>
+                <Link
+                  activeOptions={{ exact: false }}
+                  activeProps={{ className: "nav-link active" }}
+                  className="nav-link"
+                  to="/tickets"
+                >
+                  <span aria-hidden="true">▤</span> My Tickets
+                </Link>
+                <Link
+                  activeProps={{ className: "nav-link active" }}
+                  className="nav-link"
+                  to="/create"
+                >
+                  <span aria-hidden="true">⊕</span> Create Ticket
+                </Link>
+              </>
+            ) : null}
             <Link
-              activeOptions={{ exact: false }}
               activeProps={{ className: "nav-link active" }}
               className="nav-link"
-              to="/tickets"
+              to="/change-password"
             >
-              <span aria-hidden="true">▤</span> My Tickets
-            </Link>
-            <Link
-              activeProps={{ className: "nav-link active" }}
-              className="nav-link"
-              to="/create"
-            >
-              <span aria-hidden="true">⊕</span> Create Ticket
+              Change Password
             </Link>
           </nav>
-          <div className="requester-chip">
-            <span aria-hidden="true" className="requester-avatar">
-              {requester.displayName.slice(0, 1).toUpperCase()}
+          <div className="account-chip">
+            <span aria-hidden="true" className="account-avatar">
+              {initial}
             </span>
-            <span className="requester-chip-copy">
-              <span className="requester-chip-label">Current requester</span>
-              <strong>{requester.displayName}</strong>
+            <span className="account-chip-copy">
+              <span className="account-chip-label">Signed in as</span>
+              <strong>{user.displayName}</strong>
+              <span>{user.role}</span>
             </span>
+            {logoutError === null ? null : (
+              <span className="logout-error desktop-logout-error" role="alert">
+                {logoutError}
+              </span>
+            )}
             <button
               className="button button-ghost"
-              onClick={changeRequester}
+              disabled={isLoggingOut}
+              onClick={() => void handleLogout()}
               type="button"
             >
-              Change Requester
+              {isLoggingOut ? "Signing out…" : "Log out"}
             </button>
           </div>
           <details className="mobile-nav">
             <summary aria-label="Open navigation">Menu</summary>
             <nav aria-label="Mobile navigation">
-              <Link to="/tickets">My Tickets</Link>
-              <Link to="/create">Create Ticket</Link>
-              <button onClick={changeRequester} type="button">
-                Change Requester
+              {user.role === "Requester" ? (
+                <>
+                  <Link to="/tickets">My Tickets</Link>
+                  <Link to="/create">Create Ticket</Link>
+                </>
+              ) : null}
+              <Link to="/change-password">Change Password</Link>
+              <button
+                disabled={isLoggingOut}
+                onClick={() => void handleLogout()}
+                type="button"
+              >
+                {isLoggingOut ? "Signing out…" : "Log out"}
               </button>
+              {logoutError === null ? null : (
+                <span className="logout-error mobile-logout-error" role="alert">
+                  {logoutError}
+                </span>
+              )}
             </nav>
           </details>
         </div>
@@ -89,24 +223,5 @@ export const AppShell = ({ children, eyebrow, title }: AppShellProps) => {
         {children}
       </main>
     </div>
-  );
-};
-
-export const RequesterRequired = () => {
-  const navigate = useNavigate();
-
-  useEffect(() => {
-    void navigate({ to: "/" });
-  }, [navigate]);
-
-  return (
-    <main className="page-content standalone-message">
-      <section className="surface-card feedback feedback-warning">
-        <h1>Select a Development Requester</h1>
-        <p>
-          Choose a Lab 2 testing context before opening requester workflows.
-        </p>
-      </section>
-    </main>
   );
 };
