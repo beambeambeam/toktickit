@@ -33,7 +33,12 @@ export const apiErrorHandler: ErrorRequestHandler = (
     return;
   }
 
+  response.set("Cache-Control", "no-store");
+
   if (error instanceof ApiError) {
+    if (error.retryAfter !== undefined) {
+      response.set("Retry-After", error.retryAfter.toString());
+    }
     response.status(error.statusCode).json(createErrorBody(error));
     return;
   }
@@ -51,7 +56,7 @@ export const apiErrorHandler: ErrorRequestHandler = (
   response.status(500).json({
     error: {
       code: "INTERNAL_ERROR",
-      message: "Unexpected server error.",
+      message: "Unable to complete the request. Please try again.",
     },
   });
 };

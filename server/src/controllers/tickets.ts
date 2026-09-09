@@ -1,7 +1,7 @@
 import type { RequestHandler } from "express";
 
 import { ApiError } from "../errors/api-error.js";
-import { getRequesterId } from "../middlewares/requester-context.js";
+import { getAuthenticatedUserId } from "../middlewares/auth-context.js";
 import {
   parseTicketListQuery,
   validateRemovalReason,
@@ -92,7 +92,7 @@ const getBodyObject = (body: unknown): Record<string, unknown> => {
 export const createTicket: RequestHandler = async (request, response) => {
   const fields = validateTicketFields(getBodyObject(request.body));
   const ticket = await createTicketForRequester(
-    getRequesterId(response),
+    getAuthenticatedUserId(response),
     fields,
     getAttachmentCandidates(request.files)
   );
@@ -103,7 +103,7 @@ export const createTicket: RequestHandler = async (request, response) => {
 export const getTickets: RequestHandler = async (request, response) => {
   const query = parseTicketListQuery(request.query);
   const tickets = await listTicketsForRequester(
-    getRequesterId(response),
+    getAuthenticatedUserId(response),
     query
   );
 
@@ -112,7 +112,7 @@ export const getTickets: RequestHandler = async (request, response) => {
 
 export const getTicket: RequestHandler = async (request, response) => {
   const ticket = await getTicketForRequester(
-    getRequesterId(response),
+    getAuthenticatedUserId(response),
     parseId(request.params.ticketId, "ticketId")
   );
 
@@ -121,7 +121,7 @@ export const getTicket: RequestHandler = async (request, response) => {
 
 export const getAttachments: RequestHandler = async (request, response) => {
   const attachments = await getAttachmentsForRequester(
-    getRequesterId(response),
+    getAuthenticatedUserId(response),
     parseId(request.params.ticketId, "ticketId")
   );
 
@@ -139,7 +139,7 @@ export const addAttachments: RequestHandler = async (request, response) => {
   }
 
   const attachments = await addAttachmentsForRequester(
-    getRequesterId(response),
+    getAuthenticatedUserId(response),
     parseId(request.params.ticketId, "ticketId"),
     attachmentCandidates
   );
@@ -149,7 +149,7 @@ export const addAttachments: RequestHandler = async (request, response) => {
 
 export const downloadAttachment: RequestHandler = async (request, response) => {
   const attachment = await downloadAttachmentForRequester(
-    getRequesterId(response),
+    getAuthenticatedUserId(response),
     parseId(request.params.ticketId, "ticketId"),
     parseId(request.params.attachmentId, "attachmentId")
   );
@@ -161,6 +161,7 @@ export const downloadAttachment: RequestHandler = async (request, response) => {
       "Content-Disposition": `attachment; filename*=UTF-8''${encodedFilename}`,
       "Content-Length": attachment.content.byteLength.toString(),
       "Content-Type": attachment.mediaType,
+      "X-Content-Type-Options": "nosniff",
     })
     .send(attachment.content);
 };
@@ -168,7 +169,7 @@ export const downloadAttachment: RequestHandler = async (request, response) => {
 export const removeAttachment: RequestHandler = async (request, response) => {
   const body = getBodyObject(request.body);
   const attachment = await removeAttachmentForRequester(
-    getRequesterId(response),
+    getAuthenticatedUserId(response),
     parseId(request.params.ticketId, "ticketId"),
     parseId(request.params.attachmentId, "attachmentId"),
     validateRemovalReason(body.reason)

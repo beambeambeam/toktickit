@@ -7,11 +7,107 @@ servers:
   - url: http://localhost:3000
     description: Local development server
 paths:
+  /api/auth/login:
+    post:
+      operationId: postApiAuthLogin
+      summary: Sign in
+      description: Creates a restricted or normal opaque session for an active User.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: The authenticated User and CSRF token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "429":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/auth/me:
+    get:
+      operationId: getApiAuthMe
+      summary: Get the current User
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: The current User and CSRF token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/auth/change-password:
+    post:
+      operationId: postApiAuthChangePassword
+      summary: Change the current password
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "200":
+          description: The rotated unrestricted session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "429":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/auth/logout:
+    post:
+      operationId: postApiAuthLogout
+      summary: Revoke the current session
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmptyRequest"
+      responses:
+        "204":
+          description: The session was revoked.
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
   /api/categories:
     get:
       operationId: getApiCategories
       summary: List active Categories
       description: Returns active Categories in display order.
+      security:
+        - sessionCookie: []
       responses:
         "200":
           description: The active Categories.
@@ -39,6 +135,8 @@ paths:
       operationId: getApiRelatedSystems
       summary: List active Related Systems
       description: Returns active Related Systems in display order.
+      security:
+        - sessionCookie: []
       responses:
         "200":
           description: The active Related Systems.
@@ -46,20 +144,6 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/RelatedSystemListResponse"
-        "500":
-          $ref: "#/components/responses/ApiErrorResponse"
-  /api/development-requesters:
-    get:
-      operationId: getApiDevelopmentRequesters
-      summary: List active Development Requesters
-      description: Returns active test-context Requesters only.
-      responses:
-        "200":
-          description: The active Development Requesters.
-          content:
-            application/json:
-              schema:
-                $ref: "#/components/schemas/DevelopmentRequesterListResponse"
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
   /api/health:
@@ -89,9 +173,11 @@ paths:
     post:
       operationId: createApiTicket
       summary: Create a requester Ticket
-      description: Creates one Ticket owned by the validated Development Requester context.
+      description: Creates one Ticket owned by the authenticated Requester.
+      security:
+        - sessionCookie: []
       parameters:
-        - $ref: "#/components/parameters/DevelopmentRequesterId"
+        - $ref: "#/components/parameters/CsrfToken"
       requestBody:
         required: true
         content:
@@ -120,9 +206,10 @@ paths:
     get:
       operationId: getApiTickets
       summary: List owned requester Tickets
-      description: Returns only Tickets owned by the validated Development Requester context.
+      description: Returns only Tickets owned by the authenticated Requester.
+      security:
+        - sessionCookie: []
       parameters:
-        - $ref: "#/components/parameters/DevelopmentRequesterId"
         - $ref: "#/components/parameters/Search"
         - $ref: "#/components/parameters/CategoryId"
         - $ref: "#/components/parameters/RelatedSystemId"
@@ -147,8 +234,9 @@ paths:
     get:
       operationId: getApiTicket
       summary: Get an owned Ticket
+      security:
+        - sessionCookie: []
       parameters:
-        - $ref: "#/components/parameters/DevelopmentRequesterId"
         - $ref: "#/components/parameters/TicketId"
       responses:
         "200":
@@ -167,8 +255,9 @@ paths:
     get:
       operationId: getApiTicketAttachments
       summary: List owned Ticket Attachment metadata
+      security:
+        - sessionCookie: []
       parameters:
-        - $ref: "#/components/parameters/DevelopmentRequesterId"
         - $ref: "#/components/parameters/TicketId"
       responses:
         "200":
@@ -186,8 +275,10 @@ paths:
     post:
       operationId: createApiTicketAttachments
       summary: Add Attachments to an owned Ticket
+      security:
+        - sessionCookie: []
       parameters:
-        - $ref: "#/components/parameters/DevelopmentRequesterId"
+        - $ref: "#/components/parameters/CsrfToken"
         - $ref: "#/components/parameters/TicketId"
       requestBody:
         required: true
@@ -218,8 +309,9 @@ paths:
     get:
       operationId: getApiTicketAttachmentContent
       summary: Download an active owned Attachment
+      security:
+        - sessionCookie: []
       parameters:
-        - $ref: "#/components/parameters/DevelopmentRequesterId"
         - $ref: "#/components/parameters/TicketId"
         - $ref: "#/components/parameters/AttachmentId"
       responses:
@@ -256,8 +348,10 @@ paths:
     delete:
       operationId: removeApiTicketAttachment
       summary: Soft-remove an owned Attachment
+      security:
+        - sessionCookie: []
       parameters:
-        - $ref: "#/components/parameters/DevelopmentRequesterId"
+        - $ref: "#/components/parameters/CsrfToken"
         - $ref: "#/components/parameters/TicketId"
         - $ref: "#/components/parameters/AttachmentId"
       requestBody:
@@ -281,14 +375,13 @@ paths:
           $ref: "#/components/responses/ApiErrorResponse"
 components:
   parameters:
-    DevelopmentRequesterId:
-      name: X-Development-Requester-Id
+    CsrfToken:
+      name: X-CSRF-Token
       in: header
       required: true
-      description: Temporary Lab 2 test context; not authentication.
+      description: Synchronizer token returned by login or current-user retrieval.
       schema:
-        type: integer
-        minimum: 1
+        type: string
     TicketId:
       name: ticketId
       in: path
@@ -375,6 +468,11 @@ components:
         type: integer
         enum: [10, 25, 50]
         default: 10
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: toktickit_session
   responses:
     ApiErrorResponse:
       description: The API could not complete the request.
@@ -438,7 +536,42 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RelatedSystem"
-    DevelopmentRequester:
+    User:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          displayName,
+          email,
+          role,
+          isActive,
+          mustChangePassword,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        id:
+          type: integer
+        displayName:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          type: string
+          enum: [Requester, IT Staff, Administrator]
+        isActive:
+          type: boolean
+        mustChangePassword:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    TicketRequester:
       type: object
       additionalProperties: false
       required: [id, displayName, email]
@@ -450,15 +583,40 @@ components:
         email:
           type: string
           format: email
-    DevelopmentRequesterListResponse:
+    AuthResponse:
       type: object
       additionalProperties: false
-      required: [items]
+      required: [user, csrfToken]
       properties:
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/DevelopmentRequester"
+        user:
+          $ref: "#/components/schemas/User"
+        csrfToken:
+          type: string
+          minLength: 43
+          maxLength: 43
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    ChangePasswordRequest:
+      type: object
+      additionalProperties: false
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+    EmptyRequest:
+      type: object
+      additionalProperties: false
+      maxProperties: 0
     RequestedPriority:
       type: string
       enum: [Low, Medium, High, Urgent]
@@ -553,7 +711,7 @@ components:
           required: [requester, description, attachments]
           properties:
             requester:
-              $ref: "#/components/schemas/DevelopmentRequester"
+              $ref: "#/components/schemas/TicketRequester"
             description:
               type: string
             attachments:

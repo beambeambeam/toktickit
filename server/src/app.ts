@@ -10,8 +10,10 @@ export const app = express();
 app.use(
   "/api",
   cors({
-    allowedHeaders: ["Content-Type", "X-Development-Requester-Id"],
-    exposedHeaders: ["Content-Disposition"],
+    allowedHeaders: ["Content-Type", "X-CSRF-Token"],
+    credentials: true,
+    exposedHeaders: ["Content-Disposition", "Retry-After"],
+    methods: ["GET", "POST", "PATCH", "PUT", "DELETE", "OPTIONS"],
     origin: corsConfig.CORS_ORIGIN,
   }),
   apiRouter

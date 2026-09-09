@@ -191,6 +191,23 @@ export const validateTicketFields = (
   input: Record<string, unknown>
 ): TicketFields => {
   const issues: ValidationIssue[] = [];
+  const allowedFields = new Set([
+    "categoryId",
+    "description",
+    "relatedSystemId",
+    "requestedPriority",
+    "summary",
+  ]);
+
+  for (const field of Object.keys(input)) {
+    if (!allowedFields.has(field)) {
+      issues.push({
+        field,
+        reason: "Request field is not supported.",
+      });
+    }
+  }
+
   const categoryId = parsePositiveInteger(
     getSingleValue(input, "categoryId", issues),
     "categoryId",

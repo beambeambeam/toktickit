@@ -25,7 +25,7 @@ const attachmentSelection = {
   originalFilename: true,
   removalReason: true,
   removedAt: true,
-  removedByRequesterId: true,
+  removedByUserId: true,
   storageKey: true,
   uploadedAt: true,
 } as const;
@@ -276,7 +276,7 @@ export const removeAttachment = async (
       data: {
         removalReason: reason,
         removedAt,
-        removedByRequesterId: requesterId,
+        removedByUserId: requesterId,
       },
       where: {
         id: attachmentId,
