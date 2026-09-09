@@ -35,7 +35,7 @@ export default defineConfig({
     ? [["github"], ["html", { open: "never" }]]
     : [["list"], ["html", { open: "never" }]],
   retries: isCI ? 2 : 0,
-  testDir: "lab-02",
+  testDir: ".",
   timeout: 60_000,
   use: {
     baseURL,

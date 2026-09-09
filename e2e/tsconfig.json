@@ -7,5 +7,5 @@
     "strict": true,
     "types": ["node"]
   },
-  "include": ["playwright.config.ts", "lab-02/**/*.ts"]
+  "include": ["playwright.config.ts", "lab-*/**/*.ts"]
 }
