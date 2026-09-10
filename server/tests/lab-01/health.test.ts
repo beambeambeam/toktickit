@@ -89,10 +89,7 @@ describe("Health API", () => {
       .set("Access-Control-Request-Method", "GET")
       .set("Access-Control-Request-Headers", "X-Not-Allowed")
       .expect("Access-Control-Allow-Origin", "http://localhost:5173")
-      .expect(
-        "Access-Control-Allow-Headers",
-        "Content-Type,X-Development-Requester-Id"
-      )
+      .expect("Access-Control-Allow-Headers", "Content-Type,X-CSRF-Token")
       .expect("Access-Control-Allow-Methods", /GET/u)
       .expect(204);
   });
@@ -128,7 +125,10 @@ describe("Health API", () => {
       .get("/api/error")
       .expect("Content-Type", /json/u)
       .expect(500, {
-        error: { code: "INTERNAL_ERROR", message: "Unexpected server error." },
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Unable to complete the request. Please try again.",
+        },
       });
   });
 
@@ -136,13 +136,19 @@ describe("Health API", () => {
     await request(errorApp)
       .get("/api/object-error")
       .expect(500, {
-        error: { code: "INTERNAL_ERROR", message: "Unexpected server error." },
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Unable to complete the request. Please try again.",
+        },
       });
 
     await request(errorApp)
       .get("/api/fallback")
       .expect(500, {
-        error: { code: "INTERNAL_ERROR", message: "Unexpected server error." },
+        error: {
+          code: "INTERNAL_ERROR",
+          message: "Unable to complete the request. Please try again.",
+        },
       });
   });
 

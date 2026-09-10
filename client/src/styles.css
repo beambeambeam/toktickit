@@ -145,14 +145,14 @@ button:disabled,
 }
 
 .app-header,
-.selection-header {
+.auth-header {
   color: #fff;
   background: var(--primary-green);
   box-shadow: 0 1px 0 rgb(0 0 0 / 12%);
 }
 
 .app-header-inner,
-.selection-header-inner {
+.auth-header-inner {
   width: min(100% - 2rem, 1440px);
   min-height: 4.5rem;
   margin: 0 auto;
@@ -217,14 +217,14 @@ button:disabled,
   content: "";
 }
 
-.requester-chip {
+.account-chip {
   display: flex;
   align-items: center;
   gap: 0.55rem;
   margin-left: auto;
 }
 
-.requester-avatar {
+.account-avatar {
   width: 2.25rem;
   height: 2.25rem;
   display: inline-grid;
@@ -235,24 +235,24 @@ button:disabled,
   font-weight: 800;
 }
 
-.requester-chip-copy {
+.account-chip-copy {
   min-width: 0;
   display: grid;
 }
 
-.requester-chip-label {
+.account-chip-label {
   color: rgb(255 255 255 / 72%);
   font-size: 0.7rem;
 }
 
-.requester-chip-copy strong {
+.account-chip-copy strong {
   max-width: 12rem;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
 
-.requester-chip .button-ghost {
+.account-chip .button-ghost {
   color: #fff;
 }
 
@@ -317,8 +317,7 @@ button:disabled,
   margin-bottom: 1.25rem;
 }
 
-.page-heading h1,
-.selection-card h1 {
+.page-heading h1 {
   margin: 0;
   color: var(--text);
   font-size: clamp(1.85rem, 4vw, 2.65rem);
@@ -520,6 +519,7 @@ button:disabled,
   color: var(--muted);
   font-size: 0.8rem;
   line-height: 1.45;
+  text-wrap: pretty;
 }
 
 .attachment-picker {
@@ -1078,31 +1078,34 @@ button:disabled,
   padding: 1.5rem;
 }
 
-.selection-page {
+.auth-page {
   min-height: 100dvh;
   background: var(--page-background);
 }
 
-.selection-header-inner {
+.auth-header-inner {
   min-height: 4.5rem;
 }
 
-.testing-chip {
+.auth-header-label,
+.restricted-account {
   margin-left: auto;
-  border: 1px solid rgb(255 255 255 / 40%);
-  border-radius: 999px;
-  padding: 0.4rem 0.75rem;
-  color: rgb(255 255 255 / 90%);
+  color: rgb(255 255 255 / 84%);
   font-size: 0.8rem;
 }
 
-.selection-main {
-  width: min(100% - 2rem, 52rem);
+.restricted-account {
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.auth-main {
+  width: min(100% - 2rem, 34rem);
   margin: 0 auto;
   padding: clamp(2rem, 7vw, 5rem) 0;
 }
 
-.selection-card {
+.auth-card {
   overflow: hidden;
   border: 1px solid var(--border);
   border-radius: 0.7rem;
@@ -1110,23 +1113,28 @@ button:disabled,
   box-shadow: 0 5px 20px rgb(24 49 40 / 9%);
 }
 
-.selection-card-header {
+.auth-card-header {
   padding: clamp(1.5rem, 5vw, 2.5rem) clamp(1rem, 6vw, 3rem) 1.5rem;
   text-align: center;
 }
 
-.selection-card-header h1 {
-  margin-top: 1rem;
+.auth-card-header h1,
+.auth-card-header h2 {
+  margin: 1rem 0 0;
+  color: var(--text);
   font-size: clamp(1.65rem, 4vw, 2.25rem);
+  line-height: 1.1;
+  text-wrap: balance;
 }
 
-.selection-card-header p {
+.auth-card-header p {
   margin: 0.8rem auto 0;
   color: var(--muted);
   line-height: 1.55;
+  text-wrap: pretty;
 }
 
-.selection-icon {
+.auth-icon {
   width: 4rem;
   height: 4rem;
   margin: 0 auto;
@@ -1138,54 +1146,83 @@ button:disabled,
   font-size: 2.1rem;
 }
 
-.selection-card-body {
+.auth-card-body {
   padding: 1.5rem clamp(1rem, 6vw, 3rem);
   border-top: 1px solid #e4ebe6;
 }
 
-.info-callout,
-.lab-callout {
+.auth-card-body form {
+  display: grid;
+  gap: 1rem;
+}
+
+.auth-card-body .form-field {
+  margin: 0;
+}
+
+.auth-help {
+  margin: 0;
+  color: var(--muted);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  text-wrap: pretty;
+}
+
+.auth-submit {
+  width: 100%;
+}
+
+.password-input-row {
   display: flex;
-  align-items: start;
-  gap: 0.7rem;
-  margin-top: 1rem;
-  padding: 0.8rem 0.9rem;
-  border: 1px solid #c8e4d1;
-  border-radius: 0.5rem;
+  align-items: stretch;
+  gap: 0.5rem;
+}
+
+.password-input-row input {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.password-toggle {
+  flex: 0 0 auto;
+}
+
+.password-card {
+  width: 100%;
+}
+
+.mandatory-password-main {
+  width: min(100% - 2rem, 34rem);
+}
+
+.feedback-info {
+  border-color: #c8e4d1;
   background: var(--pale-green);
   color: var(--secondary-green);
 }
 
-.lab-callout {
-  border-color: #e2e7e4;
-  background: #f4f6f5;
-  color: var(--text);
+.feedback-success {
+  border-color: #b7dec3;
+  background: var(--pale-green);
+  color: var(--success);
 }
 
-.callout-icon {
-  flex: 0 0 auto;
-  font-size: 1.3rem;
-  line-height: 1.1;
+.logout-error {
+  flex: 0 1 18rem;
+  color: #ffd6d6;
+  font-size: 0.78rem;
+  line-height: 1.35;
+  overflow-wrap: anywhere;
+  text-align: right;
 }
 
-.info-callout p,
-.lab-callout p {
-  margin: 0;
-  font-size: 0.85rem;
-  line-height: 1.45;
+.mobile-logout-error {
+  display: none;
 }
 
-.lab-callout strong {
-  display: block;
-  margin-bottom: 0.2rem;
-}
-
-.selection-card-actions {
-  display: flex;
-  justify-content: end;
-  gap: 0.65rem;
-  padding: 1rem clamp(1rem, 6vw, 3rem);
-  border-top: 1px solid #e4ebe6;
+/* Authenticated account text may contain user-controlled names and emails. */
+.account-chip-copy span {
+  overflow-wrap: anywhere;
 }
 
 .status-region:empty {
@@ -1227,7 +1264,7 @@ button:disabled,
 
 @media (max-width: 991px) {
   .app-header-inner,
-  .selection-header-inner {
+  .auth-header-inner {
     gap: 0.8rem;
   }
 
@@ -1239,14 +1276,25 @@ button:disabled,
     display: block;
   }
 
-  .requester-chip {
+  .account-chip {
     margin-left: auto;
   }
 
-  .requester-chip .button-ghost {
+  .account-chip .button-ghost {
     padding-right: 0.4rem;
     padding-left: 0.4rem;
     font-size: 0.78rem;
+  }
+
+  .desktop-logout-error {
+    display: none;
+  }
+
+  .mobile-logout-error {
+    display: block;
+    padding: 0.5rem 0.75rem;
+    color: var(--error);
+    text-align: left;
   }
 
   .detail-grid {
@@ -1264,13 +1312,13 @@ button:disabled,
 
 @media (max-width: 767px) {
   .app-header-inner,
-  .selection-header-inner,
+  .auth-header-inner,
   .page-content {
     width: min(100% - 1.25rem, 1200px);
   }
 
   .app-header-inner,
-  .selection-header-inner {
+  .auth-header-inner {
     min-height: 4rem;
   }
 
@@ -1284,13 +1332,16 @@ button:disabled,
     font-size: 1.3rem;
   }
 
-  .requester-chip-copy,
-  .requester-chip .button-ghost {
+  .account-chip-copy,
+  .account-chip .button-ghost,
+  .auth-header-label,
+  .restricted-account {
     display: none;
   }
 
-  .testing-chip {
-    font-size: 0.72rem;
+  .auth-main {
+    width: min(100% - 1.25rem, 34rem);
+    padding-top: 1.5rem;
   }
 
   .page-content {
@@ -1353,19 +1404,6 @@ button:disabled,
 
   .attachment-item-actions .button {
     flex: 1 1 auto;
-  }
-
-  .selection-main {
-    width: min(100% - 1.25rem, 52rem);
-    padding-top: 1.5rem;
-  }
-
-  .selection-card-actions {
-    justify-content: stretch;
-  }
-
-  .selection-card-actions .button {
-    flex: 1 1 0;
   }
 
   .form-actions {

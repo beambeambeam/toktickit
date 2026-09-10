@@ -7,6 +7,7 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
+import argon2 from "argon2";
 import type { Express } from "express";
 import { Client, escapeIdentifier } from "pg";
 import request from "supertest";
@@ -45,6 +46,13 @@ let ownerId: number;
 let otherRequesterId: number;
 let categoryId: number;
 let relatedSystemId: number;
+let ownerAuth: AuthContext;
+let otherAuth: AuthContext;
+
+interface AuthContext {
+  cookie: string;
+  csrfToken: string;
+}
 
 const pdf = () => Buffer.from("%PDF-1.7\nLab 2 evidence");
 
@@ -124,10 +132,37 @@ const getBinaryBody = (response: { body: unknown }): Buffer => {
   return response.body;
 };
 
+const authHeaders = (auth: AuthContext) => ({
+  Cookie: auth.cookie,
+  Origin: "http://localhost:5173",
+  "X-CSRF-Token": auth.csrfToken,
+});
+
+const authForUserId = (userId: number): AuthContext => {
+  if (userId === ownerId) {
+    return ownerAuth;
+  }
+
+  return otherAuth;
+};
+
+const loginAs = async (email: string): Promise<AuthContext> => {
+  const response = await request(app)
+    .post("/api/auth/login")
+    .set("Origin", "http://localhost:5173")
+    .send({ email, password: "correct horse battery staple" })
+    .expect(200);
+
+  return {
+    cookie: response.headers["set-cookie"][0].split(";")[0],
+    csrfToken: getJsonString(parseJson(response), "csrfToken"),
+  };
+};
+
 const createTicket = async (requesterId: number, summary: string) =>
   await request(app)
     .post("/api/tickets")
-    .set("X-Development-Requester-Id", requesterId.toString())
+    .set(authHeaders(authForUserId(requesterId)))
     .field("categoryId", categoryId.toString())
     .field("relatedSystemId", relatedSystemId.toString())
     .field("requestedPriority", "High")
@@ -202,7 +237,9 @@ beforeAll(async () => {
 beforeEach(async () => {
   await prisma.attachment.deleteMany();
   await prisma.ticket.deleteMany();
-  await prisma.developmentRequester.deleteMany();
+  await prisma.session.deleteMany();
+  await prisma.loginAttempt.deleteMany();
+  await prisma.user.deleteMany();
   await prisma.relatedSystem.deleteMany();
   await prisma.category.deleteMany();
 
@@ -212,16 +249,26 @@ beforeEach(async () => {
   const relatedSystem = await prisma.relatedSystem.create({
     data: { displayOrder: 1, name: "Campus Wi-Fi" },
   });
-  const owner = await prisma.developmentRequester.create({
+  const passwordHash = await argon2.hash("correct horse battery staple", {
+    memoryCost: 19_456,
+    parallelism: 1,
+    timeCost: 2,
+    type: argon2.argon2id,
+  });
+  const owner = await prisma.user.create({
     data: {
       displayName: "Ada Requester",
       email: `ada-${randomUUID()}@example.test`,
+      mustChangePassword: false,
+      passwordHash,
     },
   });
-  const other = await prisma.developmentRequester.create({
+  const other = await prisma.user.create({
     data: {
       displayName: "Ben Requester",
       email: `ben-${randomUUID()}@example.test`,
+      mustChangePassword: false,
+      passwordHash,
     },
   });
 
@@ -229,6 +276,8 @@ beforeEach(async () => {
   relatedSystemId = relatedSystem.id;
   ownerId = owner.id;
   otherRequesterId = other.id;
+  ownerAuth = await loginAs(owner.email);
+  otherAuth = await loginAs(other.email);
   await mkdir(storageDirectory, { recursive: true });
 });
 
@@ -262,20 +311,33 @@ afterAll(async () => {
   }
 });
 
-describe("Lab 2 requester Ticket API", () => {
-  it("returns active reference data and hides inactive Requesters", async () => {
-    await prisma.developmentRequester.create({
+describe("Authenticated requester Ticket API", () => {
+  it("returns active reference data and no longer exposes a requester directory", async () => {
+    await prisma.user.create({
       data: {
         displayName: "Inactive Requester",
         email: `inactive-${randomUUID()}@example.test`,
         isActive: false,
+        mustChangePassword: false,
+        passwordHash: await argon2.hash("correct horse battery staple", {
+          memoryCost: 19_456,
+          parallelism: 1,
+          timeCost: 2,
+          type: argon2.argon2id,
+        }),
       },
     });
 
     const [categories, systems, requesters] = await Promise.all([
-      request(app).get("/api/categories").expect(200),
-      request(app).get("/api/related-systems").expect(200),
-      request(app).get("/api/development-requesters").expect(200),
+      request(app)
+        .get("/api/categories")
+        .set(authHeaders(ownerAuth))
+        .expect(200),
+      request(app)
+        .get("/api/related-systems")
+        .set(authHeaders(ownerAuth))
+        .expect(200),
+      request(app).get("/api/development-requesters").expect(404),
     ]);
 
     assert.deepEqual(getJsonArray(parseJson(categories), "items"), [
@@ -284,29 +346,24 @@ describe("Lab 2 requester Ticket API", () => {
     assert.deepEqual(getJsonArray(parseJson(systems), "items"), [
       { id: relatedSystemId, name: "Campus Wi-Fi" },
     ]);
-    const requesterItems = getJsonArray(parseJson(requesters), "items");
-    assert.equal(requesterItems.length, 2);
     assert.equal(
-      requesterItems.some(
-        (item) =>
-          isJsonObject(item) && item.displayName === "Inactive Requester"
-      ),
-      false
+      getJsonString(getJsonObject(parseJson(requesters), "error"), "code"),
+      "NOT_FOUND"
     );
   });
 
   it("requires an active requester context and creates an owned Ticket atomically", async () => {
     await request(app)
       .get("/api/tickets")
-      .expect(400)
+      .expect(401)
       .expect((response) => {
         const error = getJsonObject(parseJson(response), "error");
-        assert.equal(getJsonString(error, "code"), "INVALID_REQUESTER_CONTEXT");
+        assert.equal(getJsonString(error, "code"), "AUTHENTICATION_REQUIRED");
       });
 
     const response = await request(app)
       .post("/api/tickets")
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .field("categoryId", categoryId.toString())
       .field("relatedSystemId", relatedSystemId.toString())
       .field("requestedPriority", "Urgent")
@@ -315,7 +372,6 @@ describe("Lab 2 requester Ticket API", () => {
         "description",
         "  The requester cannot reach the selected system from the assigned device.  "
       )
-      .field("requesterId", otherRequesterId.toString())
       .attach("attachments", pdf(), "../evidence.pdf")
       .expect(201);
 
@@ -344,7 +400,7 @@ describe("Lab 2 requester Ticket API", () => {
   it("rejects invalid fields without creating a partial Ticket", async () => {
     await request(app)
       .post("/api/tickets")
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .field("categoryId", categoryId.toString())
       .field("relatedSystemId", relatedSystemId.toString())
       .field("requestedPriority", "Critical")
@@ -362,6 +418,28 @@ describe("Lab 2 requester Ticket API", () => {
     assert.equal(await prisma.ticket.count(), 0);
   });
 
+  it("rejects requester identity overrides", async () => {
+    await request(app)
+      .post("/api/tickets")
+      .set(authHeaders(ownerAuth))
+      .field("categoryId", categoryId.toString())
+      .field("relatedSystemId", relatedSystemId.toString())
+      .field("requestedPriority", "High")
+      .field("summary", "Identity override")
+      .field(
+        "description",
+        "The authenticated identity must own the submitted Ticket."
+      )
+      .field("requesterId", otherRequesterId.toString())
+      .expect(400)
+      .expect((response) => {
+        const error = getJsonObject(parseJson(response), "error");
+        assert.equal(getJsonString(error, "code"), "VALIDATION_ERROR");
+      });
+
+    assert.equal(await prisma.ticket.count(), 0);
+  });
+
   it("lists only owned Tickets and safely hides cross-requester detail", async () => {
     await createTicket(ownerId, "Owned network request");
     const otherTicket = await createTicket(
@@ -371,7 +449,7 @@ describe("Lab 2 requester Ticket API", () => {
 
     const list = await request(app)
       .get("/api/tickets")
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .expect(200);
 
     const listBody = parseJson(list);
@@ -390,27 +468,35 @@ describe("Lab 2 requester Ticket API", () => {
 
     await request(app)
       .get(`/api/tickets/${otherTicketId}`)
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .expect(404);
 
     await request(app)
       .get("/api/tickets?pageSize=20")
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .expect(400)
       .expect((response) => {
         const error = getJsonObject(parseJson(response), "error");
         assert.equal(getJsonString(error, "code"), "VALIDATION_ERROR");
       });
 
-    const emptyRequester = await prisma.developmentRequester.create({
+    const emptyRequester = await prisma.user.create({
       data: {
         displayName: "Empty Requester",
         email: `empty-${randomUUID()}@example.test`,
+        mustChangePassword: false,
+        passwordHash: await argon2.hash("correct horse battery staple", {
+          memoryCost: 19_456,
+          parallelism: 1,
+          timeCost: 2,
+          type: argon2.argon2id,
+        }),
       },
     });
+    const emptyAuth = await loginAs(emptyRequester.email);
     const emptyList = await request(app)
       .get("/api/tickets")
-      .set("X-Development-Requester-Id", emptyRequester.id.toString())
+      .set(authHeaders(emptyAuth))
       .expect(200);
     const emptyListBody = parseJson(emptyList);
     assert.deepEqual(getJsonArray(emptyListBody, "items"), []);
@@ -421,7 +507,7 @@ describe("Lab 2 requester Ticket API", () => {
 
     const noResults = await request(app)
       .get("/api/tickets?search=does-not-exist")
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .expect(200);
     const noResultsBody = parseJson(noResults);
     assert.deepEqual(getJsonArray(noResultsBody, "items"), []);
@@ -434,19 +520,19 @@ describe("Lab 2 requester Ticket API", () => {
 
     const ticketNumberSearch = await request(app)
       .get(`/api/tickets?search=${records[0]?.ticketNumber}`)
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .expect(200);
     assert.equal(getJsonNumber(parseJson(ticketNumberSearch), "totalItems"), 1);
 
     const descriptionSearch = await request(app)
       .get("/api/tickets?search=marker%207")
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .expect(200);
     assert.equal(getJsonNumber(parseJson(descriptionSearch), "totalItems"), 1);
 
     const summarySearch = await request(app)
       .get("/api/tickets?search=Same%20summary")
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .expect(200);
     assert.equal(getJsonNumber(parseJson(summarySearch), "totalItems"), 12);
   });
@@ -476,7 +562,7 @@ describe("Lab 2 requester Ticket API", () => {
       .get(
         `/api/tickets?categoryId=${secondCategory.id}&relatedSystemId=${secondRelatedSystem.id}&requestedPriority=Urgent&currentStatus=New`
       )
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .expect(200);
     const filteredBody = parseJson(filtered);
     assert.equal(getJsonNumber(filteredBody, "totalItems"), 1);
@@ -495,7 +581,7 @@ describe("Lab 2 requester Ticket API", () => {
       .get(
         `/api/tickets?categoryId=${categoryId}&pageSize=25&sortBy=summary&sortDirection=asc`
       )
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .expect(200);
     const sameSummaryItems = getJsonArray(
       parseJson(sameSummaryAscending),
@@ -519,7 +605,7 @@ describe("Lab 2 requester Ticket API", () => {
       .get(
         "/api/tickets?page=1&pageSize=10&sortBy=updatedAt&sortDirection=desc"
       )
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .expect(200);
     const pageOneBody = parseJson(pageOne);
     const pageOneItems = getJsonArray(pageOneBody, "items");
@@ -533,7 +619,7 @@ describe("Lab 2 requester Ticket API", () => {
       .get(
         "/api/tickets?page=2&pageSize=10&sortBy=updatedAt&sortDirection=desc"
       )
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .expect(200);
     const pageTwoBody = parseJson(pageTwo);
     const pageTwoItems = getJsonArray(pageTwoBody, "items");
@@ -562,7 +648,7 @@ describe("Lab 2 requester Ticket API", () => {
       // oxlint-disable-next-line no-await-in-loop -- each response proves the public validation boundary.
       await request(app)
         .get(`/api/tickets?${invalidQuery}`)
-        .set("X-Development-Requester-Id", ownerId.toString())
+        .set(authHeaders(ownerAuth))
         .expect(400)
         .expect((response) => {
           const error = getJsonObject(parseJson(response), "error");
@@ -574,7 +660,7 @@ describe("Lab 2 requester Ticket API", () => {
   it("supports active download and soft removal without exposing removed content", async () => {
     const created = await request(app)
       .post("/api/tickets")
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .field("categoryId", categoryId.toString())
       .field("relatedSystemId", relatedSystemId.toString())
       .field("requestedPriority", "Low")
@@ -594,13 +680,13 @@ describe("Lab 2 requester Ticket API", () => {
 
     const download = await request(app)
       .get(`/api/tickets/${ticketId}/attachments/${attachmentId}/content`)
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .expect(200);
     assert.deepEqual(getBinaryBody(download), pdf());
 
     const removed = await request(app)
       .delete(`/api/tickets/${ticketId}/attachments/${attachmentId}`)
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .send({ reason: " No longer needed. " })
       .expect(200);
     const removedAttachment = getJsonObject(parseJson(removed), "attachment");
@@ -612,14 +698,14 @@ describe("Lab 2 requester Ticket API", () => {
 
     await request(app)
       .get(`/api/tickets/${ticketId}/attachments/${attachmentId}/content`)
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .expect(404);
   });
 
   it("serializes concurrent Attachment additions at the active limit", async () => {
     const created = await request(app)
       .post("/api/tickets")
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .field("categoryId", categoryId.toString())
       .field("relatedSystemId", relatedSystemId.toString())
       .field("requestedPriority", "Medium")
@@ -641,7 +727,7 @@ describe("Lab 2 requester Ticket API", () => {
     const upload = (filename: string) =>
       request(app)
         .post(`/api/tickets/${ticketId}/attachments`)
-        .set("X-Development-Requester-Id", ownerId.toString())
+        .set(authHeaders(ownerAuth))
         .attach("attachments", pdf(), filename);
 
     const responses = await Promise.all([
@@ -662,7 +748,7 @@ describe("Lab 2 requester Ticket API", () => {
   it("keeps removal retryable when Attachment cleanup fails", async () => {
     const created = await request(app)
       .post("/api/tickets")
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .field("categoryId", categoryId.toString())
       .field("relatedSystemId", relatedSystemId.toString())
       .field("requestedPriority", "Low")
@@ -692,7 +778,7 @@ describe("Lab 2 requester Ticket API", () => {
 
     const failedRemoval = await request(app)
       .delete(`/api/tickets/${ticketId}/attachments/${attachmentId}`)
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .send({ reason: "Retry after storage failure" })
       .expect(500);
     assert.equal(
@@ -712,7 +798,7 @@ describe("Lab 2 requester Ticket API", () => {
 
     const removed = await request(app)
       .delete(`/api/tickets/${ticketId}/attachments/${attachmentId}`)
-      .set("X-Development-Requester-Id", ownerId.toString())
+      .set(authHeaders(ownerAuth))
       .send({ reason: "Retry after storage failure" })
       .expect(200);
     assert.equal(

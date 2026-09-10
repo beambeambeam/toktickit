@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsErrors, CreateApiTicketAttachmentsResponses, CreateApiTicketData, CreateApiTicketErrors, CreateApiTicketResponses, GetApiCategoriesData, GetApiCategoriesErrors, GetApiCategoriesResponses, GetApiDevelopmentRequestersData, GetApiDevelopmentRequestersErrors, GetApiDevelopmentRequestersResponses, GetApiHealthData, GetApiHealthErrors, GetApiHealthResponses, GetApiRelatedSystemsData, GetApiRelatedSystemsErrors, GetApiRelatedSystemsResponses, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentErrors, GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentsData, GetApiTicketAttachmentsErrors, GetApiTicketAttachmentsResponses, GetApiTicketData, GetApiTicketErrors, GetApiTicketResponses, GetApiTicketsData, GetApiTicketsErrors, GetApiTicketsResponses, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentErrors, RemoveApiTicketAttachmentResponses } from './types.gen';
+import type { CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsErrors, CreateApiTicketAttachmentsResponses, CreateApiTicketData, CreateApiTicketErrors, CreateApiTicketResponses, GetApiAuthMeData, GetApiAuthMeErrors, GetApiAuthMeResponses, GetApiCategoriesData, GetApiCategoriesErrors, GetApiCategoriesResponses, GetApiHealthData, GetApiHealthErrors, GetApiHealthResponses, GetApiRelatedSystemsData, GetApiRelatedSystemsErrors, GetApiRelatedSystemsResponses, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentErrors, GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentsData, GetApiTicketAttachmentsErrors, GetApiTicketAttachmentsResponses, GetApiTicketData, GetApiTicketErrors, GetApiTicketResponses, GetApiTicketsData, GetApiTicketsErrors, GetApiTicketsResponses, PostApiAuthChangePasswordData, PostApiAuthChangePasswordErrors, PostApiAuthChangePasswordResponses, PostApiAuthLoginData, PostApiAuthLoginErrors, PostApiAuthLoginResponses, PostApiAuthLogoutData, PostApiAuthLogoutErrors, PostApiAuthLogoutResponses, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentErrors, RemoveApiTicketAttachmentResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -19,25 +19,95 @@ export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends 
 };
 
 /**
+ * Sign in
+ *
+ * Creates a restricted or normal opaque session for an active User.
+ */
+export const postApiAuthLogin = <ThrowOnError extends boolean = false>(options: Options<PostApiAuthLoginData, ThrowOnError>): RequestResult<PostApiAuthLoginResponses, PostApiAuthLoginErrors, ThrowOnError> => (options.client ?? client).post<PostApiAuthLoginResponses, PostApiAuthLoginErrors, ThrowOnError>({
+    url: '/api/auth/login',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get the current User
+ */
+export const getApiAuthMe = <ThrowOnError extends boolean = false>(options?: Options<GetApiAuthMeData, ThrowOnError>): RequestResult<GetApiAuthMeResponses, GetApiAuthMeErrors, ThrowOnError> => (options?.client ?? client).get<GetApiAuthMeResponses, GetApiAuthMeErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/auth/me',
+    ...options
+});
+
+/**
+ * Change the current password
+ */
+export const postApiAuthChangePassword = <ThrowOnError extends boolean = false>(options: Options<PostApiAuthChangePasswordData, ThrowOnError>): RequestResult<PostApiAuthChangePasswordResponses, PostApiAuthChangePasswordErrors, ThrowOnError> => (options.client ?? client).post<PostApiAuthChangePasswordResponses, PostApiAuthChangePasswordErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/auth/change-password',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Revoke the current session
+ */
+export const postApiAuthLogout = <ThrowOnError extends boolean = false>(options: Options<PostApiAuthLogoutData, ThrowOnError>): RequestResult<PostApiAuthLogoutResponses, PostApiAuthLogoutErrors, ThrowOnError> => (options.client ?? client).post<PostApiAuthLogoutResponses, PostApiAuthLogoutErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/auth/logout',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
  * List active Categories
  *
  * Returns active Categories in display order.
  */
-export const getApiCategories = <ThrowOnError extends boolean = false>(options?: Options<GetApiCategoriesData, ThrowOnError>): RequestResult<GetApiCategoriesResponses, GetApiCategoriesErrors, ThrowOnError> => (options?.client ?? client).get<GetApiCategoriesResponses, GetApiCategoriesErrors, ThrowOnError>({ url: '/api/categories', ...options });
+export const getApiCategories = <ThrowOnError extends boolean = false>(options?: Options<GetApiCategoriesData, ThrowOnError>): RequestResult<GetApiCategoriesResponses, GetApiCategoriesErrors, ThrowOnError> => (options?.client ?? client).get<GetApiCategoriesResponses, GetApiCategoriesErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/categories',
+    ...options
+});
 
 /**
  * List active Related Systems
  *
  * Returns active Related Systems in display order.
  */
-export const getApiRelatedSystems = <ThrowOnError extends boolean = false>(options?: Options<GetApiRelatedSystemsData, ThrowOnError>): RequestResult<GetApiRelatedSystemsResponses, GetApiRelatedSystemsErrors, ThrowOnError> => (options?.client ?? client).get<GetApiRelatedSystemsResponses, GetApiRelatedSystemsErrors, ThrowOnError>({ url: '/api/related-systems', ...options });
-
-/**
- * List active Development Requesters
- *
- * Returns active test-context Requesters only.
- */
-export const getApiDevelopmentRequesters = <ThrowOnError extends boolean = false>(options?: Options<GetApiDevelopmentRequestersData, ThrowOnError>): RequestResult<GetApiDevelopmentRequestersResponses, GetApiDevelopmentRequestersErrors, ThrowOnError> => (options?.client ?? client).get<GetApiDevelopmentRequestersResponses, GetApiDevelopmentRequestersErrors, ThrowOnError>({ url: '/api/development-requesters', ...options });
+export const getApiRelatedSystems = <ThrowOnError extends boolean = false>(options?: Options<GetApiRelatedSystemsData, ThrowOnError>): RequestResult<GetApiRelatedSystemsResponses, GetApiRelatedSystemsErrors, ThrowOnError> => (options?.client ?? client).get<GetApiRelatedSystemsResponses, GetApiRelatedSystemsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/related-systems',
+    ...options
+});
 
 /**
  * Check API liveness
@@ -49,17 +119,30 @@ export const getApiHealth = <ThrowOnError extends boolean = false>(options?: Opt
 /**
  * List owned requester Tickets
  *
- * Returns only Tickets owned by the validated Development Requester context.
+ * Returns only Tickets owned by the authenticated Requester.
  */
-export const getApiTickets = <ThrowOnError extends boolean = false>(options: Options<GetApiTicketsData, ThrowOnError>): RequestResult<GetApiTicketsResponses, GetApiTicketsErrors, ThrowOnError> => (options.client ?? client).get<GetApiTicketsResponses, GetApiTicketsErrors, ThrowOnError>({ url: '/api/tickets', ...options });
+export const getApiTickets = <ThrowOnError extends boolean = false>(options?: Options<GetApiTicketsData, ThrowOnError>): RequestResult<GetApiTicketsResponses, GetApiTicketsErrors, ThrowOnError> => (options?.client ?? client).get<GetApiTicketsResponses, GetApiTicketsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/tickets',
+    ...options
+});
 
 /**
  * Create a requester Ticket
  *
- * Creates one Ticket owned by the validated Development Requester context.
+ * Creates one Ticket owned by the authenticated Requester.
  */
 export const createApiTicket = <ThrowOnError extends boolean = false>(options: Options<CreateApiTicketData, ThrowOnError>): RequestResult<CreateApiTicketResponses, CreateApiTicketErrors, ThrowOnError> => (options.client ?? client).post<CreateApiTicketResponses, CreateApiTicketErrors, ThrowOnError>({
     ...formDataBodySerializer,
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
     url: '/api/tickets',
     ...options,
     headers: {
@@ -71,18 +154,39 @@ export const createApiTicket = <ThrowOnError extends boolean = false>(options: O
 /**
  * Get an owned Ticket
  */
-export const getApiTicket = <ThrowOnError extends boolean = false>(options: Options<GetApiTicketData, ThrowOnError>): RequestResult<GetApiTicketResponses, GetApiTicketErrors, ThrowOnError> => (options.client ?? client).get<GetApiTicketResponses, GetApiTicketErrors, ThrowOnError>({ url: '/api/tickets/{ticketId}', ...options });
+export const getApiTicket = <ThrowOnError extends boolean = false>(options: Options<GetApiTicketData, ThrowOnError>): RequestResult<GetApiTicketResponses, GetApiTicketErrors, ThrowOnError> => (options.client ?? client).get<GetApiTicketResponses, GetApiTicketErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/tickets/{ticketId}',
+    ...options
+});
 
 /**
  * List owned Ticket Attachment metadata
  */
-export const getApiTicketAttachments = <ThrowOnError extends boolean = false>(options: Options<GetApiTicketAttachmentsData, ThrowOnError>): RequestResult<GetApiTicketAttachmentsResponses, GetApiTicketAttachmentsErrors, ThrowOnError> => (options.client ?? client).get<GetApiTicketAttachmentsResponses, GetApiTicketAttachmentsErrors, ThrowOnError>({ url: '/api/tickets/{ticketId}/attachments', ...options });
+export const getApiTicketAttachments = <ThrowOnError extends boolean = false>(options: Options<GetApiTicketAttachmentsData, ThrowOnError>): RequestResult<GetApiTicketAttachmentsResponses, GetApiTicketAttachmentsErrors, ThrowOnError> => (options.client ?? client).get<GetApiTicketAttachmentsResponses, GetApiTicketAttachmentsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/tickets/{ticketId}/attachments',
+    ...options
+});
 
 /**
  * Add Attachments to an owned Ticket
  */
 export const createApiTicketAttachments = <ThrowOnError extends boolean = false>(options: Options<CreateApiTicketAttachmentsData, ThrowOnError>): RequestResult<CreateApiTicketAttachmentsResponses, CreateApiTicketAttachmentsErrors, ThrowOnError> => (options.client ?? client).post<CreateApiTicketAttachmentsResponses, CreateApiTicketAttachmentsErrors, ThrowOnError>({
     ...formDataBodySerializer,
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
     url: '/api/tickets/{ticketId}/attachments',
     ...options,
     headers: {
@@ -94,12 +198,25 @@ export const createApiTicketAttachments = <ThrowOnError extends boolean = false>
 /**
  * Download an active owned Attachment
  */
-export const getApiTicketAttachmentContent = <ThrowOnError extends boolean = false>(options: Options<GetApiTicketAttachmentContentData, ThrowOnError>): RequestResult<GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentContentErrors, ThrowOnError> => (options.client ?? client).get<GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentContentErrors, ThrowOnError>({ url: '/api/tickets/{ticketId}/attachments/{attachmentId}/content', ...options });
+export const getApiTicketAttachmentContent = <ThrowOnError extends boolean = false>(options: Options<GetApiTicketAttachmentContentData, ThrowOnError>): RequestResult<GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentContentErrors, ThrowOnError> => (options.client ?? client).get<GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentContentErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/tickets/{ticketId}/attachments/{attachmentId}/content',
+    ...options
+});
 
 /**
  * Soft-remove an owned Attachment
  */
 export const removeApiTicketAttachment = <ThrowOnError extends boolean = false>(options: Options<RemoveApiTicketAttachmentData, ThrowOnError>): RequestResult<RemoveApiTicketAttachmentResponses, RemoveApiTicketAttachmentErrors, ThrowOnError> => (options.client ?? client).delete<RemoveApiTicketAttachmentResponses, RemoveApiTicketAttachmentErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
     url: '/api/tickets/{ticketId}/attachments/{attachmentId}',
     ...options,
     headers: {

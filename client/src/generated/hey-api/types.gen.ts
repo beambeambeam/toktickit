@@ -34,14 +34,40 @@ export type RelatedSystemListResponse = {
     items: Array<RelatedSystem>;
 };
 
-export type DevelopmentRequester = {
+export type User = {
+    id: number;
+    displayName: string;
+    email: string;
+    role: 'Requester' | 'IT Staff' | 'Administrator';
+    isActive: boolean;
+    mustChangePassword: boolean;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type TicketRequester = {
     id: number;
     displayName: string;
     email: string;
 };
 
-export type DevelopmentRequesterListResponse = {
-    items: Array<DevelopmentRequester>;
+export type AuthResponse = {
+    user: User;
+    csrfToken: string;
+};
+
+export type LoginRequest = {
+    email: string;
+    password: string;
+};
+
+export type ChangePasswordRequest = {
+    currentPassword: string;
+    newPassword: string;
+};
+
+export type EmptyRequest = {
+    [key: string]: never;
 };
 
 export type RequestedPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
@@ -76,7 +102,7 @@ export type TicketSummary = {
 };
 
 export type TicketDetail = TicketSummary & {
-    requester: DevelopmentRequester;
+    requester: TicketRequester;
     description: string;
     attachments: Array<AttachmentMetadata>;
 };
@@ -120,9 +146,9 @@ export type HealthResponse = {
 };
 
 /**
- * Temporary Lab 2 test context; not authentication.
+ * Synchronizer token returned by login or current-user retrieval.
  */
-export type DevelopmentRequesterId = number;
+export type CsrfToken = string;
 
 export type TicketId = number;
 
@@ -145,6 +171,150 @@ export type SortDirection = 'asc' | 'desc';
 export type Page = number;
 
 export type PageSize = 10 | 25 | 50;
+
+export type PostApiAuthLoginData = {
+    body: LoginRequest;
+    path?: never;
+    query?: never;
+    url: '/api/auth/login';
+};
+
+export type PostApiAuthLoginErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    429: ApiError;
+};
+
+export type PostApiAuthLoginError = PostApiAuthLoginErrors[keyof PostApiAuthLoginErrors];
+
+export type PostApiAuthLoginResponses = {
+    /**
+     * The authenticated User and CSRF token.
+     */
+    200: AuthResponse;
+};
+
+export type PostApiAuthLoginResponse = PostApiAuthLoginResponses[keyof PostApiAuthLoginResponses];
+
+export type GetApiAuthMeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/auth/me';
+};
+
+export type GetApiAuthMeErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+};
+
+export type GetApiAuthMeError = GetApiAuthMeErrors[keyof GetApiAuthMeErrors];
+
+export type GetApiAuthMeResponses = {
+    /**
+     * The current User and CSRF token.
+     */
+    200: AuthResponse;
+};
+
+export type GetApiAuthMeResponse = GetApiAuthMeResponses[keyof GetApiAuthMeResponses];
+
+export type PostApiAuthChangePasswordData = {
+    body: ChangePasswordRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/auth/change-password';
+};
+
+export type PostApiAuthChangePasswordErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    429: ApiError;
+};
+
+export type PostApiAuthChangePasswordError = PostApiAuthChangePasswordErrors[keyof PostApiAuthChangePasswordErrors];
+
+export type PostApiAuthChangePasswordResponses = {
+    /**
+     * The rotated unrestricted session.
+     */
+    200: AuthResponse;
+};
+
+export type PostApiAuthChangePasswordResponse = PostApiAuthChangePasswordResponses[keyof PostApiAuthChangePasswordResponses];
+
+export type PostApiAuthLogoutData = {
+    body: EmptyRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/auth/logout';
+};
+
+export type PostApiAuthLogoutErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+};
+
+export type PostApiAuthLogoutError = PostApiAuthLogoutErrors[keyof PostApiAuthLogoutErrors];
+
+export type PostApiAuthLogoutResponses = {
+    /**
+     * The session was revoked.
+     */
+    204: void;
+};
+
+export type PostApiAuthLogoutResponse = PostApiAuthLogoutResponses[keyof PostApiAuthLogoutResponses];
 
 export type GetApiCategoriesData = {
     body?: never;
@@ -196,31 +366,6 @@ export type GetApiRelatedSystemsResponses = {
 
 export type GetApiRelatedSystemsResponse = GetApiRelatedSystemsResponses[keyof GetApiRelatedSystemsResponses];
 
-export type GetApiDevelopmentRequestersData = {
-    body?: never;
-    path?: never;
-    query?: never;
-    url: '/api/development-requesters';
-};
-
-export type GetApiDevelopmentRequestersErrors = {
-    /**
-     * The API could not complete the request.
-     */
-    500: ApiError;
-};
-
-export type GetApiDevelopmentRequestersError = GetApiDevelopmentRequestersErrors[keyof GetApiDevelopmentRequestersErrors];
-
-export type GetApiDevelopmentRequestersResponses = {
-    /**
-     * The active Development Requesters.
-     */
-    200: DevelopmentRequesterListResponse;
-};
-
-export type GetApiDevelopmentRequestersResponse = GetApiDevelopmentRequestersResponses[keyof GetApiDevelopmentRequestersResponses];
-
 export type GetApiHealthData = {
     body?: never;
     path?: never;
@@ -248,12 +393,6 @@ export type GetApiHealthResponse = GetApiHealthResponses[keyof GetApiHealthRespo
 
 export type GetApiTicketsData = {
     body?: never;
-    headers: {
-        /**
-         * Temporary Lab 2 test context; not authentication.
-         */
-        'X-Development-Requester-Id': number;
-    };
     path?: never;
     query?: {
         search?: string;
@@ -295,9 +434,9 @@ export type CreateApiTicketData = {
     body: CreateTicketRequest;
     headers: {
         /**
-         * Temporary Lab 2 test context; not authentication.
+         * Synchronizer token returned by login or current-user retrieval.
          */
-        'X-Development-Requester-Id': number;
+        'X-CSRF-Token': string;
     };
     path?: never;
     query?: never;
@@ -344,12 +483,6 @@ export type CreateApiTicketResponse = CreateApiTicketResponses[keyof CreateApiTi
 
 export type GetApiTicketData = {
     body?: never;
-    headers: {
-        /**
-         * Temporary Lab 2 test context; not authentication.
-         */
-        'X-Development-Requester-Id': number;
-    };
     path: {
         ticketId: number;
     };
@@ -385,12 +518,6 @@ export type GetApiTicketResponse = GetApiTicketResponses[keyof GetApiTicketRespo
 
 export type GetApiTicketAttachmentsData = {
     body?: never;
-    headers: {
-        /**
-         * Temporary Lab 2 test context; not authentication.
-         */
-        'X-Development-Requester-Id': number;
-    };
     path: {
         ticketId: number;
     };
@@ -428,9 +555,9 @@ export type CreateApiTicketAttachmentsData = {
     body: AttachmentUploadRequest;
     headers: {
         /**
-         * Temporary Lab 2 test context; not authentication.
+         * Synchronizer token returned by login or current-user retrieval.
          */
-        'X-Development-Requester-Id': number;
+        'X-CSRF-Token': string;
     };
     path: {
         ticketId: number;
@@ -479,12 +606,6 @@ export type CreateApiTicketAttachmentsResponse = CreateApiTicketAttachmentsRespo
 
 export type GetApiTicketAttachmentContentData = {
     body?: never;
-    headers: {
-        /**
-         * Temporary Lab 2 test context; not authentication.
-         */
-        'X-Development-Requester-Id': number;
-    };
     path: {
         ticketId: number;
         attachmentId: number;
@@ -523,9 +644,9 @@ export type RemoveApiTicketAttachmentData = {
     body: RemoveAttachmentRequest;
     headers: {
         /**
-         * Temporary Lab 2 test context; not authentication.
+         * Synchronizer token returned by login or current-user retrieval.
          */
-        'X-Development-Requester-Id': number;
+        'X-CSRF-Token': string;
     };
     path: {
         ticketId: number;

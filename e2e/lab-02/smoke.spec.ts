@@ -4,6 +4,6 @@ test("opens the TokTickIT application", async ({ page }) => {
   await page.goto("/");
 
   await expect(
-    page.getByRole("heading", { name: "Select Development Requester" })
+    page.getByRole("heading", { name: "Sign in to TokTickIT" })
   ).toBeVisible();
 });

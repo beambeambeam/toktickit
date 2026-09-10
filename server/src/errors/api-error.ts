@@ -8,17 +8,20 @@ export class ApiError extends Error {
   readonly code: string;
   readonly details: ApiErrorDetails | undefined;
   readonly statusCode: number;
+  readonly retryAfter: number | undefined;
 
   constructor(
     statusCode: number,
     code: string,
     message: string,
-    details?: ApiErrorDetails
+    details?: ApiErrorDetails,
+    retryAfter?: number
   ) {
     super(message);
     this.name = "ApiError";
     this.code = code;
     this.details = details;
     this.statusCode = statusCode;
+    this.retryAfter = retryAfter;
   }
 }

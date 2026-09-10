@@ -4,6 +4,15 @@ import path from "node:path";
 const repositoryRoot = path.resolve(import.meta.dirname, "..");
 
 export default function globalSetup(): void {
+  execFileSync("pnpm", ["--filter", "@toktickit/server", "db:seed"], {
+    cwd: repositoryRoot,
+    stdio: "inherit",
+  });
+  execFileSync(
+    "pnpm",
+    ["--filter", "@toktickit/server", "exec", "tsx", "scripts/prepare-e2e.ts"],
+    { cwd: repositoryRoot, stdio: "inherit" }
+  );
   execFileSync(
     "pnpm",
     [

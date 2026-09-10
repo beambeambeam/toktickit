@@ -1,23 +1,23 @@
 # Lab 3 Test Plan and Traceability
 
-Status: planned before implementation under #49. All Lab 3 paths below are planned, not existing tests or passing results. [Specification](./specification.md) defines each AC; [API](./api-spec.md) and [UI](./ui-spec.md) define exact expected behavior. Existing Lab 2 results are not Lab 3 evidence.
+Status: #50 authentication and Requester continuity are implemented on the feature branch. The Final column records current coverage; untouched Lab 3 slices remain planned. [Specification](./specification.md) defines each AC; [API](./api-spec.md) and [UI](./ui-spec.md) define exact expected behavior. Existing Lab 2 results are not Lab 3 evidence.
 
 ## 1. Strategy and seams
 
-Primary seam: Supertest HTTP through composed Express, disposable PostgreSQL databases and temporary Attachment storage, following `server/tests/lab-02/requester-ticketing.test.ts`. Test cookies, CSRF, authorization, persisted outcomes, concurrency and errors via observable behavior. Client uses existing Vitest/React Testing Library for controls, routing/cache boundaries and feedback. Pure unit tests are limited to meaningful password/query/transition rules. No new test framework. Feature slices use red/green at these seams; this docs-only contract does not add executable feature tests.
+Primary seam: Supertest HTTP through composed Express, disposable PostgreSQL databases and temporary Attachment storage, following `server/tests/lab-02/requester-ticketing.test.ts`. Test cookies, CSRF, authorization, persisted outcomes, concurrency and errors via observable behavior. Client uses existing Vitest/React Testing Library for controls, routing/cache boundaries and feedback. Pure unit tests are limited to meaningful password/query/transition rules. No new test framework. Feature slices use red/green at these seams. #50 adapts the selector-dependent cases to real login and removes obsolete context tests while retaining their ownership/recovery intent.
 
-Existing `client/tests/lab-02/`, `server/tests/lab-02/` and `e2e/lab-02/` remain regression inputs. #50 adapts the selector-dependent cases to real login and removes obsolete context tests while retaining their ownership/recovery intent. Generalize Playwright discovery to both lab directories; preserve desktop 1440×900, tablet 768×1024, mobile 390×844. Browser runs use a fresh disposable database and Attachment storage fixture per run; no E2E test relies on a mutable application-seed `mustChangePassword` flag. Each vertical slice owns one complete browser journey and negative cases. Final full browser run is required under #58.
+Existing `client/tests/lab-02/`, `server/tests/lab-02/` and `e2e/lab-02/` remain regression inputs. Generalize Playwright discovery to both lab directories; preserve desktop 1440×900, tablet 768×1024, mobile 390×844. Browser runs use a fresh disposable database and Attachment storage fixture per run; no E2E test relies on a mutable application-seed `mustChangePassword` flag. Each vertical slice owns one complete browser journey and negative cases. Final full browser run is required under #58.
 
-## 2. Planned test register
+## 2. Test register
 
-All Final values are **Planned**. Replace planned path with actual path only after the test exists; record run provenance separately. Ranges below enumerate exact ACs in the traceability table that follows.
+Final values identify implemented coverage and remaining gaps. Ranges below enumerate exact ACs in the traceability table that follows.
 
 | Test ID | Type | Planned file | What it tests / expected result | Final |
 | --- | --- | --- | --- | --- |
-| UNIT-01 | Unit | server/tests/lab-03/auth-rules.test.ts | Password 14/15/128/129 code points, astral characters, spaces/paste semantics, reuse and normalization: exact contract bounds. | Planned |
+| UNIT-01 | Unit | server/tests/lab-03/auth-rules.test.ts | Password 14/15/128/129 code points, astral characters, spaces/paste semantics, reuse and normalization: exact contract bounds. | Pass — 2 tests |
 | UNIT-02 | Unit | server/tests/lab-03/workflow-rules.test.ts | All 8×8 status edges and owner/confirmation requirements; only matrix edges succeed. | Planned |
-| API-01 | API/integration | server/tests/lab-03/auth.api.test.ts | Valid/unknown/invalid/inactive login, including generic wrong-password versus 403 `ACCOUNT_INACTIVE` behavior, restricted/me/change/logout, rotation, cookie/hash storage, 30m/8h/15m exact expiry boundaries; replay denied. | Planned |
-| SEC-01 | Security | server/tests/lab-03/auth.api.test.ts | Five-account/30-IP limit and concurrent attempts, expiry/retry; missing/wrong/session-mismatched CSRF, disallowed/null/missing origin and multipart; safe failures and no secret exposure. | Planned |
+| API-01 | API/integration | server/tests/lab-03/auth.api.test.ts | Valid/unknown/invalid/inactive login, generic failures, restricted/me/change/logout, rotation, cookie/hash storage, throttling and replay. | Partial — 5 tests pass; exact expiry boundaries remain planned |
+| SEC-01 | Security | server/tests/lab-03/auth.api.test.ts | Account/IP throttling, malformed-input reservations, inactive-account throttling, CSRF and safe failures. | Partial — 5 tests pass; full concurrency/origin/expiry matrix remains planned |
 | SEC-02 | Security/authorization | server/tests/lab-03/authorization.api.test.ts | Parameterize every role × API operation, restricted/anonymous, requesterId/header spoofing, foreign Ticket/file/comment, nested-note leakage and identical 403 on note IDs. | Planned |
 | REG-01 | Migration/regression | server/tests/lab-03/migration.api.test.ts | Start at populated Lab 2 schema, snapshot IDs/times/FKs/bytes/removed attribution; upgrade preserves all, collisions abort; repeated deploy/bootstrap/seeds retain edits and fixture counts. | Planned |
 | REG-02 | Migration/regression | server/tests/lab-02/requester-ticketing.test.ts | Authenticated creation/list/detail/file lifecycle, exact limits, concurrent capacity, failed-write compensation, removal retry and foreign/removed download denial on all statuses. | Planned |
@@ -25,21 +25,21 @@ All Final values are **Planned**. Replace planned path with actual path only aft
 | API-03 | API/integration | server/tests/lab-03/staff-ticket-detail.api.test.ts | Claim one winner, reassignment/unassignment, eligible admin owner, stale/terminal denial, independent priority, every status edge, timestamps, idempotent indication/reopen and account-change races. | Planned |
 | API-04 | API/integration | server/tests/lab-03/comments-notes.api.test.ts | Role visibility, backend attribution, empty/1/5000/5001 code points, HTML payload stored as text, stable ordering, terminal write race, no edit/delete/status side effect or private metadata leak. | Planned |
 | API-05 | API/integration | server/tests/lab-03/users-admin.api.test.ts | User list/search/filter/create/edit/reset, normalized duplicate races, role array rejection, self-deactivation, concurrent last-admin guards, revocation and owner effects. | Planned |
-| UI-01 | UI component | client/tests/lab-03/Login.test.tsx | Required inputs, generic unknown/wrong-password failure, clear correct-password inactive response, throttle/retry, busy, safe failure and permitted landing. | Planned |
-| UI-02 | UI component | client/tests/lab-03/ChangePassword.test.tsx | Exact rules, confirmation, current/reused password error, first-login bypass denial, busy/success and secret clearing. | Planned |
-| UI-03 | UI component | client/tests/lab-03/AuthenticatedShell.test.tsx | Role navigation, direct route denial, me loading/failure, logout/role loss cancellation and clearing all private caches/drafts. | Planned |
+| UI-01 | UI component | client/tests/lab-03/authentication.test.tsx | Required inputs, generic credential failure, accessible password visibility and permitted first-login landing. | Partial — 5 tests pass; inactive/throttle/busy matrix remains planned |
+| UI-02 | UI component | client/tests/lab-03/authentication.test.tsx | Password rules, confirmation, successful replacement and contextual 429/Retry-After handling. | Partial — 5 tests pass; reuse/failure/secret-clearing matrix remains planned |
+| UI-03 | UI component | client/tests/lab-03/auth-context.test.tsx; authentication.test.tsx | Principal-switch private-cache clearing and requester denial for a non-Requester role. | Partial — identity isolation and role denial covered; full shell matrix remains planned |
 | UI-04 | UI component | client/tests/lab-03/StaffTicketQueue.test.tsx | Query controls/reset, numbered pages, empty/no-results/loading/failure/retry, clear filters and detail link. | Planned |
 | UI-05 | UI component | client/tests/lab-03/StaffTicketDetail.test.tsx | Separate operations/composers, confirmations, conflict refresh, retained drafts, indication, admin read-only, terminal states and private note absence for Requester. | Planned |
 | UI-06 | UI component | client/tests/lab-03/UserManagement.test.tsx | List/create/edit/reset modes, field/duplicate/admin-safety errors, one-role select, busy/success, no secret redisplay or excluded controls. | Planned |
-| UI-07 | UI component/regression | client/tests/lab-02/create-ticket.test.tsx; my-tickets.test.tsx; ticket-detail.test.tsx | Adapt existing tests to authenticated identity; preserve fields/files, query defaults, ownership/retry; add public comment/indication interactions. | Planned |
+| UI-07 | UI component/regression | client/tests/lab-02/create-ticket.test.tsx; my-tickets.test.tsx; ticket-detail.test.tsx | Adapt existing tests to authenticated identity; preserve fields/files, query defaults, ownership/retry; add public comment/indication interactions. | Partial — authenticated requester regressions covered; comments/indication remain planned |
 | STYLE-01 | UI style/accessibility | e2e/lab-03/ui-evidence.spec.ts | Computed Zen Green tokens, badges/text, readonly/editable fields, contrast, labels, keyboard/focus/dialog behavior and screenshots compared against UI reference matrix. | Planned |
 | RESP-01 | Responsive | e2e/lab-03/ui-evidence.spec.ts | All major screens at three viewports plus 320px/200% zoom checks; document/content bounds, long content, no clipping/overlap/hidden actions. | Planned |
-| E2E-01 | E2E | e2e/lab-03/authentication.spec.ts | Per-run fixture setup provisions fresh accounts for each role, including a `mustChangePassword` account; verify initial login/change, all role landings, logout/replay/direct denial and identity-cache isolation without relying on application seed state. | Planned |
-| E2E-02 | E2E/regression | e2e/lab-02/requester-flow.spec.ts | Real Requester login/create/search/detail/add/download/remove, switch by logout/login, foreign IDs denied; no selector. | Planned |
+| E2E-01 | E2E | e2e/lab-03/authentication.spec.ts | Per-run fixture setup provisions a `mustChangePassword` account; verify initial login/change, logout/replay/direct denial and committed authentication evidence without relying on application seed state. | Partial — 3 projects pass; all-role landing/cache matrix remains planned |
+| E2E-02 | E2E/regression | e2e/lab-02/requester-flow.spec.ts | Real Requester login/create/search/detail/add/download/remove, switch by logout/login, foreign IDs denied; no selector. | Existing regression — rerun after evidence-path fix pending |
 | E2E-03 | E2E | e2e/lab-03/staff-ticket-flow.spec.ts | Queue/detail, claim/priority, status/reopen/indication, public Requester-staff conversation, private staff/admin-only notes and terminal denial. | Planned |
 | E2E-04 | E2E | e2e/lab-03/user-administration.spec.ts | Create-to-first-login and reset-to-first-login; edit access, deactivate, revoked access and admin guards. | Planned |
-| CONTRACT-01 | Integration/contract | server/tests/lab-01/openapi.test.ts; scripts/openapi-check.mjs | OpenAPI validates implemented routes/security/shapes and generated client stays synchronized; both lab suites discovered. | Planned |
-| EVIDENCE-01 | Release/visual review | docs/lab-03/reviewer.md; artifacts/lab-03/visual-checklist.md | Inspect actual final-main logs/SHA, PR approvals/merges, Kanban, six documents, prompt/reflection and exactly nine readable PDF parts. No automated peer approval claim. | Planned |
+| CONTRACT-01 | Integration/contract | server/tests/lab-01/openapi.test.ts; scripts/openapi-check.mjs | OpenAPI validates implemented routes/security/shapes and generated client stays synchronized; both lab suites discovered. | Pass — `pnpm openapi:check` |
+| EVIDENCE-01 | Release/visual review | docs/lab-03/reviewer.md; artifacts/lab-03/visual-checklist.md | Inspect actual final-main logs/SHA, PR approvals/merges, Kanban, six documents, prompt/reflection and exactly nine readable PDF parts. No automated peer approval claim. | Partial — Lab 3 auth manifests are now generated by the Lab 3 spec; release/peer gates remain planned |
 
 ## 3. Acceptance traceability
 
@@ -94,7 +94,12 @@ Feature development: run focused `pnpm --filter @toktickit/server exec vitest ru
 | #49 types | pnpm run check-types | Pass for client, server and E2E. |
 | #49 formatting/lint | pnpm run check | Pass across the repository. |
 | #49 full suite | pnpm run test, isolated PostgreSQL 17 with process-only DATABASE_URL override; 2026-09-08 11:12 UTC | 50 client + 38 server tests pass (14 files); OpenAPI check passes. |
-| Lab 3 features | Planned tests above | Not implemented |
+| #50 focused client auth | 2026-09-10, `pnpm --filter @toktickit/client exec vitest run tests/lab-03/authentication.test.tsx tests/lab-03/auth-context.test.tsx` | 6 tests pass across 2 files. |
+| #50 focused server auth | 2026-09-10, isolated PostgreSQL 17 on loopback port 55432; `pnpm --filter @toktickit/server exec vitest run tests/lab-03/auth.api.test.ts` | 5 tests pass. |
+| #50 authentication E2E/evidence | 2026-09-10, disposable PostgreSQL 17; Playwright `lab-03/authentication.spec.ts` across desktop/tablet/mobile | 3 projects pass; each run writes its two authentication screenshots and manifest from the Lab 3 spec. |
+| #50 full suite | 2026-09-10, isolated PostgreSQL 17 with process-only `DATABASE_URL` override; `pnpm run test` | 55 client + 46 server tests pass (17 files); OpenAPI check passes. |
+| #50 checks | 2026-09-10, `pnpm run check`, `pnpm run check-types`, `pnpm run build` | Formatting/lint, client/E2E/server typecheck and production builds pass. |
+| #50 authentication | Actual paths above; disposable PostgreSQL and Playwright runs | Verified; remaining Lab 3 slices are not implemented |
 | Final main | Full SHA/time/environment/commands/totals/logs/screenshots required under #58 | Pending |
 
 Final-main evidence must identify exact source commit and dirty-state status. If captures use injected failures, label them. Distinguish machine assertions, agent visual inspection and human peer review. Never copy Lab 2 pass totals as Lab 3 results or mark external review complete from automated checks.

@@ -12,8 +12,14 @@ const tinyPng = Buffer.from(
 const projectSlug = (projectName: string) =>
   projectName.replaceAll(/[^a-z0-9]+/giu, "-").toLowerCase();
 
+const requesterEmailBySlug: Record<string, string> = {
+  "desktop-chromium": "e2e-desktop@example.test",
+  "mobile-chromium": "e2e-mobile@example.test",
+  "tablet-chromium": "e2e-tablet@example.test",
+};
+const e2ePassword = "correct horse battery staple";
+
 const repositoryRoot = path.resolve(import.meta.dirname, "..", "..");
-const apiURL = process.env.E2E_API_URL ?? "http://localhost:3000";
 
 const evidencePath = (section: string, name: string) =>
   path.resolve(
@@ -45,6 +51,21 @@ const expectPrimaryHeaderToken = async (page: Page) => {
   expect(backgroundColor).toBe("rgb(0, 107, 60)");
 };
 
+const logOut = async (page: Page) => {
+  const mobileNavigation = page.locator(".mobile-nav");
+
+  if (await mobileNavigation.isVisible()) {
+    await mobileNavigation.locator("summary").click();
+    await mobileNavigation.getByRole("button", { name: "Log out" }).click();
+    return;
+  }
+
+  await page
+    .locator(".account-chip")
+    .getByRole("button", { name: "Log out" })
+    .click();
+};
+
 const createDeferred = () => {
   let release!: () => void;
   // oxlint-disable-next-line promise/avoid-new -- Route gate controls a browser loading state.
@@ -55,23 +76,6 @@ const createDeferred = () => {
   return { promise, resolve: release };
 };
 
-const isSeedTicketBody = (
-  value: unknown
-): value is { ticket: { ticketNumber: string } } => {
-  if (typeof value !== "object" || value === null || !("ticket" in value)) {
-    return false;
-  }
-
-  const { ticket } = value;
-
-  return (
-    typeof ticket === "object" &&
-    ticket !== null &&
-    "ticketNumber" in ticket &&
-    typeof ticket.ticketNumber === "string"
-  );
-};
-
 test("captures the requester ticket lifecycle and ownership boundary", async ({
   page,
 }, testInfo) => {
@@ -79,14 +83,9 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
   const uniqueId = `${Date.now()}-${testInfo.workerIndex}`;
   const summary = `E2E requester flow ${uniqueId}`;
   const attachmentName = `e2e-evidence-${slug}.png`;
-  // Each viewport isolates against its own seeded Requester so the empty
-  // and ownership captures stay meaningful on repeated runs.
-  const isolationRequesterBySlug: Record<string, string> = {
-    "desktop-chromium": "2",
-    "mobile-chromium": "4",
-    "tablet-chromium": "3",
-  };
-  const isolationRequester = isolationRequesterBySlug[slug] ?? "2";
+  const requesterEmail =
+    requesterEmailBySlug[slug] ?? "e2e-desktop@example.test";
+  const isolationEmail = "e2e-isolation@example.test";
   const captured: string[] = [];
 
   const capture = async (section: string, name: string) => {
@@ -97,12 +96,13 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
 
   await page.goto("/");
   await expect(
-    page.getByRole("heading", { name: "Select Development Requester" })
+    page.getByRole("heading", { name: "Sign in to TokTickIT" })
   ).toBeVisible();
-  await capture("requester-selection", `${slug}-initial.png`);
-  await page.locator("#development-requester").selectOption("1");
-  await capture("requester-selection", `${slug}-selected.png`);
-  await page.getByRole("button", { name: "Continue" }).click();
+  await capture("login", `${slug}-initial.png`);
+  await page.getByLabel("Email").fill(requesterEmail);
+  await page.getByRole("textbox", { name: "Password" }).fill(e2ePassword);
+  await capture("login", `${slug}-filled.png`);
+  await page.getByRole("button", { name: "Sign in" }).click();
 
   await expect(page).toHaveURL(/\/tickets$/u);
   await expect(page.getByRole("heading", { name: "My Tickets" })).toBeVisible();
@@ -354,11 +354,6 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
   expect(download.suggestedFilename()).toBe(attachmentName);
   const attachmentContentUrl = attachmentContentRequest.url();
 
-  const foreignRead = await page.request.get(attachmentContentUrl, {
-    headers: { "X-Development-Requester-Id": isolationRequester },
-  });
-  expect(foreignRead.status()).toBe(404);
-
   await attachmentRow.getByRole("button", { name: "Remove" }).click();
   const removalDialog = page.getByRole("alertdialog");
   await expect(removalDialog).toBeVisible();
@@ -373,15 +368,15 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
     )
   ).toBeVisible();
   await expect(attachmentRow.locator(".state-label")).toHaveText(/Removed/u);
-  const removedDownloadResponse = await page.request.get(attachmentContentUrl, {
-    headers: { "X-Development-Requester-Id": "1" },
-  });
+  const removedDownloadResponse = await page.request.get(attachmentContentUrl);
   expect(removedDownloadResponse.status()).toBe(404);
   await capture("ticket-detail", `${slug}-removed.png`);
 
-  await page.goto("/");
-  await page.locator("#development-requester").selectOption(isolationRequester);
-  await page.getByRole("button", { name: "Continue" }).click();
+  await logOut(page);
+  await expect(page).toHaveURL(/\/login$/u);
+  await page.getByLabel("Email").fill(isolationEmail);
+  await page.getByRole("textbox", { name: "Password" }).fill(e2ePassword);
+  await page.getByRole("button", { name: "Sign in" }).click();
   await expect(page).toHaveURL(/\/tickets$/u);
   await expect(page.getByText("No Tickets yet")).toBeVisible();
   await expect(
@@ -389,40 +384,6 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
   ).toHaveCount(0);
   await capture("my-tickets", `${slug}-empty.png`);
 
-  // Seeded through the API so the ownership capture shows a populated
-  // list that visibly contains none of Requester A's Ticket Numbers.
-  const seededTicketNumbers = await Promise.all(
-    [0, 1].map(async (index) => {
-      const seedResponse = await page.request.post(`${apiURL}/api/tickets`, {
-        headers: { "X-Development-Requester-Id": isolationRequester },
-        multipart: {
-          categoryId: "1",
-          description: `Seeded isolation evidence ${uniqueId} (${index}); the second requester owns visible tickets of their own.`,
-          relatedSystemId: "1",
-          requestedPriority: "Low",
-          summary: `Seeded isolation ticket ${uniqueId}-${index}`,
-        },
-      });
-      expect(seedResponse.status()).toBe(201);
-      const seedBody: unknown = await seedResponse.json();
-      if (!isSeedTicketBody(seedBody)) {
-        throw new Error("Seed Ticket response shape was invalid.");
-      }
-
-      return seedBody.ticket.ticketNumber;
-    })
-  );
-  await page.reload();
-  await Promise.all(
-    seededTicketNumbers.map(async (seededTicketNumber) => {
-      await expect(
-        page.getByRole("link", { name: seededTicketNumber })
-      ).toBeVisible();
-    })
-  );
-  await expect(
-    page.getByRole("link", { name: createdTicketNumber })
-  ).toHaveCount(0);
   await capture("my-tickets", `${slug}-ownership.png`);
 
   await page.goto(createdTicketHref);

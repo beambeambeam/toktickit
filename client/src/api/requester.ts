@@ -1,8 +1,13 @@
-import { ApiConnectionError, apiClient } from "@/api/client";
+import { getCsrfToken, apiClient } from "@/api/client";
+import {
+  ApiRequestError,
+  invalidApiResponse,
+  unwrap,
+  unwrapWithResponse,
+} from "@/api/errors";
 import {
   createApiTicket,
   createApiTicketAttachments,
-  getApiDevelopmentRequesters,
   getApiRelatedSystems,
   getApiTicket,
   getApiTicketAttachmentContent,
@@ -11,7 +16,6 @@ import {
 } from "@/generated/hey-api/sdk.gen";
 import type {
   AttachmentMetadata,
-  DevelopmentRequester,
   RelatedSystem,
   TicketDetail,
   TicketListResponse,
@@ -19,7 +23,7 @@ import type {
 } from "@/generated/hey-api/types.gen";
 import { isRequestedPriority } from "@/lib/ticket-priorities";
 
-export const REQUESTER_HEADER = "X-Development-Requester-Id";
+export { ApiRequestError } from "@/api/errors";
 
 export interface TicketListParams {
   categoryId?: number;
@@ -45,94 +49,24 @@ export interface CreateTicketInput {
   description: string;
   relatedSystemId: number;
   requestedPriority: "Low" | "Medium" | "High" | "Urgent";
-  requesterId: number;
   summary: string;
 }
 
-export class ApiRequestError extends Error {
-  readonly code: string | undefined;
-  readonly details: Record<string, unknown> | undefined;
-  readonly status: number;
-
-  constructor(
-    status: number,
-    message: string,
-    code?: string,
-    details?: Record<string, unknown>
-  ) {
-    super(message);
-    this.name = "ApiRequestError";
-    this.code = code;
-    this.details = details;
-    this.status = status;
+const csrfHeaders = (): { "X-CSRF-Token": string } => {
+  const token = getCsrfToken();
+  if (token === null) {
+    throw new ApiRequestError(
+      401,
+      "Sign in to continue.",
+      "AUTHENTICATION_REQUIRED"
+    );
   }
-}
+
+  return { "X-CSRF-Token": token };
+};
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
-
-interface GeneratedResult<T> {
-  data?: T;
-  error?: unknown;
-  response?: Response;
-}
-
-const toApiRequestError = (error: unknown, status = 500): Error => {
-  if (error instanceof ApiConnectionError || error instanceof ApiRequestError) {
-    return error;
-  }
-
-  const errorBody =
-    isRecord(error) && isRecord(error.error) ? error.error : undefined;
-  const message =
-    errorBody !== undefined && typeof errorBody.message === "string"
-      ? errorBody.message
-      : "The API request failed.";
-  const code =
-    errorBody !== undefined && typeof errorBody.code === "string"
-      ? errorBody.code
-      : undefined;
-  const details =
-    errorBody !== undefined && isRecord(errorBody.details)
-      ? errorBody.details
-      : undefined;
-
-  return new ApiRequestError(status, message, code, details);
-};
-
-const unwrap = async <T>(result: Promise<GeneratedResult<T>>): Promise<T> => {
-  try {
-    const response = await result;
-
-    if (response.error !== undefined || response.data === undefined) {
-      throw toApiRequestError(response.error, response.response?.status);
-    }
-
-    return response.data;
-  } catch (error: unknown) {
-    throw toApiRequestError(error);
-  }
-};
-
-const unwrapWithResponse = async <T>(
-  result: Promise<GeneratedResult<T>>
-): Promise<{ data: T; response: Response }> => {
-  try {
-    const response = await result;
-
-    if (response.error !== undefined || response.data === undefined) {
-      throw toApiRequestError(response.error, response.response?.status);
-    }
-
-    if (response.response === undefined) {
-      throw new ApiRequestError(500, "The API returned no response metadata.");
-    }
-
-    return { data: response.data, response: response.response };
-  } catch (error: unknown) {
-    throw toApiRequestError(error);
-  }
-};
 
 const isUnknownArray = (value: unknown): value is unknown[] =>
   Array.isArray(value);
@@ -142,6 +76,8 @@ const isNamedReference = (
 ): value is { id: number; name: string } =>
   isRecord(value) &&
   typeof value.id === "number" &&
+  Number.isSafeInteger(value.id) &&
+  value.id > 0 &&
   typeof value.name === "string";
 
 const isCurrentStatus = (
@@ -156,6 +92,17 @@ const isPositiveSafeInteger = (value: unknown): value is number =>
 
 const isNonNegativeSafeInteger = (value: unknown): value is number =>
   typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+
+const isAttachmentMetadata = (value: unknown): value is AttachmentMetadata =>
+  isRecord(value) &&
+  isPositiveSafeInteger(value.id) &&
+  typeof value.originalFilename === "string" &&
+  typeof value.mediaType === "string" &&
+  isNonNegativeSafeInteger(value.byteSize) &&
+  typeof value.uploadedAt === "string" &&
+  (value.state === "Active" || value.state === "Removed") &&
+  (value.removedAt === null || typeof value.removedAt === "string") &&
+  (value.removalReason === null || typeof value.removalReason === "string");
 
 const isTicketSummary = (value: unknown): value is TicketSummary =>
   isRecord(value) &&
@@ -178,46 +125,21 @@ const isTicketListResponse = (value: unknown): value is TicketListResponse =>
   isNonNegativeSafeInteger(value.totalItems) &&
   isNonNegativeSafeInteger(value.totalPages);
 
-const invalidApiResponse = (message: string): ApiRequestError =>
-  new ApiRequestError(500, message);
-
-const isDevelopmentRequester = (
-  value: unknown
-): value is DevelopmentRequester =>
-  isRecord(value) &&
-  typeof value.displayName === "string" &&
-  typeof value.email === "string" &&
-  typeof value.id === "number";
-
 const requireItems = <T>(
   body: unknown,
-  isItem: (value: unknown) => value is T
+  isItem: (value: unknown) => value is T,
+  message = "The API returned an invalid reference-data response."
 ): T[] => {
   if (
     !isRecord(body) ||
     !isUnknownArray(body.items) ||
     !body.items.every(isItem)
   ) {
-    throw invalidApiResponse(
-      "The API returned an invalid reference-data response."
-    );
+    throw invalidApiResponse(message);
   }
 
   return body.items;
 };
-
-export const getDevelopmentRequesters = async (
-  signal?: AbortSignal
-): Promise<DevelopmentRequester[]> =>
-  requireItems<DevelopmentRequester>(
-    await unwrap(
-      getApiDevelopmentRequesters({
-        client: apiClient,
-        signal,
-      })
-    ),
-    isDevelopmentRequester
-  );
 
 export const getRelatedSystems = async (
   signal?: AbortSignal
@@ -231,12 +153,6 @@ export const getRelatedSystems = async (
     ),
     isNamedReference
   );
-
-const requesterHeaders = (
-  requesterId: number
-): { "X-Development-Requester-Id": number } => ({
-  [REQUESTER_HEADER]: requesterId,
-});
 
 export const createTicket = async (
   input: CreateTicketInput,
@@ -253,7 +169,7 @@ export const createTicket = async (
         summary: input.summary,
       },
       client: apiClient,
-      headers: requesterHeaders(input.requesterId),
+      headers: csrfHeaders(),
       signal,
     })
   );
@@ -262,15 +178,13 @@ export const createTicket = async (
 };
 
 export const getTickets = async (
-  requesterId: number,
   params: TicketListParams,
   signal?: AbortSignal
 ): Promise<TicketListResponse> => {
   const body = await unwrap(
     getApiTickets({
       client: apiClient,
-      headers: requesterHeaders(requesterId),
-      query: params,
+      query: { ...params },
       signal,
     })
   );
@@ -285,21 +199,18 @@ export const getTickets = async (
 };
 
 export const getTicket = async (
-  requesterId: number,
   ticketId: number,
   signal?: AbortSignal
 ): Promise<TicketDetail> =>
   await unwrap(
     getApiTicket({
       client: apiClient,
-      headers: requesterHeaders(requesterId),
       path: { ticketId },
       signal,
     })
   );
 
 export const uploadTicketAttachments = async (
-  requesterId: number,
   ticketId: number,
   attachments: readonly File[],
   signal?: AbortSignal
@@ -308,17 +219,26 @@ export const uploadTicketAttachments = async (
     createApiTicketAttachments({
       body: { attachments: [...attachments] },
       client: apiClient,
-      headers: requesterHeaders(requesterId),
+      headers: csrfHeaders(),
       path: { ticketId },
       signal,
     })
   );
 
+  if (
+    !isRecord(body) ||
+    !isUnknownArray(body.attachments) ||
+    !body.attachments.every(isAttachmentMetadata)
+  ) {
+    throw invalidApiResponse(
+      "The API returned an invalid Attachment response."
+    );
+  }
+
   return body.attachments;
 };
 
 export const downloadTicketAttachment = async (
-  requesterId: number,
   ticketId: number,
   attachmentId: number,
   signal?: AbortSignal
@@ -326,7 +246,6 @@ export const downloadTicketAttachment = async (
   const { data: blob, response } = await unwrapWithResponse(
     getApiTicketAttachmentContent({
       client: apiClient,
-      headers: requesterHeaders(requesterId),
       parseAs: "blob",
       path: { attachmentId, ticketId },
       signal,
@@ -347,7 +266,6 @@ export const downloadTicketAttachment = async (
 };
 
 export const removeTicketAttachment = async (
-  requesterId: number,
   ticketId: number,
   attachmentId: number,
   reason: string,
@@ -357,11 +275,17 @@ export const removeTicketAttachment = async (
     removeApiTicketAttachment({
       body: { reason },
       client: apiClient,
-      headers: requesterHeaders(requesterId),
+      headers: csrfHeaders(),
       path: { attachmentId, ticketId },
       signal,
     })
   );
+
+  if (!isRecord(body) || !isAttachmentMetadata(body.attachment)) {
+    throw invalidApiResponse(
+      "The API returned an invalid Attachment response."
+    );
+  }
 
   return body.attachment;
 };
