@@ -25,7 +25,7 @@ const evidencePath = (section: string, name: string) =>
   path.resolve(
     repositoryRoot,
     "artifacts",
-    "lab-03",
+    "lab-02",
     "screenshots",
     section,
     name
@@ -397,7 +397,7 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
     path.resolve(
       repositoryRoot,
       "artifacts",
-      "lab-03",
+      "lab-02",
       "screenshots",
       `manifest-${slug}.json`
     ),

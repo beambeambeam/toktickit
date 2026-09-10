@@ -53,30 +53,28 @@ const inactiveError = () =>
     "This account is inactive. Contact your administrator."
   );
 
-const cookieSecure = (request: Request): boolean =>
-  request.protocol === "https";
+const cookieSecure = corsConfig.API_ORIGIN.startsWith("https:");
 
-const cookieAttributes = (request: Request, maxAge: number): string =>
+const cookieAttributes = (maxAge: number): string =>
   `Max-Age=${maxAge}; Path=/; HttpOnly; SameSite=Lax${
-    cookieSecure(request) ? "; Secure" : ""
+    cookieSecure ? "; Secure" : ""
   }`;
 
 export const setSessionCookie = (
-  request: Request,
   response: Response,
   token: string,
   maxAge: number
 ) => {
   response.setHeader(
     "Set-Cookie",
-    `${SESSION_COOKIE_NAME}=${token}; ${cookieAttributes(request, maxAge)}`
+    `${SESSION_COOKIE_NAME}=${token}; ${cookieAttributes(maxAge)}`
   );
 };
 
-export const clearSessionCookie = (request: Request, response: Response) => {
+export const clearSessionCookie = (response: Response) => {
   response.setHeader(
     "Set-Cookie",
-    `${SESSION_COOKIE_NAME}=; ${cookieAttributes(request, 0)}`
+    `${SESSION_COOKIE_NAME}=; ${cookieAttributes(0)}`
   );
 };
 
@@ -192,7 +190,7 @@ export const requireSession: RequestHandler = async (
   const token = getSessionToken(request);
 
   if (token === undefined) {
-    clearSessionCookie(request, response);
+    clearSessionCookie(response);
     next(authRequiredError());
     return;
   }
@@ -209,14 +207,14 @@ export const requireSession: RequestHandler = async (
     if (session !== null) {
       await deleteSessionByTokenHash(session.tokenHash);
     }
-    clearSessionCookie(request, response);
+    clearSessionCookie(response);
     next(authRequiredError());
     return;
   }
 
   if (!session.user.isActive) {
     await deleteSessionByTokenHash(session.tokenHash);
-    clearSessionCookie(request, response);
+    clearSessionCookie(response);
     next(inactiveError());
     return;
   }

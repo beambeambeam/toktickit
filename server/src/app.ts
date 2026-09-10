@@ -7,6 +7,8 @@ import { documentationRouter } from "./routes/documentation.js";
 
 export const app = express();
 
+app.set("trust proxy", 1);
+
 app.use(
   "/api",
   cors({

@@ -20,7 +20,7 @@ export const login: RequestHandler = async (request, response) => {
     getSessionToken(request)
   );
 
-  setSessionCookie(request, response, issued.token, issued.maxAge);
+  setSessionCookie(response, issued.token, issued.maxAge);
   response.json(issued.auth);
 };
 
@@ -35,12 +35,12 @@ export const changePassword: RequestHandler = async (request, response) => {
     request.ip ?? "unknown"
   );
 
-  setSessionCookie(request, response, issued.token, issued.maxAge);
+  setSessionCookie(response, issued.token, issued.maxAge);
   response.json(issued.auth);
 };
 
-export const logout: RequestHandler = async (request, response) => {
+export const logout: RequestHandler = async (_request, response) => {
   await revokeSession(getAuthenticatedSession(response).id);
-  clearSessionCookie(request, response);
+  clearSessionCookie(response);
   response.status(204).end();
 };

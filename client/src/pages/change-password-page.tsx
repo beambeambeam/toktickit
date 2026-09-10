@@ -1,5 +1,5 @@
 import { useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { SubmitEvent } from "react";
 
 import { ApiConnectionError } from "@/api/client";
@@ -19,6 +19,10 @@ const getChangePasswordErrorMessage = (error: unknown): string => {
     return "Unable to connect to the TokTickIT API. Check the server and retry.";
   }
 
+  if (error instanceof ApiRequestError && error.status === 429) {
+    return "Too many password-change attempts. Try again later.";
+  }
+
   if (error instanceof ApiRequestError && error.message.length > 0) {
     return error.message;
   }
@@ -28,6 +32,14 @@ const getChangePasswordErrorMessage = (error: unknown): string => {
   }
 
   return "Unable to change your password. Try again.";
+};
+
+const getRetryAfterSeconds = (error: unknown): number | null => {
+  if (!(error instanceof ApiRequestError) || error.status !== 429) {
+    return null;
+  }
+
+  return error.retryAfterSeconds ?? 1;
 };
 
 const getPasswordFieldErrors = (error: unknown): PasswordChangeFieldErrors => {
@@ -121,8 +133,33 @@ const PasswordForm = ({
   const [fieldErrors, setFieldErrors] = useState<PasswordChangeFieldErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [retryAfterSeconds, setRetryAfterSeconds] = useState<number | null>(
+    null
+  );
   const [isSubmitting, setIsSubmitting] = useState(false);
   const Heading = mandatory ? "h1" : "h2";
+
+  useEffect(() => {
+    let timer: number | undefined;
+
+    if (retryAfterSeconds !== null && retryAfterSeconds > 0) {
+      timer = window.setInterval(() => {
+        setRetryAfterSeconds((current) => {
+          if (current === null || current <= 1) {
+            return null;
+          }
+
+          return current - 1;
+        });
+      }, 1000);
+    }
+
+    return () => {
+      if (timer !== undefined) {
+        window.clearInterval(timer);
+      }
+    };
+  }, [retryAfterSeconds]);
 
   const submit = async (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -134,6 +171,7 @@ const PasswordForm = ({
     setFieldErrors(errors);
     setSubmitError(null);
     setSuccessMessage(null);
+    setRetryAfterSeconds(null);
 
     if (Object.keys(errors).length > 0) {
       return;
@@ -150,6 +188,7 @@ const PasswordForm = ({
     } catch (error: unknown) {
       setFieldErrors(getPasswordFieldErrors(error));
       setSubmitError(getChangePasswordErrorMessage(error));
+      setRetryAfterSeconds(getRetryAfterSeconds(error));
     } finally {
       setIsSubmitting(false);
     }
@@ -178,6 +217,12 @@ const PasswordForm = ({
           <div className="feedback feedback-error" role="alert">
             <strong>Password change failed.</strong>
             <span>{submitError}</span>
+            {retryAfterSeconds === null ? null : (
+              <span>
+                Try again in {retryAfterSeconds} second
+                {retryAfterSeconds === 1 ? "" : "s"}.
+              </span>
+            )}
           </div>
         )}
         {successMessage === null ? null : (
@@ -205,7 +250,7 @@ const PasswordForm = ({
               )}
               aria-invalid={Boolean(fieldErrors.currentPassword)}
               autoComplete="current-password"
-              disabled={isSubmitting}
+              disabled={isSubmitting || retryAfterSeconds !== null}
               id="current-password"
               onChange={(event) => {
                 setCurrentPassword(event.target.value);
@@ -240,7 +285,7 @@ const PasswordForm = ({
               }
               aria-invalid={Boolean(fieldErrors.newPassword)}
               autoComplete="new-password"
-              disabled={isSubmitting}
+              disabled={isSubmitting || retryAfterSeconds !== null}
               id="new-password"
               onChange={(event) => {
                 setNewPassword(event.target.value);
@@ -272,7 +317,7 @@ const PasswordForm = ({
               )}
               aria-invalid={Boolean(fieldErrors.confirmation)}
               autoComplete="new-password"
-              disabled={isSubmitting}
+              disabled={isSubmitting || retryAfterSeconds !== null}
               id="confirm-password"
               onChange={(event) => {
                 setConfirmation(event.target.value);
@@ -303,7 +348,7 @@ const PasswordForm = ({
             )}
             <button
               className="button button-primary"
-              disabled={isSubmitting}
+              disabled={isSubmitting || retryAfterSeconds !== null}
               type="submit"
             >
               {isSubmitting ? "Saving…" : null}

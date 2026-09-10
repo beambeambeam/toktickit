@@ -1,9 +1,26 @@
+import { writeFile } from "node:fs/promises";
+import path from "node:path";
+
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
 const apiUrl = process.env.E2E_API_URL ?? "http://localhost:3000";
 const password = "correct horse battery staple";
 const replacementPassword = "new correct horse phrase";
+const repositoryRoot = path.resolve(import.meta.dirname, "..", "..");
+
+const projectSlug = (projectName: string) =>
+  projectName.replaceAll(/[^a-z0-9]+/giu, "-").toLowerCase();
+
+const evidencePath = (name: string) =>
+  path.resolve(
+    repositoryRoot,
+    "artifacts",
+    "lab-03",
+    "screenshots",
+    "authentication",
+    name
+  );
 
 const firstLoginEmailBySlug: Record<string, string> = {
   "desktop-chromium": "e2e-first-login-desktop@example.test",
@@ -41,18 +58,25 @@ test("changes an initial password and rejects the old session after logout", asy
   page,
   request,
 }, testInfo) => {
-  const slug = testInfo.project.name
-    .replaceAll(/[^a-z0-9]+/giu, "-")
-    .toLowerCase();
+  const slug = projectSlug(testInfo.project.name);
   const email = firstLoginEmailBySlug[slug];
+  const captured: string[] = [];
+
+  const capture = async (name: string) => {
+    const filePath = evidencePath(name);
+    await page.screenshot({ fullPage: true, path: filePath });
+    captured.push(path.relative(repositoryRoot, filePath));
+  };
 
   if (email === undefined) {
     throw new Error(`No first-login fixture configured for ${slug}.`);
   }
 
   await page.goto("/");
+  await capture(`${slug}-initial.png`);
   await page.getByLabel("Email").fill(email);
   await page.getByRole("textbox", { name: "Password" }).fill(password);
+  await capture(`${slug}-filled.png`);
   await page.getByRole("button", { name: "Sign in" }).click();
 
   await expect(page).toHaveURL(/\/change-password$/u);
@@ -89,4 +113,23 @@ test("changes an initial password and rejects the old session after logout", asy
   await expect(
     page.getByRole("heading", { name: "Sign in to TokTickIT" })
   ).toBeVisible();
+
+  await writeFile(
+    path.resolve(
+      repositoryRoot,
+      "artifacts",
+      "lab-03",
+      "screenshots",
+      `manifest-${slug}.json`
+    ),
+    `${JSON.stringify(
+      {
+        files: captured,
+        generatedAt: new Date().toISOString(),
+        project: testInfo.project.name,
+      },
+      null,
+      2
+    )}\n`
+  );
 });

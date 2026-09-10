@@ -189,6 +189,45 @@ describe("authenticated identity screens", () => {
     expect(screen.getByLabelText(/New password/u)).toHaveProperty("value", "");
   });
 
+  it("explains password-change throttling and disables retrying early", async () => {
+    authState.user = authUser;
+    render(<ChangePasswordPage />);
+
+    fireEvent.change(screen.getByLabelText(/Current password/u), {
+      target: { value: "old passphrase" },
+    });
+    fireEvent.change(screen.getByLabelText(/New password/u), {
+      target: { value: "new passphrase with spaces" },
+    });
+    fireEvent.change(screen.getByLabelText(/Confirm new password/u), {
+      target: { value: "new passphrase with spaces" },
+    });
+    changePasswordMock.mockRejectedValueOnce(
+      new ApiRequestError(
+        429,
+        "Too many sign-in attempts. Try again later.",
+        "RATE_LIMITED",
+        undefined,
+        30
+      )
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Save password" }));
+
+    expect(
+      await screen.findByText(
+        "Too many password-change attempts. Try again later."
+      )
+    ).toBeTruthy();
+    expect(screen.getByText("Try again in 30 seconds.")).toBeTruthy();
+    expect(screen.getByLabelText(/Current password/u)).toHaveProperty(
+      "disabled",
+      true
+    );
+    expect(
+      screen.getByRole("button", { name: "Save password" })
+    ).toHaveProperty("disabled", true);
+  });
+
   it("denies requester screens to authenticated non-Requester roles", () => {
     authState.user = { ...authUser, role: "IT Staff" };
     render(<MyTicketsPage />);

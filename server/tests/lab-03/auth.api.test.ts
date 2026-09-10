@@ -227,6 +227,14 @@ describe("Lab 3 authentication", () => {
       getJsonString(getJsonObject(parseJson(inactiveCorrect), "error"), "code"),
       "ACCOUNT_INACTIVE"
     );
+    for (let attempt = 0; attempt < 2; attempt += 1) {
+      // The inactive account must continue consuming its account reservations.
+      // oxlint-disable-next-line no-await-in-loop
+      const repeatedInactive = await login();
+      assert.equal(repeatedInactive.status, 403);
+    }
+    const throttledInactive = await login();
+    assert.equal(throttledInactive.status, 429);
     assert.equal(await prisma.session.count(), 0);
   });
 
@@ -286,6 +294,23 @@ describe("Lab 3 authentication", () => {
       "PASSWORD_CHANGE_REQUIRED"
     );
 
+    for (let attempt = 0; attempt < 5; attempt += 1) {
+      // Wrong current-password checks must not lock out the login route.
+      // oxlint-disable-next-line no-await-in-loop
+      const wrongChange = await request(app)
+        .post("/api/auth/change-password")
+        .set("Origin", origin)
+        .set("Cookie", restrictedCookie)
+        .set("X-CSRF-Token", restrictedCsrf)
+        .send({
+          currentPassword: "wrong horse battery staple",
+          newPassword: "new correct horse phrase",
+        });
+      assert.equal(wrongChange.status, 400);
+    }
+    const loginAfterWrongChanges = await login();
+    assert.equal(loginAfterWrongChanges.status, 200);
+
     const changed = await request(app)
       .post("/api/auth/change-password")
       .set("Origin", origin)
@@ -316,6 +341,16 @@ describe("Lab 3 authentication", () => {
   });
 
   it("limits repeated failed attempts and invalidates logout replay", async () => {
+    for (let attempt = 0; attempt < 31; attempt += 1) {
+      // Validation reservations must not accumulate into a shared IP lockout.
+      // oxlint-disable-next-line no-await-in-loop
+      const malformed = await request(app)
+        .post("/api/auth/login")
+        .set("Origin", origin)
+        .send({});
+      assert.equal(malformed.status, 400);
+    }
+
     for (let attempt = 0; attempt < 5; attempt += 1) {
       // Each request must update the rolling account counter before the next.
       // oxlint-disable-next-line no-await-in-loop

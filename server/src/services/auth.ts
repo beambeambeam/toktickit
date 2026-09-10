@@ -168,6 +168,15 @@ const reserveAttempts = async (
   return result.reservationIds;
 };
 
+const reserveAndReleaseAttempts = async (
+  email: string | undefined,
+  ip: string,
+  now: Date
+): Promise<void> => {
+  const reservationIds = await reserveAttempts(email, ip, now);
+  await releaseLoginAttemptReservations(reservationIds);
+};
+
 const issueSession = async (
   userId: number,
   restricted: boolean,
@@ -216,7 +225,7 @@ export const login = async (
     typeof emailValue !== "string" ||
     typeof record.password !== "string"
   ) {
-    await reserveAttempts(undefined, ip, now);
+    await reserveAndReleaseAttempts(undefined, ip, now);
     throw validationError("body", "Email and password are required.");
   }
 
@@ -224,12 +233,12 @@ export const login = async (
   const { password } = record;
 
   if (!isValidEmail(email)) {
-    await reserveAttempts(undefined, ip, now);
+    await reserveAndReleaseAttempts(undefined, ip, now);
     throw validationError("email", "Enter a valid email address.");
   }
 
   if (!isValidPasswordLength(password)) {
-    await reserveAttempts(undefined, ip, now);
+    await reserveAndReleaseAttempts(email, ip, now);
     throw validationError(
       "password",
       "Password must contain 15–128 Unicode characters."
@@ -244,8 +253,6 @@ export const login = async (
     throw invalidCredentials();
   }
 
-  await releaseLoginAttemptReservations(reservationIds);
-
   if (user === null || user.passwordHash === null) {
     throw invalidCredentials();
   }
@@ -257,6 +264,8 @@ export const login = async (
       "This account is inactive. Contact your administrator."
     );
   }
+
+  await releaseLoginAttemptReservations(reservationIds);
 
   return await issueSession(
     user.id,
@@ -298,56 +307,64 @@ export const changePassword = async (
     ip,
     new Date()
   );
-  const currentHash = session.user.passwordHash;
-  const matches = await verifyPassword(currentHash, currentPassword);
 
-  if (!matches || currentHash === null) {
-    throw validationError("currentPassword", "Current password is incorrect.");
-  }
+  try {
+    const currentHash = session.user.passwordHash;
+    const matches = await verifyPassword(currentHash, currentPassword);
 
-  const reused = await verifyPassword(currentHash, newPassword);
+    if (!matches || currentHash === null) {
+      throw validationError(
+        "currentPassword",
+        "Current password is incorrect."
+      );
+    }
 
-  if (reused) {
+    const reused = await verifyPassword(currentHash, newPassword);
+
+    if (reused) {
+      throw validationError(
+        "newPassword",
+        "New password must be different from the current password."
+      );
+    }
+
+    const newPasswordHash = await hashPassword(newPassword);
+    const token = createOpaqueToken();
+    const csrfToken = createCsrfSecret();
+    const now = new Date();
+    const replaced = await replacePasswordAndSessions({
+      absoluteExpiresAt: new Date(
+        now.getTime() + NORMAL_SESSION_SECONDS * 1000
+      ),
+      csrfSecret: csrfToken,
+      currentPasswordHash: currentHash,
+      id: randomUUID(),
+      newPasswordHash,
+      restricted: false,
+      sessionId: session.id,
+      tokenHash: hashSessionToken(token),
+      userId: session.user.id,
+    });
+
+    if (replaced === null) {
+      throw new ApiError(
+        401,
+        "AUTHENTICATION_REQUIRED",
+        "Authentication is required."
+      );
+    }
+
+    return {
+      auth: {
+        csrfToken,
+        user: toPublicUser(replaced.user),
+      },
+      maxAge: NORMAL_SESSION_SECONDS,
+      token,
+    };
+  } finally {
     await releaseLoginAttemptReservations(reservationIds);
-    throw validationError(
-      "newPassword",
-      "New password must be different from the current password."
-    );
   }
-
-  const newPasswordHash = await hashPassword(newPassword);
-  const token = createOpaqueToken();
-  const csrfToken = createCsrfSecret();
-  const now = new Date();
-  const replaced = await replacePasswordAndSessions({
-    absoluteExpiresAt: new Date(now.getTime() + NORMAL_SESSION_SECONDS * 1000),
-    csrfSecret: csrfToken,
-    currentPasswordHash: currentHash,
-    id: randomUUID(),
-    newPasswordHash,
-    restricted: false,
-    sessionId: session.id,
-    tokenHash: hashSessionToken(token),
-    userId: session.user.id,
-  });
-
-  if (replaced === null) {
-    throw new ApiError(
-      401,
-      "AUTHENTICATION_REQUIRED",
-      "Authentication is required."
-    );
-  }
-
-  await releaseLoginAttemptReservations(reservationIds);
-  return {
-    auth: {
-      csrfToken,
-      user: toPublicUser(replaced.user),
-    },
-    maxAge: NORMAL_SESSION_SECONDS,
-    token,
-  };
 };
 
 export const revokeSession = async (sessionId: string) => {

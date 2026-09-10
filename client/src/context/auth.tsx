@@ -5,6 +5,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
 } from "react";
 import type { PropsWithChildren } from "react";
 
@@ -89,6 +90,22 @@ export const AuthProvider = ({ children }: PropsWithChildren) => {
     retry: false,
     staleTime: 0,
   });
+  const previousUserIdRef = useRef<number | null>(null);
+  const authenticatedUserId =
+    authQuery.isSuccess && authQuery.data !== null
+      ? authQuery.data.user.id
+      : null;
+
+  useEffect(() => {
+    if (
+      previousUserIdRef.current !== null &&
+      previousUserIdRef.current !== authenticatedUserId
+    ) {
+      clearPrivateClientState(queryClient);
+    }
+
+    previousUserIdRef.current = authenticatedUserId;
+  }, [authenticatedUserId, queryClient]);
 
   const clearSession = useCallback(() => {
     clearCsrfToken();
