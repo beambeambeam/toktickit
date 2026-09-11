@@ -149,6 +149,7 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
 
   const data = ticketsQuery.isError ? undefined : ticketsQuery.data;
   const hasFilters = hasTicketFilters(params);
+  const hasActiveFilters = hasFilters || searchDraft.trim().length > 0;
   const showEmpty =
     data !== undefined &&
     !ticketsQuery.isError &&
@@ -184,6 +185,14 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
           View and track support requests owned by {user.displayName}.
         </p>
         <div className="button-row">
+          <button
+            className="button button-tertiary"
+            disabled={!hasActiveFilters}
+            onClick={clearFilters}
+            type="button"
+          >
+            ↻ Clear Filters
+          </button>
           <button
             className="button button-primary"
             onClick={() => void navigate({ to: "/create" })}
