@@ -185,21 +185,12 @@ describe("My Tickets page", () => {
     vi.unstubAllGlobals();
   });
 
-  it("lets Clear Filters clear an unsubmitted search draft", async () => {
+  it("does not render a toolbar Clear Filters action", async () => {
     mockApi();
     renderMyTickets();
 
     await screen.findByText("21 total");
-    const search = screen.getByRole("textbox", { name: "Search" });
-    fireEvent.change(search, { target: { value: "draft search" } });
-
-    const clearFilters = screen.getByRole("button", {
-      name: /Clear Filters/u,
-    });
-    expect(clearFilters).not.toHaveProperty("disabled", true);
-    fireEvent.click(clearFilters);
-
-    expect(search).toHaveProperty("value", "");
+    expect(screen.queryByRole("button", { name: /Clear Filters/u })).toBeNull();
   });
 
   it("announces initial loading and background refetching", async () => {
