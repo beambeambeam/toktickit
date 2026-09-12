@@ -1,8 +1,15 @@
+import {
+  AddCircleIcon,
+  Clock01Icon,
+  Ticket01Icon,
+  UserGroupIcon,
+} from "@hugeicons/core-free-icons";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import type { PropsWithChildren } from "react";
 
 import type { AuthUser } from "@/api/auth";
+import { Icon } from "@/components/icon";
 import { useAuth } from "@/context/auth";
 
 type AppShellProps = PropsWithChildren<{
@@ -158,7 +165,7 @@ export const AppShell = ({
         <div className="app-header-inner">
           <Link className="brand" to={homeRouteForRole(user.role)}>
             <span aria-hidden="true" className="brand-mark">
-              ◷
+              <Icon icon={Clock01Icon} />
             </span>
             <span>TokTickIT</span>
           </Link>
@@ -171,14 +178,20 @@ export const AppShell = ({
                   className="nav-link"
                   to="/tickets"
                 >
-                  <span aria-hidden="true">▤</span> My Tickets
+                  <span aria-hidden="true">
+                    <Icon icon={Ticket01Icon} />
+                  </span>{" "}
+                  My Tickets
                 </Link>
                 <Link
                   activeProps={{ className: "nav-link active" }}
                   className="nav-link"
                   to="/create"
                 >
-                  <span aria-hidden="true">⊕</span> Create Ticket
+                  <span aria-hidden="true">
+                    <Icon icon={AddCircleIcon} />
+                  </span>{" "}
+                  Create Ticket
                 </Link>
               </>
             ) : null}
@@ -188,7 +201,10 @@ export const AppShell = ({
                 className="nav-link"
                 to="/users"
               >
-                <span aria-hidden="true">◎</span> User Management
+                <span aria-hidden="true">
+                  <Icon icon={UserGroupIcon} />
+                </span>{" "}
+                User Management
               </Link>
             ) : null}
             <Link

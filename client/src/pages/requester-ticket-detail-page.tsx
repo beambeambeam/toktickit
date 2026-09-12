@@ -1,3 +1,9 @@
+import {
+  ArrowLeft01Icon,
+  Attachment01Icon,
+  CancelCircleIcon,
+  CheckmarkCircle02Icon,
+} from "@hugeicons/core-free-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
@@ -16,6 +22,7 @@ import {
 } from "@/components/app-shell";
 import { AttachmentPicker } from "@/components/attachment-picker";
 import { FormField, ReadOnlyField } from "@/components/form-field";
+import { Icon } from "@/components/icon";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
 import { cn } from "@/lib/class-names";
@@ -197,7 +204,7 @@ export const RequesterTicketDetailPage = ({
           Read-only view of your saved support request.
         </p>
         <Link className="button button-secondary" to="/tickets">
-          ← Back to My Tickets
+          <Icon icon={ArrowLeft01Icon} /> Back to My Tickets
         </Link>
       </div>
 
@@ -341,7 +348,7 @@ export const RequesterTicketDetailPage = ({
                 >
                   <div className="attachment-item-main">
                     <span aria-hidden="true" className="attachment-icon">
-                      ▧
+                      <Icon icon={Attachment01Icon} />
                     </span>
                     <div>
                       <h3>{attachment.originalFilename}</h3>
@@ -369,7 +376,13 @@ export const RequesterTicketDetailPage = ({
                       )}
                     >
                       <span aria-hidden="true">
-                        {attachment.state === "Active" ? "●" : "×"}
+                        <Icon
+                          icon={
+                            attachment.state === "Active"
+                              ? CheckmarkCircle02Icon
+                              : CancelCircleIcon
+                          }
+                        />
                       </span>{" "}
                       {attachment.state}
                     </span>
@@ -402,7 +415,9 @@ export const RequesterTicketDetailPage = ({
 
             <div aria-live="polite" className="operation-status" role="status">
               {successMessage !== null && successMessage.length > 0 ? (
-                <span className="success-message">✓ {successMessage}</span>
+                <span className="success-message">
+                  <Icon icon={CheckmarkCircle02Icon} /> {successMessage}
+                </span>
               ) : null}
               {operationError !== null && operationError.length > 0 ? (
                 <span className="error-message">{operationError}</span>

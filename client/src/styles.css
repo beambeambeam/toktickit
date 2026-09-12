@@ -31,6 +31,14 @@
   box-sizing: border-box;
 }
 
+.app-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  vertical-align: -0.15em;
+}
+
 html {
   min-width: 320px;
   background: var(--page-background);
@@ -485,15 +493,8 @@ button:disabled,
   line-height: 1.4;
 }
 
-.field-error span {
-  display: inline-grid;
-  width: 1.1rem;
-  height: 1.1rem;
-  place-items: center;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-  font-size: 0.7rem;
-  font-weight: 800;
+.field-error .app-icon {
+  font-size: 1.1rem;
 }
 
 .readonly-field output {

@@ -1,3 +1,8 @@
+import {
+  Search01Icon,
+  UserGroupIcon,
+  UserShield01Icon,
+} from "@hugeicons/core-free-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
 import type { SubmitEvent } from "react";
@@ -9,6 +14,7 @@ import { createUser } from "@/api/users";
 import type { User, UserListParams, UserRole } from "@/api/users";
 import { AccessDenied, AppShell, AuthRequired } from "@/components/app-shell";
 import { fieldDescribedBy, FormField } from "@/components/form-field";
+import { Icon } from "@/components/icon";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
 import {
@@ -81,7 +87,10 @@ const getUserListErrorMessage = (error: unknown): string => {
 
 const RoleBadge = ({ role }: { role: UserRole }) => (
   <span className="role-badge">
-    <span aria-hidden="true">◆</span> {role}
+    <span aria-hidden="true">
+      <Icon icon={UserShield01Icon} />
+    </span>{" "}
+    {role}
   </span>
 );
 
@@ -638,7 +647,7 @@ const UserManagementContent = () => {
         {usersQuery.isSuccess && users.length === 0 && !hasFilters ? (
           <div className="empty-state">
             <div aria-hidden="true" className="empty-icon">
-              ◎
+              <Icon icon={UserGroupIcon} />
             </div>
             <h3>No user accounts yet</h3>
             <p>Create the first account to give a user access to TokTickIT.</p>
@@ -655,7 +664,7 @@ const UserManagementContent = () => {
         {usersQuery.isSuccess && users.length === 0 && hasFilters ? (
           <div className="empty-state">
             <div aria-hidden="true" className="empty-icon">
-              ◌
+              <Icon icon={Search01Icon} />
             </div>
             <h3>No matching users</h3>
             <p>Try a different search or remove the active filters.</p>

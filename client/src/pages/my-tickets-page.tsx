@@ -1,3 +1,10 @@
+import {
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  RefreshIcon,
+  Search01Icon,
+  Ticket01Icon,
+} from "@hugeicons/core-free-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
@@ -15,6 +22,7 @@ import {
   AuthRequired,
   RequesterAccessDenied,
 } from "@/components/app-shell";
+import { Icon } from "@/components/icon";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
 import { isRequestedPriority } from "@/lib/ticket-priorities";
@@ -191,7 +199,7 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
             onClick={clearFilters}
             type="button"
           >
-            ↻ Clear Filters
+            <Icon icon={RefreshIcon} /> Clear Filters
           </button>
           <button
             className="button button-primary"
@@ -208,7 +216,9 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
           <div className="search-field">
             <label htmlFor="ticket-search">Search</label>
             <div className="input-with-icon">
-              <span aria-hidden="true">⌕</span>
+              <span aria-hidden="true">
+                <Icon icon={Search01Icon} />
+              </span>
               <input
                 id="ticket-search"
                 onChange={(event) => {
@@ -426,7 +436,7 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
         {showEmpty ? (
           <div className="empty-state">
             <div aria-hidden="true" className="empty-icon">
-              ▤
+              <Icon icon={Ticket01Icon} />
             </div>
             <h3>No Tickets yet</h3>
             <p>{user.displayName} has not created a support request.</p>
@@ -443,7 +453,7 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
         {showNoResults ? (
           <div className="empty-state">
             <div aria-hidden="true" className="empty-icon">
-              ⌕
+              <Icon icon={Search01Icon} />
             </div>
             <h3>No matching Tickets</h3>
             <p>Try a different search or clear the active filters.</p>
@@ -460,7 +470,7 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
         {showPageEmpty ? (
           <div className="empty-state">
             <div aria-hidden="true" className="empty-icon">
-              ▤
+              <Icon icon={Ticket01Icon} />
             </div>
             <h3>No Tickets on this page</h3>
             <p>Use the page controls to return to a page with Tickets.</p>
@@ -472,7 +482,7 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
               }}
               type="button"
             >
-              ← Previous page
+              <Icon icon={ArrowLeft01Icon} /> Previous page
             </button>
           </div>
         ) : null}
@@ -588,7 +598,7 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
                 }}
                 type="button"
               >
-                ← Previous
+                <Icon icon={ArrowLeft01Icon} /> Previous
               </button>
               <span>
                 Page {page} of {totalPages > 0 ? totalPages : 1}
@@ -630,7 +640,7 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
                 }}
                 type="button"
               >
-                Next →
+                Next <Icon icon={ArrowRight01Icon} />
               </button>
             </nav>
           </>

@@ -1,3 +1,6 @@
+import { CircleIcon, Flag01Icon } from "@hugeicons/core-free-icons";
+
+import { Icon } from "@/components/icon";
 import { cn } from "@/lib/class-names";
 
 interface StatusBadgeProps {
@@ -7,6 +10,6 @@ interface StatusBadgeProps {
 
 export const StatusBadge = ({ kind, value }: StatusBadgeProps) => (
   <span className={cn("status-badge", `${kind}-badge`, value.toLowerCase())}>
-    <span aria-hidden="true">{kind === "status" ? "●" : "◆"}</span> {value}
+    <Icon icon={kind === "status" ? CircleIcon : Flag01Icon} /> {value}
   </span>
 );
