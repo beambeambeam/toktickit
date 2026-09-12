@@ -17,6 +17,7 @@ import {
   replacePasswordAndSessions,
 } from "../repositories/auth.js";
 import type { findSessionByTokenHash } from "../repositories/auth.js";
+import type { UserRoleValue } from "../types/users.js";
 import {
   isValidEmail,
   isValidPasswordLength,
@@ -33,8 +34,6 @@ const DUMMY_PASSWORD_HASH =
   "$argon2id$v=19$m=19456,p=1,t=2$BdyBLziZsrpH3nbQl/eAOg$vUBxU7JMsZWrxwLIu3MiOrxP62z0H7dkMgJeyxsARR4.";
 const INVALID_CREDENTIALS_MESSAGE =
   "Unable to sign in. Check your credentials or contact your administrator.";
-
-export type UserRoleValue = "Requester" | "ITStaff" | "Administrator";
 
 export interface PublicUser {
   createdAt: string;
@@ -141,7 +140,7 @@ const verifyPassword = async (hash: string | null, password: string) => {
   }
 };
 
-const hashPassword = async (password: string): Promise<string> =>
+export const hashPassword = async (password: string): Promise<string> =>
   await argon2.hash(password, {
     hashLength: 32,
     memoryCost: 19_456,

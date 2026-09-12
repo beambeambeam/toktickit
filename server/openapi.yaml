@@ -146,6 +146,62 @@ paths:
                 $ref: "#/components/schemas/RelatedSystemListResponse"
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
+  /api/users:
+    get:
+      operationId: getApiUsers
+      summary: List users
+      description: Returns users for Administrator account management.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/UserSearch"
+        - $ref: "#/components/parameters/UserRole"
+      responses:
+        "200":
+          description: The matching users.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+    post:
+      operationId: createApiUser
+      summary: Create a user account
+      description: Creates one active or inactive one-role account with an initial password.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: The created user without credential secrets.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateUserResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
   /api/health:
     get:
       operationId: getApiHealth
@@ -402,6 +458,20 @@ components:
       required: false
       schema:
         type: string
+    UserSearch:
+      name: search
+      in: query
+      required: false
+      description: Literal case-insensitive substring of user name or email.
+      schema:
+        type: string
+        maxLength: 200
+    UserRole:
+      name: role
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/UserRole"
     CategoryId:
       name: categoryId
       in: query
@@ -559,8 +629,7 @@ components:
           type: string
           format: email
         role:
-          type: string
-          enum: [Requester, IT Staff, Administrator]
+          $ref: "#/components/schemas/UserRole"
         isActive:
           type: boolean
         mustChangePassword:
@@ -571,6 +640,46 @@ components:
         updatedAt:
           type: string
           format: date-time
+    UserRole:
+      type: string
+      enum: [Requester, IT Staff, Administrator]
+    UserListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+    CreateUserRequest:
+      type: object
+      additionalProperties: false
+      required: [displayName, email, role, isActive, initialPassword]
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        role:
+          $ref: "#/components/schemas/UserRole"
+        isActive:
+          type: boolean
+        initialPassword:
+          type: string
+          minLength: 15
+          maxLength: 128
+    CreateUserResponse:
+      type: object
+      additionalProperties: false
+      required: [user]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
     TicketRequester:
       type: object
       additionalProperties: false

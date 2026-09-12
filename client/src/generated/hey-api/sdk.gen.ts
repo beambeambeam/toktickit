@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsErrors, CreateApiTicketAttachmentsResponses, CreateApiTicketData, CreateApiTicketErrors, CreateApiTicketResponses, GetApiAuthMeData, GetApiAuthMeErrors, GetApiAuthMeResponses, GetApiCategoriesData, GetApiCategoriesErrors, GetApiCategoriesResponses, GetApiHealthData, GetApiHealthErrors, GetApiHealthResponses, GetApiRelatedSystemsData, GetApiRelatedSystemsErrors, GetApiRelatedSystemsResponses, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentErrors, GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentsData, GetApiTicketAttachmentsErrors, GetApiTicketAttachmentsResponses, GetApiTicketData, GetApiTicketErrors, GetApiTicketResponses, GetApiTicketsData, GetApiTicketsErrors, GetApiTicketsResponses, PostApiAuthChangePasswordData, PostApiAuthChangePasswordErrors, PostApiAuthChangePasswordResponses, PostApiAuthLoginData, PostApiAuthLoginErrors, PostApiAuthLoginResponses, PostApiAuthLogoutData, PostApiAuthLogoutErrors, PostApiAuthLogoutResponses, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentErrors, RemoveApiTicketAttachmentResponses } from './types.gen';
+import type { CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsErrors, CreateApiTicketAttachmentsResponses, CreateApiTicketData, CreateApiTicketErrors, CreateApiTicketResponses, CreateApiUserData, CreateApiUserErrors, CreateApiUserResponses, GetApiAuthMeData, GetApiAuthMeErrors, GetApiAuthMeResponses, GetApiCategoriesData, GetApiCategoriesErrors, GetApiCategoriesResponses, GetApiHealthData, GetApiHealthErrors, GetApiHealthResponses, GetApiRelatedSystemsData, GetApiRelatedSystemsErrors, GetApiRelatedSystemsResponses, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentErrors, GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentsData, GetApiTicketAttachmentsErrors, GetApiTicketAttachmentsResponses, GetApiTicketData, GetApiTicketErrors, GetApiTicketResponses, GetApiTicketsData, GetApiTicketsErrors, GetApiTicketsResponses, GetApiUsersData, GetApiUsersErrors, GetApiUsersResponses, PostApiAuthChangePasswordData, PostApiAuthChangePasswordErrors, PostApiAuthChangePasswordResponses, PostApiAuthLoginData, PostApiAuthLoginErrors, PostApiAuthLoginResponses, PostApiAuthLogoutData, PostApiAuthLogoutErrors, PostApiAuthLogoutResponses, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentErrors, RemoveApiTicketAttachmentResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -107,6 +107,40 @@ export const getApiRelatedSystems = <ThrowOnError extends boolean = false>(optio
         }],
     url: '/api/related-systems',
     ...options
+});
+
+/**
+ * List users
+ *
+ * Returns users for Administrator account management.
+ */
+export const getApiUsers = <ThrowOnError extends boolean = false>(options?: Options<GetApiUsersData, ThrowOnError>): RequestResult<GetApiUsersResponses, GetApiUsersErrors, ThrowOnError> => (options?.client ?? client).get<GetApiUsersResponses, GetApiUsersErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/users',
+    ...options
+});
+
+/**
+ * Create a user account
+ *
+ * Creates one active or inactive one-role account with an initial password.
+ */
+export const createApiUser = <ThrowOnError extends boolean = false>(options: Options<CreateApiUserData, ThrowOnError>): RequestResult<CreateApiUserResponses, CreateApiUserErrors, ThrowOnError> => (options.client ?? client).post<CreateApiUserResponses, CreateApiUserErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/users',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
 });
 
 /**

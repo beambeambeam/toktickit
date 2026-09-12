@@ -15,6 +15,7 @@ import {
   getTickets,
   removeAttachment,
 } from "../controllers/tickets.js";
+import { createUser, getUsers } from "../controllers/users.js";
 import { apiErrorHandler, apiNotFound } from "../middlewares/api-errors.js";
 import {
   requireAllowedOrigin,
@@ -66,6 +67,24 @@ apiRouter.get(
   getRelatedSystems
 );
 apiRouter.get("/health", getHealth);
+apiRouter.get(
+  "/users",
+  requireSession,
+  requireUnrestricted,
+  requireRole("Administrator"),
+  touchSession,
+  getUsers
+);
+apiRouter.post(
+  "/users",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("Administrator"),
+  requireCsrf,
+  touchSession,
+  createUser
+);
 apiRouter.post(
   "/tickets",
   requireAllowedOrigin,

@@ -4,7 +4,12 @@ import type { SubmitEvent } from "react";
 
 import { ApiConnectionError } from "@/api/client";
 import { ApiRequestError } from "@/api/errors";
-import { AuthRequired, AuthLoading, AppShell } from "@/components/app-shell";
+import {
+  AuthLoading,
+  AuthRequired,
+  AppShell,
+  homeRouteForRole,
+} from "@/components/app-shell";
 import { FormField, fieldDescribedBy } from "@/components/form-field";
 import { useAuth } from "@/context/auth";
 import {
@@ -184,7 +189,9 @@ const PasswordForm = ({
       setNewPassword("");
       setConfirmation("");
       setSuccessMessage("Password changed. Your session was renewed.");
-      await navigate({ to: user?.role === "Requester" ? "/tickets" : "/" });
+      await navigate({
+        to: user === null ? "/" : homeRouteForRole(user.role),
+      });
     } catch (error: unknown) {
       setFieldErrors(getPasswordFieldErrors(error));
       setSubmitError(getChangePasswordErrorMessage(error));
@@ -394,7 +401,11 @@ export const ChangePasswordPage = () => {
   const form = (
     <PasswordForm
       mandatory={user.mustChangePassword}
-      onCancel={() => void navigate({ to: "/tickets" })}
+      onCancel={() =>
+        void navigate({
+          to: homeRouteForRole(user.role),
+        })
+      }
     />
   );
 

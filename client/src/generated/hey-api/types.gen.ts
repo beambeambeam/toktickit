@@ -38,11 +38,29 @@ export type User = {
     id: number;
     displayName: string;
     email: string;
-    role: 'Requester' | 'IT Staff' | 'Administrator';
+    role: UserRole;
     isActive: boolean;
     mustChangePassword: boolean;
     createdAt: string;
     updatedAt: string;
+};
+
+export type UserRole = 'Requester' | 'IT Staff' | 'Administrator';
+
+export type UserListResponse = {
+    items: Array<User>;
+};
+
+export type CreateUserRequest = {
+    displayName: string;
+    email: string;
+    role: UserRole;
+    isActive: boolean;
+    initialPassword: string;
+};
+
+export type CreateUserResponse = {
+    user: User;
 };
 
 export type TicketRequester = {
@@ -155,6 +173,13 @@ export type TicketId = number;
 export type AttachmentId = number;
 
 export type Search = string;
+
+/**
+ * Literal case-insensitive substring of user name or email.
+ */
+export type UserSearch = string;
+
+export type UserRole2 = UserRole;
 
 export type CategoryId = number;
 
@@ -365,6 +390,96 @@ export type GetApiRelatedSystemsResponses = {
 };
 
 export type GetApiRelatedSystemsResponse = GetApiRelatedSystemsResponses[keyof GetApiRelatedSystemsResponses];
+
+export type GetApiUsersData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Literal case-insensitive substring of user name or email.
+         */
+        search?: string;
+        role?: UserRole;
+    };
+    url: '/api/users';
+};
+
+export type GetApiUsersErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiUsersError = GetApiUsersErrors[keyof GetApiUsersErrors];
+
+export type GetApiUsersResponses = {
+    /**
+     * The matching users.
+     */
+    200: UserListResponse;
+};
+
+export type GetApiUsersResponse = GetApiUsersResponses[keyof GetApiUsersResponses];
+
+export type CreateApiUserData = {
+    body: CreateUserRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/users';
+};
+
+export type CreateApiUserErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type CreateApiUserError = CreateApiUserErrors[keyof CreateApiUserErrors];
+
+export type CreateApiUserResponses = {
+    /**
+     * The created user without credential secrets.
+     */
+    201: CreateUserResponse;
+};
+
+export type CreateApiUserResponse = CreateApiUserResponses[keyof CreateApiUserResponses];
 
 export type GetApiHealthData = {
     body?: never;

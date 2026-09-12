@@ -2,9 +2,11 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import type { PropsWithChildren } from "react";
 
+import type { AuthUser } from "@/api/auth";
 import { useAuth } from "@/context/auth";
 
 type AppShellProps = PropsWithChildren<{
+  allowedRoles?: readonly AuthUser["role"][];
   eyebrow?: string;
   title: string;
 }>;
@@ -57,14 +59,11 @@ export const AuthRequired = () => {
   );
 };
 
-export const RequesterAccessDenied = () => (
+const AccessDeniedMessage = ({ message }: { message: string }) => (
   <main className="page-content standalone-message">
     <section className="surface-card feedback feedback-warning" role="alert">
       <h1>Access denied</h1>
-      <p>
-        This client currently provides the Requester workspace. Your account
-        role cannot open this page.
-      </p>
+      <p>{message}</p>
       <Link className="button button-secondary" to="/change-password">
         Change Password
       </Link>
@@ -72,7 +71,34 @@ export const RequesterAccessDenied = () => (
   </main>
 );
 
-export const AppShell = ({ children, eyebrow, title }: AppShellProps) => {
+export const AccessDenied = () => (
+  <AccessDeniedMessage message="Your account role cannot open this page. Use a permitted workspace or change your account with an Administrator." />
+);
+
+export const RequesterAccessDenied = () => (
+  <AccessDeniedMessage message="This client currently provides the Requester workspace. Your account role cannot open this page." />
+);
+
+export const homeRouteForRole = (
+  role: AuthUser["role"]
+): "/" | "/tickets" | "/users" => {
+  if (role === "Requester") {
+    return "/tickets";
+  }
+
+  if (role === "Administrator") {
+    return "/users";
+  }
+
+  return "/";
+};
+
+export const AppShell = ({
+  allowedRoles,
+  children,
+  eyebrow,
+  title,
+}: AppShellProps) => {
   const navigate = useNavigate();
   const { logout, user, isLoading } = useAuth();
   const [logoutError, setLogoutError] = useState<string | null>(null);
@@ -97,8 +123,13 @@ export const AppShell = ({ children, eyebrow, title }: AppShellProps) => {
     return <AuthRequired />;
   }
 
-  if (user.role !== "Requester" && title !== "Change Password") {
-    return <RequesterAccessDenied />;
+  const canAccess =
+    allowedRoles === undefined
+      ? user.role === "Requester"
+      : allowedRoles.includes(user.role);
+
+  if (!canAccess && title !== "Change Password") {
+    return <AccessDenied />;
   }
 
   const handleLogout = async () => {
@@ -125,10 +156,7 @@ export const AppShell = ({ children, eyebrow, title }: AppShellProps) => {
     <div className="app-shell">
       <header className="app-header">
         <div className="app-header-inner">
-          <Link
-            className="brand"
-            to={user.role === "Requester" ? "/tickets" : "/change-password"}
-          >
+          <Link className="brand" to={homeRouteForRole(user.role)}>
             <span aria-hidden="true" className="brand-mark">
               ◷
             </span>
@@ -153,6 +181,15 @@ export const AppShell = ({ children, eyebrow, title }: AppShellProps) => {
                   <span aria-hidden="true">⊕</span> Create Ticket
                 </Link>
               </>
+            ) : null}
+            {user.role === "Administrator" ? (
+              <Link
+                activeProps={{ className: "nav-link active" }}
+                className="nav-link"
+                to="/users"
+              >
+                <span aria-hidden="true">◎</span> User Management
+              </Link>
             ) : null}
             <Link
               activeProps={{ className: "nav-link active" }}
@@ -193,6 +230,9 @@ export const AppShell = ({ children, eyebrow, title }: AppShellProps) => {
                   <Link to="/tickets">My Tickets</Link>
                   <Link to="/create">Create Ticket</Link>
                 </>
+              ) : null}
+              {user.role === "Administrator" ? (
+                <Link to="/users">User Management</Link>
               ) : null}
               <Link to="/change-password">Change Password</Link>
               <button
