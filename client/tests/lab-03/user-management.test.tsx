@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import type * as TanStackRouter from "@tanstack/react-router";
 import {
+  act,
   cleanup,
   fireEvent,
   render,
@@ -92,7 +93,7 @@ const users = [
 const renderPage = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
-      queries: { gcTime: 0, retry: false },
+      queries: { gcTime: 0, retry: false, retryDelay: 0 },
     },
   });
 
@@ -236,12 +237,158 @@ describe("Administrator user management", () => {
     expect(getUsersMock).not.toHaveBeenCalled();
   });
 
+  it("preserves every form value on duplicate email without revealing the password", async () => {
+    createUserMock.mockRejectedValueOnce(
+      new ApiRequestError(409, "Duplicate email", "EMAIL_CONFLICT")
+    );
+    renderPage();
+    await fillCreateForm();
+    fireEvent.click(screen.getByRole("checkbox", { name: "Active account" }));
+    fireEvent.click(screen.getByRole("button", { name: "Save User" }));
+    expect(
+      await screen.findByText(
+        "That email address is already in use. Enter a unique email address."
+      )
+    ).toBeTruthy();
+    expect(screen.getByLabelText(/Name/u)).toHaveProperty(
+      "value",
+      "Ben Requester"
+    );
+    expect(screen.getByLabelText(/Email/u)).toHaveProperty(
+      "value",
+      "ben@example.test"
+    );
+    expect(screen.getAllByRole("combobox")[1]).toHaveProperty(
+      "value",
+      "Requester"
+    );
+    expect(
+      screen.getByRole("checkbox", { name: "Active account" })
+    ).toHaveProperty("checked", false);
+    expect(screen.getByLabelText(/Initial password/u)).toHaveProperty(
+      "value",
+      "initial passphrase"
+    );
+    expect(screen.getByLabelText(/Initial password/u)).toHaveProperty(
+      "type",
+      "password"
+    );
+    expect(screen.queryByText("initial passphrase")).toBeNull();
+    expect(screen.getByRole("button", { name: "Save User" })).toHaveProperty(
+      "disabled",
+      false
+    );
+  });
+
+  it("distinguishes an empty directory from filtered no-results and clears filters", async () => {
+    getUsersMock.mockResolvedValue([]);
+    renderPage();
+    expect(
+      await screen.findByRole("heading", { name: "No user accounts yet" })
+    ).toBeTruthy();
+    expect(screen.getAllByRole("button", { name: "Create User" })).toHaveLength(
+      2
+    );
+    fireEvent.change(screen.getByRole("searchbox"), {
+      target: { value: "missing" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Search" }));
+    expect(
+      await screen.findByRole("heading", { name: "No matching users" })
+    ).toBeTruthy();
+    expect(screen.queryByText("No user accounts yet")).toBeNull();
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Clear Filters" })[1]
+    );
+    expect(
+      await screen.findByRole("heading", { name: "No user accounts yet" })
+    ).toBeTruthy();
+    expect(screen.getByRole("searchbox")).toHaveProperty("value", "");
+    expect(getUsersMock).toHaveBeenLastCalledWith({}, expect.anything());
+  });
+
+  it("shows load failure and recovers through Retry", async () => {
+    getUsersMock.mockRejectedValue(new Error("Service unavailable"));
+    renderPage();
+    expect(
+      await screen.findByText("Unable to load users.", {}, { timeout: 3000 })
+    ).toBeTruthy();
+    getUsersMock.mockResolvedValue(users);
+    fireEvent.click(screen.getByRole("button", { name: "Retry" }));
+    const matchingUsers = await screen.findAllByText("Ada Requester");
+    expect(matchingUsers.length).toBeGreaterThan(0);
+    expect(screen.queryByText("Unable to load users.")).toBeNull();
+  });
+
+  it("shows loading while the directory request is pending", async () => {
+    let resolveUsers!: (value: typeof users) => void;
+    getUsersMock.mockReturnValueOnce(
+      // oxlint-disable-next-line promise/avoid-new -- control pending network state explicitly.
+      new Promise<typeof users>((resolve) => {
+        resolveUsers = resolve;
+      })
+    );
+    renderPage();
+    expect(screen.getByText("Loading users…")).toBeTruthy();
+    act(() => {
+      resolveUsers(users);
+    });
+    const matchingUsers = await screen.findAllByText("Ada Requester");
+    expect(matchingUsers.length).toBeGreaterThan(0);
+    expect(screen.queryByText("Loading users…")).toBeNull();
+  });
+
+  it("disables form controls during saving and clears the password after success", async () => {
+    let resolveCreate!: (value: typeof adminUser) => void;
+    createUserMock.mockReturnValueOnce(
+      // oxlint-disable-next-line promise/avoid-new -- control pending network state explicitly.
+      new Promise<typeof adminUser>((resolve) => {
+        resolveCreate = resolve;
+      })
+    );
+    renderPage();
+    await fillCreateForm();
+    fireEvent.click(screen.getByRole("button", { name: "Save User" }));
+    expect(await screen.findByText("Saving user account…")).toBeTruthy();
+    expect(screen.getByRole("button", { name: "Saving…" })).toHaveProperty(
+      "disabled",
+      true
+    );
+    expect(screen.getByRole("button", { name: "Cancel" })).toHaveProperty(
+      "disabled",
+      true
+    );
+    expect(screen.getByLabelText(/Initial password/u)).toHaveProperty(
+      "disabled",
+      true
+    );
+    expect(screen.getByLabelText(/Name/u)).toHaveProperty("disabled", true);
+    expect(screen.getByLabelText(/Email/u)).toHaveProperty("disabled", true);
+    expect(screen.getAllByRole("combobox")[1]).toHaveProperty("disabled", true);
+    expect(
+      screen.getByRole("checkbox", { name: "Active account" })
+    ).toHaveProperty("disabled", true);
+    expect(createUserMock).toHaveBeenCalledTimes(1);
+    act(() => {
+      resolveCreate({ ...adminUser, displayName: "Ben Requester" });
+    });
+    expect(await screen.findByText(/Ben Requester was created/u)).toBeTruthy();
+    expect(screen.getByLabelText(/Initial password/u)).toHaveProperty(
+      "value",
+      ""
+    );
+    expect(screen.queryByText("initial passphrase")).toBeNull();
+  });
+
   it.each(["list", "create"])(
     "shows denial and clears all user caches after a %s API 403",
     async (source) => {
       const error = new ApiRequestError(403, "Access forbidden", "FORBIDDEN");
-      if (source === "list") {getUsersMock.mockRejectedValueOnce(error);}
-      else {createUserMock.mockRejectedValueOnce(error);}
+      if (source === "list") {
+        getUsersMock.mockRejectedValueOnce(error);
+      } else {
+        createUserMock.mockRejectedValueOnce(error);
+      }
       const { queryClient } = renderPage();
       queryClient.setQueryData(["users", { search: "cached" }], users);
       if (source === "create") {
@@ -251,9 +398,9 @@ describe("Administrator user management", () => {
       expect(
         await screen.findByRole("heading", { name: "Access denied" })
       ).toBeTruthy();
-      await waitFor(() =>{ 
-        expect(queryClient.getQueriesData({ queryKey: ["users"] })).toEqual([]); }
-      );
+      await waitFor(() => {
+        expect(queryClient.getQueriesData({ queryKey: ["users"] })).toEqual([]);
+      });
       expect(refetchAuthMock).toHaveBeenCalledTimes(1);
       expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
       expect(screen.queryByText("Ada Requester")).toBeNull();
@@ -269,19 +416,22 @@ describe("Administrator user management", () => {
         "Change password",
         "PASSWORD_CHANGE_REQUIRED"
       );
-      if (source === "list") {getUsersMock.mockRejectedValueOnce(error);}
-      else {createUserMock.mockRejectedValueOnce(error);}
+      if (source === "list") {
+        getUsersMock.mockRejectedValueOnce(error);
+      } else {
+        createUserMock.mockRejectedValueOnce(error);
+      }
       const { queryClient } = renderPage();
       if (source === "create") {
         await fillCreateForm();
         fireEvent.click(screen.getByRole("button", { name: "Save User" }));
       }
-      await waitFor(() =>{ 
+      await waitFor(() => {
         expect(navigateMock).toHaveBeenCalledWith({
           replace: true,
           to: "/change-password",
-        }); }
-      );
+        });
+      });
       expect(refetchAuthMock).toHaveBeenCalledTimes(1);
       expect(queryClient.getQueriesData({ queryKey: ["users"] })).toEqual([]);
       expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
