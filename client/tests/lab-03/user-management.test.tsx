@@ -13,16 +13,22 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthUser } from "@/api/auth";
+import { ApiRequestError } from "@/api/errors";
 import { UserManagementPage } from "@/pages/user-management-page";
 
-const { authState, createUserMock, getUsersMock, navigateMock } = vi.hoisted(
-  () => ({
-    authState: { user: null as AuthUser | null },
-    createUserMock: vi.fn(),
-    getUsersMock: vi.fn(),
-    navigateMock: vi.fn(),
-  })
-);
+const {
+  authState,
+  createUserMock,
+  getUsersMock,
+  navigateMock,
+  refetchAuthMock,
+} = vi.hoisted(() => ({
+  authState: { user: null as AuthUser | null },
+  createUserMock: vi.fn(),
+  getUsersMock: vi.fn(),
+  navigateMock: vi.fn(),
+  refetchAuthMock: vi.fn(),
+}));
 
 vi.mock("@tanstack/react-router", async () => {
   const actual = await vi.importActual<typeof TanStackRouter>(
@@ -53,7 +59,7 @@ vi.mock("@/context/auth", () => ({
     isRefreshing: false,
     login: vi.fn(),
     logout: vi.fn(),
-    refetchAuth: vi.fn(),
+    refetchAuth: refetchAuthMock,
     user: authState.user,
   }),
 }));
@@ -90,11 +96,29 @@ const renderPage = () => {
     },
   });
 
-  return render(
+  const result = render(
     <QueryClientProvider client={queryClient}>
       <UserManagementPage />
     </QueryClientProvider>
   );
+  return { ...result, queryClient };
+};
+
+const fillCreateForm = async () => {
+  await screen.findAllByText("Ada Requester");
+  fireEvent.click(screen.getByRole("button", { name: "Create User" }));
+  fireEvent.change(screen.getByLabelText(/Name/u), {
+    target: { value: "Ben Requester" },
+  });
+  fireEvent.change(screen.getByLabelText(/Email/u), {
+    target: { value: "ben@example.test" },
+  });
+  fireEvent.change(screen.getAllByRole("combobox")[1], {
+    target: { value: "Requester" },
+  });
+  fireEvent.change(screen.getByLabelText(/Initial password/u), {
+    target: { value: "initial passphrase" },
+  });
 };
 
 describe("Administrator user management", () => {
@@ -103,6 +127,7 @@ describe("Administrator user management", () => {
     createUserMock.mockReset();
     getUsersMock.mockReset();
     navigateMock.mockReset();
+    refetchAuthMock.mockReset();
     getUsersMock.mockResolvedValue(users);
   });
 
@@ -210,4 +235,56 @@ describe("Administrator user management", () => {
     expect(screen.getByRole("heading", { name: "Access denied" })).toBeTruthy();
     expect(getUsersMock).not.toHaveBeenCalled();
   });
+
+  it.each(["list", "create"])(
+    "shows denial and clears all user caches after a %s API 403",
+    async (source) => {
+      const error = new ApiRequestError(403, "Access forbidden", "FORBIDDEN");
+      if (source === "list") {getUsersMock.mockRejectedValueOnce(error);}
+      else {createUserMock.mockRejectedValueOnce(error);}
+      const { queryClient } = renderPage();
+      queryClient.setQueryData(["users", { search: "cached" }], users);
+      if (source === "create") {
+        await fillCreateForm();
+        fireEvent.click(screen.getByRole("button", { name: "Save User" }));
+      }
+      expect(
+        await screen.findByRole("heading", { name: "Access denied" })
+      ).toBeTruthy();
+      await waitFor(() =>{ 
+        expect(queryClient.getQueriesData({ queryKey: ["users"] })).toEqual([]); }
+      );
+      expect(refetchAuthMock).toHaveBeenCalledTimes(1);
+      expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+      expect(screen.queryByText("Ada Requester")).toBeNull();
+      expect(screen.queryByLabelText(/Initial password/u)).toBeNull();
+    }
+  );
+
+  it.each(["list", "create"])(
+    "redirects a %s password-required response without offering Retry",
+    async (source) => {
+      const error = new ApiRequestError(
+        403,
+        "Change password",
+        "PASSWORD_CHANGE_REQUIRED"
+      );
+      if (source === "list") {getUsersMock.mockRejectedValueOnce(error);}
+      else {createUserMock.mockRejectedValueOnce(error);}
+      const { queryClient } = renderPage();
+      if (source === "create") {
+        await fillCreateForm();
+        fireEvent.click(screen.getByRole("button", { name: "Save User" }));
+      }
+      await waitFor(() =>{ 
+        expect(navigateMock).toHaveBeenCalledWith({
+          replace: true,
+          to: "/change-password",
+        }); }
+      );
+      expect(refetchAuthMock).toHaveBeenCalledTimes(1);
+      expect(queryClient.getQueriesData({ queryKey: ["users"] })).toEqual([]);
+      expect(screen.queryByRole("button", { name: "Retry" })).toBeNull();
+    }
+  );
 });

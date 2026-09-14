@@ -4,7 +4,8 @@ import {
   UserShield01Icon,
 } from "@hugeicons/core-free-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import type { SubmitEvent } from "react";
 
 import { ApiConnectionError } from "@/api/client";
@@ -12,7 +13,12 @@ import { ApiRequestError } from "@/api/errors";
 import { usersQueryOptions } from "@/api/lab2-options";
 import { createUser } from "@/api/users";
 import type { User, UserListParams, UserRole } from "@/api/users";
-import { AccessDenied, AppShell, AuthRequired } from "@/components/app-shell";
+import {
+  AccessDenied,
+  AppShell,
+  AuthLoading,
+  AuthRequired,
+} from "@/components/app-shell";
 import { fieldDescribedBy, FormField } from "@/components/form-field";
 import { Icon } from "@/components/icon";
 import { StatusBadge } from "@/components/status-badge";
@@ -378,7 +384,11 @@ const UserCreateForm = ({
 );
 
 // oxlint-disable-next-line complexity -- this page keeps the documented list, form, and recovery states together.
-const UserManagementContent = () => {
+const UserManagementContent = ({
+  onAccessError,
+}: {
+  onAccessError: (error: ApiRequestError) => void;
+}) => {
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<UserListParams>({});
   const [searchDraft, setSearchDraft] = useState("");
@@ -391,6 +401,15 @@ const UserManagementContent = () => {
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const usersQuery = useQuery(usersQueryOptions(filters));
+  useEffect(() => {
+    if (
+      usersQuery.error instanceof ApiRequestError &&
+      usersQuery.error.status === 403
+    ) {
+      onAccessError(usersQuery.error);
+    }
+  }, [onAccessError, usersQuery.error]);
+
   const createMutation = useMutation({
     mutationFn: async () => {
       if (values.role === "") {
@@ -406,6 +425,10 @@ const UserManagementContent = () => {
       });
     },
     onError: (error: unknown) => {
+      if (error instanceof ApiRequestError && error.status === 403) {
+        onAccessError(error);
+        return;
+      }
       setFieldErrors(getUserFieldErrors(error));
       setSubmitError(getUserErrorMessage(error));
       setSuccessMessage(null);
@@ -690,7 +713,33 @@ const UserManagementContent = () => {
 };
 
 export const UserManagementPage = () => {
-  const { user } = useAuth();
+  const { refetchAuth, user } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [accessError, setAccessError] = useState<ApiRequestError | null>(null);
+  const handledAccessError = useRef<ApiRequestError | null>(null);
+
+  useEffect(() => {
+    if (accessError === null || handledAccessError.current === accessError) {
+      return;
+    }
+    handledAccessError.current = accessError;
+    // The content is unmounted before clearing all cached directory results.
+    void queryClient.cancelQueries({ queryKey: ["users"] });
+    queryClient.removeQueries({ queryKey: ["users"] });
+    void refetchAuth();
+    if (accessError.code === "PASSWORD_CHANGE_REQUIRED") {
+      void navigate({ replace: true, to: "/change-password" });
+    }
+  }, [accessError, navigate, queryClient, refetchAuth]);
+
+  if (accessError !== null) {
+    return accessError.code === "PASSWORD_CHANGE_REQUIRED" ? (
+      <AuthLoading />
+    ) : (
+      <AccessDenied />
+    );
+  }
 
   if (user === null || user.mustChangePassword) {
     return <AuthRequired />;
@@ -700,5 +749,5 @@ export const UserManagementPage = () => {
     return <AccessDenied />;
   }
 
-  return <UserManagementContent key={user.id} />;
+  return <UserManagementContent key={user.id} onAccessError={setAccessError} />;
 };

@@ -1,6 +1,7 @@
 import { queryOptions } from "@tanstack/react-query";
 
 import { categoriesQueryOptions } from "@/api/categories";
+import { ApiRequestError } from "@/api/errors";
 import { getRelatedSystems, getTicket, getTickets } from "@/api/requester";
 import type { TicketListParams } from "@/api/requester";
 import { getUsers } from "@/api/users";
@@ -38,5 +39,9 @@ export const usersQueryOptions = (params: UserListParams) =>
   queryOptions({
     queryFn: async ({ signal }) => await getUsers(params, signal),
     queryKey: ["users", params],
-    retry: 1,
+    retry: (failureCount, error) =>
+      !(
+        error instanceof ApiRequestError &&
+        (error.status === 401 || error.status === 403)
+      ) && failureCount < 1,
   });
