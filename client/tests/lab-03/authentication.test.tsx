@@ -14,6 +14,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import type { AuthUser } from "@/api/auth";
 import { ApiRequestError } from "@/api/errors";
 import { ChangePasswordPage } from "@/pages/change-password-page";
+import { LandingPage } from "@/pages/landing-page";
 import { LoginPage } from "@/pages/login-page";
 import { MyTicketsPage } from "@/pages/my-tickets-page";
 
@@ -83,6 +84,33 @@ describe("authenticated identity screens", () => {
 
   afterEach(() => {
     cleanup();
+  });
+
+  it("gives unrestricted IT Staff an account destination with credential and logout controls", () => {
+    authState.user = { ...authUser, role: "IT Staff" };
+    render(<LandingPage />);
+    expect(screen.getByRole("heading", { name: "My Account" })).toBeTruthy();
+    expect(screen.getByText(authUser.email)).toBeTruthy();
+    expect(
+      screen.getAllByRole("link", { name: "Change Password" })
+    ).toHaveLength(2);
+    expect(screen.getAllByRole("button", { name: "Log out" })).toHaveLength(2);
+    expect(screen.queryByRole("heading", { name: "Access denied" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "User Management" })).toBeNull();
+    expect(screen.queryByRole("link", { name: "My Tickets" })).toBeNull();
+  });
+
+  it("keeps IT Staff at mandatory password change before opening the account destination", async () => {
+    authState.user = {
+      ...authUser,
+      mustChangePassword: true,
+      role: "IT Staff",
+    };
+    render(<LandingPage />);
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledWith({ to: "/change-password" });
+    });
+    expect(screen.queryByRole("heading", { name: "My Account" })).toBeNull();
   });
 
   it("validates required login fields and preserves email on credential failure", async () => {

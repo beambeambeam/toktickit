@@ -170,6 +170,15 @@ export const AppShell = ({
             <span>TokTickIT</span>
           </Link>
           <nav aria-label="Primary navigation" className="desktop-nav">
+            {user.role === "IT Staff" ? (
+              <Link
+                activeProps={{ className: "nav-link active" }}
+                className="nav-link"
+                to="/"
+              >
+                My Account
+              </Link>
+            ) : null}
             {user.role === "Requester" ? (
               <>
                 <Link
@@ -241,6 +250,7 @@ export const AppShell = ({
           <details className="mobile-nav">
             <summary aria-label="Open navigation">Menu</summary>
             <nav aria-label="Mobile navigation">
+              {user.role === "IT Staff" ? <Link to="/">My Account</Link> : null}
               {user.role === "Requester" ? (
                 <>
                   <Link to="/tickets">My Tickets</Link>
