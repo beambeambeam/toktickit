@@ -8,36 +8,49 @@ const users = [
     displayName: "E2E Desktop Requester",
     email: "e2e-desktop@example.test",
     mustChangePassword: false,
+    role: "Requester" as const,
   },
   {
     displayName: "E2E Tablet Requester",
     email: "e2e-tablet@example.test",
     mustChangePassword: false,
+    role: "Requester" as const,
   },
   {
     displayName: "E2E Mobile Requester",
     email: "e2e-mobile@example.test",
     mustChangePassword: false,
+    role: "Requester" as const,
   },
   {
     displayName: "E2E Isolation Requester",
     email: "e2e-isolation@example.test",
     mustChangePassword: false,
+    role: "Requester" as const,
   },
   {
     displayName: "E2E Desktop First Login",
     email: "e2e-first-login-desktop@example.test",
     mustChangePassword: true,
+    role: "Requester" as const,
   },
   {
     displayName: "E2E Tablet First Login",
     email: "e2e-first-login-tablet@example.test",
     mustChangePassword: true,
+    role: "Requester" as const,
   },
   {
     displayName: "E2E Mobile First Login",
     email: "e2e-first-login-mobile@example.test",
     mustChangePassword: true,
+    role: "Requester" as const,
+  },
+  {
+    displayName: "E2E Administrator",
+    email: "e2e-admin@example.test",
+    mustChangePassword: false,
+    role: "Administrator" as const,
   },
 ] as const;
 
@@ -74,6 +87,7 @@ try {
           isActive: true,
           mustChangePassword: user.mustChangePassword,
           passwordHash,
+          role: user.role,
         },
         where: { id: existing.id },
       });

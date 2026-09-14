@@ -31,6 +31,14 @@
   box-sizing: border-box;
 }
 
+.app-icon {
+  display: inline-block;
+  width: 1em;
+  height: 1em;
+  flex-shrink: 0;
+  vertical-align: -0.15em;
+}
+
 html {
   min-width: 320px;
   background: var(--page-background);
@@ -485,15 +493,8 @@ button:disabled,
   line-height: 1.4;
 }
 
-.field-error span {
-  display: inline-grid;
-  width: 1.1rem;
-  height: 1.1rem;
-  place-items: center;
-  border: 1px solid currentColor;
-  border-radius: 50%;
-  font-size: 0.7rem;
-  font-weight: 800;
+.field-error .app-icon {
+  font-size: 1.1rem;
 }
 
 .readonly-field output {
@@ -699,6 +700,161 @@ button:disabled,
 
 .filter-feedback {
   margin-bottom: 0;
+}
+
+.user-filter-form {
+  display: grid;
+  grid-template-columns: minmax(16rem, 2fr) minmax(12rem, 1fr) auto;
+  align-items: end;
+  gap: 0.75rem;
+}
+
+.user-filter-actions {
+  min-height: var(--control-height);
+}
+
+.user-create-card,
+.user-list-card {
+  margin-bottom: 1.25rem;
+}
+
+.user-create-card form {
+  display: grid;
+  gap: 1rem;
+}
+
+.checkbox-field > label {
+  min-height: var(--control-height);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.checkbox-field input {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: var(--primary-green);
+}
+
+.user-table-wrap {
+  overflow-x: auto;
+  border: 1px solid #dce8e1;
+  border-radius: 0.5rem;
+}
+
+.user-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+
+.user-table th,
+.user-table td {
+  padding: 0.85rem 0.75rem;
+  border-bottom: 1px solid #e4ece7;
+  text-align: left;
+  vertical-align: middle;
+}
+
+.user-table thead th {
+  color: var(--secondary-green);
+  background: var(--pale-green);
+  font-size: 0.75rem;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+
+.user-table tbody tr:last-child th,
+.user-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.user-table tbody th,
+.user-table td {
+  overflow-wrap: anywhere;
+}
+
+.button-small {
+  min-height: var(--control-height);
+  padding: 0.4rem 0.7rem;
+  font-size: 0.82rem;
+}
+
+.role-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  padding: 0.2rem 0.55rem;
+  font-size: 0.76rem;
+  font-weight: 800;
+  line-height: 1.25;
+  white-space: nowrap;
+  color: var(--secondary-green);
+  background: var(--pale-green);
+}
+
+.status-badge.inactive {
+  color: var(--muted);
+  background: #eef1ef;
+}
+
+.user-cards {
+  display: none;
+  gap: 0.85rem;
+}
+
+.user-card {
+  padding: 1rem;
+  border: 1px solid #dce8e1;
+  border-radius: 0.55rem;
+  background: var(--surface);
+}
+
+.user-card-heading {
+  display: flex;
+  align-items: start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+.user-card h3 {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  font-size: 1rem;
+  text-wrap: balance;
+}
+
+.user-card dl {
+  display: grid;
+  gap: 0.55rem;
+  margin: 1rem 0;
+}
+
+.user-card dl div {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.user-card dt {
+  color: var(--muted);
+}
+
+.user-card dd {
+  min-width: 0;
+  margin: 0;
+  overflow-wrap: anywhere;
+  text-align: right;
+}
+
+.user-card > .button {
+  width: 100%;
 }
 
 .ticket-list-card {
@@ -1308,6 +1464,14 @@ button:disabled,
   .search-field {
     grid-column: span 2;
   }
+
+  .user-filter-form {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .user-filter-actions {
+    grid-column: span 2;
+  }
 }
 
 @media (max-width: 767px) {
@@ -1381,12 +1545,32 @@ button:disabled,
     grid-column: auto;
   }
 
+  .user-filter-form {
+    grid-template-columns: 1fr;
+  }
+
+  .user-filter-actions {
+    grid-column: auto;
+  }
+
+  .user-filter-actions .button {
+    flex: 1 1 auto;
+  }
+
   .filter-submit {
     width: 100%;
   }
 
   .ticket-table-wrap {
     display: none;
+  }
+
+  .user-table-wrap {
+    display: none;
+  }
+
+  .user-cards {
+    display: grid;
   }
 
   .ticket-cards {

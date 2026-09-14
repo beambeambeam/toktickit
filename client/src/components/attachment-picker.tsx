@@ -1,3 +1,7 @@
+import { Attachment01Icon } from "@hugeicons/core-free-icons";
+
+import { Icon } from "@/components/icon";
+
 interface AttachmentPickerProps {
   disabled?: boolean;
   errors: readonly string[];
@@ -51,7 +55,9 @@ export const AttachmentPicker = ({
       <ul className="attachment-file-list" aria-label="Selected attachments">
         {files.map((file) => (
           <li key={`${file.name}-${file.size}-${file.lastModified}`}>
-            <span aria-hidden="true">▧</span>
+            <span aria-hidden="true">
+              <Icon icon={Attachment01Icon} />
+            </span>
             <span>{file.name}</span>
             <small>{formatFileSize(file.size)}</small>
           </li>

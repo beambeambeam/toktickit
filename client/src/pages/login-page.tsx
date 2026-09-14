@@ -1,3 +1,4 @@
+import { Clock01Icon, Login01Icon } from "@hugeicons/core-free-icons";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import type { SubmitEvent } from "react";
@@ -5,6 +6,7 @@ import type { SubmitEvent } from "react";
 import { ApiConnectionError } from "@/api/client";
 import { ApiRequestError } from "@/api/errors";
 import { fieldDescribedBy, FormField } from "@/components/form-field";
+import { Icon } from "@/components/icon";
 import { useAuth } from "@/context/auth";
 import { validateLogin } from "@/lib/auth-rules";
 import type { LoginFieldErrors } from "@/lib/auth-rules";
@@ -38,7 +40,7 @@ const LoginBrand = () => (
     <div className="auth-header-inner">
       <span className="brand">
         <span aria-hidden="true" className="brand-mark">
-          ◷
+          <Icon icon={Clock01Icon} />
         </span>
         <span>TokTickIT</span>
       </span>
@@ -158,7 +160,7 @@ export const LoginPage = () => {
         <section className="auth-card" aria-labelledby="login-heading">
           <div className="auth-card-header">
             <div aria-hidden="true" className="auth-icon">
-              ◉
+              <Icon icon={Login01Icon} />
             </div>
             <h1 id="login-heading">Sign in to TokTickIT</h1>
             <p>Use your TokTickIT account to access the service desk.</p>

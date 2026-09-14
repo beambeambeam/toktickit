@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { createApiTicket, createApiTicketAttachments, getApiAuthMe, getApiCategories, getApiHealth, getApiRelatedSystems, getApiTicket, getApiTicketAttachmentContent, getApiTicketAttachments, getApiTickets, type Options, postApiAuthChangePassword, postApiAuthLogin, postApiAuthLogout, removeApiTicketAttachment } from '../sdk.gen';
-import type { CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsError, CreateApiTicketAttachmentsResponse, CreateApiTicketData, CreateApiTicketError, CreateApiTicketResponse, GetApiAuthMeData, GetApiAuthMeError, GetApiAuthMeResponse, GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse, GetApiRelatedSystemsData, GetApiRelatedSystemsError, GetApiRelatedSystemsResponse, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentsData, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, GetApiTicketData, GetApiTicketError, GetApiTicketResponse, GetApiTicketsData, GetApiTicketsError, GetApiTicketsResponse, PostApiAuthChangePasswordData, PostApiAuthChangePasswordError, PostApiAuthChangePasswordResponse, PostApiAuthLoginData, PostApiAuthLoginError, PostApiAuthLoginResponse, PostApiAuthLogoutData, PostApiAuthLogoutError, PostApiAuthLogoutResponse, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentError, RemoveApiTicketAttachmentResponse } from '../types.gen';
+import { createApiTicket, createApiTicketAttachments, createApiUser, getApiAuthMe, getApiCategories, getApiHealth, getApiRelatedSystems, getApiTicket, getApiTicketAttachmentContent, getApiTicketAttachments, getApiTickets, getApiUsers, type Options, postApiAuthChangePassword, postApiAuthLogin, postApiAuthLogout, removeApiTicketAttachment } from '../sdk.gen';
+import type { CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsError, CreateApiTicketAttachmentsResponse, CreateApiTicketData, CreateApiTicketError, CreateApiTicketResponse, CreateApiUserData, CreateApiUserError, CreateApiUserResponse, GetApiAuthMeData, GetApiAuthMeError, GetApiAuthMeResponse, GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse, GetApiRelatedSystemsData, GetApiRelatedSystemsError, GetApiRelatedSystemsResponse, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentsData, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, GetApiTicketData, GetApiTicketError, GetApiTicketResponse, GetApiTicketsData, GetApiTicketsError, GetApiTicketsResponse, GetApiUsersData, GetApiUsersError, GetApiUsersResponse, PostApiAuthChangePasswordData, PostApiAuthChangePasswordError, PostApiAuthChangePasswordResponse, PostApiAuthLoginData, PostApiAuthLoginError, PostApiAuthLoginResponse, PostApiAuthLogoutData, PostApiAuthLogoutError, PostApiAuthLogoutResponse, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentError, RemoveApiTicketAttachmentResponse } from '../types.gen';
 
 /**
  * Sign in
@@ -149,6 +149,45 @@ export const getApiRelatedSystemsOptions = (options?: Options<GetApiRelatedSyste
     },
     queryKey: getApiRelatedSystemsQueryKey(options)
 });
+
+export const getApiUsersQueryKey = (options?: Options<GetApiUsersData>) => createQueryKey('getApiUsers', options);
+
+/**
+ * List users
+ *
+ * Returns users for Administrator account management.
+ */
+export const getApiUsersOptions = (options?: Options<GetApiUsersData>) => queryOptions<GetApiUsersResponse, GetApiUsersError, GetApiUsersResponse, ReturnType<typeof getApiUsersQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiUsers({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiUsersQueryKey(options)
+});
+
+/**
+ * Create a user account
+ *
+ * Creates one active or inactive one-role account with an initial password.
+ */
+export const createApiUserMutation = (options?: Partial<Options<CreateApiUserData>>): UseMutationOptions<CreateApiUserResponse, CreateApiUserError, Options<CreateApiUserData>> => {
+    const mutationOptions: UseMutationOptions<CreateApiUserResponse, CreateApiUserError, Options<CreateApiUserData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createApiUser({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 export const getApiHealthQueryKey = (options?: Options<GetApiHealthData>) => createQueryKey('getApiHealth', options);
 

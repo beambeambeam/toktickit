@@ -22,6 +22,14 @@ Prepared under [Issue #49](https://github.com/beambeambeam/toktickit/issues/49) 
 
 For each actual review append date, exact reviewed commit, reviewer identity, PR/comment links, actionable comments, author responses/fix commits, re-review outcome, formal approval and merge actor/SHA. Record requested changes and unresolved findings honestly. Agent findings belong in their own section, never in the peer approval column.
 
+## PR #61 icon scope clarification
+
+On 2026-09-14, Kiatisakk reviewed commit `43803a88ec0fdf3b8ce60902d9cc31c31c6e40a2` and [noted that the Hugeicons migration is unrelated to #56](https://github.com/beambeambeam/toktickit/pull/61#discussion_r4002899408). The migration was a separate explicit owner request and has no associated Issue. It remains in this PR as its own commit, `43803a8`, rather than being presented as part of the user-management acceptance criteria. The PR description records this scope exception; future unrelated visual migrations should use separate PRs. This clarification does not claim reviewer approval.
+
+## PR #61 acceptance coverage response
+
+Kiatisakk's [2026-09-14 acceptance-coverage finding](https://github.com/beambeambeam/toktickit/pull/61#discussion_r4002899385), against `43803a88ec0fdf3b8ce60902d9cc31c31c6e40a2`, requested proof of created-account password replacement, authorization, duplicate races, search/filter behavior and create-to-first-login. The response adds endpoint and lifecycle suites plus a browser test and updates the API-05/UI-06/E2E-04 register to actual paths and partial status. The API fixture requires an explicit disposable test-server URL and never falls back to the shared local database. Integration/E2E execution and re-review remain pending; neither passing database behavior nor reviewer approval is claimed. #56 is explicitly linked to PR #61 through GitHub's closing-issue relationship for the non-default target branch, but acceptance must be verified before merge.
+
 ## Agent review
 
 Standards review (2026-09-08, Codex subagent): one prose-spacing finding and one path-shorthand clarity suggestion. Corrected concatenated HTTP status wording and explicitly documented table paths as relative to `/api`. No further standard or relevant abstraction findings reported.

@@ -1,3 +1,4 @@
+import { CheckmarkCircle02Icon } from "@hugeicons/core-free-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
@@ -19,6 +20,7 @@ import {
   fieldDescribedBy,
   ReadOnlyField,
 } from "@/components/form-field";
+import { Icon } from "@/components/icon";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
 import {
@@ -442,7 +444,7 @@ export const CreateTicketPage = () => {
           aria-labelledby="ticket-created-heading"
         >
           <div className="success-icon" aria-hidden="true">
-            ✓
+            <Icon icon={CheckmarkCircle02Icon} />
           </div>
           <p className="eyebrow">Saved successfully</p>
           <h2 id="ticket-created-heading">Ticket created</h2>

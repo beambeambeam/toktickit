@@ -1,11 +1,18 @@
+import { Clock01Icon, LockPasswordIcon } from "@hugeicons/core-free-icons";
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import type { SubmitEvent } from "react";
 
 import { ApiConnectionError } from "@/api/client";
 import { ApiRequestError } from "@/api/errors";
-import { AuthRequired, AuthLoading, AppShell } from "@/components/app-shell";
+import {
+  AuthLoading,
+  AuthRequired,
+  AppShell,
+  homeRouteForRole,
+} from "@/components/app-shell";
 import { FormField, fieldDescribedBy } from "@/components/form-field";
+import { Icon } from "@/components/icon";
 import { useAuth } from "@/context/auth";
 import {
   MAX_PASSWORD_LENGTH,
@@ -94,7 +101,7 @@ const PasswordBrand = ({
     <div className="auth-header-inner">
       <span className="brand">
         <span aria-hidden="true" className="brand-mark">
-          ◷
+          <Icon icon={Clock01Icon} />
         </span>
         <span>TokTickIT</span>
       </span>
@@ -184,7 +191,9 @@ const PasswordForm = ({
       setNewPassword("");
       setConfirmation("");
       setSuccessMessage("Password changed. Your session was renewed.");
-      await navigate({ to: user?.role === "Requester" ? "/tickets" : "/" });
+      await navigate({
+        to: user === null ? "/" : homeRouteForRole(user.role),
+      });
     } catch (error: unknown) {
       setFieldErrors(getPasswordFieldErrors(error));
       setSubmitError(getChangePasswordErrorMessage(error));
@@ -201,7 +210,7 @@ const PasswordForm = ({
     >
       <div className="auth-card-header">
         <div aria-hidden="true" className="auth-icon">
-          ◆
+          <Icon icon={LockPasswordIcon} />
         </div>
         <Heading id="password-heading">
           {mandatory ? "Set your new password" : "Change password"}
@@ -394,7 +403,11 @@ export const ChangePasswordPage = () => {
   const form = (
     <PasswordForm
       mandatory={user.mustChangePassword}
-      onCancel={() => void navigate({ to: "/tickets" })}
+      onCancel={() =>
+        void navigate({
+          to: homeRouteForRole(user.role),
+        })
+      }
     />
   );
 
