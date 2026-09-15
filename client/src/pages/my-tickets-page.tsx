@@ -15,7 +15,7 @@ import {
   activeCategoriesQueryOptions,
   relatedSystemsQueryOptions,
   ticketsQueryOptions,
-} from "@/api/lab2-options";
+} from "@/api/query-options";
 import type { TicketListParams } from "@/api/requester";
 import {
   AppShell,

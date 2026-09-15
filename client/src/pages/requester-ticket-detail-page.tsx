@@ -9,7 +9,7 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import type { SubmitEvent } from "react";
 
-import { ticketQueryOptions } from "@/api/lab2-options";
+import { ticketQueryOptions } from "@/api/query-options";
 import {
   downloadTicketAttachment,
   removeTicketAttachment,

@@ -9,7 +9,7 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import { ApiConnectionError } from "@/api/client";
-import { ticketQueryOptions } from "@/api/lab3-options";
+import { ticketQueryOptions } from "@/api/query-options";
 import { downloadTicketAttachment } from "@/api/requester";
 import { AccessDenied, AppShell, AuthRequired } from "@/components/app-shell";
 import { ReadOnlyField } from "@/components/form-field";

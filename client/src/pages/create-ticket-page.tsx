@@ -7,7 +7,7 @@ import type { SubmitEvent } from "react";
 import {
   activeCategoriesQueryOptions,
   relatedSystemsQueryOptions,
-} from "@/api/lab2-options";
+} from "@/api/query-options";
 import { createTicket } from "@/api/requester";
 import {
   AppShell,

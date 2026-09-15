@@ -14,13 +14,15 @@ import type { AuthUser } from "@/api/auth";
 import {
   activeCategoriesQueryOptions,
   relatedSystemsQueryOptions,
-  staffOwnersQueryOptions,
-  staffTicketsQueryOptions,
-} from "@/api/lab3-options";
+} from "@/api/query-options";
 import type {
   StaffTicketListParams,
   StaffTicketOwnerFilter,
 } from "@/api/staff";
+import {
+  staffOwnersQueryOptions,
+  staffTicketsQueryOptions,
+} from "@/api/staff-query-options";
 import { AccessDenied, AppShell, AuthRequired } from "@/components/app-shell";
 import { Icon } from "@/components/icon";
 import { StatusBadge } from "@/components/status-badge";

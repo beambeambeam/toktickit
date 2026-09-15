@@ -35,7 +35,7 @@ vi.mock("@tanstack/react-router", async () => {
   };
 });
 
-vi.mock("@/api/lab3-options", () => ({
+vi.mock("@/api/query-options", () => ({
   ticketQueryOptions: (ticketId: number) => ({
     queryFn: async ({ signal }: { signal: AbortSignal }) => {
       const result: unknown = await getTicketMock(ticketId, signal);

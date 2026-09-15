@@ -54,7 +54,7 @@ vi.mock("@tanstack/react-router", async () => {
   };
 });
 
-vi.mock("@/api/lab2-options", () => ({
+vi.mock("@/api/query-options", () => ({
   activeCategoriesQueryOptions: () => ({
     queryFn: () => [{ id: 1, name: "Network" }],
     queryKey: ["categories"],
