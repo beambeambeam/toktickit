@@ -16,6 +16,13 @@ enum RequestedPriority {
 
 enum CurrentStatus {
   New
+  Open
+  InProgress          @map("In Progress")
+  WaitingForRequester @map("Waiting for Requester")
+  Resolved
+  Closed
+  Reopened
+  Cancelled
 }
 
 enum UserRole {
@@ -62,6 +69,8 @@ model User {
   createdAt           DateTime     @default(now())
   updatedAt           DateTime     @updatedAt
   tickets             Ticket[]
+  ownedTickets        Ticket[]     @relation("TicketOwner")
+  resolutionIndications Ticket[]   @relation("TicketResolutionIndication")
   removedAttachments  Attachment[] @relation("RemovedAttachmentUser")
   sessions            Session[]
 
@@ -78,11 +87,23 @@ model Ticket {
   summary            String
   description        String
   requestedPriority  RequestedPriority
+  itPriority         RequestedPriority @default(Low)
   currentStatus      CurrentStatus    @default(New)
+  ownerId            Int?
+  version            Int              @default(1)
+  resolutionIndicatedAt       DateTime?
+  resolutionIndicatedByUserId Int?
+  statusChangedAt    DateTime         @default(now())
+  resolvedAt         DateTime?
+  reopenedAt         DateTime?
+  closedAt           DateTime?
+  cancelledAt        DateTime?
   createdAt          DateTime         @default(now())
   updatedAt          DateTime         @updatedAt
   seedKey            String?          @unique
   requester          User             @relation(fields: [requesterId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  owner              User?            @relation("TicketOwner", fields: [ownerId], references: [id], onDelete: SetNull, onUpdate: Restrict)
+  resolutionIndicatedBy User?        @relation("TicketResolutionIndication", fields: [resolutionIndicatedByUserId], references: [id], onDelete: SetNull, onUpdate: Restrict)
   category           Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   relatedSystem      RelatedSystem    @relation(fields: [relatedSystemId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   attachments        Attachment[]
@@ -92,6 +113,11 @@ model Ticket {
   @@index([requesterId, requestedPriority])
   @@index([requesterId, categoryId])
   @@index([requesterId, relatedSystemId])
+  @@index([updatedAt, id])
+  @@index([ownerId])
+  @@index([currentStatus])
+  @@index([itPriority])
+  @@index([categoryId, relatedSystemId])
 }
 
 model Attachment {

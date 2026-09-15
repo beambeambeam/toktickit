@@ -6,12 +6,22 @@ import {
   countActiveAttachments,
   createAttachments,
   createTicket,
+  findEligibleOwner,
+  findEligibleOwners,
   findOwnedAttachment,
   findOwnedTicket,
+  findReadableAttachment,
+  findStaffTicketSummaries,
+  findTicketById,
   findTicketSummaries,
   removeAttachment,
 } from "../repositories/tickets.js";
-import type { TicketFields, TicketListQuery } from "../types/tickets.js";
+import type {
+  StaffTicketListQuery,
+  TicketFields,
+  TicketListQuery,
+} from "../types/tickets.js";
+import type { UserRoleValue } from "../types/users.js";
 import {
   removeAttachmentFiles,
   readAttachmentFile,
@@ -20,6 +30,8 @@ import {
 import { createTicketNumber } from "./ticket-number.js";
 import {
   toAttachmentMetadata,
+  toOperationalSummary,
+  toOwner,
   toTicketDetail,
   toTicketSummary,
 } from "./ticket-presenters.js";
@@ -204,11 +216,73 @@ export const listTicketsForRequester = async (
   }
 };
 
-export const getTicketForRequester = async (
-  requesterId: number,
+const readerCanAccessTicket = (role: UserRoleValue) =>
+  role === "ITStaff" || role === "Administrator";
+
+export const listStaffTickets = async (
+  currentUserId: number,
+  query: StaffTicketListQuery
+) => {
+  try {
+    if (typeof query.owner === "number") {
+      const owner = await findEligibleOwner(query.owner);
+
+      if (owner === null) {
+        throw new ApiError(
+          400,
+          "OWNER_INELIGIBLE",
+          "The selected Ticket Owner is not currently eligible.",
+          {
+            field: "owner",
+            reason: "Choose an active IT Staff or Administrator.",
+          }
+        );
+      }
+    }
+
+    const result = await findStaffTicketSummaries(currentUserId, query);
+
+    return {
+      items: result.items.map(toOperationalSummary),
+      page: query.page,
+      pageSize: query.pageSize,
+      totalItems: result.totalItems,
+      totalPages: Math.ceil(result.totalItems / query.pageSize),
+    };
+  } catch (error: unknown) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    throw new ApiError(
+      500,
+      "TICKET_QUEUE_FAILURE",
+      "Unable to load the shared Ticket Queue."
+    );
+  }
+};
+
+export const listStaffOwners = async () => {
+  try {
+    const owners = await findEligibleOwners();
+    return owners.map(toOwner);
+  } catch {
+    throw new ApiError(
+      500,
+      "TICKET_OWNER_LIST_FAILURE",
+      "Unable to load eligible Ticket Owners."
+    );
+  }
+};
+
+export const getTicketForReader = async (
+  userId: number,
+  role: UserRoleValue,
   ticketId: number
 ) => {
-  const ticket = await findOwnedTicket(requesterId, ticketId);
+  const ticket = readerCanAccessTicket(role)
+    ? await findTicketById(ticketId)
+    : await findOwnedTicket(userId, ticketId);
 
   if (ticket === null) {
     throw notFound("Ticket");
@@ -217,11 +291,14 @@ export const getTicketForRequester = async (
   return toTicketDetail(ticket);
 };
 
-export const getAttachmentsForRequester = async (
-  requesterId: number,
+export const getAttachmentsForReader = async (
+  userId: number,
+  role: UserRoleValue,
   ticketId: number
 ) => {
-  const ticket = await findOwnedTicket(requesterId, ticketId);
+  const ticket = readerCanAccessTicket(role)
+    ? await findTicketById(ticketId)
+    : await findOwnedTicket(userId, ticketId);
 
   if (ticket === null) {
     throw notFound("Ticket");
@@ -286,16 +363,15 @@ export const addAttachmentsForRequester = async (
   }
 };
 
-export const downloadAttachmentForRequester = async (
-  requesterId: number,
+export const downloadAttachmentForReader = async (
+  userId: number,
+  role: UserRoleValue,
   ticketId: number,
   attachmentId: number
 ) => {
-  const attachment = await findOwnedAttachment(
-    requesterId,
-    ticketId,
-    attachmentId
-  );
+  const attachment = readerCanAccessTicket(role)
+    ? await findReadableAttachment(ticketId, attachmentId)
+    : await findOwnedAttachment(userId, ticketId, attachmentId);
 
   if (attachment === null) {
     throw notFound("Attachment");

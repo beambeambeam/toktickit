@@ -17,6 +17,7 @@ import {
   replacePasswordAndSessions,
 } from "../repositories/auth.js";
 import type { findSessionByTokenHash } from "../repositories/auth.js";
+import { toUserRoleLabel } from "../types/users.js";
 import type { UserRoleValue } from "../types/users.js";
 import {
   isValidEmail,
@@ -86,14 +87,6 @@ const createOpaqueToken = (): string => randomBytes(32).toString("base64url");
 
 const createCsrfSecret = (): string => randomBytes(32).toString("base64url");
 
-const roleLabel = (role: UserRoleValue): PublicUser["role"] => {
-  if (role === "ITStaff") {
-    return "IT Staff";
-  }
-
-  return role;
-};
-
 export const toPublicUser = (user: {
   createdAt: Date;
   displayName: string;
@@ -110,7 +103,7 @@ export const toPublicUser = (user: {
   id: user.id,
   isActive: user.isActive,
   mustChangePassword: user.mustChangePassword,
-  role: roleLabel(user.role),
+  role: toUserRoleLabel(user.role),
   updatedAt: user.updatedAt.toISOString(),
 });
 

@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsErrors, CreateApiTicketAttachmentsResponses, CreateApiTicketData, CreateApiTicketErrors, CreateApiTicketResponses, CreateApiUserData, CreateApiUserErrors, CreateApiUserResponses, GetApiAuthMeData, GetApiAuthMeErrors, GetApiAuthMeResponses, GetApiCategoriesData, GetApiCategoriesErrors, GetApiCategoriesResponses, GetApiHealthData, GetApiHealthErrors, GetApiHealthResponses, GetApiRelatedSystemsData, GetApiRelatedSystemsErrors, GetApiRelatedSystemsResponses, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentErrors, GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentsData, GetApiTicketAttachmentsErrors, GetApiTicketAttachmentsResponses, GetApiTicketData, GetApiTicketErrors, GetApiTicketResponses, GetApiTicketsData, GetApiTicketsErrors, GetApiTicketsResponses, GetApiUsersData, GetApiUsersErrors, GetApiUsersResponses, PostApiAuthChangePasswordData, PostApiAuthChangePasswordErrors, PostApiAuthChangePasswordResponses, PostApiAuthLoginData, PostApiAuthLoginErrors, PostApiAuthLoginResponses, PostApiAuthLogoutData, PostApiAuthLogoutErrors, PostApiAuthLogoutResponses, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentErrors, RemoveApiTicketAttachmentResponses } from './types.gen';
+import type { CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsErrors, CreateApiTicketAttachmentsResponses, CreateApiTicketData, CreateApiTicketErrors, CreateApiTicketResponses, CreateApiUserData, CreateApiUserErrors, CreateApiUserResponses, GetApiAuthMeData, GetApiAuthMeErrors, GetApiAuthMeResponses, GetApiCategoriesData, GetApiCategoriesErrors, GetApiCategoriesResponses, GetApiHealthData, GetApiHealthErrors, GetApiHealthResponses, GetApiRelatedSystemsData, GetApiRelatedSystemsErrors, GetApiRelatedSystemsResponses, GetApiStaffOwnersData, GetApiStaffOwnersErrors, GetApiStaffOwnersResponses, GetApiStaffTicketsData, GetApiStaffTicketsErrors, GetApiStaffTicketsResponses, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentErrors, GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentsData, GetApiTicketAttachmentsErrors, GetApiTicketAttachmentsResponses, GetApiTicketData, GetApiTicketErrors, GetApiTicketResponses, GetApiTicketsData, GetApiTicketsErrors, GetApiTicketsResponses, GetApiUsersData, GetApiUsersErrors, GetApiUsersResponses, PostApiAuthChangePasswordData, PostApiAuthChangePasswordErrors, PostApiAuthChangePasswordResponses, PostApiAuthLoginData, PostApiAuthLoginErrors, PostApiAuthLoginResponses, PostApiAuthLogoutData, PostApiAuthLogoutErrors, PostApiAuthLogoutResponses, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentErrors, RemoveApiTicketAttachmentResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -110,6 +110,34 @@ export const getApiRelatedSystems = <ThrowOnError extends boolean = false>(optio
 });
 
 /**
+ * List the shared Ticket Queue
+ *
+ * Returns operational Ticket summaries for IT Staff and read-only Administrators.
+ */
+export const getApiStaffTickets = <ThrowOnError extends boolean = false>(options?: Options<GetApiStaffTicketsData, ThrowOnError>): RequestResult<GetApiStaffTicketsResponses, GetApiStaffTicketsErrors, ThrowOnError> => (options?.client ?? client).get<GetApiStaffTicketsResponses, GetApiStaffTicketsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/staff/tickets',
+    ...options
+});
+
+/**
+ * List eligible Ticket Owners
+ */
+export const getApiStaffOwners = <ThrowOnError extends boolean = false>(options?: Options<GetApiStaffOwnersData, ThrowOnError>): RequestResult<GetApiStaffOwnersResponses, GetApiStaffOwnersErrors, ThrowOnError> => (options?.client ?? client).get<GetApiStaffOwnersResponses, GetApiStaffOwnersErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/staff/owners',
+    ...options
+});
+
+/**
  * List users
  *
  * Returns users for Administrator account management.
@@ -186,7 +214,9 @@ export const createApiTicket = <ThrowOnError extends boolean = false>(options: O
 });
 
 /**
- * Get an owned Ticket
+ * Get a Ticket
+ *
+ * Requesters can read their own Tickets; IT Staff and Administrators can read every Ticket.
  */
 export const getApiTicket = <ThrowOnError extends boolean = false>(options: Options<GetApiTicketData, ThrowOnError>): RequestResult<GetApiTicketResponses, GetApiTicketErrors, ThrowOnError> => (options.client ?? client).get<GetApiTicketResponses, GetApiTicketErrors, ThrowOnError>({
     security: [{
@@ -199,7 +229,9 @@ export const getApiTicket = <ThrowOnError extends boolean = false>(options: Opti
 });
 
 /**
- * List owned Ticket Attachment metadata
+ * List Ticket Attachment metadata
+ *
+ * Requesters can read their own Ticket Attachments; IT Staff and Administrators can read every Ticket's metadata.
  */
 export const getApiTicketAttachments = <ThrowOnError extends boolean = false>(options: Options<GetApiTicketAttachmentsData, ThrowOnError>): RequestResult<GetApiTicketAttachmentsResponses, GetApiTicketAttachmentsErrors, ThrowOnError> => (options.client ?? client).get<GetApiTicketAttachmentsResponses, GetApiTicketAttachmentsErrors, ThrowOnError>({
     security: [{
@@ -230,7 +262,9 @@ export const createApiTicketAttachments = <ThrowOnError extends boolean = false>
 });
 
 /**
- * Download an active owned Attachment
+ * Download an active Attachment
+ *
+ * Requesters can download active Attachments from their own Tickets; IT Staff and Administrators can download active Attachments from every Ticket.
  */
 export const getApiTicketAttachmentContent = <ThrowOnError extends boolean = false>(options: Options<GetApiTicketAttachmentContentData, ThrowOnError>): RequestResult<GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentContentErrors, ThrowOnError> => (options.client ?? client).get<GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentContentErrors, ThrowOnError>({
     security: [{

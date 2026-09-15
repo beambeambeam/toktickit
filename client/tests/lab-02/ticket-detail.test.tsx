@@ -113,6 +113,8 @@ const ticket = {
   description:
     "The requester cannot reach the campus network from the assigned device.",
   id: 11,
+  itPriority: "High" as const,
+  owner: null,
   relatedSystem,
   requestedPriority: "High" as const,
   requester: owner,

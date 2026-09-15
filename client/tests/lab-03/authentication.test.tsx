@@ -86,18 +86,13 @@ describe("authenticated identity screens", () => {
     cleanup();
   });
 
-  it("gives unrestricted IT Staff an account destination with credential and logout controls", () => {
+  it("routes unrestricted IT Staff to the shared Ticket Queue", async () => {
     authState.user = { ...authUser, role: "IT Staff" };
     render(<LandingPage />);
-    expect(screen.getByRole("heading", { name: "My Account" })).toBeTruthy();
-    expect(screen.getByText(authUser.email)).toBeTruthy();
-    expect(
-      screen.getAllByRole("link", { name: "Change Password" })
-    ).toHaveLength(2);
-    expect(screen.getAllByRole("button", { name: "Log out" })).toHaveLength(2);
-    expect(screen.queryByRole("heading", { name: "Access denied" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "User Management" })).toBeNull();
-    expect(screen.queryByRole("link", { name: "My Tickets" })).toBeNull();
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledWith({ to: "/staff/tickets" });
+    });
+    expect(screen.queryByRole("heading", { name: "My Account" })).toBeNull();
   });
 
   it("keeps IT Staff at mandatory password change before opening the account destination", async () => {

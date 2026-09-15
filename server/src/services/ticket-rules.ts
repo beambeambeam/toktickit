@@ -6,6 +6,9 @@ import type {
   RequestedPriority,
   TicketFields,
   TicketListQuery,
+  StaffTicketListQuery,
+  StaffTicketOwnerFilter,
+  StaffTicketSortField,
   TicketSortDirection,
   TicketSortField,
 } from "../types/tickets.js";
@@ -13,6 +16,9 @@ import type {
 export type {
   CurrentStatus,
   RequestedPriority,
+  StaffTicketListQuery,
+  StaffTicketOwnerFilter,
+  StaffTicketSortField,
   TicketFields,
   TicketListQuery,
   TicketSortDirection,
@@ -27,7 +33,16 @@ export const MIN_DESCRIPTION_LENGTH = 20;
 export const MAX_DESCRIPTION_LENGTH = 4000;
 
 export const requestedPriorities = ["Low", "Medium", "High", "Urgent"] as const;
-export const currentStatuses = ["New"] as const;
+export const currentStatuses = [
+  "New",
+  "Open",
+  "In Progress",
+  "Waiting for Requester",
+  "Resolved",
+  "Closed",
+  "Reopened",
+  "Cancelled",
+] as const;
 export const ticketSortFields = [
   "ticketNumber",
   "ticketDate",
@@ -35,6 +50,13 @@ export const ticketSortFields = [
   "requestedPriority",
   "currentStatus",
   "updatedAt",
+] as const;
+
+export const staffTicketSortFields = [
+  "ticketDate",
+  "updatedAt",
+  "itPriority",
+  "ticketNumber",
 ] as const;
 
 export interface AttachmentCandidate {
@@ -106,10 +128,13 @@ const getOptionalSingleValue = (
   return value;
 };
 
+const MAX_POSTGRES_INT = 2_147_483_647;
+
 const parsePositiveInteger = (
   value: string | undefined,
   field: string,
-  issues: ValidationIssue[]
+  issues: ValidationIssue[],
+  maximum = Number.MAX_SAFE_INTEGER
 ): number | undefined => {
   if (value === undefined || !/^[1-9]\d*$/u.test(value)) {
     issues.push({ field, reason: `${field} must be a positive integer.` });
@@ -118,7 +143,7 @@ const parsePositiveInteger = (
 
   const parsed = Number(value);
 
-  if (!Number.isSafeInteger(parsed) || parsed < 1) {
+  if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > maximum) {
     issues.push({ field, reason: `${field} must be a positive integer.` });
     return undefined;
   }
@@ -129,9 +154,12 @@ const parsePositiveInteger = (
 const parseOptionalPositiveInteger = (
   value: string | undefined,
   field: string,
-  issues: ValidationIssue[]
+  issues: ValidationIssue[],
+  maximum = Number.MAX_SAFE_INTEGER
 ): number | undefined =>
-  value === undefined ? undefined : parsePositiveInteger(value, field, issues);
+  value === undefined
+    ? undefined
+    : parsePositiveInteger(value, field, issues, maximum);
 
 const parsePageSize = (
   value: string,
@@ -167,6 +195,14 @@ const isTicketSortField = (value: string): value is TicketSortField =>
 
 const isTicketSortDirection = (value: string): value is TicketSortDirection =>
   value === "asc" || value === "desc";
+
+const isStaffTicketSortField = (value: string): value is StaffTicketSortField =>
+  staffTicketSortFields.some((field) => field === value);
+
+const isStaffTicketOwnerFilter = (
+  value: string
+): value is Exclude<StaffTicketOwnerFilter, number> =>
+  value === "me" || value === "unassigned";
 
 const parseOptionalEnum = <T extends string>(
   value: string | undefined,
@@ -211,12 +247,14 @@ export const validateTicketFields = (
   const categoryId = parsePositiveInteger(
     getSingleValue(input, "categoryId", issues),
     "categoryId",
-    issues
+    issues,
+    MAX_POSTGRES_INT
   );
   const relatedSystemId = parsePositiveInteger(
     getSingleValue(input, "relatedSystemId", issues),
     "relatedSystemId",
-    issues
+    issues,
+    MAX_POSTGRES_INT
   );
   const summaryValue = getSingleValue(input, "summary", issues);
   const descriptionValue = getSingleValue(input, "description", issues);
@@ -325,19 +363,21 @@ export const parseTicketListQuery = (
   const categoryId = parseOptionalPositiveInteger(
     getOptionalSingleValue(input, "categoryId", issues),
     "categoryId",
-    issues
+    issues,
+    MAX_POSTGRES_INT
   );
   const relatedSystemId = parseOptionalPositiveInteger(
     getOptionalSingleValue(input, "relatedSystemId", issues),
     "relatedSystemId",
-    issues
+    issues,
+    MAX_POSTGRES_INT
   );
   const pageValue = getOptionalSingleValue(input, "page", issues);
   const pageSizeValue = getOptionalSingleValue(input, "pageSize", issues);
   const page =
     pageValue === undefined
       ? 1
-      : parsePositiveInteger(pageValue, "page", issues);
+      : parsePositiveInteger(pageValue, "page", issues, MAX_POSTGRES_INT);
   const pageSize =
     pageSizeValue === undefined ? 10 : parsePageSize(pageSizeValue, issues);
   const requestedPriority = parseOptionalEnum(
@@ -351,7 +391,7 @@ export const parseTicketListQuery = (
     getOptionalSingleValue(input, "currentStatus", issues),
     "currentStatus",
     isCurrentStatus,
-    "Current status must be New.",
+    "Current status is not supported.",
     issues
   );
   const sortBy = parseOptionalEnum(
@@ -369,6 +409,14 @@ export const parseTicketListQuery = (
     issues
   );
   const searchValue = getOptionalSingleValue(input, "search", issues);
+  const normalizedSearch = searchValue?.trim();
+
+  if (normalizedSearch !== undefined && normalizedSearch.length > 200) {
+    issues.push({
+      field: "search",
+      reason: "Search must contain at most 200 characters.",
+    });
+  }
 
   if (issues.length > 0 || page === undefined || pageSize === undefined) {
     throw createValidationError(issues);
@@ -380,7 +428,6 @@ export const parseTicketListQuery = (
     sortBy: sortBy ?? "updatedAt",
     sortDirection: sortDirection ?? "desc",
   };
-  const normalizedSearch = searchValue?.trim();
 
   if (categoryId !== undefined) {
     query.categoryId = categoryId;
@@ -392,6 +439,178 @@ export const parseTicketListQuery = (
 
   if (normalizedSearch !== undefined && normalizedSearch.length > 0) {
     query.search = normalizedSearch;
+  }
+
+  if (relatedSystemId !== undefined) {
+    query.relatedSystemId = relatedSystemId;
+  }
+
+  if (requestedPriority !== undefined) {
+    query.requestedPriority = requestedPriority;
+  }
+
+  return query;
+};
+
+const staffAllowedQueryFields = new Set([
+  "categoryId",
+  "currentStatus",
+  "itPriority",
+  "owner",
+  "page",
+  "pageSize",
+  "relatedSystemId",
+  "requestedPriority",
+  "search",
+  "sortBy",
+  "sortDirection",
+]);
+
+const parseStaffPageSize = (
+  value: string,
+  issues: ValidationIssue[]
+): 10 | 20 | 50 | undefined => {
+  if (value === "10") {
+    return 10;
+  }
+
+  if (value === "20") {
+    return 20;
+  }
+
+  if (value === "50") {
+    return 50;
+  }
+
+  issues.push({
+    field: "pageSize",
+    reason: "Page size must be 10, 20, or 50.",
+  });
+  return undefined;
+};
+
+const appendStaffUnsupportedQueryIssues = (
+  input: Record<string, unknown>,
+  issues: ValidationIssue[]
+) => {
+  for (const field of Object.keys(input)) {
+    if (!staffAllowedQueryFields.has(field)) {
+      issues.push({ field, reason: "Query parameter is not supported." });
+    }
+  }
+};
+
+// oxlint-disable-next-line complexity -- this parser validates the complete documented queue contract.
+export const parseStaffTicketListQuery = (
+  input: Record<string, unknown>
+): StaffTicketListQuery => {
+  const issues: ValidationIssue[] = [];
+  appendStaffUnsupportedQueryIssues(input, issues);
+
+  const categoryId = parseOptionalPositiveInteger(
+    getOptionalSingleValue(input, "categoryId", issues),
+    "categoryId",
+    issues,
+    MAX_POSTGRES_INT
+  );
+  const currentStatus = parseOptionalEnum(
+    getOptionalSingleValue(input, "currentStatus", issues),
+    "currentStatus",
+    isCurrentStatus,
+    "Current status is not supported.",
+    issues
+  );
+  const itPriority = parseOptionalEnum(
+    getOptionalSingleValue(input, "itPriority", issues),
+    "itPriority",
+    isRequestedPriority,
+    "IT priority must be Low, Medium, High, or Urgent.",
+    issues
+  );
+  const ownerValue = getOptionalSingleValue(input, "owner", issues);
+  let owner: StaffTicketOwnerFilter | undefined;
+
+  if (ownerValue !== undefined) {
+    owner = isStaffTicketOwnerFilter(ownerValue)
+      ? ownerValue
+      : parsePositiveInteger(ownerValue, "owner", issues, MAX_POSTGRES_INT);
+  }
+
+  const pageValue = getOptionalSingleValue(input, "page", issues);
+  const page =
+    pageValue === undefined
+      ? 1
+      : parsePositiveInteger(pageValue, "page", issues, MAX_POSTGRES_INT);
+  const pageSizeValue = getOptionalSingleValue(input, "pageSize", issues);
+  const pageSize =
+    pageSizeValue === undefined
+      ? 20
+      : parseStaffPageSize(pageSizeValue, issues);
+  const relatedSystemId = parseOptionalPositiveInteger(
+    getOptionalSingleValue(input, "relatedSystemId", issues),
+    "relatedSystemId",
+    issues,
+    MAX_POSTGRES_INT
+  );
+  const requestedPriority = parseOptionalEnum(
+    getOptionalSingleValue(input, "requestedPriority", issues),
+    "requestedPriority",
+    isRequestedPriority,
+    "Requested priority must be Low, Medium, High, or Urgent.",
+    issues
+  );
+  const searchValue = getOptionalSingleValue(input, "search", issues);
+  const normalizedSearch = searchValue?.trim();
+  if (normalizedSearch !== undefined && normalizedSearch.length > 200) {
+    issues.push({
+      field: "search",
+      reason: "Search must contain at most 200 characters.",
+    });
+  }
+  const sortBy = parseOptionalEnum(
+    getOptionalSingleValue(input, "sortBy", issues),
+    "sortBy",
+    isStaffTicketSortField,
+    "Queue sort field is not supported.",
+    issues
+  );
+  const sortDirection = parseOptionalEnum(
+    getOptionalSingleValue(input, "sortDirection", issues),
+    "sortDirection",
+    isTicketSortDirection,
+    "Sort direction must be asc or desc.",
+    issues
+  );
+
+  if (issues.length > 0 || page === undefined || pageSize === undefined) {
+    throw createValidationError(issues);
+  }
+
+  const query: StaffTicketListQuery = {
+    page,
+    pageSize,
+    sortBy: sortBy ?? "updatedAt",
+    sortDirection: sortDirection ?? "desc",
+  };
+
+  if (categoryId !== undefined) {
+    query.categoryId = categoryId;
+  }
+
+  if (currentStatus !== undefined) {
+    query.currentStatus = currentStatus;
+  }
+
+  if (itPriority !== undefined) {
+    query.itPriority = itPriority;
+  }
+
+  if (normalizedSearch !== undefined && normalizedSearch.length > 0) {
+    query.search = normalizedSearch;
+  }
+
+  if (owner !== undefined) {
+    query.owner = owner;
   }
 
   if (relatedSystemId !== undefined) {

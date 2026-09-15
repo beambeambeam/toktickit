@@ -1,6 +1,12 @@
 import { prisma } from "../db/client.js";
 import { Prisma } from "../generated/prisma/client.js";
-import type { TicketFields, TicketListQuery } from "../types/tickets.js";
+import type { CurrentStatus as PrismaCurrentStatus } from "../generated/prisma/enums.js";
+import type {
+  StaffTicketOwnerFilter,
+  StaffTicketListQuery,
+  TicketFields,
+  TicketListQuery,
+} from "../types/tickets.js";
 
 const categorySelection = {
   id: true,
@@ -16,6 +22,13 @@ const requesterSelection = {
   displayName: true,
   email: true,
   id: true,
+} as const;
+
+const ownerSelection = {
+  displayName: true,
+  id: true,
+  isActive: true,
+  role: true,
 } as const;
 
 const attachmentSelection = {
@@ -36,8 +49,12 @@ export const ticketDetailInclude = {
     select: attachmentSelection,
   },
   category: { select: categorySelection },
+  owner: { select: ownerSelection },
   relatedSystem: { select: relatedSystemSelection },
   requester: { select: requesterSelection },
+  resolutionIndicatedBy: {
+    select: { displayName: true, id: true },
+  },
 } satisfies Prisma.TicketInclude;
 
 export const ticketSummaryInclude = {
@@ -49,6 +66,12 @@ export const findOwnedTicket = async (requesterId: number, ticketId: number) =>
   await prisma.ticket.findFirst({
     include: ticketDetailInclude,
     where: { id: ticketId, requesterId },
+  });
+
+export const findTicketById = async (ticketId: number) =>
+  await prisma.ticket.findUnique({
+    include: ticketDetailInclude,
+    where: { id: ticketId },
   });
 
 export const findOwnedAttachment = async (
@@ -68,10 +91,43 @@ export const findOwnedAttachment = async (
     },
   });
 
+export const findReadableAttachment = async (
+  ticketId: number,
+  attachmentId: number
+) =>
+  await prisma.attachment.findFirst({
+    select: {
+      ...attachmentSelection,
+      ticketId: true,
+    },
+    where: {
+      id: attachmentId,
+      removedAt: null,
+      ticketId,
+    },
+  });
+
 export const countActiveAttachments = async (ticketId: number) =>
   await prisma.attachment.count({
     where: { removedAt: null, ticketId },
   });
+
+const escapeLikePattern = (value: string): string =>
+  value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
+
+const currentStatusByWire: Record<
+  Exclude<StaffTicketListQuery["currentStatus"], undefined>,
+  PrismaCurrentStatus
+> = {
+  Cancelled: "Cancelled",
+  Closed: "Closed",
+  "In Progress": "InProgress",
+  New: "New",
+  Open: "Open",
+  Reopened: "Reopened",
+  Resolved: "Resolved",
+  "Waiting for Requester": "WaitingForRequester",
+};
 
 const buildTicketWhere = (
   requesterId: number,
@@ -80,7 +136,7 @@ const buildTicketWhere = (
   ...(query.categoryId === undefined ? {} : { categoryId: query.categoryId }),
   ...(query.currentStatus === undefined
     ? {}
-    : { currentStatus: query.currentStatus }),
+    : { currentStatus: currentStatusByWire[query.currentStatus] }),
   ...(query.relatedSystemId === undefined
     ? {}
     : { relatedSystemId: query.relatedSystemId }),
@@ -91,13 +147,128 @@ const buildTicketWhere = (
     ? {}
     : {
         OR: [
-          { ticketNumber: { contains: query.search, mode: "insensitive" } },
-          { summary: { contains: query.search, mode: "insensitive" } },
-          { description: { contains: query.search, mode: "insensitive" } },
+          {
+            ticketNumber: {
+              contains: escapeLikePattern(query.search),
+              mode: "insensitive",
+            },
+          },
+          {
+            summary: {
+              contains: escapeLikePattern(query.search),
+              mode: "insensitive",
+            },
+          },
+          {
+            description: {
+              contains: escapeLikePattern(query.search),
+              mode: "insensitive",
+            },
+          },
         ],
       }),
   requesterId,
 });
+
+const resolveOwnerId = (
+  owner: StaffTicketOwnerFilter,
+  currentUserId: number
+): number | null => {
+  if (owner === "me") {
+    return currentUserId;
+  }
+
+  if (owner === "unassigned") {
+    return null;
+  }
+
+  return owner;
+};
+
+const buildStaffTicketWhere = (
+  query: StaffTicketListQuery,
+  currentUserId: number
+): Prisma.TicketWhereInput => ({
+  ...(query.categoryId === undefined ? {} : { categoryId: query.categoryId }),
+  ...(query.currentStatus === undefined
+    ? {}
+    : { currentStatus: currentStatusByWire[query.currentStatus] }),
+  ...(query.itPriority === undefined ? {} : { itPriority: query.itPriority }),
+  ...(query.owner === undefined
+    ? {}
+    : { ownerId: resolveOwnerId(query.owner, currentUserId) }),
+  ...(query.relatedSystemId === undefined
+    ? {}
+    : { relatedSystemId: query.relatedSystemId }),
+  ...(query.requestedPriority === undefined
+    ? {}
+    : { requestedPriority: query.requestedPriority }),
+  ...(query.search === undefined
+    ? {}
+    : {
+        OR: [
+          {
+            ticketNumber: {
+              contains: escapeLikePattern(query.search),
+              mode: "insensitive",
+            },
+          },
+          {
+            summary: {
+              contains: escapeLikePattern(query.search),
+              mode: "insensitive",
+            },
+          },
+        ],
+      }),
+});
+
+const staffTicketSummaryInclude = {
+  category: { select: categorySelection },
+  owner: { select: ownerSelection },
+  relatedSystem: { select: relatedSystemSelection },
+} satisfies Prisma.TicketInclude;
+
+export const findEligibleOwners = async () =>
+  await prisma.user.findMany({
+    orderBy: [{ displayName: "asc" }, { id: "asc" }],
+    select: ownerSelection,
+    where: { isActive: true, role: { in: ["ITStaff", "Administrator"] } },
+  });
+
+export const findEligibleOwner = async (id: number) =>
+  await prisma.user.findFirst({
+    select: ownerSelection,
+    where: { id, isActive: true, role: { in: ["ITStaff", "Administrator"] } },
+  });
+
+export const findStaffTicketSummaries = async (
+  currentUserId: number,
+  query: StaffTicketListQuery
+) => {
+  const where = buildStaffTicketWhere(query, currentUserId);
+  const direction = query.sortDirection;
+  const orderBy: Prisma.TicketOrderByWithRelationInput[] = [
+    { [query.sortBy]: direction },
+    { id: direction },
+  ];
+
+  return await prisma.$transaction(
+    async (database) => {
+      const totalItems = await database.ticket.count({ where });
+      const items = await database.ticket.findMany({
+        include: staffTicketSummaryInclude,
+        orderBy,
+        skip: (query.page - 1) * query.pageSize,
+        take: query.pageSize,
+        where,
+      });
+
+      return { items, totalItems };
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead }
+  );
+};
 
 export const findTicketSummaries = async (
   requesterId: number,
@@ -152,9 +323,11 @@ export const insertTicket = async (
       categoryId: fields.categoryId,
       currentStatus: "New",
       description: fields.description,
+      itPriority: fields.requestedPriority,
       relatedSystemId: fields.relatedSystemId,
       requestedPriority: fields.requestedPriority,
       requesterId,
+      statusChangedAt: ticketDate,
       summary: fields.summary,
       ticketDate,
       ticketNumber,

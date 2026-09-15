@@ -90,7 +90,7 @@ export type EmptyRequest = {
 
 export type RequestedPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
 
-export type CurrentStatus = 'New';
+export type CurrentStatus = 'New' | 'Open' | 'In Progress' | 'Waiting for Requester' | 'Resolved' | 'Closed' | 'Reopened' | 'Cancelled';
 
 export type AttachmentMetadata = {
     id: number;
@@ -123,6 +123,15 @@ export type TicketDetail = TicketSummary & {
     requester: TicketRequester;
     description: string;
     attachments: Array<AttachmentMetadata>;
+    itPriority: RequestedPriority;
+    owner: Owner | null;
+    version: number;
+    resolutionIndication: ResolutionIndication | null;
+    statusChangedAt: string;
+    resolvedAt: string | null;
+    reopenedAt: string | null;
+    closedAt: string | null;
+    cancelledAt: string | null;
 };
 
 export type TicketListResponse = {
@@ -131,6 +140,40 @@ export type TicketListResponse = {
     pageSize: 10 | 25 | 50;
     totalItems: number;
     totalPages: number;
+};
+
+export type OperationalTicketSummary = TicketSummary & {
+    itPriority: RequestedPriority;
+    owner: Owner | null;
+    version: number;
+};
+
+export type StaffTicketListResponse = {
+    items: Array<OperationalTicketSummary>;
+    page: number;
+    pageSize: 10 | 20 | 50;
+    totalItems: number;
+    totalPages: number;
+};
+
+export type Owner = {
+    id: number;
+    displayName: string;
+    role: UserRole;
+    isActive: boolean;
+    isEligible: boolean;
+};
+
+export type OwnerListResponse = {
+    items: Array<Owner>;
+};
+
+export type ResolutionIndication = {
+    author: {
+        id: number;
+        displayName: string;
+    };
+    createdAt: string;
 };
 
 export type CreateTicketRequest = {
@@ -189,13 +232,24 @@ export type RequestedPriority2 = RequestedPriority;
 
 export type CurrentStatus2 = CurrentStatus;
 
+export type ItPriority = RequestedPriority;
+
+/**
+ * Eligible owner ID, me, or unassigned.
+ */
+export type Owner2 = number | 'me' | 'unassigned';
+
 export type SortBy = 'ticketNumber' | 'ticketDate' | 'summary' | 'requestedPriority' | 'currentStatus' | 'updatedAt';
 
 export type SortDirection = 'asc' | 'desc';
 
+export type QueueSortBy = 'ticketDate' | 'updatedAt' | 'itPriority' | 'ticketNumber';
+
 export type Page = number;
 
 export type PageSize = 10 | 25 | 50;
+
+export type QueuePageSize = 10 | 20 | 50;
 
 export type PostApiAuthLoginData = {
     body: LoginRequest;
@@ -390,6 +444,91 @@ export type GetApiRelatedSystemsResponses = {
 };
 
 export type GetApiRelatedSystemsResponse = GetApiRelatedSystemsResponses[keyof GetApiRelatedSystemsResponses];
+
+export type GetApiStaffTicketsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        search?: string;
+        categoryId?: number;
+        relatedSystemId?: number;
+        requestedPriority?: RequestedPriority;
+        itPriority?: RequestedPriority;
+        currentStatus?: CurrentStatus;
+        /**
+         * Eligible owner ID, me, or unassigned.
+         */
+        owner?: number | 'me' | 'unassigned';
+        sortBy?: 'ticketDate' | 'updatedAt' | 'itPriority' | 'ticketNumber';
+        sortDirection?: 'asc' | 'desc';
+        page?: number;
+        pageSize?: 10 | 20 | 50;
+    };
+    url: '/api/staff/tickets';
+};
+
+export type GetApiStaffTicketsErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiStaffTicketsError = GetApiStaffTicketsErrors[keyof GetApiStaffTicketsErrors];
+
+export type GetApiStaffTicketsResponses = {
+    /**
+     * The shared operational Ticket page.
+     */
+    200: StaffTicketListResponse;
+};
+
+export type GetApiStaffTicketsResponse = GetApiStaffTicketsResponses[keyof GetApiStaffTicketsResponses];
+
+export type GetApiStaffOwnersData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/staff/owners';
+};
+
+export type GetApiStaffOwnersErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiStaffOwnersError = GetApiStaffOwnersErrors[keyof GetApiStaffOwnersErrors];
+
+export type GetApiStaffOwnersResponses = {
+    /**
+     * Active IT Staff and Administrators eligible for assignment.
+     */
+    200: OwnerListResponse;
+};
+
+export type GetApiStaffOwnersResponse = GetApiStaffOwnersResponses[keyof GetApiStaffOwnersResponses];
 
 export type GetApiUsersData = {
     body?: never;
@@ -624,7 +763,7 @@ export type GetApiTicketError = GetApiTicketErrors[keyof GetApiTicketErrors];
 
 export type GetApiTicketResponses = {
     /**
-     * The owned Ticket Detail.
+     * The Ticket Detail for the permitted reader.
      */
     200: TicketDetail;
 };
@@ -659,7 +798,7 @@ export type GetApiTicketAttachmentsError = GetApiTicketAttachmentsErrors[keyof G
 
 export type GetApiTicketAttachmentsResponses = {
     /**
-     * Attachment metadata for the owned Ticket.
+     * Attachment metadata for the permitted Ticket.
      */
     200: AttachmentListResponse;
 };

@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { createApiTicket, createApiTicketAttachments, createApiUser, getApiAuthMe, getApiCategories, getApiHealth, getApiRelatedSystems, getApiTicket, getApiTicketAttachmentContent, getApiTicketAttachments, getApiTickets, getApiUsers, type Options, postApiAuthChangePassword, postApiAuthLogin, postApiAuthLogout, removeApiTicketAttachment } from '../sdk.gen';
-import type { CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsError, CreateApiTicketAttachmentsResponse, CreateApiTicketData, CreateApiTicketError, CreateApiTicketResponse, CreateApiUserData, CreateApiUserError, CreateApiUserResponse, GetApiAuthMeData, GetApiAuthMeError, GetApiAuthMeResponse, GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse, GetApiRelatedSystemsData, GetApiRelatedSystemsError, GetApiRelatedSystemsResponse, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentsData, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, GetApiTicketData, GetApiTicketError, GetApiTicketResponse, GetApiTicketsData, GetApiTicketsError, GetApiTicketsResponse, GetApiUsersData, GetApiUsersError, GetApiUsersResponse, PostApiAuthChangePasswordData, PostApiAuthChangePasswordError, PostApiAuthChangePasswordResponse, PostApiAuthLoginData, PostApiAuthLoginError, PostApiAuthLoginResponse, PostApiAuthLogoutData, PostApiAuthLogoutError, PostApiAuthLogoutResponse, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentError, RemoveApiTicketAttachmentResponse } from '../types.gen';
+import { createApiTicket, createApiTicketAttachments, createApiUser, getApiAuthMe, getApiCategories, getApiHealth, getApiRelatedSystems, getApiStaffOwners, getApiStaffTickets, getApiTicket, getApiTicketAttachmentContent, getApiTicketAttachments, getApiTickets, getApiUsers, type Options, postApiAuthChangePassword, postApiAuthLogin, postApiAuthLogout, removeApiTicketAttachment } from '../sdk.gen';
+import type { CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsError, CreateApiTicketAttachmentsResponse, CreateApiTicketData, CreateApiTicketError, CreateApiTicketResponse, CreateApiUserData, CreateApiUserError, CreateApiUserResponse, GetApiAuthMeData, GetApiAuthMeError, GetApiAuthMeResponse, GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse, GetApiRelatedSystemsData, GetApiRelatedSystemsError, GetApiRelatedSystemsResponse, GetApiStaffOwnersData, GetApiStaffOwnersError, GetApiStaffOwnersResponse, GetApiStaffTicketsData, GetApiStaffTicketsError, GetApiStaffTicketsResponse, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentsData, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, GetApiTicketData, GetApiTicketError, GetApiTicketResponse, GetApiTicketsData, GetApiTicketsError, GetApiTicketsResponse, GetApiUsersData, GetApiUsersError, GetApiUsersResponse, PostApiAuthChangePasswordData, PostApiAuthChangePasswordError, PostApiAuthChangePasswordResponse, PostApiAuthLoginData, PostApiAuthLoginError, PostApiAuthLoginResponse, PostApiAuthLogoutData, PostApiAuthLogoutError, PostApiAuthLogoutResponse, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentError, RemoveApiTicketAttachmentResponse } from '../types.gen';
 
 /**
  * Sign in
@@ -150,6 +150,105 @@ export const getApiRelatedSystemsOptions = (options?: Options<GetApiRelatedSyste
     queryKey: getApiRelatedSystemsQueryKey(options)
 });
 
+export const getApiStaffTicketsQueryKey = (options?: Options<GetApiStaffTicketsData>) => createQueryKey('getApiStaffTickets', options);
+
+/**
+ * List the shared Ticket Queue
+ *
+ * Returns operational Ticket summaries for IT Staff and read-only Administrators.
+ */
+export const getApiStaffTicketsOptions = (options?: Options<GetApiStaffTicketsData>) => queryOptions<GetApiStaffTicketsResponse, GetApiStaffTicketsError, GetApiStaffTicketsResponse, ReturnType<typeof getApiStaffTicketsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiStaffTickets({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiStaffTicketsQueryKey(options)
+});
+
+const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'headers' | 'path' | 'query'>>(queryKey: QueryKey<Options>, page: K) => {
+    const params = { ...queryKey[0] };
+    if (page.body) {
+        params.body = {
+            ...queryKey[0].body as any,
+            ...page.body as any
+        };
+    }
+    if (page.headers) {
+        params.headers = {
+            ...queryKey[0].headers,
+            ...page.headers
+        };
+    }
+    if (page.path) {
+        params.path = {
+            ...queryKey[0].path as any,
+            ...page.path as any
+        };
+    }
+    if (page.query) {
+        params.query = {
+            ...queryKey[0].query as any,
+            ...page.query as any
+        };
+    }
+    return params as unknown as typeof page;
+};
+
+export const getApiStaffTicketsInfiniteQueryKey = (options?: Options<GetApiStaffTicketsData>): QueryKey<Options<GetApiStaffTicketsData>> => createQueryKey('getApiStaffTickets', options, true);
+
+/**
+ * List the shared Ticket Queue
+ *
+ * Returns operational Ticket summaries for IT Staff and read-only Administrators.
+ */
+export const getApiStaffTicketsInfiniteOptions = (options?: Options<GetApiStaffTicketsData>) => {
+    const opts = infiniteQueryOptions<GetApiStaffTicketsResponse, GetApiStaffTicketsError, InfiniteData<GetApiStaffTicketsResponse>, QueryKey<Options<GetApiStaffTicketsData>>, number | Pick<QueryKey<Options<GetApiStaffTicketsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetApiStaffTicketsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getApiStaffTickets({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getApiStaffTicketsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+export const getApiStaffOwnersQueryKey = (options?: Options<GetApiStaffOwnersData>) => createQueryKey('getApiStaffOwners', options);
+
+/**
+ * List eligible Ticket Owners
+ */
+export const getApiStaffOwnersOptions = (options?: Options<GetApiStaffOwnersData>) => queryOptions<GetApiStaffOwnersResponse, GetApiStaffOwnersError, GetApiStaffOwnersResponse, ReturnType<typeof getApiStaffOwnersQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiStaffOwners({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiStaffOwnersQueryKey(options)
+});
+
 export const getApiUsersQueryKey = (options?: Options<GetApiUsersData>) => createQueryKey('getApiUsers', options);
 
 /**
@@ -229,35 +328,6 @@ export const getApiTicketsOptions = (options?: Options<GetApiTicketsData>) => qu
     queryKey: getApiTicketsQueryKey(options)
 });
 
-const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'headers' | 'path' | 'query'>>(queryKey: QueryKey<Options>, page: K) => {
-    const params = { ...queryKey[0] };
-    if (page.body) {
-        params.body = {
-            ...queryKey[0].body as any,
-            ...page.body as any
-        };
-    }
-    if (page.headers) {
-        params.headers = {
-            ...queryKey[0].headers,
-            ...page.headers
-        };
-    }
-    if (page.path) {
-        params.path = {
-            ...queryKey[0].path as any,
-            ...page.path as any
-        };
-    }
-    if (page.query) {
-        params.query = {
-            ...queryKey[0].query as any,
-            ...page.query as any
-        };
-    }
-    return params as unknown as typeof page;
-};
-
 export const getApiTicketsInfiniteQueryKey = (options?: Options<GetApiTicketsData>): QueryKey<Options<GetApiTicketsData>> => createQueryKey('getApiTickets', options, true);
 
 /**
@@ -312,7 +382,9 @@ export const createApiTicketMutation = (options?: Partial<Options<CreateApiTicke
 export const getApiTicketQueryKey = (options: Options<GetApiTicketData>) => createQueryKey('getApiTicket', options);
 
 /**
- * Get an owned Ticket
+ * Get a Ticket
+ *
+ * Requesters can read their own Tickets; IT Staff and Administrators can read every Ticket.
  */
 export const getApiTicketOptions = (options: Options<GetApiTicketData>) => queryOptions<GetApiTicketResponse, GetApiTicketError, GetApiTicketResponse, ReturnType<typeof getApiTicketQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -330,7 +402,9 @@ export const getApiTicketOptions = (options: Options<GetApiTicketData>) => query
 export const getApiTicketAttachmentsQueryKey = (options: Options<GetApiTicketAttachmentsData>) => createQueryKey('getApiTicketAttachments', options);
 
 /**
- * List owned Ticket Attachment metadata
+ * List Ticket Attachment metadata
+ *
+ * Requesters can read their own Ticket Attachments; IT Staff and Administrators can read every Ticket's metadata.
  */
 export const getApiTicketAttachmentsOptions = (options: Options<GetApiTicketAttachmentsData>) => queryOptions<GetApiTicketAttachmentsResponse, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, ReturnType<typeof getApiTicketAttachmentsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -365,7 +439,9 @@ export const createApiTicketAttachmentsMutation = (options?: Partial<Options<Cre
 export const getApiTicketAttachmentContentQueryKey = (options: Options<GetApiTicketAttachmentContentData>) => createQueryKey('getApiTicketAttachmentContent', options);
 
 /**
- * Download an active owned Attachment
+ * Download an active Attachment
+ *
+ * Requesters can download active Attachments from their own Tickets; IT Staff and Administrators can download active Attachments from every Ticket.
  */
 export const getApiTicketAttachmentContentOptions = (options: Options<GetApiTicketAttachmentContentData>) => queryOptions<GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, ReturnType<typeof getApiTicketAttachmentContentQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

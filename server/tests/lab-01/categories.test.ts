@@ -108,6 +108,8 @@ beforeAll(async () => {
 beforeEach(async () => {
   const database = getPrisma();
   await database.session.deleteMany();
+  await database.attachment.deleteMany();
+  await database.ticket.deleteMany();
   await database.category.deleteMany();
   const passwordHash = await argon2.hash("correct horse battery staple", {
     memoryCost: 19_456,

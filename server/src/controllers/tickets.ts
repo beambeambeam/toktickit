@@ -1,8 +1,12 @@
 import type { RequestHandler } from "express";
 
 import { ApiError } from "../errors/api-error.js";
-import { getAuthenticatedUserId } from "../middlewares/auth-context.js";
 import {
+  getAuthenticatedUser,
+  getAuthenticatedUserId,
+} from "../middlewares/auth-context.js";
+import {
+  parseStaffTicketListQuery,
   parseTicketListQuery,
   validateRemovalReason,
   validateTicketFields,
@@ -11,9 +15,11 @@ import type { AttachmentCandidate } from "../services/ticket-rules.js";
 import {
   addAttachmentsForRequester,
   createTicketForRequester,
-  downloadAttachmentForRequester,
-  getAttachmentsForRequester,
-  getTicketForRequester,
+  downloadAttachmentForReader,
+  getAttachmentsForReader,
+  getTicketForReader,
+  listStaffOwners,
+  listStaffTickets,
   listTicketsForRequester,
   removeAttachmentForRequester,
 } from "../services/tickets.js";
@@ -28,7 +34,7 @@ const parseId = (value: unknown, field: string): number => {
 
   const id = Number(value);
 
-  if (!Number.isSafeInteger(id)) {
+  if (!Number.isSafeInteger(id) || id > 2_147_483_647) {
     throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
       field,
       reason: `${field} must be a positive integer.`,
@@ -110,9 +116,23 @@ export const getTickets: RequestHandler = async (request, response) => {
   response.json(tickets);
 };
 
+export const getStaffTickets: RequestHandler = async (request, response) => {
+  const user = getAuthenticatedUser(response);
+  const query = parseStaffTicketListQuery(request.query);
+  const tickets = await listStaffTickets(user.id, query);
+
+  response.json(tickets);
+};
+
+export const getStaffOwners: RequestHandler = async (_request, response) => {
+  response.json({ items: await listStaffOwners() });
+};
+
 export const getTicket: RequestHandler = async (request, response) => {
-  const ticket = await getTicketForRequester(
-    getAuthenticatedUserId(response),
+  const user = getAuthenticatedUser(response);
+  const ticket = await getTicketForReader(
+    user.id,
+    user.role,
     parseId(request.params.ticketId, "ticketId")
   );
 
@@ -120,8 +140,10 @@ export const getTicket: RequestHandler = async (request, response) => {
 };
 
 export const getAttachments: RequestHandler = async (request, response) => {
-  const attachments = await getAttachmentsForRequester(
-    getAuthenticatedUserId(response),
+  const user = getAuthenticatedUser(response);
+  const attachments = await getAttachmentsForReader(
+    user.id,
+    user.role,
     parseId(request.params.ticketId, "ticketId")
   );
 
@@ -148,8 +170,10 @@ export const addAttachments: RequestHandler = async (request, response) => {
 };
 
 export const downloadAttachment: RequestHandler = async (request, response) => {
-  const attachment = await downloadAttachmentForRequester(
-    getAuthenticatedUserId(response),
+  const user = getAuthenticatedUser(response);
+  const attachment = await downloadAttachmentForReader(
+    user.id,
+    user.role,
     parseId(request.params.ticketId, "ticketId"),
     parseId(request.params.attachmentId, "attachmentId")
   );
