@@ -16,18 +16,20 @@ import {
 } from "@/generated/hey-api/sdk.gen";
 import type {
   AttachmentMetadata,
+  CurrentStatus,
   RelatedSystem,
   TicketDetail,
   TicketListResponse,
   TicketSummary,
 } from "@/generated/hey-api/types.gen";
 import { isRequestedPriority } from "@/lib/ticket-priorities";
+import { isCurrentStatus } from "@/lib/ticket-statuses";
 
 export { ApiRequestError } from "@/api/errors";
 
 export interface TicketListParams {
   categoryId?: number;
-  currentStatus?: "New";
+  currentStatus?: CurrentStatus;
   page?: number;
   pageSize?: 10 | 25 | 50;
   relatedSystemId?: number;
@@ -79,10 +81,6 @@ const isNamedReference = (
   Number.isSafeInteger(value.id) &&
   value.id > 0 &&
   typeof value.name === "string";
-
-const isCurrentStatus = (
-  value: unknown
-): value is TicketSummary["currentStatus"] => value === "New";
 
 const isPageSize = (value: unknown): value is TicketListResponse["pageSize"] =>
   value === 10 || value === 25 || value === 50;
