@@ -658,6 +658,11 @@ button:disabled,
   background: #eaf6ef;
 }
 
+.owner-badge {
+  color: var(--secondary-green);
+  background: var(--pale-green);
+}
+
 .status-badge {
   color: #166534;
   background: #eaf6ef;

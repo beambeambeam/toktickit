@@ -275,6 +275,11 @@ export const RequesterTicketDetailPage = ({
                 label="Requested Priority"
                 value={ticket.requestedPriority}
               />
+              <ReadOnlyField label="IT Priority" value={ticket.itPriority} />
+              <ReadOnlyField
+                label="Ticket Owner"
+                value={ticket.owner?.displayName ?? "Unassigned"}
+              />
               <ReadOnlyField
                 label="Current Status"
                 value={ticket.currentStatus}
