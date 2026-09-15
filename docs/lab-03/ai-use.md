@@ -11,6 +11,9 @@ Only prompts visible in this session are recorded. The final requirement is 6–
 | Date | Actual prompt | Observed use |
 | --- | --- | --- |
 | 2026-09-08 | `$implement https://github.com/beambeambeam/toktickit/issues/49` | Inspect Issue #49/#48, repository conventions and labsheet; create feature/49-sprint-3-engineering-contract and prepare the six living documents. |
+| 2026-09-10 | `$implement https://github.com/beambeambeam/toktickit/issues/50` | Inspect Issue #50/#48, repository conventions, labsheet and the Lab 2 flow; implement authenticated Requester migration, session security, protected navigation, ownership continuity, tests, and responsive E2E evidence. |
+| 2026-09-12 | `$implement https://github.com/beambeambeam/toktickit/issues/56` | Inspect Issue #56/#48, repository conventions and the existing authentication flow; implement Administrator user search/filter and account creation, validation, API/client synchronization, responsive UI, tests, and review follow-up. |
+| 2026-09-15 | `$implement https://github.com/beambeambeam/toktickit/issues/51` | Inspect Issue #51/#48, the Lab 3 contracts and existing authenticated workflow; implement staff Ticket queue/detail read models, filtering, sorting, pagination, role boundaries, UI states, tests, and browser evidence. |
 
 The user supplied the implement skill instructions requiring appropriate TDD seams, regular focused tests/typechecks, full tests at the end, code review and a commit. This ticket is documentation-only: test cases are planned before feature implementation and existing checks are run for baseline evidence. Actual verification and agent-review outcomes are maintained in [tests.md](./tests.md) and [reviewer.md](./reviewer.md).
 
