@@ -38,17 +38,19 @@ const codePointLength = (value: string): number =>
   // oxlint-disable-next-line unicorn/prefer-spread -- comment contract counts Unicode code points.
   Array.from(value).length;
 
-export const PublicCommentsSection = ({
-  canPost,
-  currentStatus,
-  principalId,
-  ticketId,
-}: {
+interface PublicCommentsSectionProps {
   canPost: boolean;
   currentStatus: CurrentStatus;
   principalId: number;
   ticketId: number;
-}) => {
+}
+
+const PublicCommentsSectionContent = ({
+  canPost,
+  currentStatus,
+  principalId,
+  ticketId,
+}: PublicCommentsSectionProps) => {
   const queryClient = useQueryClient();
   const commentsQuery = useQuery(
     ticketCommentsQueryOptions(ticketId, principalId)
@@ -238,3 +240,7 @@ export const PublicCommentsSection = ({
     </section>
   );
 };
+
+export const PublicCommentsSection = (props: PublicCommentsSectionProps) => (
+  <PublicCommentsSectionContent key={props.ticketId} {...props} />
+);

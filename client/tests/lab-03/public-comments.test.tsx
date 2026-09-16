@@ -41,9 +41,11 @@ const newComment: Entry = {
 const renderSection = ({
   canPost = true,
   currentStatus = "Open" as const,
+  ticketId = 11,
 }: {
   canPost?: boolean;
   currentStatus?: CurrentStatus;
+  ticketId?: number;
 } = {}) => {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -52,16 +54,18 @@ const renderSection = ({
     },
   });
 
-  return render(
+  const rendered = render(
     <QueryClientProvider client={queryClient}>
       <PublicCommentsSection
         canPost={canPost}
         currentStatus={currentStatus}
         principalId={1}
-        ticketId={11}
+        ticketId={ticketId}
       />
     </QueryClientProvider>
   );
+
+  return { ...rendered, queryClient };
 };
 
 describe("Public Comments section", () => {
@@ -114,6 +118,29 @@ describe("Public Comments section", () => {
     await screen.findByText("The API request failed.");
     expect(composer).toHaveProperty("value", "Keep this draft");
     expect(postTicketCommentMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears draft and feedback when navigating to another Ticket", async () => {
+    const rendered = renderSection();
+    const composer = await screen.findByRole("textbox", {
+      name: "Public Comment",
+    });
+    fireEvent.change(composer, { target: { value: "Ticket A draft" } });
+
+    rendered.rerender(
+      <QueryClientProvider client={rendered.queryClient}>
+        <PublicCommentsSection
+          canPost
+          currentStatus="Open"
+          principalId={1}
+          ticketId={12}
+        />
+      </QueryClientProvider>
+    );
+
+    expect(
+      await screen.findByRole("textbox", { name: "Public Comment" })
+    ).toHaveProperty("value", "");
   });
 
   it("hides the composer for terminal Tickets and read-only Administrators", async () => {
