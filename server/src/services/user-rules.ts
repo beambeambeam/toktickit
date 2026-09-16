@@ -1,6 +1,8 @@
 import { ApiError } from "../errors/api-error.js";
 import type {
   CreateUserInput,
+  ResetInitialPasswordInput,
+  UpdateUserInput,
   UserListQuery,
   UserRoleValue,
 } from "../types/users.js";
@@ -167,5 +169,82 @@ export const validateCreateUser = (body: unknown): CreateUserInput => {
     initialPassword,
     isActive: body.isActive,
     role: userRoleFromLabel(body.role),
+  };
+};
+
+export const validateUpdateUser = (body: unknown): UpdateUserInput => {
+  if (!isRecord(body)) {
+    throw validationError("body", "Request body must be an object.");
+  }
+
+  const allowedFields = ["displayName", "email", "role", "isActive"] as const;
+  const keys = Object.keys(body);
+
+  if (keys.length === 0) {
+    throw validationError(
+      "body",
+      "At least one editable account field is required."
+    );
+  }
+
+  const unknownField = keys.find(
+    (key) => !allowedFields.some((allowedField) => allowedField === key)
+  );
+  if (unknownField !== undefined) {
+    throw validationError("body", `Unknown account field: ${unknownField}.`);
+  }
+
+  const input: UpdateUserInput = {};
+
+  if ("displayName" in body) {
+    input.displayName = validateDisplayName(body.displayName);
+  }
+
+  if ("email" in body) {
+    input.email = validateEmail(body.email);
+  }
+
+  if ("role" in body) {
+    if (typeof body.role !== "string" || !isUserRoleLabel(body.role)) {
+      throw validationError(
+        "role",
+        "Role must be Requester, IT Staff, or Administrator."
+      );
+    }
+
+    input.role = userRoleFromLabel(body.role);
+  }
+
+  if ("isActive" in body) {
+    if (typeof body.isActive !== "boolean") {
+      throw validationError("isActive", "Activation state must be a boolean.");
+    }
+
+    input.isActive = body.isActive;
+  }
+
+  return input;
+};
+
+export const validateResetInitialPassword = (
+  body: unknown
+): ResetInitialPasswordInput => {
+  if (!isExactObject(body, ["initialPassword", "confirmed"])) {
+    throw validationError(
+      "body",
+      "Initial password and confirmation are required."
+    );
+  }
+
+  if (body.confirmed !== true) {
+    throw validationError(
+      "confirmed",
+      "Confirm that all target sessions will end."
+    );
+  }
+
+  return {
+    confirmed: true,
+    initialPassword: validatePassword(body.initialPassword, "initialPassword"),
   };
 };

@@ -17,7 +17,13 @@ import {
   getTickets,
   removeAttachment,
 } from "../controllers/tickets.js";
-import { createUser, getUsers } from "../controllers/users.js";
+import {
+  createUser,
+  getUser,
+  getUsers,
+  resetUserInitialPassword,
+  updateUser,
+} from "../controllers/users.js";
 import { apiErrorHandler, apiNotFound } from "../middlewares/api-errors.js";
 import {
   requireAllowedOrigin,
@@ -102,6 +108,34 @@ apiRouter.post(
   requireCsrf,
   touchSession,
   createUser
+);
+apiRouter.get(
+  "/users/:userId",
+  requireSession,
+  requireUnrestricted,
+  requireRole("Administrator"),
+  touchSession,
+  getUser
+);
+apiRouter.patch(
+  "/users/:userId",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("Administrator"),
+  requireCsrf,
+  touchSession,
+  updateUser
+);
+apiRouter.post(
+  "/users/:userId/initial-password",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("Administrator"),
+  requireCsrf,
+  touchSession,
+  resetUserInitialPassword
 );
 apiRouter.post(
   "/tickets",

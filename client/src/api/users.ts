@@ -1,11 +1,19 @@
 import { getCsrfToken, apiClient } from "@/api/client";
 import { ApiRequestError, invalidApiResponse, unwrap } from "@/api/errors";
-import { createApiUser, getApiUsers } from "@/generated/hey-api/sdk.gen";
+import {
+  createApiUser,
+  getApiUser,
+  getApiUsers,
+  resetApiUserInitialPassword,
+  updateApiUser,
+} from "@/generated/hey-api/sdk.gen";
 import type {
   CreateUserRequest,
+  InitialPasswordResetRequest,
   User,
   UserListResponse,
   UserRole,
+  UpdateUserRequest,
 } from "@/generated/hey-api/types.gen";
 
 export type { User, UserRole } from "@/generated/hey-api/types.gen";
@@ -16,6 +24,8 @@ export interface UserListParams {
 }
 
 export type CreateUserInput = CreateUserRequest;
+export type UpdateUserInput = UpdateUserRequest;
+export type ResetInitialPasswordInput = InitialPasswordResetRequest;
 
 const csrfHeaders = (): { "X-CSRF-Token": string } => {
   const token = getCsrfToken();
@@ -69,6 +79,22 @@ const requireCreatedUser = (value: unknown): User => {
   return value.user;
 };
 
+const requireUserResponse = (value: unknown): User => {
+  if (!isUser(value)) {
+    throw invalidApiResponse("The API returned an invalid User response.");
+  }
+
+  return value;
+};
+
+const requireUpdatedUser = (value: unknown): User => {
+  if (!isRecord(value) || !isUser(value.user)) {
+    throw invalidApiResponse("The API returned an invalid User response.");
+  }
+
+  return value.user;
+};
+
 export const getUsers = async (
   params: UserListParams = {},
   signal?: AbortSignal
@@ -93,6 +119,54 @@ export const createUser = async (
         body: input,
         client: apiClient,
         headers: csrfHeaders(),
+        signal,
+      })
+    )
+  );
+
+export const getUser = async (
+  userId: number,
+  signal?: AbortSignal
+): Promise<User> =>
+  requireUserResponse(
+    await unwrap(
+      getApiUser({
+        client: apiClient,
+        path: { userId },
+        signal,
+      })
+    )
+  );
+
+export const updateUser = async (
+  userId: number,
+  input: UpdateUserInput,
+  signal?: AbortSignal
+): Promise<User> =>
+  requireUpdatedUser(
+    await unwrap(
+      updateApiUser({
+        body: input,
+        client: apiClient,
+        headers: csrfHeaders(),
+        path: { userId },
+        signal,
+      })
+    )
+  );
+
+export const resetUserInitialPassword = async (
+  userId: number,
+  input: ResetInitialPasswordInput,
+  signal?: AbortSignal
+): Promise<User> =>
+  requireUpdatedUser(
+    await unwrap(
+      resetApiUserInitialPassword({
+        body: input,
+        client: apiClient,
+        headers: csrfHeaders(),
+        path: { userId },
         signal,
       })
     )

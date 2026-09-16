@@ -10,8 +10,8 @@ import type { SubmitEvent } from "react";
 
 import { ApiConnectionError } from "@/api/client";
 import { ApiRequestError } from "@/api/errors";
-import { usersQueryOptions } from "@/api/query-options";
-import { createUser } from "@/api/users";
+import { userQueryOptions, usersQueryOptions } from "@/api/query-options";
+import { createUser, resetUserInitialPassword, updateUser } from "@/api/users";
 import type { User, UserListParams, UserRole } from "@/api/users";
 import {
   AccessDenied,
@@ -26,9 +26,14 @@ import { useAuth } from "@/context/auth";
 import {
   getUserFieldErrors,
   MAX_USER_SEARCH_LENGTH,
+  validateUserEditForm,
   validateUserForm,
 } from "@/lib/user-rules";
-import type { UserFieldErrors, UserFormValues } from "@/lib/user-rules";
+import type {
+  UserEditFormValues,
+  UserFieldErrors,
+  UserFormValues,
+} from "@/lib/user-rules";
 
 const userRoles: readonly UserRole[] = [
   "Requester",
@@ -40,6 +45,13 @@ const initialFormValues: UserFormValues = {
   displayName: "",
   email: "",
   initialPassword: "",
+  isActive: true,
+  role: "",
+};
+
+const initialEditFormValues: UserEditFormValues = {
+  displayName: "",
+  email: "",
   isActive: true,
   role: "",
 };
@@ -72,11 +84,22 @@ const getUserErrorMessage = (error: unknown): string => {
     return "That email address is already in use. Enter a unique email address.";
   }
 
+  if (error instanceof ApiRequestError && error.code === "SELF_DEACTIVATION") {
+    return "You cannot deactivate your own Administrator account.";
+  }
+
+  if (
+    error instanceof ApiRequestError &&
+    error.code === "LAST_ADMIN_REQUIRED"
+  ) {
+    return "At least one active Administrator account must remain.";
+  }
+
   if (error instanceof Error && error.message.length > 0) {
     return error.message;
   }
 
-  return "Unable to create the account. Entered values are preserved.";
+  return "Unable to save the account. Entered values are preserved.";
 };
 
 const getUserListErrorMessage = (error: unknown): string => {
@@ -104,7 +127,13 @@ const AccountStatusBadge = ({ isActive }: { isActive: boolean }) => (
   <StatusBadge kind="status" value={isActive ? "Active" : "Inactive"} />
 );
 
-const UserTable = ({ users }: { users: readonly User[] }) => (
+const UserTable = ({
+  onEdit,
+  users,
+}: {
+  onEdit: (user: User) => void;
+  users: readonly User[];
+}) => (
   <div className="user-table-wrap">
     <table className="user-table">
       <caption className="visually-hidden">TokTickIT user accounts</caption>
@@ -132,8 +161,9 @@ const UserTable = ({ users }: { users: readonly User[] }) => (
               <button
                 aria-label={`Edit ${user.displayName}`}
                 className="button button-secondary button-small"
-                disabled
-                title="Account editing is not available yet."
+                onClick={() => {
+                  onEdit(user);
+                }}
                 type="button"
               >
                 Edit
@@ -146,7 +176,13 @@ const UserTable = ({ users }: { users: readonly User[] }) => (
   </div>
 );
 
-const UserCards = ({ users }: { users: readonly User[] }) => (
+const UserCards = ({
+  onEdit,
+  users,
+}: {
+  onEdit: (user: User) => void;
+  users: readonly User[];
+}) => (
   <div className="user-cards">
     {users.map((user) => (
       <article className="user-card" key={user.id}>
@@ -169,8 +205,9 @@ const UserCards = ({ users }: { users: readonly User[] }) => (
         <button
           aria-label={`Edit ${user.displayName}`}
           className="button button-secondary"
-          disabled
-          title="Account editing is not available yet."
+          onClick={() => {
+            onEdit(user);
+          }}
           type="button"
         >
           Edit
@@ -383,11 +420,303 @@ const UserCreateForm = ({
   </section>
 );
 
+// oxlint-disable-next-line complexity -- this form renders the documented edit and reset states.
+const UserEditForm = ({
+  fieldErrors,
+  isLoading,
+  isResetting,
+  isSubmitting,
+  isResetConfirmed,
+  loadError,
+  onCancel,
+  onChange,
+  onResetChange,
+  onResetSubmit,
+  onRetry,
+  onSubmit,
+  resetError,
+  resetFieldError,
+  resetPassword,
+  resetSuccess,
+  submitError,
+  successMessage,
+  user,
+  values,
+}: {
+  fieldErrors: UserFieldErrors;
+  isLoading: boolean;
+  isResetting: boolean;
+  isSubmitting: boolean;
+  isResetConfirmed: boolean;
+  loadError: unknown;
+  onCancel: () => void;
+  onChange: (field: keyof UserEditFormValues, value: string | boolean) => void;
+  onResetChange: (
+    field: "confirmed" | "password",
+    value: boolean | string
+  ) => void;
+  onResetSubmit: (event: SubmitEvent<HTMLFormElement>) => void;
+  onRetry: () => void;
+  onSubmit: (event: SubmitEvent<HTMLFormElement>) => void;
+  resetError: string | null;
+  resetFieldError: string | null;
+  resetPassword: string;
+  resetSuccess: string | null;
+  submitError: string | null;
+  successMessage: string | null;
+  user: User | null;
+  values: UserEditFormValues | null;
+}) => (
+  <section
+    aria-labelledby="edit-user-heading"
+    className="surface-card form-section user-edit-card"
+  >
+    <div className="section-heading">
+      <div>
+        <p className="eyebrow">Administrator action</p>
+        <h2 id="edit-user-heading">
+          {user === null ? "Edit User" : `Edit ${user.displayName}`}
+        </h2>
+      </div>
+      <button
+        className="button button-secondary button-small"
+        disabled={isSubmitting || isResetting}
+        onClick={onCancel}
+        type="button"
+      >
+        Cancel
+      </button>
+    </div>
+
+    {isLoading ? (
+      <p aria-live="polite" className="loading-line" role="status">
+        Loading account…
+      </p>
+    ) : null}
+
+    {loadError === null || loadError === undefined ? null : (
+      <div className="feedback feedback-error" role="alert">
+        <strong>Unable to load account.</strong>
+        <span>Refresh the account and try again.</span>
+        <button
+          className="button button-secondary"
+          onClick={onRetry}
+          type="button"
+        >
+          Retry
+        </button>
+      </div>
+    )}
+
+    {submitError === null ? null : (
+      <div className="feedback feedback-error" role="alert">
+        <strong>Account update failed.</strong>
+        <span>{submitError}</span>
+      </div>
+    )}
+    {successMessage === null ? null : (
+      <div className="feedback feedback-success" role="status">
+        {successMessage}
+      </div>
+    )}
+
+    {user !== null && values !== null ? (
+      <>
+        <form noValidate onSubmit={onSubmit}>
+          <div className="form-grid form-grid-two">
+            <FormField
+              error={fieldErrors.displayName}
+              htmlFor="user-display-name"
+              label="Name"
+              required
+            >
+              <input
+                aria-describedby={fieldDescribedBy(
+                  "user-display-name",
+                  Boolean(fieldErrors.displayName)
+                )}
+                aria-invalid={Boolean(fieldErrors.displayName)}
+                autoComplete="name"
+                disabled={isSubmitting || isResetting}
+                id="user-display-name"
+                onChange={(event) => {
+                  onChange("displayName", event.target.value);
+                }}
+                value={values.displayName}
+              />
+            </FormField>
+
+            <FormField
+              error={fieldErrors.email}
+              htmlFor="user-email"
+              label="Email"
+              required
+            >
+              <input
+                aria-describedby={fieldDescribedBy(
+                  "user-email",
+                  Boolean(fieldErrors.email)
+                )}
+                aria-invalid={Boolean(fieldErrors.email)}
+                autoComplete="email"
+                disabled={isSubmitting || isResetting}
+                id="user-email"
+                inputMode="email"
+                onChange={(event) => {
+                  onChange("email", event.target.value);
+                }}
+                type="email"
+                value={values.email}
+              />
+            </FormField>
+
+            <FormField
+              error={fieldErrors.role}
+              htmlFor="user-role"
+              label="Role"
+              required
+            >
+              <select
+                aria-describedby={fieldDescribedBy(
+                  "user-role",
+                  Boolean(fieldErrors.role)
+                )}
+                aria-invalid={Boolean(fieldErrors.role)}
+                disabled={isSubmitting || isResetting}
+                id="user-role"
+                onChange={(event) => {
+                  const role = event.target.value;
+                  onChange("role", isUserRole(role) ? role : "");
+                }}
+                value={values.role}
+              >
+                <option value="">Choose a role</option>
+                {userRoles.map((role) => (
+                  <option key={role} value={role}>
+                    {role}
+                  </option>
+                ))}
+              </select>
+            </FormField>
+
+            <div className="form-field checkbox-field">
+              <span className="field-label">Status</span>
+              <label>
+                <input
+                  checked={values.isActive}
+                  disabled={isSubmitting || isResetting}
+                  onChange={(event) => {
+                    onChange("isActive", event.target.checked);
+                  }}
+                  type="checkbox"
+                />
+                <span>Active account</span>
+              </label>
+              <p className="field-help">
+                Deactivation revokes every current session for this account.
+              </p>
+            </div>
+          </div>
+
+          <div aria-live="polite" className="form-status" role="status">
+            {isSubmitting ? <span>Saving account changes…</span> : null}
+          </div>
+          <div className="form-actions">
+            <button
+              className="button button-primary"
+              disabled={isSubmitting || isResetting}
+              type="submit"
+            >
+              {isSubmitting ? "Saving…" : "Save Changes"}
+            </button>
+          </div>
+        </form>
+
+        <section
+          aria-labelledby="reset-user-heading"
+          className="user-reset-card"
+        >
+          <div className="section-heading">
+            <div>
+              <p className="eyebrow">Credential recovery</p>
+              <h3 id="reset-user-heading">Set new initial password</h3>
+            </div>
+          </div>
+          <p className="field-help">
+            This ends every session for {user.displayName}. The account holder
+            must replace the new password at next login.
+          </p>
+          {resetError === null ? null : (
+            <div className="feedback feedback-error" role="alert">
+              <strong>Password reset failed.</strong>
+              <span>{resetError}</span>
+            </div>
+          )}
+          {resetSuccess === null ? null : (
+            <div className="feedback feedback-success" role="status">
+              {resetSuccess}
+            </div>
+          )}
+          <form noValidate onSubmit={onResetSubmit}>
+            <FormField
+              error={resetFieldError ?? undefined}
+              htmlFor="reset-initial-password"
+              label="New initial password"
+              required
+            >
+              <input
+                aria-describedby={fieldDescribedBy(
+                  "reset-initial-password",
+                  resetFieldError !== null
+                )}
+                aria-invalid={resetFieldError !== null}
+                autoComplete="new-password"
+                disabled={isSubmitting || isResetting}
+                id="reset-initial-password"
+                onChange={(event) => {
+                  onResetChange("password", event.target.value);
+                }}
+                type="password"
+                value={resetPassword}
+              />
+            </FormField>
+            <label className="confirmation-check">
+              <input
+                checked={isResetConfirmed}
+                disabled={isSubmitting || isResetting}
+                id="reset-confirmation"
+                onChange={(event) => {
+                  onResetChange("confirmed", event.target.checked);
+                }}
+                type="checkbox"
+              />
+              <span>I understand that all sessions will end.</span>
+            </label>
+            <div className="form-actions">
+              <button
+                className="button button-secondary"
+                disabled={isSubmitting || isResetting}
+                type="submit"
+              >
+                {isResetting ? "Resetting…" : "Reset Initial Password"}
+              </button>
+            </div>
+          </form>
+        </section>
+      </>
+    ) : null}
+  </section>
+);
+
 // oxlint-disable-next-line complexity -- this page keeps the documented list, form, and recovery states together.
 const UserManagementContent = ({
   onAccessError,
+  onSessionRevoked,
+  principalId,
 }: {
   onAccessError: (error: ApiRequestError) => void;
+  onSessionRevoked: () => void;
+  principalId: number;
 }) => {
   const queryClient = useQueryClient();
   const [filters, setFilters] = useState<UserListParams>({});
@@ -399,8 +728,24 @@ const UserManagementContent = ({
   const [fieldErrors, setFieldErrors] = useState<UserFieldErrors>({});
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [editingUserId, setEditingUserId] = useState<number | null>(null);
+  const [editValues, setEditValues] = useState<UserEditFormValues | null>(null);
+  const [editFieldErrors, setEditFieldErrors] = useState<UserFieldErrors>({});
+  const [editSubmitError, setEditSubmitError] = useState<string | null>(null);
+  const [editSuccessMessage, setEditSuccessMessage] = useState<string | null>(
+    null
+  );
+  const [resetPassword, setResetPassword] = useState("");
+  const [isResetConfirmed, setIsResetConfirmed] = useState(false);
+  const [resetFieldError, setResetFieldError] = useState<string | null>(null);
+  const [resetError, setResetError] = useState<string | null>(null);
+  const [resetSuccess, setResetSuccess] = useState<string | null>(null);
 
   const usersQuery = useQuery(usersQueryOptions(filters));
+  const editUserQuery = useQuery({
+    ...userQueryOptions(editingUserId ?? 0, principalId),
+    enabled: editingUserId !== null,
+  });
   useEffect(() => {
     if (
       usersQuery.error instanceof ApiRequestError &&
@@ -409,6 +754,15 @@ const UserManagementContent = ({
       onAccessError(usersQuery.error);
     }
   }, [onAccessError, usersQuery.error]);
+
+  useEffect(() => {
+    if (
+      editUserQuery.error instanceof ApiRequestError &&
+      editUserQuery.error.status === 403
+    ) {
+      onAccessError(editUserQuery.error);
+    }
+  }, [editUserQuery.error, onAccessError]);
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -442,6 +796,96 @@ const UserManagementContent = ({
       setValues(initialFormValues);
       await queryClient.invalidateQueries({ queryKey: ["users"] });
     },
+  });
+
+  const updateMutation = useMutation({
+    mutationFn: async () => {
+      if (editingUserId === null || editValues === null) {
+        throw new Error("Choose a user to edit.");
+      }
+
+      if (editValues.role === "") {
+        throw new Error("Choose a role.");
+      }
+
+      return await updateUser(editingUserId, {
+        displayName: editValues.displayName.trim(),
+        email: editValues.email.trim(),
+        isActive: editValues.isActive,
+        role: editValues.role,
+      });
+    },
+    onError: (error: unknown) => {
+      if (error instanceof ApiRequestError && error.status === 403) {
+        onAccessError(error);
+        return;
+      }
+
+      setEditFieldErrors(getUserFieldErrors(error));
+      setEditSubmitError(getUserErrorMessage(error));
+      setEditSuccessMessage(null);
+    },
+    onSuccess: async (user) => {
+      setEditFieldErrors({});
+      setEditSubmitError(null);
+
+      if (user.id === principalId && user.role !== "Administrator") {
+        onSessionRevoked();
+        return;
+      }
+
+      setEditSuccessMessage(`${user.displayName} was updated successfully.`);
+      setEditValues({
+        displayName: user.displayName,
+        email: user.email,
+        isActive: user.isActive,
+        role: user.role,
+      });
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      await queryClient.invalidateQueries({ queryKey: ["user"] });
+    },
+    retry: false,
+  });
+
+  const resetMutation = useMutation({
+    mutationFn: async () => {
+      if (editingUserId === null) {
+        throw new Error("Choose a user to edit.");
+      }
+
+      return await resetUserInitialPassword(editingUserId, {
+        confirmed: true,
+        initialPassword: resetPassword,
+      });
+    },
+    onError: (error: unknown) => {
+      if (error instanceof ApiRequestError && error.status === 403) {
+        onAccessError(error);
+        return;
+      }
+
+      setResetFieldError(getUserFieldErrors(error).initialPassword ?? null);
+      setResetError(getUserErrorMessage(error));
+      setResetSuccess(null);
+    },
+    onSuccess: async (user) => {
+      setResetPassword("");
+      setIsResetConfirmed(false);
+      setResetFieldError(null);
+
+      if (user.id === principalId) {
+        onSessionRevoked();
+        return;
+      }
+
+      setResetError(null);
+      setResetSuccess(
+        `${user.displayName}'s initial password was reset. All sessions ended; replacement is required at next login.`
+      );
+      await queryClient.invalidateQueries({ queryKey: ["users"] });
+      await queryClient.invalidateQueries({ queryKey: ["user"] });
+    },
+    retry: false,
   });
 
   const hasFilters = filters.search !== undefined || filters.role !== undefined;
@@ -491,6 +935,8 @@ const UserManagementContent = ({
   };
 
   const openCreateForm = () => {
+    setEditingUserId(null);
+    setEditValues(null);
     setIsCreateFormVisible(true);
     setSubmitError(null);
     setSuccessMessage(null);
@@ -502,6 +948,38 @@ const UserManagementContent = ({
     setFieldErrors({});
     setSubmitError(null);
     setSuccessMessage(null);
+  };
+
+  const openEditForm = (user: User) => {
+    setIsCreateFormVisible(false);
+    setEditingUserId(user.id);
+    setEditValues({
+      displayName: user.displayName,
+      email: user.email,
+      isActive: user.isActive,
+      role: user.role,
+    });
+    setEditFieldErrors({});
+    setEditSubmitError(null);
+    setEditSuccessMessage(null);
+    setResetPassword("");
+    setIsResetConfirmed(false);
+    setResetFieldError(null);
+    setResetError(null);
+    setResetSuccess(null);
+  };
+
+  const closeEditForm = () => {
+    setEditingUserId(null);
+    setEditValues(initialEditFormValues);
+    setEditFieldErrors({});
+    setEditSubmitError(null);
+    setEditSuccessMessage(null);
+    setResetPassword("");
+    setIsResetConfirmed(false);
+    setResetFieldError(null);
+    setResetError(null);
+    setResetSuccess(null);
   };
 
   const submitCreateUser = (event: SubmitEvent<HTMLFormElement>) => {
@@ -517,6 +995,81 @@ const UserManagementContent = ({
     }
 
     createMutation.mutate();
+  };
+
+  const updateEditField = <Field extends keyof UserEditFormValues>(
+    field: Field,
+    value: UserEditFormValues[Field]
+  ) => {
+    setEditValues((current) =>
+      current === null ? current : { ...current, [field]: value }
+    );
+    setEditFieldErrors((current) => ({ ...current, [field]: undefined }));
+    setEditSubmitError(null);
+    setEditSuccessMessage(null);
+  };
+
+  const submitEditUser = (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    if (editValues === null) {
+      return;
+    }
+
+    const errors = validateUserEditForm(editValues);
+    setEditFieldErrors(errors);
+    setEditSubmitError(null);
+    setEditSuccessMessage(null);
+
+    if (Object.keys(errors).length > 0) {
+      focusFirstUserFieldError(errors);
+      return;
+    }
+
+    updateMutation.mutate();
+  };
+
+  const updateResetField = (
+    field: "confirmed" | "password",
+    value: boolean | string
+  ) => {
+    if (field === "confirmed" && typeof value === "boolean") {
+      setIsResetConfirmed(value);
+      setResetError(null);
+      return;
+    }
+
+    if (field === "password" && typeof value === "string") {
+      setResetPassword(value);
+      setResetFieldError(null);
+      setResetError(null);
+      setResetSuccess(null);
+    }
+  };
+
+  const submitReset = (event: SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    // oxlint-disable-next-line unicorn/prefer-spread -- reset validation counts Unicode code points.
+    const { length } = Array.from(resetPassword);
+
+    if (length < 15 || length > 128) {
+      setResetFieldError(
+        "Initial password must contain 15–128 Unicode characters."
+      );
+      document.querySelector<HTMLElement>("#reset-initial-password")?.focus();
+      return;
+    }
+
+    if (!isResetConfirmed) {
+      setResetError("Confirm that all sessions will end before resetting.");
+      document.querySelector<HTMLElement>("#reset-confirmation")?.focus();
+      return;
+    }
+
+    setResetFieldError(null);
+    setResetError(null);
+    setResetSuccess(null);
+    resetMutation.mutate();
   };
 
   const users = usersQuery.isError ? [] : (usersQuery.data ?? []);
@@ -624,6 +1177,31 @@ const UserManagementContent = ({
         />
       ) : null}
 
+      {editingUserId !== null && (
+        <UserEditForm
+          fieldErrors={editFieldErrors}
+          isLoading={editUserQuery.isPending}
+          isResetConfirmed={isResetConfirmed}
+          isResetting={resetMutation.isPending}
+          isSubmitting={updateMutation.isPending}
+          loadError={editUserQuery.error}
+          onCancel={closeEditForm}
+          onChange={updateEditField}
+          onResetChange={updateResetField}
+          onResetSubmit={submitReset}
+          onRetry={() => void editUserQuery.refetch()}
+          onSubmit={submitEditUser}
+          resetError={resetError}
+          resetFieldError={resetFieldError}
+          resetPassword={resetPassword}
+          resetSuccess={resetSuccess}
+          submitError={editSubmitError}
+          successMessage={editSuccessMessage}
+          user={editUserQuery.data ?? null}
+          values={editValues}
+        />
+      )}
+
       <section
         aria-busy={usersQuery.isPending || usersQuery.isFetching}
         aria-labelledby="user-list-heading"
@@ -703,8 +1281,8 @@ const UserManagementContent = ({
 
         {usersQuery.isSuccess && users.length > 0 ? (
           <>
-            <UserTable users={users} />
-            <UserCards users={users} />
+            <UserTable onEdit={openEditForm} users={users} />
+            <UserCards onEdit={openEditForm} users={users} />
           </>
         ) : null}
       </section>
@@ -727,6 +1305,8 @@ export const UserManagementPage = () => {
     // The content is unmounted before clearing all cached directory results.
     void queryClient.cancelQueries({ queryKey: ["users"] });
     queryClient.removeQueries({ queryKey: ["users"] });
+    void queryClient.cancelQueries({ queryKey: ["user"] });
+    queryClient.removeQueries({ queryKey: ["user"] });
     void refetchAuth();
     if (accessError.code === "PASSWORD_CHANGE_REQUIRED") {
       void navigate({ replace: true, to: "/change-password" });
@@ -749,5 +1329,21 @@ export const UserManagementPage = () => {
     return <AccessDenied />;
   }
 
-  return <UserManagementContent key={user.id} onAccessError={setAccessError} />;
+  const handleSessionRevoked = () => {
+    void queryClient.cancelQueries({ queryKey: ["users"] });
+    queryClient.removeQueries({ queryKey: ["users"] });
+    void queryClient.cancelQueries({ queryKey: ["user"] });
+    queryClient.removeQueries({ queryKey: ["user"] });
+    void refetchAuth();
+    void navigate({ replace: true, to: "/login" });
+  };
+
+  return (
+    <UserManagementContent
+      key={user.id}
+      onAccessError={setAccessError}
+      onSessionRevoked={handleSessionRevoked}
+      principalId={user.id}
+    />
+  );
 };

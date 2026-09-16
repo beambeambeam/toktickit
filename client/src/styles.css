@@ -719,13 +719,54 @@ button:disabled,
 }
 
 .user-create-card,
+.user-edit-card,
 .user-list-card {
   margin-bottom: 1.25rem;
 }
 
-.user-create-card form {
+.user-create-card form,
+.user-edit-card > form {
   display: grid;
   gap: 1rem;
+}
+
+.user-reset-card {
+  display: grid;
+  gap: 0.85rem;
+  margin-top: 1.5rem;
+  padding: 1rem;
+  border: 1px solid #e6d9c6;
+  border-radius: 0.55rem;
+  background: #fcfaf5;
+}
+
+.user-reset-card .section-heading {
+  margin-bottom: 0;
+}
+
+.user-reset-card h3 {
+  margin: 0;
+  font-size: 1.1rem;
+}
+
+.user-reset-card form {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.confirmation-check {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.55rem;
+  min-height: var(--control-height);
+  color: var(--text);
+  font-weight: 700;
+}
+
+.confirmation-check input {
+  width: 1.15rem;
+  height: 1.15rem;
+  accent-color: var(--primary-green);
 }
 
 .checkbox-field > label {

@@ -63,6 +63,22 @@ export type CreateUserResponse = {
     user: User;
 };
 
+export type UserResponse = {
+    user: User;
+};
+
+export type UpdateUserRequest = {
+    displayName?: string;
+    email?: string;
+    role?: UserRole;
+    isActive?: boolean;
+};
+
+export type InitialPasswordResetRequest = {
+    initialPassword: string;
+    confirmed: true;
+};
+
 export type TicketRequester = {
     id: number;
     displayName: string;
@@ -212,6 +228,8 @@ export type HealthResponse = {
 export type CsrfToken = string;
 
 export type TicketId = number;
+
+export type UserId = number;
 
 export type AttachmentId = number;
 
@@ -619,6 +637,151 @@ export type CreateApiUserResponses = {
 };
 
 export type CreateApiUserResponse = CreateApiUserResponses[keyof CreateApiUserResponses];
+
+export type GetApiUserData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/api/users/{userId}';
+};
+
+export type GetApiUserErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiUserError = GetApiUserErrors[keyof GetApiUserErrors];
+
+export type GetApiUserResponses = {
+    /**
+     * The requested user without credential secrets.
+     */
+    200: User;
+};
+
+export type GetApiUserResponse = GetApiUserResponses[keyof GetApiUserResponses];
+
+export type UpdateApiUserData = {
+    body: UpdateUserRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/api/users/{userId}';
+};
+
+export type UpdateApiUserErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type UpdateApiUserError = UpdateApiUserErrors[keyof UpdateApiUserErrors];
+
+export type UpdateApiUserResponses = {
+    /**
+     * The updated user without credential secrets.
+     */
+    200: UserResponse;
+};
+
+export type UpdateApiUserResponse = UpdateApiUserResponses[keyof UpdateApiUserResponses];
+
+export type ResetApiUserInitialPasswordData = {
+    body: InitialPasswordResetRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/api/users/{userId}/initial-password';
+};
+
+export type ResetApiUserInitialPasswordErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type ResetApiUserInitialPasswordError = ResetApiUserInitialPasswordErrors[keyof ResetApiUserInitialPasswordErrors];
+
+export type ResetApiUserInitialPasswordResponses = {
+    /**
+     * The reset user without credential secrets.
+     */
+    200: UserResponse;
+};
+
+export type ResetApiUserInitialPasswordResponse = ResetApiUserInitialPasswordResponses[keyof ResetApiUserInitialPasswordResponses];
 
 export type GetApiHealthData = {
     body?: never;
