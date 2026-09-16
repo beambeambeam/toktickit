@@ -87,7 +87,7 @@ model Ticket {
   summary            String
   description        String
   requestedPriority  RequestedPriority
-  itPriority         RequestedPriority @default(Low)
+  itPriority         RequestedPriority
   currentStatus      CurrentStatus    @default(New)
   ownerId            Int?
   version            Int              @default(1)

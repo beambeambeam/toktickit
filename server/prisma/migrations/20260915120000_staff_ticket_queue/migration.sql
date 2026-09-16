@@ -24,6 +24,7 @@ SET "itPriority" = "requestedPriority",
     "statusChangedAt" = "ticketDate";
 
 ALTER TABLE "Ticket"
+  ALTER COLUMN "itPriority" DROP DEFAULT,
   ADD CONSTRAINT "Ticket_ownerId_fkey"
     FOREIGN KEY ("ownerId") REFERENCES "User"("id") ON DELETE SET NULL ON UPDATE RESTRICT,
   ADD CONSTRAINT "Ticket_resolutionIndicatedByUserId_fkey"
