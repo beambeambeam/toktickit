@@ -12,12 +12,14 @@ import {
   getApiTicket,
   getApiTicketAttachmentContent,
   getApiTickets,
+  indicateApiTicketResolution,
   removeApiTicketAttachment,
 } from "@/generated/hey-api/sdk.gen";
 import type {
   AttachmentMetadata,
   CurrentStatus,
   RelatedSystem,
+  ResolutionIndication,
   TicketDetail,
   TicketListResponse,
   TicketSummary,
@@ -101,6 +103,15 @@ const isAttachmentMetadata = (value: unknown): value is AttachmentMetadata =>
   (value.state === "Active" || value.state === "Removed") &&
   (value.removedAt === null || typeof value.removedAt === "string") &&
   (value.removalReason === null || typeof value.removalReason === "string");
+
+const isResolutionIndication = (
+  value: unknown
+): value is ResolutionIndication =>
+  isRecord(value) &&
+  isRecord(value.author) &&
+  isPositiveSafeInteger(value.author.id) &&
+  typeof value.author.displayName === "string" &&
+  typeof value.createdAt === "string";
 
 const isTicketSummary = (value: unknown): value is TicketSummary =>
   isRecord(value) &&
@@ -207,6 +218,29 @@ export const getTicket = async (
       signal,
     })
   );
+
+export const indicateTicketResolution = async (
+  ticketId: number,
+  signal?: AbortSignal
+): Promise<ResolutionIndication> => {
+  const body = await unwrap(
+    indicateApiTicketResolution({
+      body: {},
+      client: apiClient,
+      headers: csrfHeaders(),
+      path: { ticketId },
+      signal,
+    })
+  );
+
+  if (!isRecord(body) || !isResolutionIndication(body.resolutionIndication)) {
+    throw invalidApiResponse(
+      "The API returned an invalid resolution indication response."
+    );
+  }
+
+  return body.resolutionIndication;
+};
 
 export const uploadTicketAttachments = async (
   ticketId: number,

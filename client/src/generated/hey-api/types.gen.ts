@@ -88,9 +88,33 @@ export type EmptyRequest = {
     [key: string]: never;
 };
 
+export type TicketVersionRequest = {
+    version: number;
+};
+
+export type OwnerMutationRequest = {
+    ownerId: number | null;
+    version: number;
+};
+
+export type ItPriorityMutationRequest = {
+    itPriority: RequestedPriority;
+    version: number;
+};
+
 export type RequestedPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
 
 export type CurrentStatus = 'New' | 'Open' | 'In Progress' | 'Waiting for Requester' | 'Resolved' | 'Closed' | 'Reopened' | 'Cancelled';
+
+export type StatusMutationRequest = {
+    currentStatus: CurrentStatus;
+    version: number;
+    confirmed?: boolean;
+};
+
+export type ResolutionIndicationResponse = {
+    resolutionIndication: ResolutionIndication;
+};
 
 export type AttachmentMetadata = {
     id: number;
@@ -554,6 +578,267 @@ export type GetApiStaffOwnersResponses = {
 };
 
 export type GetApiStaffOwnersResponse = GetApiStaffOwnersResponses[keyof GetApiStaffOwnersResponses];
+
+export type UpdateApiTicketStatusData = {
+    body: StatusMutationRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/status';
+};
+
+export type UpdateApiTicketStatusErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type UpdateApiTicketStatusError = UpdateApiTicketStatusErrors[keyof UpdateApiTicketStatusErrors];
+
+export type UpdateApiTicketStatusResponses = {
+    /**
+     * The updated Ticket.
+     */
+    200: TicketDetail;
+};
+
+export type UpdateApiTicketStatusResponse = UpdateApiTicketStatusResponses[keyof UpdateApiTicketStatusResponses];
+
+export type IndicateApiTicketResolutionData = {
+    body: EmptyRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/resolution-indication';
+};
+
+export type IndicateApiTicketResolutionErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type IndicateApiTicketResolutionError = IndicateApiTicketResolutionErrors[keyof IndicateApiTicketResolutionErrors];
+
+export type IndicateApiTicketResolutionResponses = {
+    /**
+     * The recorded indication.
+     */
+    200: ResolutionIndicationResponse;
+};
+
+export type IndicateApiTicketResolutionResponse = IndicateApiTicketResolutionResponses[keyof IndicateApiTicketResolutionResponses];
+
+export type ClaimApiTicketData = {
+    body: TicketVersionRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/claim';
+};
+
+export type ClaimApiTicketErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type ClaimApiTicketError = ClaimApiTicketErrors[keyof ClaimApiTicketErrors];
+
+export type ClaimApiTicketResponses = {
+    /**
+     * The updated Ticket.
+     */
+    200: TicketDetail;
+};
+
+export type ClaimApiTicketResponse = ClaimApiTicketResponses[keyof ClaimApiTicketResponses];
+
+export type UpdateApiTicketOwnerData = {
+    body: OwnerMutationRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/owner';
+};
+
+export type UpdateApiTicketOwnerErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type UpdateApiTicketOwnerError = UpdateApiTicketOwnerErrors[keyof UpdateApiTicketOwnerErrors];
+
+export type UpdateApiTicketOwnerResponses = {
+    /**
+     * The updated Ticket.
+     */
+    200: TicketDetail;
+};
+
+export type UpdateApiTicketOwnerResponse = UpdateApiTicketOwnerResponses[keyof UpdateApiTicketOwnerResponses];
+
+export type UpdateApiTicketItPriorityData = {
+    body: ItPriorityMutationRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/it-priority';
+};
+
+export type UpdateApiTicketItPriorityErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+};
+
+export type UpdateApiTicketItPriorityError = UpdateApiTicketItPriorityErrors[keyof UpdateApiTicketItPriorityErrors];
+
+export type UpdateApiTicketItPriorityResponses = {
+    /**
+     * The updated Ticket.
+     */
+    200: TicketDetail;
+};
+
+export type UpdateApiTicketItPriorityResponse = UpdateApiTicketItPriorityResponses[keyof UpdateApiTicketItPriorityResponses];
 
 export type GetApiUsersData = {
     body?: never;
