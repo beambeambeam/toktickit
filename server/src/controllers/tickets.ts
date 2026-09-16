@@ -8,20 +8,34 @@ import {
 import {
   parseStaffTicketListQuery,
   parseTicketListQuery,
+  validateEmptyRequest,
+  validateClaimInput,
+  validateItPriorityMutation,
+  validateOwnerMutation,
   validateRemovalReason,
+  validateStatusMutation,
   validateTicketFields,
 } from "../services/ticket-rules.js";
 import type { AttachmentCandidate } from "../services/ticket-rules.js";
 import {
   addAttachmentsForRequester,
+  claimTicketForStaff,
   createTicketForRequester,
+  createPublicCommentForUser,
   downloadAttachmentForReader,
   getAttachmentsForReader,
+  listInternalNotesForReader,
   getTicketForReader,
+  indicateTicketResolutionForRequester,
+  listPublicCommentsForReader,
   listStaffOwners,
   listStaffTickets,
   listTicketsForRequester,
   removeAttachmentForRequester,
+  createInternalNoteForUser,
+  updateTicketStatusForStaff,
+  updateTicketItPriorityForStaff,
+  updateTicketOwnerForStaff,
 } from "../services/tickets.js";
 
 const parseId = (value: unknown, field: string): number => {
@@ -128,6 +142,62 @@ export const getStaffOwners: RequestHandler = async (_request, response) => {
   response.json({ items: await listStaffOwners() });
 };
 
+export const updateTicketStatus: RequestHandler = async (request, response) => {
+  const ticket = await updateTicketStatusForStaff(
+    getAuthenticatedUserId(response),
+    parseId(request.params.ticketId, "ticketId"),
+    validateStatusMutation(request.body)
+  );
+
+  response.json(ticket);
+};
+
+export const claimTicket: RequestHandler = async (request, response) => {
+  const ticket = await claimTicketForStaff(
+    getAuthenticatedUserId(response),
+    parseId(request.params.ticketId, "ticketId"),
+    validateClaimInput(request.body)
+  );
+
+  response.json(ticket);
+};
+
+export const indicateTicketResolution: RequestHandler = async (
+  request,
+  response
+) => {
+  validateEmptyRequest(request.body);
+  const indication = await indicateTicketResolutionForRequester(
+    getAuthenticatedUserId(response),
+    parseId(request.params.ticketId, "ticketId")
+  );
+
+  response.json(indication);
+};
+
+export const updateTicketOwner: RequestHandler = async (request, response) => {
+  const ticket = await updateTicketOwnerForStaff(
+    getAuthenticatedUserId(response),
+    parseId(request.params.ticketId, "ticketId"),
+    validateOwnerMutation(request.body)
+  );
+
+  response.json(ticket);
+};
+
+export const updateTicketItPriority: RequestHandler = async (
+  request,
+  response
+) => {
+  const ticket = await updateTicketItPriorityForStaff(
+    getAuthenticatedUserId(response),
+    parseId(request.params.ticketId, "ticketId"),
+    validateItPriorityMutation(request.body)
+  );
+
+  response.json(ticket);
+};
+
 export const getTicket: RequestHandler = async (request, response) => {
   const user = getAuthenticatedUser(response);
   const ticket = await getTicketForReader(
@@ -148,6 +218,54 @@ export const getAttachments: RequestHandler = async (request, response) => {
   );
 
   response.json({ attachments });
+};
+
+export const getInternalNotes: RequestHandler = async (request, response) => {
+  const user = getAuthenticatedUser(response);
+  const internalNotes = await listInternalNotesForReader(
+    user.role,
+    parseId(request.params.ticketId, "ticketId")
+  );
+
+  response.json({ internalNotes });
+};
+
+export const createInternalNote: RequestHandler = async (request, response) => {
+  const user = getAuthenticatedUser(response);
+  const internalNote = await createInternalNoteForUser(
+    user.id,
+    user.role,
+    parseId(request.params.ticketId, "ticketId"),
+    getBodyObject(request.body)
+  );
+
+  response.status(201).json({ internalNote });
+};
+
+export const getPublicComments: RequestHandler = async (request, response) => {
+  const user = getAuthenticatedUser(response);
+  const comments = await listPublicCommentsForReader(
+    user.id,
+    user.role,
+    parseId(request.params.ticketId, "ticketId")
+  );
+
+  response.json({ comments });
+};
+
+export const createPublicComment: RequestHandler = async (
+  request,
+  response
+) => {
+  const user = getAuthenticatedUser(response);
+  const comment = await createPublicCommentForUser(
+    user.id,
+    user.role,
+    parseId(request.params.ticketId, "ticketId"),
+    getBodyObject(request.body)
+  );
+
+  response.status(201).json({ comment });
 };
 
 export const addAttachments: RequestHandler = async (request, response) => {

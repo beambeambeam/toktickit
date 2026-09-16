@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { createApiTicket, createApiTicketAttachments, createApiUser, getApiAuthMe, getApiCategories, getApiHealth, getApiRelatedSystems, getApiStaffOwners, getApiStaffTickets, getApiTicket, getApiTicketAttachmentContent, getApiTicketAttachments, getApiTickets, getApiUser, getApiUsers, type Options, postApiAuthChangePassword, postApiAuthLogin, postApiAuthLogout, removeApiTicketAttachment, resetApiUserInitialPassword, updateApiUser } from '../sdk.gen';
-import type { CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsError, CreateApiTicketAttachmentsResponse, CreateApiTicketData, CreateApiTicketError, CreateApiTicketResponse, CreateApiUserData, CreateApiUserError, CreateApiUserResponse, GetApiAuthMeData, GetApiAuthMeError, GetApiAuthMeResponse, GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse, GetApiRelatedSystemsData, GetApiRelatedSystemsError, GetApiRelatedSystemsResponse, GetApiStaffOwnersData, GetApiStaffOwnersError, GetApiStaffOwnersResponse, GetApiStaffTicketsData, GetApiStaffTicketsError, GetApiStaffTicketsResponse, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentsData, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, GetApiTicketData, GetApiTicketError, GetApiTicketResponse, GetApiTicketsData, GetApiTicketsError, GetApiTicketsResponse, GetApiUserData, GetApiUserError, GetApiUserResponse, GetApiUsersData, GetApiUsersError, GetApiUsersResponse, PostApiAuthChangePasswordData, PostApiAuthChangePasswordError, PostApiAuthChangePasswordResponse, PostApiAuthLoginData, PostApiAuthLoginError, PostApiAuthLoginResponse, PostApiAuthLogoutData, PostApiAuthLogoutError, PostApiAuthLogoutResponse, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentError, RemoveApiTicketAttachmentResponse, ResetApiUserInitialPasswordData, ResetApiUserInitialPasswordError, ResetApiUserInitialPasswordResponse, UpdateApiUserData, UpdateApiUserError, UpdateApiUserResponse } from '../types.gen';
+import { claimApiTicket, createApiTicket, createApiTicketAttachments, createApiTicketComment, createApiTicketInternalNote, createApiUser, getApiAuthMe, getApiCategories, getApiHealth, getApiRelatedSystems, getApiStaffOwners, getApiStaffTickets, getApiTicket, getApiTicketAttachmentContent, getApiTicketAttachments, getApiTicketComments, getApiTicketInternalNotes, getApiTickets, getApiUser, getApiUsers, indicateApiTicketResolution, type Options, postApiAuthChangePassword, postApiAuthLogin, postApiAuthLogout, removeApiTicketAttachment, resetApiUserInitialPassword, updateApiTicketItPriority, updateApiTicketOwner, updateApiTicketStatus, updateApiUser } from '../sdk.gen';
+import type { ClaimApiTicketData, ClaimApiTicketError, ClaimApiTicketResponse, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsError, CreateApiTicketAttachmentsResponse, CreateApiTicketCommentData, CreateApiTicketCommentError, CreateApiTicketCommentResponse, CreateApiTicketData, CreateApiTicketError, CreateApiTicketInternalNoteData, CreateApiTicketInternalNoteError, CreateApiTicketInternalNoteResponse, CreateApiTicketResponse, CreateApiUserData, CreateApiUserError, CreateApiUserResponse, GetApiAuthMeData, GetApiAuthMeError, GetApiAuthMeResponse, GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse, GetApiRelatedSystemsData, GetApiRelatedSystemsError, GetApiRelatedSystemsResponse, GetApiStaffOwnersData, GetApiStaffOwnersError, GetApiStaffOwnersResponse, GetApiStaffTicketsData, GetApiStaffTicketsError, GetApiStaffTicketsResponse, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentsData, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, GetApiTicketCommentsData, GetApiTicketCommentsError, GetApiTicketCommentsResponse, GetApiTicketData, GetApiTicketError, GetApiTicketInternalNotesData, GetApiTicketInternalNotesError, GetApiTicketInternalNotesResponse, GetApiTicketResponse, GetApiTicketsData, GetApiTicketsError, GetApiTicketsResponse, GetApiUserData, GetApiUserError, GetApiUserResponse, GetApiUsersData, GetApiUsersError, GetApiUsersResponse, IndicateApiTicketResolutionData, IndicateApiTicketResolutionError, IndicateApiTicketResolutionResponse, PostApiAuthChangePasswordData, PostApiAuthChangePasswordError, PostApiAuthChangePasswordResponse, PostApiAuthLoginData, PostApiAuthLoginError, PostApiAuthLoginResponse, PostApiAuthLogoutData, PostApiAuthLogoutError, PostApiAuthLogoutResponse, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentError, RemoveApiTicketAttachmentResponse, ResetApiUserInitialPasswordData, ResetApiUserInitialPasswordError, ResetApiUserInitialPasswordResponse, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityError, UpdateApiTicketItPriorityResponse, UpdateApiTicketOwnerData, UpdateApiTicketOwnerError, UpdateApiTicketOwnerResponse, UpdateApiTicketStatusData, UpdateApiTicketStatusError, UpdateApiTicketStatusResponse, UpdateApiUserData, UpdateApiUserError, UpdateApiUserResponse } from '../types.gen';
 
 /**
  * Sign in
@@ -249,6 +249,101 @@ export const getApiStaffOwnersOptions = (options?: Options<GetApiStaffOwnersData
     queryKey: getApiStaffOwnersQueryKey(options)
 });
 
+/**
+ * Progress a Ticket
+ *
+ * Applies one approved status transition for IT Staff.
+ */
+export const updateApiTicketStatusMutation = (options?: Partial<Options<UpdateApiTicketStatusData>>): UseMutationOptions<UpdateApiTicketStatusResponse, UpdateApiTicketStatusError, Options<UpdateApiTicketStatusData>> => {
+    const mutationOptions: UseMutationOptions<UpdateApiTicketStatusResponse, UpdateApiTicketStatusError, Options<UpdateApiTicketStatusData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateApiTicketStatus({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Indicate apparent Ticket resolution
+ *
+ * Records an owning Requester's apparent-resolution indication without formally changing status.
+ */
+export const indicateApiTicketResolutionMutation = (options?: Partial<Options<IndicateApiTicketResolutionData>>): UseMutationOptions<IndicateApiTicketResolutionResponse, IndicateApiTicketResolutionError, Options<IndicateApiTicketResolutionData>> => {
+    const mutationOptions: UseMutationOptions<IndicateApiTicketResolutionResponse, IndicateApiTicketResolutionError, Options<IndicateApiTicketResolutionData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await indicateApiTicketResolution({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Claim an unassigned Ticket
+ *
+ * Assigns the current IT Staff member when the Ticket is unassigned.
+ */
+export const claimApiTicketMutation = (options?: Partial<Options<ClaimApiTicketData>>): UseMutationOptions<ClaimApiTicketResponse, ClaimApiTicketError, Options<ClaimApiTicketData>> => {
+    const mutationOptions: UseMutationOptions<ClaimApiTicketResponse, ClaimApiTicketError, Options<ClaimApiTicketData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await claimApiTicket({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Assign a Ticket Owner
+ *
+ * Assigns, reassigns, or unassigns a Ticket Owner.
+ */
+export const updateApiTicketOwnerMutation = (options?: Partial<Options<UpdateApiTicketOwnerData>>): UseMutationOptions<UpdateApiTicketOwnerResponse, UpdateApiTicketOwnerError, Options<UpdateApiTicketOwnerData>> => {
+    const mutationOptions: UseMutationOptions<UpdateApiTicketOwnerResponse, UpdateApiTicketOwnerError, Options<UpdateApiTicketOwnerData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateApiTicketOwner({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Set a Ticket IT Priority
+ *
+ * Sets the operational IT Priority without changing Requested Priority.
+ */
+export const updateApiTicketItPriorityMutation = (options?: Partial<Options<UpdateApiTicketItPriorityData>>): UseMutationOptions<UpdateApiTicketItPriorityResponse, UpdateApiTicketItPriorityError, Options<UpdateApiTicketItPriorityData>> => {
+    const mutationOptions: UseMutationOptions<UpdateApiTicketItPriorityResponse, UpdateApiTicketItPriorityError, Options<UpdateApiTicketItPriorityData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateApiTicketItPriority({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
 export const getApiUsersQueryKey = (options?: Options<GetApiUsersData>) => createQueryKey('getApiUsers', options);
 
 /**
@@ -456,6 +551,84 @@ export const getApiTicketOptions = (options: Options<GetApiTicketData>) => query
     },
     queryKey: getApiTicketQueryKey(options)
 });
+
+export const getApiTicketInternalNotesQueryKey = (options: Options<GetApiTicketInternalNotesData>) => createQueryKey('getApiTicketInternalNotes', options);
+
+/**
+ * List private Internal Notes
+ *
+ * IT Staff and Administrators can read every Ticket's private Internal Notes. Requesters cannot access this resource.
+ */
+export const getApiTicketInternalNotesOptions = (options: Options<GetApiTicketInternalNotesData>) => queryOptions<GetApiTicketInternalNotesResponse, GetApiTicketInternalNotesError, GetApiTicketInternalNotesResponse, ReturnType<typeof getApiTicketInternalNotesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiTicketInternalNotes({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiTicketInternalNotesQueryKey(options)
+});
+
+/**
+ * Add a private Internal Note
+ *
+ * IT Staff can append a private Internal Note to any non-terminal Ticket. Administrators and Requesters cannot write notes.
+ */
+export const createApiTicketInternalNoteMutation = (options?: Partial<Options<CreateApiTicketInternalNoteData>>): UseMutationOptions<CreateApiTicketInternalNoteResponse, CreateApiTicketInternalNoteError, Options<CreateApiTicketInternalNoteData>> => {
+    const mutationOptions: UseMutationOptions<CreateApiTicketInternalNoteResponse, CreateApiTicketInternalNoteError, Options<CreateApiTicketInternalNoteData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createApiTicketInternalNote({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getApiTicketCommentsQueryKey = (options: Options<GetApiTicketCommentsData>) => createQueryKey('getApiTicketComments', options);
+
+/**
+ * List public Ticket comments
+ *
+ * Requesters can read their own public comments; IT Staff and Administrators can read every Ticket's public comments. The response contains at most the 500 latest comments in chronological order.
+ */
+export const getApiTicketCommentsOptions = (options: Options<GetApiTicketCommentsData>) => queryOptions<GetApiTicketCommentsResponse, GetApiTicketCommentsError, GetApiTicketCommentsResponse, ReturnType<typeof getApiTicketCommentsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiTicketComments({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiTicketCommentsQueryKey(options)
+});
+
+/**
+ * Post a public Ticket comment
+ *
+ * A Requester may post to an owned Ticket and IT Staff may post to any Ticket. Administrators have read-only access.
+ */
+export const createApiTicketCommentMutation = (options?: Partial<Options<CreateApiTicketCommentData>>): UseMutationOptions<CreateApiTicketCommentResponse, CreateApiTicketCommentError, Options<CreateApiTicketCommentData>> => {
+    const mutationOptions: UseMutationOptions<CreateApiTicketCommentResponse, CreateApiTicketCommentError, Options<CreateApiTicketCommentData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createApiTicketComment({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 export const getApiTicketAttachmentsQueryKey = (options: Options<GetApiTicketAttachmentsData>) => createQueryKey('getApiTicketAttachments', options);
 

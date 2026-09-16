@@ -8,14 +8,23 @@ import {
 } from "../controllers/reference-data.js";
 import {
   addAttachments,
+  createInternalNote,
+  claimTicket,
+  createPublicComment,
   createTicket,
   downloadAttachment,
   getAttachments,
+  getInternalNotes,
   getStaffOwners,
   getStaffTickets,
   getTicket,
+  getPublicComments,
   getTickets,
+  indicateTicketResolution,
   removeAttachment,
+  updateTicketStatus,
+  updateTicketItPriority,
+  updateTicketOwner,
 } from "../controllers/tickets.js";
 import {
   createUser,
@@ -89,6 +98,56 @@ apiRouter.get(
   requireRole("ITStaff", "Administrator"),
   touchSession,
   getStaffOwners
+);
+apiRouter.post(
+  "/tickets/:ticketId/status",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff"),
+  requireCsrf,
+  touchSession,
+  updateTicketStatus
+);
+apiRouter.put(
+  "/tickets/:ticketId/resolution-indication",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester"),
+  requireCsrf,
+  touchSession,
+  indicateTicketResolution
+);
+apiRouter.post(
+  "/tickets/:ticketId/claim",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff"),
+  requireCsrf,
+  touchSession,
+  claimTicket
+);
+apiRouter.put(
+  "/tickets/:ticketId/owner",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff"),
+  requireCsrf,
+  touchSession,
+  updateTicketOwner
+);
+apiRouter.patch(
+  "/tickets/:ticketId/it-priority",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff"),
+  requireCsrf,
+  touchSession,
+  updateTicketItPriority
 );
 apiRouter.get("/health", getHealth);
 apiRouter.get(
@@ -171,6 +230,42 @@ apiRouter.get(
   requireRole("Requester", "ITStaff", "Administrator"),
   touchSession,
   getAttachments
+);
+apiRouter.get(
+  "/tickets/:ticketId/internal-notes",
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff", "Administrator"),
+  touchSession,
+  getInternalNotes
+);
+apiRouter.post(
+  "/tickets/:ticketId/internal-notes",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff"),
+  requireCsrf,
+  touchSession,
+  createInternalNote
+);
+apiRouter.get(
+  "/tickets/:ticketId/comments",
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester", "ITStaff", "Administrator"),
+  touchSession,
+  getPublicComments
+);
+apiRouter.post(
+  "/tickets/:ticketId/comments",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester", "ITStaff"),
+  requireCsrf,
+  touchSession,
+  createPublicComment
 );
 apiRouter.post(
   "/tickets/:ticketId/attachments",

@@ -1,6 +1,9 @@
 import { prisma } from "../db/client.js";
 import { Prisma } from "../generated/prisma/client.js";
-import type { CurrentStatus as PrismaCurrentStatus } from "../generated/prisma/enums.js";
+import type {
+  CurrentStatus as PrismaCurrentStatus,
+  UserRole as PrismaUserRole,
+} from "../generated/prisma/enums.js";
 import type {
   StaffTicketOwnerFilter,
   StaffTicketListQuery,
@@ -409,6 +412,247 @@ export const touchTicket = async (database: TicketDatabase, ticketId: number) =>
   await database.ticket.update({
     data: { updatedAt: new Date() },
     where: { id: ticketId },
+  });
+
+type TicketDetailDatabaseRecord = Prisma.TicketGetPayload<{
+  include: typeof ticketDetailInclude;
+}>;
+
+type TicketMutationOutcome =
+  | { kind: "actor-ineligible" }
+  | { kind: "not-found" }
+  | { kind: "owner-ineligible" }
+  | { kind: "version-conflict" }
+  | { kind: "assignment-conflict" }
+  | { kind: "terminal" }
+  | { kind: "unchanged"; ticket: TicketDetailDatabaseRecord }
+  | { kind: "success"; ticket: TicketDetailDatabaseRecord };
+
+const terminalStatuses = new Set<PrismaCurrentStatus>([
+  "Resolved",
+  "Closed",
+  "Cancelled",
+]);
+
+const lockUserForOwnerMutation = async (
+  database: TicketDatabase,
+  userId: number
+) => {
+  await database.$queryRaw(
+    Prisma.sql`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`
+  );
+};
+
+const lockUsersForOwnerMutation = async (
+  database: TicketDatabase,
+  userIds: readonly number[]
+) => {
+  const sortedUserIds = [...new Set(userIds)];
+  // oxlint-disable-next-line unicorn/no-array-sort -- copy is local to this transaction.
+  sortedUserIds.sort((left, right) => left - right);
+  for (const userId of sortedUserIds) {
+    // Account lifecycle mutations use the same ascending user lock order.
+    // oxlint-disable-next-line no-await-in-loop
+    await lockUserForOwnerMutation(database, userId);
+  }
+};
+
+const lockTicketForMutation = async (
+  database: TicketDatabase,
+  ticketId: number
+) => {
+  await database.$queryRaw(
+    Prisma.sql`SELECT "id" FROM "Ticket" WHERE "id" = ${ticketId} FOR UPDATE`
+  );
+};
+
+const findLockedTicket = async (
+  database: TicketDatabase,
+  ticketId: number
+): Promise<TicketDetailDatabaseRecord | null> =>
+  await database.ticket.findUnique({
+    include: ticketDetailInclude,
+    where: { id: ticketId },
+  });
+
+const isEligibleOwner = (user: {
+  isActive: boolean;
+  role: PrismaUserRole;
+}): boolean =>
+  user.isActive && (user.role === "ITStaff" || user.role === "Administrator");
+
+const isEligibleStaffActor = (
+  user: {
+    isActive: boolean;
+    mustChangePassword: boolean;
+    role: PrismaUserRole;
+  } | null
+): boolean =>
+  user !== null &&
+  user.isActive &&
+  !user.mustChangePassword &&
+  user.role === "ITStaff";
+
+const findStaffActor = async (database: TicketDatabase, userId: number) =>
+  await database.user.findUnique({
+    select: { isActive: true, mustChangePassword: true, role: true },
+    where: { id: userId },
+  });
+
+export const claimTicket = async (
+  currentUserId: number,
+  ticketId: number,
+  version: number
+): Promise<TicketMutationOutcome> =>
+  await prisma.$transaction(async (database) => {
+    // Owner rows are locked before Ticket rows. Account lifecycle mutations use
+    // the same order when removing owner eligibility.
+    await lockUsersForOwnerMutation(database, [currentUserId]);
+    const currentUser = await findStaffActor(database, currentUserId);
+
+    if (!isEligibleStaffActor(currentUser)) {
+      return { kind: "actor-ineligible" };
+    }
+
+    await lockTicketForMutation(database, ticketId);
+    const ticket = await findLockedTicket(database, ticketId);
+
+    if (ticket === null) {
+      return { kind: "not-found" };
+    }
+
+    if (ticket.version !== version) {
+      return { kind: "version-conflict" };
+    }
+
+    if (terminalStatuses.has(ticket.currentStatus)) {
+      return { kind: "terminal" };
+    }
+
+    if (ticket.ownerId !== null) {
+      return { kind: "assignment-conflict" };
+    }
+
+    const updated = await database.ticket.update({
+      data: {
+        ownerId: currentUserId,
+        updatedAt: new Date(),
+        version: ticket.version + 1,
+      },
+      include: ticketDetailInclude,
+      where: { id: ticketId },
+    });
+
+    return { kind: "success", ticket: updated };
+  });
+
+export const updateTicketOwner = async (
+  currentUserId: number,
+  ticketId: number,
+  ownerId: number | null,
+  version: number
+): Promise<TicketMutationOutcome> =>
+  await prisma.$transaction(async (database) => {
+    await lockUsersForOwnerMutation(
+      database,
+      ownerId === null ? [currentUserId] : [currentUserId, ownerId]
+    );
+    const currentUser = await findStaffActor(database, currentUserId);
+
+    if (!isEligibleStaffActor(currentUser)) {
+      return { kind: "actor-ineligible" };
+    }
+
+    let ownerEligible = true;
+
+    if (ownerId !== null) {
+      const owner = await database.user.findUnique({
+        select: { isActive: true, role: true },
+        where: { id: ownerId },
+      });
+      ownerEligible = owner !== null && isEligibleOwner(owner);
+    }
+
+    await lockTicketForMutation(database, ticketId);
+    const ticket = await findLockedTicket(database, ticketId);
+
+    if (ticket === null) {
+      return { kind: "not-found" };
+    }
+
+    if (ticket.version !== version) {
+      return { kind: "version-conflict" };
+    }
+
+    if (terminalStatuses.has(ticket.currentStatus)) {
+      return { kind: "terminal" };
+    }
+
+    if (!ownerEligible) {
+      return { kind: "owner-ineligible" };
+    }
+
+    if (ticket.ownerId === ownerId) {
+      return { kind: "unchanged", ticket };
+    }
+
+    const updated = await database.ticket.update({
+      data: {
+        ownerId,
+        updatedAt: new Date(),
+        version: ticket.version + 1,
+      },
+      include: ticketDetailInclude,
+      where: { id: ticketId },
+    });
+
+    return { kind: "success", ticket: updated };
+  });
+
+export const updateTicketItPriority = async (
+  currentUserId: number,
+  ticketId: number,
+  itPriority: "Low" | "Medium" | "High" | "Urgent",
+  version: number
+): Promise<TicketMutationOutcome> =>
+  await prisma.$transaction(async (database) => {
+    await lockUsersForOwnerMutation(database, [currentUserId]);
+    const currentUser = await findStaffActor(database, currentUserId);
+
+    if (!isEligibleStaffActor(currentUser)) {
+      return { kind: "actor-ineligible" };
+    }
+
+    await lockTicketForMutation(database, ticketId);
+    const ticket = await findLockedTicket(database, ticketId);
+
+    if (ticket === null) {
+      return { kind: "not-found" };
+    }
+
+    if (ticket.version !== version) {
+      return { kind: "version-conflict" };
+    }
+
+    if (terminalStatuses.has(ticket.currentStatus)) {
+      return { kind: "terminal" };
+    }
+
+    if (ticket.itPriority === itPriority) {
+      return { kind: "unchanged", ticket };
+    }
+
+    const updated = await database.ticket.update({
+      data: {
+        itPriority,
+        updatedAt: new Date(),
+        version: ticket.version + 1,
+      },
+      include: ticketDetailInclude,
+      where: { id: ticketId },
+    });
+
+    return { kind: "success", ticket: updated };
   });
 
 export const createAttachments = async (

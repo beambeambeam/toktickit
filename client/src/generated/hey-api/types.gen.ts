@@ -104,9 +104,33 @@ export type EmptyRequest = {
     [key: string]: never;
 };
 
+export type TicketVersionRequest = {
+    version: number;
+};
+
+export type OwnerMutationRequest = {
+    ownerId: number | null;
+    version: number;
+};
+
+export type ItPriorityMutationRequest = {
+    itPriority: RequestedPriority;
+    version: number;
+};
+
 export type RequestedPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
 
 export type CurrentStatus = 'New' | 'Open' | 'In Progress' | 'Waiting for Requester' | 'Resolved' | 'Closed' | 'Reopened' | 'Cancelled';
+
+export type StatusMutationRequest = {
+    currentStatus: CurrentStatus;
+    version: number;
+    confirmed?: boolean;
+};
+
+export type ResolutionIndicationResponse = {
+    resolutionIndication: ResolutionIndication;
+};
 
 export type AttachmentMetadata = {
     id: number;
@@ -190,6 +214,43 @@ export type ResolutionIndication = {
         displayName: string;
     };
     createdAt: string;
+};
+
+export type Entry = {
+    id: number;
+    content: string;
+    author: {
+        id: number;
+        displayName: string;
+    };
+    createdAt: string;
+};
+
+export type InternalNoteRequest = {
+    content: string;
+};
+
+export type InternalNoteResponse = {
+    internalNote: Entry;
+};
+
+export type InternalNoteListResponse = {
+    internalNotes: Array<Entry>;
+};
+
+export type PublicCommentRequest = {
+    /**
+     * Leading and trailing whitespace is trimmed before storage. Length limits apply to the submitted value, which must contain at least one non-whitespace character.
+     */
+    content: string;
+};
+
+export type PublicCommentResponse = {
+    comment: Entry;
+};
+
+export type PublicCommentListResponse = {
+    comments: Array<Entry>;
 };
 
 export type CreateTicketRequest = {
@@ -547,6 +608,267 @@ export type GetApiStaffOwnersResponses = {
 };
 
 export type GetApiStaffOwnersResponse = GetApiStaffOwnersResponses[keyof GetApiStaffOwnersResponses];
+
+export type UpdateApiTicketStatusData = {
+    body: StatusMutationRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/status';
+};
+
+export type UpdateApiTicketStatusErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type UpdateApiTicketStatusError = UpdateApiTicketStatusErrors[keyof UpdateApiTicketStatusErrors];
+
+export type UpdateApiTicketStatusResponses = {
+    /**
+     * The updated Ticket.
+     */
+    200: TicketDetail;
+};
+
+export type UpdateApiTicketStatusResponse = UpdateApiTicketStatusResponses[keyof UpdateApiTicketStatusResponses];
+
+export type IndicateApiTicketResolutionData = {
+    body: EmptyRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/resolution-indication';
+};
+
+export type IndicateApiTicketResolutionErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type IndicateApiTicketResolutionError = IndicateApiTicketResolutionErrors[keyof IndicateApiTicketResolutionErrors];
+
+export type IndicateApiTicketResolutionResponses = {
+    /**
+     * The recorded indication.
+     */
+    200: ResolutionIndicationResponse;
+};
+
+export type IndicateApiTicketResolutionResponse = IndicateApiTicketResolutionResponses[keyof IndicateApiTicketResolutionResponses];
+
+export type ClaimApiTicketData = {
+    body: TicketVersionRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/claim';
+};
+
+export type ClaimApiTicketErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type ClaimApiTicketError = ClaimApiTicketErrors[keyof ClaimApiTicketErrors];
+
+export type ClaimApiTicketResponses = {
+    /**
+     * The updated Ticket.
+     */
+    200: TicketDetail;
+};
+
+export type ClaimApiTicketResponse = ClaimApiTicketResponses[keyof ClaimApiTicketResponses];
+
+export type UpdateApiTicketOwnerData = {
+    body: OwnerMutationRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/owner';
+};
+
+export type UpdateApiTicketOwnerErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type UpdateApiTicketOwnerError = UpdateApiTicketOwnerErrors[keyof UpdateApiTicketOwnerErrors];
+
+export type UpdateApiTicketOwnerResponses = {
+    /**
+     * The updated Ticket.
+     */
+    200: TicketDetail;
+};
+
+export type UpdateApiTicketOwnerResponse = UpdateApiTicketOwnerResponses[keyof UpdateApiTicketOwnerResponses];
+
+export type UpdateApiTicketItPriorityData = {
+    body: ItPriorityMutationRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/it-priority';
+};
+
+export type UpdateApiTicketItPriorityErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+};
+
+export type UpdateApiTicketItPriorityError = UpdateApiTicketItPriorityErrors[keyof UpdateApiTicketItPriorityErrors];
+
+export type UpdateApiTicketItPriorityResponses = {
+    /**
+     * The updated Ticket.
+     */
+    200: TicketDetail;
+};
+
+export type UpdateApiTicketItPriorityResponse = UpdateApiTicketItPriorityResponses[keyof UpdateApiTicketItPriorityResponses];
 
 export type GetApiUsersData = {
     body?: never;
@@ -932,6 +1254,198 @@ export type GetApiTicketResponses = {
 };
 
 export type GetApiTicketResponse = GetApiTicketResponses[keyof GetApiTicketResponses];
+
+export type GetApiTicketInternalNotesData = {
+    body?: never;
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/internal-notes';
+};
+
+export type GetApiTicketInternalNotesErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiTicketInternalNotesError = GetApiTicketInternalNotesErrors[keyof GetApiTicketInternalNotesErrors];
+
+export type GetApiTicketInternalNotesResponses = {
+    /**
+     * The private Internal Notes in chronological order.
+     */
+    200: InternalNoteListResponse;
+};
+
+export type GetApiTicketInternalNotesResponse = GetApiTicketInternalNotesResponses[keyof GetApiTicketInternalNotesResponses];
+
+export type CreateApiTicketInternalNoteData = {
+    body: InternalNoteRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/internal-notes';
+};
+
+export type CreateApiTicketInternalNoteErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type CreateApiTicketInternalNoteError = CreateApiTicketInternalNoteErrors[keyof CreateApiTicketInternalNoteErrors];
+
+export type CreateApiTicketInternalNoteResponses = {
+    /**
+     * The created private Internal Note.
+     */
+    201: InternalNoteResponse;
+};
+
+export type CreateApiTicketInternalNoteResponse = CreateApiTicketInternalNoteResponses[keyof CreateApiTicketInternalNoteResponses];
+
+export type GetApiTicketCommentsData = {
+    body?: never;
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/comments';
+};
+
+export type GetApiTicketCommentsErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiTicketCommentsError = GetApiTicketCommentsErrors[keyof GetApiTicketCommentsErrors];
+
+export type GetApiTicketCommentsResponses = {
+    /**
+     * The 500 latest public Ticket comments in chronological order.
+     */
+    200: PublicCommentListResponse;
+};
+
+export type GetApiTicketCommentsResponse = GetApiTicketCommentsResponses[keyof GetApiTicketCommentsResponses];
+
+export type CreateApiTicketCommentData = {
+    body: PublicCommentRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/comments';
+};
+
+export type CreateApiTicketCommentErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type CreateApiTicketCommentError = CreateApiTicketCommentErrors[keyof CreateApiTicketCommentErrors];
+
+export type CreateApiTicketCommentResponses = {
+    /**
+     * The created public Ticket comment.
+     */
+    201: PublicCommentResponse;
+};
+
+export type CreateApiTicketCommentResponse = CreateApiTicketCommentResponses[keyof CreateApiTicketCommentResponses];
 
 export type GetApiTicketAttachmentsData = {
     body?: never;

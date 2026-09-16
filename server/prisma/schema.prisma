@@ -72,6 +72,8 @@ model User {
   ownedTickets        Ticket[]     @relation("TicketOwner")
   resolutionIndications Ticket[]   @relation("TicketResolutionIndication")
   removedAttachments  Attachment[] @relation("RemovedAttachmentUser")
+  internalNotes       InternalNote[] @relation("InternalNoteAuthor")
+  publicComments      PublicComment[] @relation("PublicCommentAuthor")
   sessions            Session[]
 
   @@index([isActive, displayName])
@@ -107,6 +109,8 @@ model Ticket {
   category           Category         @relation(fields: [categoryId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   relatedSystem      RelatedSystem    @relation(fields: [relatedSystemId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   attachments        Attachment[]
+  internalNotes      InternalNote[]
+  publicComments     PublicComment[]
 
   @@index([requesterId, updatedAt])
   @@index([requesterId, currentStatus])
@@ -118,6 +122,30 @@ model Ticket {
   @@index([currentStatus])
   @@index([itPriority])
   @@index([categoryId, relatedSystemId])
+}
+
+model InternalNote {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  authorId  Int
+  content   String
+  createdAt DateTime @default(now())
+  seedKey   String?  @unique
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  author    User     @relation("InternalNoteAuthor", fields: [authorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+}
+
+model PublicComment {
+  id        Int      @id @default(autoincrement())
+  ticketId  Int
+  authorId  Int
+  content   String
+  createdAt DateTime @default(now())
+  seedKey   String?  @unique
+  ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  author    User     @relation("PublicCommentAuthor", fields: [authorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([ticketId, createdAt, id])
 }
 
 model Attachment {
