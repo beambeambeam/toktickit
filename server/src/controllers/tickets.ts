@@ -146,6 +146,7 @@ export const claimTicket: RequestHandler = async (request, response) => {
 
 export const updateTicketOwner: RequestHandler = async (request, response) => {
   const ticket = await updateTicketOwnerForStaff(
+    getAuthenticatedUserId(response),
     parseId(request.params.ticketId, "ticketId"),
     validateOwnerMutation(request.body)
   );
@@ -158,6 +159,7 @@ export const updateTicketItPriority: RequestHandler = async (
   response
 ) => {
   const ticket = await updateTicketItPriorityForStaff(
+    getAuthenticatedUserId(response),
     parseId(request.params.ticketId, "ticketId"),
     validateItPriorityMutation(request.body)
   );

@@ -285,6 +285,13 @@ const resolveTicketMutation = (
   outcome: Awaited<ReturnType<typeof claimTicket>>
 ) => {
   switch (outcome.kind) {
+    case "actor-ineligible": {
+      throw new ApiError(
+        403,
+        "FORBIDDEN",
+        "You do not have permission to update Ticket operations."
+      );
+    }
     case "not-found": {
       throw notFound("Ticket");
     }
@@ -340,19 +347,31 @@ export const claimTicketForStaff = async (
   );
 
 export const updateTicketOwnerForStaff = async (
+  currentUserId: number,
   ticketId: number,
   input: OwnerMutationInput
 ) =>
   resolveTicketMutation(
-    await updateTicketOwner(ticketId, input.ownerId, input.version)
+    await updateTicketOwner(
+      currentUserId,
+      ticketId,
+      input.ownerId,
+      input.version
+    )
   );
 
 export const updateTicketItPriorityForStaff = async (
+  currentUserId: number,
   ticketId: number,
   input: ItPriorityMutationInput
 ) =>
   resolveTicketMutation(
-    await updateTicketItPriority(ticketId, input.itPriority, input.version)
+    await updateTicketItPriority(
+      currentUserId,
+      ticketId,
+      input.itPriority,
+      input.version
+    )
   );
 
 export const getTicketForReader = async (

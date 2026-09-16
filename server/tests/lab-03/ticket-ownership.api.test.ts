@@ -260,6 +260,35 @@ describe("Lab 3 Ticket ownership and IT Priority operations", () => {
     assert.equal(errorCode(terminal), "TICKET_TERMINAL");
   });
 
+  it("rechecks the acting Staff member inside owner mutations", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket({
+      ticketNumber: "TKT-20260916-OWN005",
+    });
+    const { updateTicketItPriority, updateTicketOwner } =
+      await import("../../src/repositories/tickets.js");
+
+    await activeFixture.prisma.user.update({
+      data: { isActive: false },
+      where: { id: staffId },
+    });
+
+    assert.deepEqual(
+      await updateTicketOwner(staffId, ticket.id, secondStaffId, 1),
+      { kind: "actor-ineligible" }
+    );
+    assert.deepEqual(
+      await updateTicketItPriority(staffId, ticket.id, "Urgent", 1),
+      { kind: "actor-ineligible" }
+    );
+
+    const stored = await activeFixture.prisma.ticket.findUnique({
+      select: { itPriority: true, ownerId: true, version: true },
+      where: { id: ticket.id },
+    });
+    assert.deepEqual(stored, { itPriority: "Low", ownerId: null, version: 1 });
+  });
+
   it("allows one winner when two Staff members claim the same Ticket", async () => {
     const activeFixture = getFixture();
     const ticket = await createTicket({
