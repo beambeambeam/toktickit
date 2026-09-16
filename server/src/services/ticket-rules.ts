@@ -36,6 +36,7 @@ export const MIN_SUMMARY_LENGTH = 5;
 export const MAX_SUMMARY_LENGTH = 120;
 export const MIN_DESCRIPTION_LENGTH = 20;
 export const MAX_DESCRIPTION_LENGTH = 4000;
+export const MAX_INTERNAL_NOTE_CODE_POINTS = 5000;
 export const MAX_PUBLIC_COMMENT_CODE_POINTS = 5000;
 
 export const requestedPriorities = ["Low", "Medium", "High", "Urgent"] as const;
@@ -485,6 +486,41 @@ export const validateRemovalReason = (value: unknown): string => {
   }
 
   return reason;
+};
+
+export const validateInternalNoteContent = (
+  input: Record<string, unknown>
+): string => {
+  const fields = Object.keys(input);
+  const unsupportedField = fields.find((field) => field !== "content");
+  const value = input.content;
+
+  if (unsupportedField !== undefined) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: unsupportedField,
+      reason: "Request field is not supported.",
+    });
+  }
+
+  if (typeof value !== "string") {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "content",
+      reason: "Content is required.",
+    });
+  }
+
+  const content = value.trim();
+  // oxlint-disable-next-line unicorn/prefer-spread -- internal-note contract counts Unicode code points.
+  const codePointLength = Array.from(content).length;
+
+  if (codePointLength < 1 || codePointLength > MAX_INTERNAL_NOTE_CODE_POINTS) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "content",
+      reason: `Content must contain 1–${MAX_INTERNAL_NOTE_CODE_POINTS} Unicode code points after trimming.`,
+    });
+  }
+
+  return content;
 };
 
 export const validatePublicCommentContent = (

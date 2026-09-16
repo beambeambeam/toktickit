@@ -210,6 +210,18 @@ export type Entry = {
     createdAt: string;
 };
 
+export type InternalNoteRequest = {
+    content: string;
+};
+
+export type InternalNoteResponse = {
+    internalNote: Entry;
+};
+
+export type InternalNoteListResponse = {
+    internalNotes: Array<Entry>;
+};
+
 export type PublicCommentRequest = {
     /**
      * Leading and trailing whitespace is trimmed before storage. Length limits apply to the submitted value, which must contain at least one non-whitespace character.
@@ -1079,6 +1091,102 @@ export type GetApiTicketResponses = {
 };
 
 export type GetApiTicketResponse = GetApiTicketResponses[keyof GetApiTicketResponses];
+
+export type GetApiTicketInternalNotesData = {
+    body?: never;
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/internal-notes';
+};
+
+export type GetApiTicketInternalNotesErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiTicketInternalNotesError = GetApiTicketInternalNotesErrors[keyof GetApiTicketInternalNotesErrors];
+
+export type GetApiTicketInternalNotesResponses = {
+    /**
+     * The private Internal Notes in chronological order.
+     */
+    200: InternalNoteListResponse;
+};
+
+export type GetApiTicketInternalNotesResponse = GetApiTicketInternalNotesResponses[keyof GetApiTicketInternalNotesResponses];
+
+export type CreateApiTicketInternalNoteData = {
+    body: InternalNoteRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/internal-notes';
+};
+
+export type CreateApiTicketInternalNoteErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type CreateApiTicketInternalNoteError = CreateApiTicketInternalNoteErrors[keyof CreateApiTicketInternalNoteErrors];
+
+export type CreateApiTicketInternalNoteResponses = {
+    /**
+     * The created private Internal Note.
+     */
+    201: InternalNoteResponse;
+};
+
+export type CreateApiTicketInternalNoteResponse = CreateApiTicketInternalNoteResponses[keyof CreateApiTicketInternalNoteResponses];
 
 export type GetApiTicketCommentsData = {
     body?: never;

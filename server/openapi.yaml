@@ -534,6 +534,66 @@ paths:
           $ref: "#/components/responses/ApiErrorResponse"
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/internal-notes:
+    get:
+      operationId: getApiTicketInternalNotes
+      summary: List private Internal Notes
+      description: IT Staff and Administrators can read every Ticket's private Internal Notes. Requesters cannot access this resource.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+      responses:
+        "200":
+          description: The private Internal Notes in chronological order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalNoteListResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+    post:
+      operationId: createApiTicketInternalNote
+      summary: Add a private Internal Note
+      description: IT Staff can append a private Internal Note to any non-terminal Ticket. Administrators and Requesters cannot write notes.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InternalNoteRequest"
+      responses:
+        "201":
+          description: The created private Internal Note.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalNoteResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
   /api/tickets/{ticketId}/comments:
     get:
       operationId: getApiTicketComments
@@ -1368,6 +1428,31 @@ components:
         createdAt:
           type: string
           format: date-time
+    InternalNoteRequest:
+      type: object
+      additionalProperties: false
+      required: [content]
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 5000
+    InternalNoteResponse:
+      type: object
+      additionalProperties: false
+      required: [internalNote]
+      properties:
+        internalNote:
+          $ref: "#/components/schemas/Entry"
+    InternalNoteListResponse:
+      type: object
+      additionalProperties: false
+      required: [internalNotes]
+      properties:
+        internalNotes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Entry"
     PublicCommentRequest:
       type: object
       additionalProperties: false

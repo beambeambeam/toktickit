@@ -2,6 +2,7 @@ import { queryOptions } from "@tanstack/react-query";
 
 import { categoriesQueryOptions } from "@/api/categories";
 import { ApiRequestError } from "@/api/errors";
+import { getTicketInternalNotes } from "@/api/internal-notes";
 import { getRelatedSystems, getTicket, getTickets } from "@/api/requester";
 import type { TicketListParams } from "@/api/requester";
 import { getTicketComments } from "@/api/ticket-comments";
@@ -33,6 +34,17 @@ export const ticketQueryOptions = (ticketId: number, principalId: number) =>
   queryOptions({
     queryFn: async ({ signal }) => await getTicket(ticketId, signal),
     queryKey: ["ticket", principalId, ticketId],
+    retry: 1,
+  });
+
+export const internalNotesQueryOptions = (
+  ticketId: number,
+  principalId: number
+) =>
+  queryOptions({
+    queryFn: async ({ signal }) =>
+      await getTicketInternalNotes(ticketId, signal),
+    queryKey: ["internal-notes", principalId, ticketId],
     retry: 1,
   });
 
