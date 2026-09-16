@@ -187,6 +187,9 @@ export type Entry = {
 };
 
 export type PublicCommentRequest = {
+    /**
+     * Leading and trailing whitespace is trimmed before storage. Length limits apply to the submitted value, which must contain at least one non-whitespace character.
+     */
     content: string;
 };
 

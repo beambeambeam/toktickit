@@ -348,7 +348,13 @@ export const validatePublicCommentContent = (
     issues.push({ field: "content", reason: "Content is required." });
   }
 
-  const content = typeof value === "string" ? value.trim() : undefined;
+  const rawContent = typeof value === "string" ? value : undefined;
+  const content = rawContent?.trim();
+  const rawCodePointLength =
+    rawContent === undefined
+      ? 0
+      : // oxlint-disable-next-line unicorn/prefer-spread -- comment contract counts Unicode code points.
+        Array.from(rawContent).length;
   const codePointLength =
     content === undefined
       ? 0
@@ -357,11 +363,11 @@ export const validatePublicCommentContent = (
 
   if (
     content !== undefined &&
-    (codePointLength < 1 || codePointLength > MAX_PUBLIC_COMMENT_CODE_POINTS)
+    (codePointLength < 1 || rawCodePointLength > MAX_PUBLIC_COMMENT_CODE_POINTS)
   ) {
     issues.push({
       field: "content",
-      reason: `Content must contain 1–${MAX_PUBLIC_COMMENT_CODE_POINTS} Unicode code points after trimming.`,
+      reason: `Content must contain 1–${MAX_PUBLIC_COMMENT_CODE_POINTS} submitted Unicode code points and at least one non-whitespace character.`,
     });
   }
 

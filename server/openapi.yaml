@@ -1152,6 +1152,7 @@ components:
       properties:
         content:
           type: string
+          description: Leading and trailing whitespace is trimmed before storage. Length limits apply to the submitted value, which must contain at least one non-whitespace character.
           minLength: 1
           maxLength: 5000
     PublicCommentResponse:

@@ -293,7 +293,7 @@ describe("Lab 3 public Ticket comments", () => {
     const accepted = await request(activeFixture.app)
       .post(`/api/tickets/${resolvedTicket.id}/comments`)
       .set(authHeaders(requester))
-      .send({ content: `${"😀".repeat(5000)} ` })
+      .send({ content: "😀".repeat(5000) })
       .expect(201);
     const acceptedContent = asJsonObject(
       asJsonObject(accepted.body).comment
@@ -306,6 +306,12 @@ describe("Lab 3 public Ticket comments", () => {
       Array.from(acceptedContent).length,
       5000
     );
+
+    await request(activeFixture.app)
+      .post(`/api/tickets/${resolvedTicket.id}/comments`)
+      .set(authHeaders(requester))
+      .send({ content: `${"😀".repeat(5000)} ` })
+      .expect(400);
 
     await Promise.all(
       (["Closed", "Cancelled"] as const).map(async (status) => {

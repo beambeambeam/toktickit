@@ -89,11 +89,12 @@ const PublicCommentsSectionContent = ({
   const submit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     const content = draft.trim();
-    const length = codePointLength(content);
+    const submittedLength = codePointLength(draft);
+    const contentLength = codePointLength(content);
 
-    if (length < 1 || length > MAX_COMMENT_CODE_POINTS) {
+    if (contentLength < 1 || submittedLength > MAX_COMMENT_CODE_POINTS) {
       setValidationError(
-        `Comment must contain 1–${MAX_COMMENT_CODE_POINTS} Unicode code points after trimming.`
+        `Comment must contain 1–${MAX_COMMENT_CODE_POINTS} submitted Unicode code points and at least one non-whitespace character.`
       );
       setOperationError(null);
       return;
@@ -152,8 +153,8 @@ const PublicCommentsSectionContent = ({
           />
         </FormField>
         <p className="field-help" id={`public-comment-help-${ticketId}`}>
-          Plain text only. {codePointLength(draft.trim())} /{" "}
-          {MAX_COMMENT_CODE_POINTS} Unicode code points after trimming.
+          Plain text only. {codePointLength(draft)} / {MAX_COMMENT_CODE_POINTS}{" "}
+          submitted Unicode code points.
         </p>
         <div className="form-actions">
           <button
