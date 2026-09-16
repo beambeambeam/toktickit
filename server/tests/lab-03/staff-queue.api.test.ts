@@ -395,11 +395,25 @@ describe("Lab 3 shared Ticket Queue and read-only Ticket access", () => {
     assert.deepEqual(download.body, content);
     assert.equal(download.headers["content-type"], "application/pdf");
 
-    const requesterUpload = await request(activeFixture.app)
+    const staffUpload = await request(activeFixture.app)
       .post(`/api/tickets/${ticket.id}/attachments`)
       .set(authHeaders(staff))
       .expect(403);
-    assert.equal(errorCode(requesterUpload), "FORBIDDEN");
+    assert.equal(errorCode(staffUpload), "FORBIDDEN");
+
+    const staffRemoval = await request(activeFixture.app)
+      .delete(`/api/tickets/${ticket.id}/attachments/${attachment.id}`)
+      .set(authHeaders(staff))
+      .send({ reason: "Staff must not remove Requester Attachments." })
+      .expect(403);
+    assert.equal(errorCode(staffRemoval), "FORBIDDEN");
+
+    const adminUpload = await request(activeFixture.app)
+      .post(`/api/tickets/${ticket.id}/attachments`)
+      .set(authHeaders(admin))
+      .attach("attachments", Buffer.from("admin upload"), "admin.txt")
+      .expect(403);
+    assert.equal(errorCode(adminUpload), "FORBIDDEN");
   });
 
   it("copies Requested Priority into IT Priority for authenticated Ticket creation", async () => {
