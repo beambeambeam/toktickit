@@ -147,12 +147,10 @@ test("edits account access and resets the initial password", async ({
 
   await editButton(updatedDisplayName).click();
   await page.getByLabel(/^New initial password/u).fill(resetPassword);
-  await page
-    .getByRole("checkbox", {
-      name: "I understand that all sessions will end.",
-    })
-    .check();
   await page.getByRole("button", { name: "Reset Initial Password" }).click();
+  const confirmation = page.getByRole("alertdialog");
+  await expect(confirmation).toBeVisible();
+  await confirmation.getByRole("button", { name: "Confirm reset" }).click();
   await expect(
     page.getByText(`${updatedDisplayName}'s initial password was reset.`)
   ).toBeVisible();

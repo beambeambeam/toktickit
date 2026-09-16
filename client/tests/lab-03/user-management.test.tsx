@@ -9,6 +9,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -275,11 +276,6 @@ describe("Administrator user management", () => {
     fireEvent.change(screen.getByLabelText(/^New initial password/u), {
       target: { value: resetPassword },
     });
-    fireEvent.click(
-      screen.getByRole("checkbox", {
-        name: "I understand that all sessions will end.",
-      })
-    );
     resetUserInitialPasswordMock.mockResolvedValueOnce({
       ...users[1],
       displayName: "Ada Updated",
@@ -287,6 +283,10 @@ describe("Administrator user management", () => {
     });
     fireEvent.click(
       screen.getByRole("button", { name: "Reset Initial Password" })
+    );
+    const confirmation = await screen.findByRole("alertdialog");
+    fireEvent.click(
+      within(confirmation).getByRole("button", { name: "Confirm reset" })
     );
 
     await waitFor(() => {
@@ -303,6 +303,35 @@ describe("Administrator user management", () => {
       ""
     );
     expect(screen.queryByText(resetPassword)).toBeNull();
+  });
+
+  it("requires an accessible confirmation before resetting a password", async () => {
+    renderPage();
+    await screen.findAllByText("Ada Requester");
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Edit Ada Requester" })[0]
+    );
+    await screen.findByDisplayValue("Ada Requester");
+    fireEvent.change(screen.getByLabelText(/^New initial password/u), {
+      target: { value: "replacement initial password" },
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Reset Initial Password" })
+    );
+    const confirmation = await screen.findByRole("alertdialog");
+    const cancel = within(confirmation).getByRole("button", {
+      name: "Cancel",
+    });
+    expect(
+      within(confirmation).getByRole("heading", {
+        name: "Reset initial password?",
+      })
+    ).toBeTruthy();
+    expect(document.activeElement).toBe(cancel);
+    fireEvent.click(cancel);
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(resetUserInitialPasswordMock).not.toHaveBeenCalled();
   });
 
   it("initializes the edit form from the fetched account detail", async () => {

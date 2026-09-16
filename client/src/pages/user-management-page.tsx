@@ -433,11 +433,13 @@ const UserEditForm = ({
   isLoading,
   isResetting,
   isSubmitting,
-  isResetConfirmed,
+  isResetConfirming,
   loadError,
   onCancel,
   onChange,
-  onResetChange,
+  onResetCancel,
+  onResetConfirm,
+  onResetPasswordChange,
   onResetSubmit,
   onRetry,
   onSubmit,
@@ -454,14 +456,13 @@ const UserEditForm = ({
   isLoading: boolean;
   isResetting: boolean;
   isSubmitting: boolean;
-  isResetConfirmed: boolean;
+  isResetConfirming: boolean;
   loadError: unknown;
   onCancel: () => void;
   onChange: (field: keyof UserEditFormValues, value: string | boolean) => void;
-  onResetChange: (
-    field: "confirmed" | "password",
-    value: boolean | string
-  ) => void;
+  onResetCancel: () => void;
+  onResetConfirm: () => void;
+  onResetPasswordChange: (value: string) => void;
   onResetSubmit: (event: SubmitEvent<HTMLFormElement>) => void;
   onRetry: () => void;
   onSubmit: (event: SubmitEvent<HTMLFormElement>) => void;
@@ -681,24 +682,12 @@ const UserEditForm = ({
                 disabled={isSubmitting || isResetting}
                 id="reset-initial-password"
                 onChange={(event) => {
-                  onResetChange("password", event.target.value);
+                  onResetPasswordChange(event.target.value);
                 }}
                 type="password"
                 value={resetPassword}
               />
             </FormField>
-            <label className="confirmation-check">
-              <input
-                checked={isResetConfirmed}
-                disabled={isSubmitting || isResetting}
-                id="reset-confirmation"
-                onChange={(event) => {
-                  onResetChange("confirmed", event.target.checked);
-                }}
-                type="checkbox"
-              />
-              <span>I understand that all sessions will end.</span>
-            </label>
             <div className="form-actions">
               <button
                 className="button button-secondary"
@@ -711,6 +700,45 @@ const UserEditForm = ({
           </form>
         </section>
       </>
+    ) : null}
+    {isResetConfirming ? (
+      <div
+        aria-describedby="reset-password-confirmation-description"
+        aria-labelledby="reset-password-confirmation-title"
+        aria-modal="true"
+        className="dialog-backdrop"
+        role="alertdialog"
+      >
+        <div className="surface-card confirmation-dialog">
+          <p className="eyebrow">Confirm action</p>
+          <h2 id="reset-password-confirmation-title">
+            Reset initial password?
+          </h2>
+          <p id="reset-password-confirmation-description">
+            Every session for {user?.displayName ?? "this account"} will end,
+            and the account holder must replace this password at next login.
+          </p>
+          <div className="form-actions">
+            <button
+              autoFocus
+              className="button button-secondary"
+              disabled={isResetting}
+              onClick={onResetCancel}
+              type="button"
+            >
+              Cancel
+            </button>
+            <button
+              className="button button-danger"
+              disabled={isResetting}
+              onClick={onResetConfirm}
+              type="button"
+            >
+              {isResetting ? "Resetting…" : "Confirm reset"}
+            </button>
+          </div>
+        </div>
+      </div>
     ) : null}
   </section>
 );
@@ -743,7 +771,7 @@ const UserManagementContent = ({
     null
   );
   const [resetPassword, setResetPassword] = useState("");
-  const [isResetConfirmed, setIsResetConfirmed] = useState(false);
+  const [isResetConfirmationOpen, setIsResetConfirmationOpen] = useState(false);
   const [resetFieldError, setResetFieldError] = useState<string | null>(null);
   const [resetError, setResetError] = useState<string | null>(null);
   const [resetSuccess, setResetSuccess] = useState<string | null>(null);
@@ -874,10 +902,11 @@ const UserManagementContent = ({
       setResetFieldError(getUserFieldErrors(error).initialPassword ?? null);
       setResetError(getUserErrorMessage(error));
       setResetSuccess(null);
+      setIsResetConfirmationOpen(false);
     },
     onSuccess: async (user) => {
       setResetPassword("");
-      setIsResetConfirmed(false);
+      setIsResetConfirmationOpen(false);
       setResetFieldError(null);
 
       if (user.id === principalId) {
@@ -965,7 +994,7 @@ const UserManagementContent = ({
     setEditSubmitError(null);
     setEditSuccessMessage(null);
     setResetPassword("");
-    setIsResetConfirmed(false);
+    setIsResetConfirmationOpen(false);
     setResetFieldError(null);
     setResetError(null);
     setResetSuccess(null);
@@ -978,7 +1007,7 @@ const UserManagementContent = ({
     setEditSubmitError(null);
     setEditSuccessMessage(null);
     setResetPassword("");
-    setIsResetConfirmed(false);
+    setIsResetConfirmationOpen(false);
     setResetFieldError(null);
     setResetError(null);
     setResetSuccess(null);
@@ -1038,22 +1067,11 @@ const UserManagementContent = ({
     updateMutation.mutate();
   };
 
-  const updateResetField = (
-    field: "confirmed" | "password",
-    value: boolean | string
-  ) => {
-    if (field === "confirmed" && typeof value === "boolean") {
-      setIsResetConfirmed(value);
-      setResetError(null);
-      return;
-    }
-
-    if (field === "password" && typeof value === "string") {
-      setResetPassword(value);
-      setResetFieldError(null);
-      setResetError(null);
-      setResetSuccess(null);
-    }
+  const updateResetPassword = (value: string) => {
+    setResetPassword(value);
+    setResetFieldError(null);
+    setResetError(null);
+    setResetSuccess(null);
   };
 
   const submitReset = (event: SubmitEvent<HTMLFormElement>) => {
@@ -1069,15 +1087,13 @@ const UserManagementContent = ({
       return;
     }
 
-    if (!isResetConfirmed) {
-      setResetError("Confirm that all sessions will end before resetting.");
-      document.querySelector<HTMLElement>("#reset-confirmation")?.focus();
-      return;
-    }
-
     setResetFieldError(null);
     setResetError(null);
     setResetSuccess(null);
+    setIsResetConfirmationOpen(true);
+  };
+
+  const confirmReset = () => {
     resetMutation.mutate();
   };
 
@@ -1190,13 +1206,17 @@ const UserManagementContent = ({
         <UserEditForm
           fieldErrors={editFieldErrors}
           isLoading={editUserQuery.isPending}
-          isResetConfirmed={isResetConfirmed}
+          isResetConfirming={isResetConfirmationOpen}
           isResetting={resetMutation.isPending}
           isSubmitting={updateMutation.isPending}
           loadError={editUserQuery.error}
           onCancel={closeEditForm}
           onChange={updateEditField}
-          onResetChange={updateResetField}
+          onResetCancel={() => {
+            setIsResetConfirmationOpen(false);
+          }}
+          onResetConfirm={confirmReset}
+          onResetPasswordChange={updateResetPassword}
           onResetSubmit={submitReset}
           onRetry={() => void editUserQuery.refetch()}
           onSubmit={submitEditUser}
