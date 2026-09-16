@@ -176,6 +176,28 @@ export type ResolutionIndication = {
     createdAt: string;
 };
 
+export type Entry = {
+    id: number;
+    content: string;
+    author: {
+        id: number;
+        displayName: string;
+    };
+    createdAt: string;
+};
+
+export type PublicCommentRequest = {
+    content: string;
+};
+
+export type PublicCommentResponse = {
+    comment: Entry;
+};
+
+export type PublicCommentListResponse = {
+    comments: Array<Entry>;
+};
+
 export type CreateTicketRequest = {
     categoryId: number;
     relatedSystemId: number;
@@ -769,6 +791,102 @@ export type GetApiTicketResponses = {
 };
 
 export type GetApiTicketResponse = GetApiTicketResponses[keyof GetApiTicketResponses];
+
+export type GetApiTicketCommentsData = {
+    body?: never;
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/comments';
+};
+
+export type GetApiTicketCommentsErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiTicketCommentsError = GetApiTicketCommentsErrors[keyof GetApiTicketCommentsErrors];
+
+export type GetApiTicketCommentsResponses = {
+    /**
+     * The public Ticket comments in chronological order.
+     */
+    200: PublicCommentListResponse;
+};
+
+export type GetApiTicketCommentsResponse = GetApiTicketCommentsResponses[keyof GetApiTicketCommentsResponses];
+
+export type CreateApiTicketCommentData = {
+    body: PublicCommentRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/comments';
+};
+
+export type CreateApiTicketCommentErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type CreateApiTicketCommentError = CreateApiTicketCommentErrors[keyof CreateApiTicketCommentErrors];
+
+export type CreateApiTicketCommentResponses = {
+    /**
+     * The created public Ticket comment.
+     */
+    201: PublicCommentResponse;
+};
+
+export type CreateApiTicketCommentResponse = CreateApiTicketCommentResponses[keyof CreateApiTicketCommentResponses];
 
 export type GetApiTicketAttachmentsData = {
     body?: never;

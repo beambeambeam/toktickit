@@ -38,6 +38,13 @@ export interface TicketResolutionIndicationRecord {
   id: number;
 }
 
+export interface TicketEntryRecord {
+  author: { displayName: string; id: number };
+  content: string;
+  createdAt: Date;
+  id: number;
+}
+
 export interface OperationalTicketRecord {
   itPriority: string;
   owner: TicketOwnerRecord | null;
@@ -114,6 +121,13 @@ export const toTicketSummary = (ticket: TicketSummaryRecord) => ({
   ticketDate: ticket.ticketDate.toISOString(),
   ticketNumber: ticket.ticketNumber,
   updatedAt: ticket.updatedAt.toISOString(),
+});
+
+export const toTicketEntry = (entry: TicketEntryRecord) => ({
+  author: entry.author,
+  content: entry.content,
+  createdAt: entry.createdAt.toISOString(),
+  id: entry.id,
 });
 
 export const toTicketDetail = (ticket: TicketDetailRecord) => ({

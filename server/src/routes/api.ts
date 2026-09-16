@@ -8,12 +8,14 @@ import {
 } from "../controllers/reference-data.js";
 import {
   addAttachments,
+  createPublicComment,
   createTicket,
   downloadAttachment,
   getAttachments,
   getStaffOwners,
   getStaffTickets,
   getTicket,
+  getPublicComments,
   getTickets,
   removeAttachment,
 } from "../controllers/tickets.js";
@@ -137,6 +139,24 @@ apiRouter.get(
   requireRole("Requester", "ITStaff", "Administrator"),
   touchSession,
   getAttachments
+);
+apiRouter.get(
+  "/tickets/:ticketId/comments",
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester", "ITStaff", "Administrator"),
+  touchSession,
+  getPublicComments
+);
+apiRouter.post(
+  "/tickets/:ticketId/comments",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester", "ITStaff"),
+  requireCsrf,
+  touchSession,
+  createPublicComment
 );
 apiRouter.post(
   "/tickets/:ticketId/attachments",

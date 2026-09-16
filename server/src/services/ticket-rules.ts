@@ -31,6 +31,7 @@ export const MIN_SUMMARY_LENGTH = 5;
 export const MAX_SUMMARY_LENGTH = 120;
 export const MIN_DESCRIPTION_LENGTH = 20;
 export const MAX_DESCRIPTION_LENGTH = 4000;
+export const MAX_PUBLIC_COMMENT_CODE_POINTS = 5000;
 
 export const requestedPriorities = ["Low", "Medium", "High", "Urgent"] as const;
 export const currentStatuses = [
@@ -329,6 +330,46 @@ export const validateRemovalReason = (value: unknown): string => {
   }
 
   return reason;
+};
+
+export const validatePublicCommentContent = (
+  input: Record<string, unknown>
+): string => {
+  const issues: ValidationIssue[] = [];
+
+  for (const field of Object.keys(input)) {
+    if (field !== "content") {
+      issues.push({ field, reason: "Request field is not supported." });
+    }
+  }
+
+  const value = input.content;
+  if (typeof value !== "string") {
+    issues.push({ field: "content", reason: "Content is required." });
+  }
+
+  const content = typeof value === "string" ? value.trim() : undefined;
+  const codePointLength =
+    content === undefined
+      ? 0
+      : // oxlint-disable-next-line unicorn/prefer-spread -- comment contract counts Unicode code points.
+        Array.from(content).length;
+
+  if (
+    content !== undefined &&
+    (codePointLength < 1 || codePointLength > MAX_PUBLIC_COMMENT_CODE_POINTS)
+  ) {
+    issues.push({
+      field: "content",
+      reason: `Content must contain 1–${MAX_PUBLIC_COMMENT_CODE_POINTS} Unicode code points after trimming.`,
+    });
+  }
+
+  if (issues.length > 0 || content === undefined) {
+    throw createValidationError(issues);
+  }
+
+  return content;
 };
 
 const allowedQueryFields = new Set([

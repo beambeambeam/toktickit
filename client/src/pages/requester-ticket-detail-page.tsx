@@ -23,6 +23,7 @@ import {
 import { AttachmentPicker } from "@/components/attachment-picker";
 import { FormField, ReadOnlyField } from "@/components/form-field";
 import { Icon } from "@/components/icon";
+import { PublicCommentsSection } from "@/components/public-comments-section";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
 import { cn } from "@/lib/class-names";
@@ -297,6 +298,13 @@ export const RequesterTicketDetailPage = ({
               </div>
             </div>
           </section>
+
+          <PublicCommentsSection
+            canPost
+            currentStatus={ticket.currentStatus}
+            principalId={principalId}
+            ticketId={numericTicketId}
+          />
 
           <section
             className="surface-card form-section"

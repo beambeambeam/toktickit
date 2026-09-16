@@ -3,6 +3,11 @@ import { Prisma } from "../generated/prisma/client.js";
 import { findActiveCategory } from "../repositories/categories.js";
 import { findActiveRelatedSystem } from "../repositories/related-systems.js";
 import {
+  createPublicComment,
+  findPublicCommentsForReader,
+  findTicketForPublicComments,
+} from "../repositories/ticket-comments.js";
+import {
   countActiveAttachments,
   createAttachments,
   createTicket,
@@ -32,11 +37,13 @@ import {
   toAttachmentMetadata,
   toOperationalSummary,
   toOwner,
+  toTicketEntry,
   toTicketDetail,
   toTicketSummary,
 } from "./ticket-presenters.js";
 import {
   MAX_ACTIVE_ATTACHMENTS,
+  validatePublicCommentContent,
   validateAttachmentFiles,
 } from "./ticket-rules.js";
 import type { AttachmentCandidate } from "./ticket-rules.js";
@@ -305,6 +312,68 @@ export const getAttachmentsForReader = async (
   }
 
   return ticket.attachments.map(toAttachmentMetadata);
+};
+
+const ticketTerminalError = () =>
+  new ApiError(
+    409,
+    "TICKET_TERMINAL",
+    "Closed or Cancelled Tickets cannot receive public comments."
+  );
+
+export const listPublicCommentsForReader = async (
+  userId: number,
+  role: UserRoleValue,
+  ticketId: number
+) => {
+  const comments = await findPublicCommentsForReader(userId, role, ticketId);
+
+  if (comments === null) {
+    throw notFound("Ticket");
+  }
+
+  return comments.map(toTicketEntry);
+};
+
+export const createPublicCommentForUser = async (
+  userId: number,
+  role: UserRoleValue,
+  ticketId: number,
+  body: Record<string, unknown>
+) => {
+  const ticket = await findTicketForPublicComments(userId, role, ticketId);
+
+  if (ticket === null) {
+    throw notFound("Ticket");
+  }
+
+  if (
+    ticket.currentStatus === "Closed" ||
+    ticket.currentStatus === "Cancelled"
+  ) {
+    throw ticketTerminalError();
+  }
+
+  const content = validatePublicCommentContent(body);
+  const result = await createPublicComment(userId, role, ticketId, content);
+
+  if (result.kind === "forbidden") {
+    throw new ApiError(
+      403,
+      "FORBIDDEN",
+      "You do not have permission to post public comments."
+    );
+  }
+
+  if (result.kind === "not-found") {
+    throw notFound("Ticket");
+  }
+
+  if (result.kind === "terminal") {
+    throw ticketTerminalError();
+  }
+
+  return toTicketEntry(result.comment);
 };
 
 export const addAttachmentsForRequester = async (
