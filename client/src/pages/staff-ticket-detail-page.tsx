@@ -416,7 +416,7 @@ const StaffTicketDetailContent = ({
                         operationBusy
                       }
                       onClick={() => {
-                        const submittedOwnerValue = selectedOwnerId ?? "";
+                        const submittedOwnerValue = ownerValue;
                         const ownerId =
                           submittedOwnerValue.length === 0
                             ? null
