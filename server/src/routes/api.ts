@@ -11,6 +11,8 @@ import {
   createTicket,
   downloadAttachment,
   getAttachments,
+  getStaffOwners,
+  getStaffTickets,
   getTicket,
   getTickets,
   removeAttachment,
@@ -66,6 +68,22 @@ apiRouter.get(
   touchSession,
   getRelatedSystems
 );
+apiRouter.get(
+  "/staff/tickets",
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff", "Administrator"),
+  touchSession,
+  getStaffTickets
+);
+apiRouter.get(
+  "/staff/owners",
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff", "Administrator"),
+  touchSession,
+  getStaffOwners
+);
 apiRouter.get("/health", getHealth);
 apiRouter.get(
   "/users",
@@ -108,7 +126,7 @@ apiRouter.get(
   "/tickets/:ticketId",
   requireSession,
   requireUnrestricted,
-  requireRole("Requester"),
+  requireRole("Requester", "ITStaff", "Administrator"),
   touchSession,
   getTicket
 );
@@ -116,7 +134,7 @@ apiRouter.get(
   "/tickets/:ticketId/attachments",
   requireSession,
   requireUnrestricted,
-  requireRole("Requester"),
+  requireRole("Requester", "ITStaff", "Administrator"),
   touchSession,
   getAttachments
 );
@@ -135,7 +153,7 @@ apiRouter.get(
   "/tickets/:ticketId/attachments/:attachmentId/content",
   requireSession,
   requireUnrestricted,
-  requireRole("Requester"),
+  requireRole("Requester", "ITStaff", "Administrator"),
   touchSession,
   downloadAttachment
 );

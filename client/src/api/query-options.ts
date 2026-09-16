@@ -28,10 +28,10 @@ export const ticketsQueryOptions = (params: TicketListParams) =>
     retry: 1,
   });
 
-export const ticketQueryOptions = (ticketId: number) =>
+export const ticketQueryOptions = (ticketId: number, principalId: number) =>
   queryOptions({
     queryFn: async ({ signal }) => await getTicket(ticketId, signal),
-    queryKey: ["ticket", ticketId],
+    queryKey: ["ticket", principalId, ticketId],
     retry: 1,
   });
 

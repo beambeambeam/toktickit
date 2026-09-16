@@ -10,7 +10,7 @@ import type { SubmitEvent } from "react";
 
 import { ApiConnectionError } from "@/api/client";
 import { ApiRequestError } from "@/api/errors";
-import { usersQueryOptions } from "@/api/lab2-options";
+import { usersQueryOptions } from "@/api/query-options";
 import { createUser } from "@/api/users";
 import type { User, UserListParams, UserRole } from "@/api/users";
 import {

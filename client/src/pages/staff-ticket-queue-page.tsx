@@ -5,22 +5,30 @@ import {
   Search01Icon,
   Ticket01Icon,
 } from "@hugeicons/core-free-icons";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { SubmitEvent } from "react";
 
 import type { AuthUser } from "@/api/auth";
+import { ApiRequestError } from "@/api/errors";
 import {
   activeCategoriesQueryOptions,
   relatedSystemsQueryOptions,
-  ticketsQueryOptions,
 } from "@/api/query-options";
-import type { TicketListParams } from "@/api/requester";
+import type {
+  StaffTicketListParams,
+  StaffTicketOwnerFilter,
+} from "@/api/staff";
 import {
+  staffOwnersQueryOptions,
+  staffTicketsQueryOptions,
+} from "@/api/staff-query-options";
+import {
+  AccessDenied,
   AppShell,
+  AuthLoading,
   AuthRequired,
-  RequesterAccessDenied,
 } from "@/components/app-shell";
 import { Icon } from "@/components/icon";
 import { StatusBadge } from "@/components/status-badge";
@@ -28,43 +36,39 @@ import { useAuth } from "@/context/auth";
 import { isRequestedPriority } from "@/lib/ticket-priorities";
 import { currentStatuses, isCurrentStatus } from "@/lib/ticket-statuses";
 
-const initialParams: TicketListParams = {
+const initialParams: StaffTicketListParams = {
   page: 1,
-  pageSize: 10,
+  pageSize: 20,
   sortBy: "updatedAt",
   sortDirection: "desc",
 };
 
-const formatDate = (value: string) =>
-  new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
+const queueSortFields = [
+  "ticketNumber",
+  "ticketDate",
+  "itPriority",
+  "updatedAt",
+] as const;
 
-type TicketSortField = NonNullable<TicketListParams["sortBy"]>;
-type TicketSortDirection = NonNullable<TicketListParams["sortDirection"]>;
+type QueueSortField = (typeof queueSortFields)[number];
+type QueueSortDirection = NonNullable<StaffTicketListParams["sortDirection"]>;
 
-const isTicketSortField = (value: string): value is TicketSortField =>
-  value === "ticketNumber" ||
-  value === "ticketDate" ||
-  value === "summary" ||
-  value === "requestedPriority" ||
-  value === "currentStatus" ||
-  value === "updatedAt";
+const isQueueSortField = (value: string): value is QueueSortField =>
+  queueSortFields.some((field) => field === value);
 
-const isTicketSortDirection = (value: string): value is TicketSortDirection =>
+const isQueueSortDirection = (value: string): value is QueueSortDirection =>
   value === "asc" || value === "desc";
 
 const parseSort = (
   value: string
-): { sortBy: TicketSortField; sortDirection: TicketSortDirection } => {
+): { sortBy: QueueSortField; sortDirection: QueueSortDirection } => {
   const [sortBy, sortDirection] = value.split(":");
 
   if (
     sortBy !== undefined &&
-    isTicketSortField(sortBy) &&
+    isQueueSortField(sortBy) &&
     sortDirection !== undefined &&
-    isTicketSortDirection(sortDirection)
+    isQueueSortDirection(sortDirection)
   ) {
     return { sortBy, sortDirection };
   }
@@ -72,24 +76,41 @@ const parseSort = (
   return { sortBy: "updatedAt", sortDirection: "desc" };
 };
 
-const parsePageSize = (value: string): 10 | 25 | 50 => {
-  if (value === "25") {
-    return 25;
+const parsePageSize = (value: string): 10 | 20 | 50 => {
+  if (value === "10") {
+    return 10;
   }
 
   if (value === "50") {
     return 50;
   }
 
-  return 10;
+  return 20;
 };
 
-const hasTicketFilters = (params: TicketListParams) =>
+const parseOwner = (value: string): StaffTicketOwnerFilter | undefined => {
+  if (value === "me" || value === "unassigned") {
+    return value;
+  }
+
+  if (/^[1-9]\d*$/u.test(value)) {
+    const ownerId = Number(value);
+    if (Number.isSafeInteger(ownerId)) {
+      return ownerId;
+    }
+  }
+
+  return undefined;
+};
+
+const hasTicketFilters = (params: StaffTicketListParams) =>
   (params.search !== undefined && params.search.length > 0) ||
   params.categoryId !== undefined ||
   params.relatedSystemId !== undefined ||
   params.requestedPriority !== undefined ||
-  params.currentStatus !== undefined;
+  params.itPriority !== undefined ||
+  params.currentStatus !== undefined ||
+  params.owner !== undefined;
 
 type PageToken = number | "ellipsis-before" | "ellipsis-after";
 
@@ -129,25 +150,95 @@ const getPageTokens = (
   return pages;
 };
 
-// oxlint-disable-next-line complexity -- this page renders the documented loading, error, empty, and data states.
-const MyTicketsContent = ({ user }: { user: AuthUser }) => {
-  const navigate = useNavigate();
-  const [params, setParams] = useState<TicketListParams>(initialParams);
+const formatDate = (value: string) =>
+  new Intl.DateTimeFormat(undefined, {
+    dateStyle: "medium",
+    timeStyle: "short",
+  }).format(new Date(value));
+
+const getQueueErrorMessage = (
+  error: unknown,
+  ownerIneligible: boolean
+): string => {
+  if (ownerIneligible) {
+    return "The Owner filter was reset while the latest options load.";
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Try again.";
+};
+
+// oxlint-disable-next-line complexity -- this page renders documented queue filters and data states.
+const StaffTicketQueueContent = ({
+  onAccessError,
+  user,
+}: {
+  onAccessError: (error: ApiRequestError) => void;
+  user: AuthUser;
+}) => {
+  const [params, setParams] = useState<StaffTicketListParams>(initialParams);
   const [searchDraft, setSearchDraft] = useState("");
+  const handledOwnerError = useRef<ApiRequestError | null>(null);
 
   const categoriesQuery = useQuery(activeCategoriesQueryOptions());
   const relatedSystemsQuery = useQuery(relatedSystemsQueryOptions());
-  const ticketsQuery = useQuery({
-    ...ticketsQueryOptions(params),
-  });
+  const ownersQuery = useQuery(staffOwnersQueryOptions());
+  const ticketsQuery = useQuery(staffTicketsQueryOptions(params));
+  const refetchOwners = ownersQuery.refetch;
 
-  const updateParams = (change: Partial<TicketListParams>) => {
+  useEffect(() => {
+    const accessError = [
+      categoriesQuery.error,
+      relatedSystemsQuery.error,
+      ownersQuery.error,
+      ticketsQuery.error,
+    ].find(
+      (error): error is ApiRequestError =>
+        error instanceof ApiRequestError && error.status === 403
+    );
+
+    if (accessError !== undefined) {
+      onAccessError(accessError);
+    }
+  }, [
+    categoriesQuery.error,
+    onAccessError,
+    ownersQuery.error,
+    relatedSystemsQuery.error,
+    ticketsQuery.error,
+  ]);
+
+  const ownerIneligibleError =
+    ticketsQuery.error instanceof ApiRequestError &&
+    ticketsQuery.error.code === "OWNER_INELIGIBLE"
+      ? ticketsQuery.error
+      : null;
+
+  useEffect(() => {
+    if (ownerIneligibleError === null) {
+      handledOwnerError.current = null;
+      return;
+    }
+
+    if (handledOwnerError.current === ownerIneligibleError) {
+      return;
+    }
+
+    handledOwnerError.current = ownerIneligibleError;
+    setParams((current) => ({ ...current, owner: undefined, page: 1 }));
+    void refetchOwners();
+  }, [ownerIneligibleError, refetchOwners]);
+
+  const updateParams = (change: Partial<StaffTicketListParams>) => {
     setParams((current) => ({ ...current, ...change, page: 1 }));
   };
 
   const clearFilters = () => {
     setSearchDraft("");
-    setParams(initialParams);
+    setParams({ ...initialParams });
   };
 
   const submitSearch = (event: SubmitEvent<HTMLFormElement>) => {
@@ -180,63 +271,72 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
   const totalPages = data?.totalPages ?? 0;
   const pageTokens = getPageTokens(totalPages, page);
   const hasFilterDataError =
-    categoriesQuery.isError || relatedSystemsQuery.isError;
+    categoriesQuery.isError ||
+    relatedSystemsQuery.isError ||
+    ownersQuery.isError;
 
   const retryFilterData = () => {
     void categoriesQuery.refetch();
     void relatedSystemsQuery.refetch();
+    void ownersQuery.refetch();
   };
 
+  const workspaceLabel =
+    user.role === "Administrator"
+      ? "Administrator workspace"
+      : "IT Staff workspace";
+
   return (
-    <AppShell eyebrow="Requester workspace" title="My Tickets">
+    <AppShell
+      eyebrow={workspaceLabel}
+      title="Ticket Queue"
+      allowedRoles={["IT Staff", "Administrator"]}
+    >
       <div className="page-actions">
         <p className="page-description">
-          View and track support requests owned by {user.displayName}.
+          Browse every support request and inspect its current operational
+          ownership.
         </p>
-        <div className="button-row">
-          {showNoResults ? null : (
-            <button
-              className="button button-tertiary"
-              disabled={!hasActiveFilters}
-              onClick={clearFilters}
-              type="button"
-            >
-              <Icon icon={RefreshIcon} /> Clear Filters
-            </button>
-          )}
+        {showNoResults ? null : (
           <button
-            className="button button-primary"
-            onClick={() => void navigate({ to: "/create" })}
+            className="button button-tertiary"
+            disabled={!hasActiveFilters}
+            onClick={clearFilters}
             type="button"
           >
-            + Create Ticket
+            <Icon icon={RefreshIcon} /> Clear Filters
           </button>
-        </div>
+        )}
       </div>
 
-      <section className="surface-card filter-card" aria-label="Ticket filters">
+      <section
+        className="surface-card filter-card"
+        aria-label="Ticket Queue filters"
+      >
         <form className="filter-grid" onSubmit={submitSearch}>
           <div className="search-field">
-            <label htmlFor="ticket-search">Search</label>
+            <label htmlFor="staff-ticket-search">Search</label>
             <div className="input-with-icon">
               <span aria-hidden="true">
                 <Icon icon={Search01Icon} />
               </span>
               <input
-                id="ticket-search"
+                id="staff-ticket-search"
+                maxLength={200}
                 onChange={(event) => {
                   setSearchDraft(event.target.value);
                 }}
-                placeholder="Search Ticket Number, summary, or description"
+                placeholder="Search Ticket Number or summary"
+                type="search"
                 value={searchDraft}
               />
             </div>
           </div>
           <div className="filter-field">
-            <label htmlFor="ticket-category-filter">Category</label>
+            <label htmlFor="staff-ticket-category-filter">Category</label>
             <select
               disabled={categoriesQuery.isPending || categoriesQuery.isError}
-              id="ticket-category-filter"
+              id="staff-ticket-category-filter"
               onChange={(event) => {
                 updateParams({
                   categoryId: event.target.value
@@ -255,12 +355,12 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
             </select>
           </div>
           <div className="filter-field">
-            <label htmlFor="ticket-system-filter">Related System</label>
+            <label htmlFor="staff-ticket-system-filter">Related System</label>
             <select
               disabled={
                 relatedSystemsQuery.isPending || relatedSystemsQuery.isError
               }
-              id="ticket-system-filter"
+              id="staff-ticket-system-filter"
               onChange={(event) => {
                 updateParams({
                   relatedSystemId: event.target.value
@@ -279,17 +379,16 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
             </select>
           </div>
           <div className="filter-field">
-            <label htmlFor="ticket-priority-filter">Requested Priority</label>
+            <label htmlFor="staff-ticket-requested-priority-filter">
+              Requested Priority
+            </label>
             <select
-              id="ticket-priority-filter"
+              id="staff-ticket-requested-priority-filter"
               onChange={(event) => {
-                const requestedPriority = event.target.value;
                 updateParams({
-                  requestedPriority:
-                    requestedPriority.length > 0 &&
-                    isRequestedPriority(requestedPriority)
-                      ? requestedPriority
-                      : undefined,
+                  requestedPriority: isRequestedPriority(event.target.value)
+                    ? event.target.value
+                    : undefined,
                 });
               }}
               value={params.requestedPriority ?? ""}
@@ -302,9 +401,29 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
             </select>
           </div>
           <div className="filter-field">
-            <label htmlFor="ticket-status-filter">Current Status</label>
+            <label htmlFor="staff-ticket-it-priority-filter">IT Priority</label>
             <select
-              id="ticket-status-filter"
+              id="staff-ticket-it-priority-filter"
+              onChange={(event) => {
+                updateParams({
+                  itPriority: isRequestedPriority(event.target.value)
+                    ? event.target.value
+                    : undefined,
+                });
+              }}
+              value={params.itPriority ?? ""}
+            >
+              <option value="">All Priorities</option>
+              <option value="Low">Low</option>
+              <option value="Medium">Medium</option>
+              <option value="High">High</option>
+              <option value="Urgent">Urgent</option>
+            </select>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="staff-ticket-status-filter">Current Status</label>
+            <select
+              id="staff-ticket-status-filter"
               onChange={(event) => {
                 updateParams({
                   currentStatus: isCurrentStatus(event.target.value)
@@ -323,9 +442,29 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
             </select>
           </div>
           <div className="filter-field">
-            <label htmlFor="ticket-sort">Sort</label>
+            <label htmlFor="staff-ticket-owner-filter">Ticket Owner</label>
             <select
-              id="ticket-sort"
+              disabled={ownersQuery.isPending || ownersQuery.isError}
+              id="staff-ticket-owner-filter"
+              onChange={(event) => {
+                updateParams({ owner: parseOwner(event.target.value) });
+              }}
+              value={params.owner?.toString() ?? ""}
+            >
+              <option value="">All Owners</option>
+              <option value="me">Me</option>
+              <option value="unassigned">Unassigned</option>
+              {ownersQuery.data?.map((owner) => (
+                <option key={owner.id} value={owner.id}>
+                  {owner.displayName}
+                </option>
+              ))}
+            </select>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="staff-ticket-sort">Sort</label>
+            <select
+              id="staff-ticket-sort"
               onChange={(event) => {
                 updateParams(parseSort(event.target.value));
               }}
@@ -335,33 +474,23 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
               <option value="updatedAt:asc">Last Updated (oldest)</option>
               <option value="ticketDate:desc">Ticket Date (newest)</option>
               <option value="ticketDate:asc">Ticket Date (oldest)</option>
+              <option value="itPriority:asc">IT Priority (Low–Urgent)</option>
+              <option value="itPriority:desc">IT Priority (Urgent–Low)</option>
               <option value="ticketNumber:asc">Ticket Number (A–Z)</option>
               <option value="ticketNumber:desc">Ticket Number (Z–A)</option>
-              <option value="summary:asc">Summary (A–Z)</option>
-              <option value="summary:desc">Summary (Z–A)</option>
-              <option value="requestedPriority:asc">
-                Requested Priority (Low–Urgent)
-              </option>
-              <option value="requestedPriority:desc">
-                Requested Priority (Urgent–Low)
-              </option>
-              <option value="currentStatus:asc">Current Status (A–Z)</option>
-              <option value="currentStatus:desc">Current Status (Z–A)</option>
             </select>
           </div>
           <div className="filter-field">
-            <label htmlFor="ticket-page-size">Per page</label>
+            <label htmlFor="staff-ticket-page-size">Per page</label>
             <select
-              id="ticket-page-size"
+              id="staff-ticket-page-size"
               onChange={(event) => {
-                updateParams({
-                  pageSize: parsePageSize(event.target.value),
-                });
+                updateParams({ pageSize: parsePageSize(event.target.value) });
               }}
-              value={params.pageSize ?? 10}
+              value={params.pageSize ?? 20}
             >
               <option value={10}>10</option>
-              <option value={25}>25</option>
+              <option value={20}>20</option>
               <option value={50}>50</option>
             </select>
           </div>
@@ -379,7 +508,8 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
           >
             <strong>Some filter options are unavailable.</strong>
             <span>
-              Retry to load the latest Category and Related System options.
+              Retry to load the latest Category, Related System, and Owner
+              options.
             </span>
             <button
               className="button button-secondary"
@@ -393,14 +523,14 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
       </section>
 
       <section
-        className="surface-card ticket-list-card"
         aria-busy={ticketsQuery.isFetching}
-        aria-labelledby="ticket-list-heading"
+        aria-labelledby="ticket-queue-heading"
+        className="surface-card ticket-list-card"
       >
         <div className="section-heading list-heading">
           <div>
-            <p className="eyebrow">Owned requests</p>
-            <h2 id="ticket-list-heading">Your tickets</h2>
+            <p className="eyebrow">Shared operational view</p>
+            <h2 id="ticket-queue-heading">All Tickets</h2>
           </div>
           {data ? (
             <span className="result-count">{data.totalItems} total</span>
@@ -414,10 +544,10 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
           role="status"
         >
           {ticketsQuery.isPending ? (
-            <p className="loading-line">Loading your Tickets…</p>
+            <p className="loading-line">Loading the Ticket Queue…</p>
           ) : null}
           {ticketsQuery.isFetching && !ticketsQuery.isPending ? (
-            <p className="loading-line">Updating results…</p>
+            <p className="loading-line">Updating queue results…</p>
           ) : null}
           {data && !ticketsQuery.isFetching ? (
             <p className="visually-hidden">{data.totalItems} Tickets loaded.</p>
@@ -426,19 +556,26 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
 
         {ticketsQuery.isError ? (
           <div className="feedback feedback-error" role="alert">
-            <strong>Could not load My Tickets.</strong>
+            <strong>
+              {ownerIneligibleError === null
+                ? "Could not load the Ticket Queue."
+                : "The selected Ticket Owner is no longer available."}
+            </strong>
             <span>
-              {ticketsQuery.error instanceof Error
-                ? ticketsQuery.error.message
-                : "Try again."}
+              {getQueueErrorMessage(
+                ticketsQuery.error,
+                ownerIneligibleError !== null
+              )}
             </span>
-            <button
-              className="button button-secondary"
-              onClick={() => void ticketsQuery.refetch()}
-              type="button"
-            >
-              Retry
-            </button>
+            {ownerIneligibleError === null ? (
+              <button
+                className="button button-secondary"
+                onClick={() => void ticketsQuery.refetch()}
+                type="button"
+              >
+                Retry
+              </button>
+            ) : null}
           </div>
         ) : null}
 
@@ -447,15 +584,8 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
             <div aria-hidden="true" className="empty-icon">
               <Icon icon={Ticket01Icon} />
             </div>
-            <h3>No Tickets yet</h3>
-            <p>{user.displayName} has not created a support request.</p>
-            <button
-              className="button button-primary"
-              onClick={() => void navigate({ to: "/create" })}
-              type="button"
-            >
-              Create your first Ticket
-            </button>
+            <h3>No Tickets in the queue</h3>
+            <p>New support requests will appear here.</p>
           </div>
         ) : null}
 
@@ -499,18 +629,17 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
         {showLoadedTickets ? (
           <>
             <div className="ticket-table-wrap">
-              <table className="ticket-table">
+              <table className="ticket-table queue-table">
                 <caption className="visually-hidden">
-                  Tickets owned by {user.displayName}
+                  Shared TokTickIT Ticket Queue
                 </caption>
                 <thead>
                   <tr>
-                    <th scope="col">Ticket No.</th>
-                    <th scope="col">Ticket Date</th>
+                    <th scope="col">Ticket Number</th>
                     <th scope="col">Summary</th>
-                    <th scope="col">Category</th>
-                    <th scope="col">Requested Priority</th>
                     <th scope="col">Current Status</th>
+                    <th scope="col">IT Priority</th>
+                    <th scope="col">Ticket Owner</th>
                     <th scope="col">Last Updated</th>
                   </tr>
                 </thead>
@@ -526,19 +655,23 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
                           {ticket.ticketNumber}
                         </Link>
                       </td>
-                      <td>{formatDate(ticket.ticketDate)}</td>
                       <td className="summary-cell">{ticket.summary}</td>
-                      <td>{ticket.category.name}</td>
-                      <td>
-                        <StatusBadge
-                          kind="priority"
-                          value={ticket.requestedPriority}
-                        />
-                      </td>
                       <td>
                         <StatusBadge
                           kind="status"
                           value={ticket.currentStatus}
+                        />
+                      </td>
+                      <td>
+                        <StatusBadge
+                          kind="priority"
+                          value={ticket.itPriority}
+                        />
+                      </td>
+                      <td>
+                        <StatusBadge
+                          kind="owner"
+                          value={ticket.owner?.displayName ?? "Unassigned"}
                         />
                       </td>
                       <td>{formatDate(ticket.updatedAt)}</td>
@@ -547,7 +680,7 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
                 </tbody>
               </table>
             </div>
-            <div className="ticket-cards">
+            <div className="ticket-cards queue-cards">
               {data.items.map((ticket) => (
                 <article className="ticket-card" key={ticket.id}>
                   <div className="ticket-card-heading">
@@ -563,23 +696,20 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
                   <h3>{ticket.summary}</h3>
                   <dl>
                     <div>
-                      <dt>Ticket Date</dt>
-                      <dd>{formatDate(ticket.ticketDate)}</dd>
-                    </div>
-                    <div>
-                      <dt>Category</dt>
-                      <dd>{ticket.category.name}</dd>
-                    </div>
-                    <div>
-                      <dt>Related System</dt>
-                      <dd>{ticket.relatedSystem.name}</dd>
-                    </div>
-                    <div>
-                      <dt>Requested Priority</dt>
+                      <dt>IT Priority</dt>
                       <dd>
                         <StatusBadge
                           kind="priority"
-                          value={ticket.requestedPriority}
+                          value={ticket.itPriority}
+                        />
+                      </dd>
+                    </div>
+                    <div>
+                      <dt>Ticket Owner</dt>
+                      <dd>
+                        <StatusBadge
+                          kind="owner"
+                          value={ticket.owner?.displayName ?? "Unassigned"}
                         />
                       </dd>
                     </div>
@@ -598,7 +728,7 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
                 </article>
               ))}
             </div>
-            <nav className="pagination" aria-label="Ticket pages">
+            <nav className="pagination" aria-label="Ticket Queue pages">
               <button
                 className="button button-secondary"
                 disabled={page <= 1}
@@ -659,8 +789,36 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
   );
 };
 
-export const MyTicketsPage = () => {
-  const { user } = useAuth();
+export const StaffTicketQueuePage = () => {
+  const { refetchAuth, user } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [accessError, setAccessError] = useState<ApiRequestError | null>(null);
+  const handledAccessError = useRef<ApiRequestError | null>(null);
+
+  useEffect(() => {
+    if (accessError === null || handledAccessError.current === accessError) {
+      return;
+    }
+
+    handledAccessError.current = accessError;
+    void queryClient.cancelQueries({ queryKey: ["staff-tickets"] });
+    queryClient.removeQueries({ queryKey: ["staff-tickets"] });
+    void queryClient.cancelQueries({ queryKey: ["staff-owners"] });
+    queryClient.removeQueries({ queryKey: ["staff-owners"] });
+    void refetchAuth();
+    if (accessError.code === "PASSWORD_CHANGE_REQUIRED") {
+      void navigate({ replace: true, to: "/change-password" });
+    }
+  }, [accessError, navigate, queryClient, refetchAuth]);
+
+  if (accessError !== null) {
+    return accessError.code === "PASSWORD_CHANGE_REQUIRED" ? (
+      <AuthLoading />
+    ) : (
+      <AccessDenied />
+    );
+  }
 
   if (user === null) {
     return <AuthRequired />;
@@ -670,9 +828,15 @@ export const MyTicketsPage = () => {
     return <AuthRequired />;
   }
 
-  if (user.role !== "Requester") {
-    return <RequesterAccessDenied />;
+  if (user.role !== "IT Staff" && user.role !== "Administrator") {
+    return <AccessDenied />;
   }
 
-  return <MyTicketsContent key={user.id} user={user} />;
+  return (
+    <StaffTicketQueueContent
+      key={user.id}
+      onAccessError={setAccessError}
+      user={user}
+    />
+  );
 };

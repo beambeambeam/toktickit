@@ -9,7 +9,7 @@ import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import type { SubmitEvent } from "react";
 
-import { ticketQueryOptions } from "@/api/lab2-options";
+import { ticketQueryOptions } from "@/api/query-options";
 import {
   downloadTicketAttachment,
   removeTicketAttachment,
@@ -47,11 +47,12 @@ export const RequesterTicketDetailPage = ({
 }) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
+  const principalId = user?.id ?? 0;
   const numericTicketId = Number(ticketId);
   const hasValidTicketId =
     Number.isSafeInteger(numericTicketId) && numericTicketId > 0;
   const ticketQuery = useQuery({
-    ...ticketQueryOptions(numericTicketId),
+    ...ticketQueryOptions(numericTicketId, principalId),
     enabled:
       user?.role === "Requester" &&
       !user.mustChangePassword &&
@@ -87,7 +88,7 @@ export const RequesterTicketDetailPage = ({
       setOperationError(null);
       setSuccessMessage("Attachment(s) added successfully.");
       void queryClient.invalidateQueries({
-        queryKey: ["ticket", numericTicketId],
+        queryKey: ["ticket", principalId, numericTicketId],
       });
     },
   });
@@ -126,7 +127,7 @@ export const RequesterTicketDetailPage = ({
         "Attachment removed. Its metadata remains in the Ticket history."
       );
       void queryClient.invalidateQueries({
-        queryKey: ["ticket", numericTicketId],
+        queryKey: ["ticket", principalId, numericTicketId],
       });
     },
   });
@@ -274,6 +275,11 @@ export const RequesterTicketDetailPage = ({
               <ReadOnlyField
                 label="Requested Priority"
                 value={ticket.requestedPriority}
+              />
+              <ReadOnlyField label="IT Priority" value={ticket.itPriority} />
+              <ReadOnlyField
+                label="Ticket Owner"
+                value={ticket.owner?.displayName ?? "Unassigned"}
               />
               <ReadOnlyField
                 label="Current Status"

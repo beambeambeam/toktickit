@@ -146,6 +146,59 @@ paths:
                 $ref: "#/components/schemas/RelatedSystemListResponse"
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
+  /api/staff/tickets:
+    get:
+      operationId: getApiStaffTickets
+      summary: List the shared Ticket Queue
+      description: Returns operational Ticket summaries for IT Staff and read-only Administrators.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/CategoryId"
+        - $ref: "#/components/parameters/RelatedSystemId"
+        - $ref: "#/components/parameters/RequestedPriority"
+        - $ref: "#/components/parameters/ItPriority"
+        - $ref: "#/components/parameters/CurrentStatus"
+        - $ref: "#/components/parameters/Owner"
+        - $ref: "#/components/parameters/QueueSortBy"
+        - $ref: "#/components/parameters/SortDirection"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/QueuePageSize"
+      responses:
+        "200":
+          description: The shared operational Ticket page.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffTicketListResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/staff/owners:
+    get:
+      operationId: getApiStaffOwners
+      summary: List eligible Ticket Owners
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Active IT Staff and Administrators eligible for assignment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerListResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
   /api/users:
     get:
       operationId: getApiUsers
@@ -289,14 +342,15 @@ paths:
   /api/tickets/{ticketId}:
     get:
       operationId: getApiTicket
-      summary: Get an owned Ticket
+      summary: Get a Ticket
+      description: Requesters can read their own Tickets; IT Staff and Administrators can read every Ticket.
       security:
         - sessionCookie: []
       parameters:
         - $ref: "#/components/parameters/TicketId"
       responses:
         "200":
-          description: The owned Ticket Detail.
+          description: The Ticket Detail for the permitted reader.
           content:
             application/json:
               schema:
@@ -310,14 +364,15 @@ paths:
   /api/tickets/{ticketId}/attachments:
     get:
       operationId: getApiTicketAttachments
-      summary: List owned Ticket Attachment metadata
+      summary: List Ticket Attachment metadata
+      description: Requesters can read their own Ticket Attachments; IT Staff and Administrators can read every Ticket's metadata.
       security:
         - sessionCookie: []
       parameters:
         - $ref: "#/components/parameters/TicketId"
       responses:
         "200":
-          description: Attachment metadata for the owned Ticket.
+          description: Attachment metadata for the permitted Ticket.
           content:
             application/json:
               schema:
@@ -364,7 +419,8 @@ paths:
   /api/tickets/{ticketId}/attachments/{attachmentId}/content:
     get:
       operationId: getApiTicketAttachmentContent
-      summary: Download an active owned Attachment
+      summary: Download an active Attachment
+      description: Requesters can download active Attachments from their own Tickets; IT Staff and Administrators can download active Attachments from every Ticket.
       security:
         - sessionCookie: []
       parameters:
@@ -458,6 +514,7 @@ components:
       required: false
       schema:
         type: string
+        maxLength: 200
     UserSearch:
       name: search
       in: query
@@ -498,6 +555,23 @@ components:
       required: false
       schema:
         $ref: "#/components/schemas/CurrentStatus"
+    ItPriority:
+      name: itPriority
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/RequestedPriority"
+    Owner:
+      name: owner
+      in: query
+      required: false
+      description: Eligible owner ID, me, or unassigned.
+      schema:
+        oneOf:
+          - type: integer
+            minimum: 1
+          - type: string
+            enum: [me, unassigned]
     SortBy:
       name: sortBy
       in: query
@@ -522,6 +596,14 @@ components:
         type: string
         enum: [asc, desc]
         default: desc
+    QueueSortBy:
+      name: sortBy
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [ticketDate, updatedAt, itPriority, ticketNumber]
+        default: updatedAt
     Page:
       name: page
       in: query
@@ -538,6 +620,14 @@ components:
         type: integer
         enum: [10, 25, 50]
         default: 10
+    QueuePageSize:
+      name: pageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        enum: [10, 20, 50]
+        default: 20
   securitySchemes:
     sessionCookie:
       type: apiKey
@@ -731,7 +821,17 @@ components:
       enum: [Low, Medium, High, Urgent]
     CurrentStatus:
       type: string
-      enum: [New]
+      enum:
+        [
+          New,
+          Open,
+          In Progress,
+          Waiting for Requester,
+          Resolved,
+          Closed,
+          Reopened,
+          Cancelled,
+        ]
     AttachmentMetadata:
       type: object
       additionalProperties: false
@@ -817,7 +917,21 @@ components:
         - $ref: "#/components/schemas/TicketSummary"
         - type: object
           additionalProperties: false
-          required: [requester, description, attachments]
+          required:
+            [
+              requester,
+              description,
+              attachments,
+              itPriority,
+              owner,
+              version,
+              resolutionIndication,
+              statusChangedAt,
+              resolvedAt,
+              reopenedAt,
+              closedAt,
+              cancelledAt,
+            ]
           properties:
             requester:
               $ref: "#/components/schemas/TicketRequester"
@@ -827,6 +941,34 @@ components:
               type: array
               items:
                 $ref: "#/components/schemas/AttachmentMetadata"
+            itPriority:
+              $ref: "#/components/schemas/RequestedPriority"
+            owner:
+              oneOf:
+                - $ref: "#/components/schemas/Owner"
+                - type: "null"
+            version:
+              type: integer
+              minimum: 1
+            resolutionIndication:
+              oneOf:
+                - $ref: "#/components/schemas/ResolutionIndication"
+                - type: "null"
+            statusChangedAt:
+              type: string
+              format: date-time
+            resolvedAt:
+              type: [string, "null"]
+              format: date-time
+            reopenedAt:
+              type: [string, "null"]
+              format: date-time
+            closedAt:
+              type: [string, "null"]
+              format: date-time
+            cancelledAt:
+              type: [string, "null"]
+              format: date-time
     TicketListResponse:
       type: object
       additionalProperties: false
@@ -845,6 +987,81 @@ components:
           type: integer
         totalPages:
           type: integer
+    OperationalTicketSummary:
+      allOf:
+        - $ref: "#/components/schemas/TicketSummary"
+        - type: object
+          required: [itPriority, owner, version]
+          properties:
+            itPriority:
+              $ref: "#/components/schemas/RequestedPriority"
+            owner:
+              oneOf:
+                - $ref: "#/components/schemas/Owner"
+                - type: "null"
+            version:
+              type: integer
+              minimum: 1
+      unevaluatedProperties: false
+    StaffTicketListResponse:
+      type: object
+      additionalProperties: false
+      required: [items, page, pageSize, totalItems, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperationalTicketSummary"
+        page:
+          type: integer
+        pageSize:
+          type: integer
+          enum: [10, 20, 50]
+        totalItems:
+          type: integer
+        totalPages:
+          type: integer
+    Owner:
+      type: object
+      additionalProperties: false
+      required: [id, displayName, role, isActive, isEligible]
+      properties:
+        id:
+          type: integer
+        displayName:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+        isActive:
+          type: boolean
+        isEligible:
+          type: boolean
+    OwnerListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Owner"
+    ResolutionIndication:
+      type: object
+      additionalProperties: false
+      required: [author, createdAt]
+      properties:
+        author:
+          type: object
+          additionalProperties: false
+          required: [id, displayName]
+          properties:
+            id:
+              type: integer
+            displayName:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
     CreateTicketRequest:
       type: object
       additionalProperties: false

@@ -88,7 +88,7 @@ export const RequesterAccessDenied = () => (
 
 export const homeRouteForRole = (
   role: AuthUser["role"]
-): "/" | "/tickets" | "/users" => {
+): "/" | "/tickets" | "/staff/tickets" | "/users" => {
   if (role === "Requester") {
     return "/tickets";
   }
@@ -97,7 +97,7 @@ export const homeRouteForRole = (
     return "/users";
   }
 
-  return "/";
+  return "/staff/tickets";
 };
 
 export const AppShell = ({
@@ -139,6 +139,9 @@ export const AppShell = ({
     return <AccessDenied />;
   }
 
+  const isQueueReader =
+    user.role === "IT Staff" || user.role === "Administrator";
+
   const handleLogout = async () => {
     setLogoutError(null);
     setIsLoggingOut(true);
@@ -170,13 +173,17 @@ export const AppShell = ({
             <span>TokTickIT</span>
           </Link>
           <nav aria-label="Primary navigation" className="desktop-nav">
-            {user.role === "IT Staff" ? (
+            {isQueueReader ? (
               <Link
+                activeOptions={{ exact: false }}
                 activeProps={{ className: "nav-link active" }}
                 className="nav-link"
-                to="/"
+                to="/staff/tickets"
               >
-                My Account
+                <span aria-hidden="true">
+                  <Icon icon={Ticket01Icon} />
+                </span>{" "}
+                Ticket Queue
               </Link>
             ) : null}
             {user.role === "Requester" ? (
@@ -250,7 +257,9 @@ export const AppShell = ({
           <details className="mobile-nav">
             <summary aria-label="Open navigation">Menu</summary>
             <nav aria-label="Mobile navigation">
-              {user.role === "IT Staff" ? <Link to="/">My Account</Link> : null}
+              {isQueueReader ? (
+                <Link to="/staff/tickets">Ticket Queue</Link>
+              ) : null}
               {user.role === "Requester" ? (
                 <>
                   <Link to="/tickets">My Tickets</Link>

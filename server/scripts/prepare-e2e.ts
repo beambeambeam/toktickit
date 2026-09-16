@@ -52,6 +52,12 @@ const users = [
     mustChangePassword: false,
     role: "Administrator" as const,
   },
+  {
+    displayName: "E2E IT Staff",
+    email: "e2e-staff@example.test",
+    mustChangePassword: false,
+    role: "ITStaff" as const,
+  },
 ] as const;
 
 try {
