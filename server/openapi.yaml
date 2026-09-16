@@ -991,7 +991,6 @@ components:
       allOf:
         - $ref: "#/components/schemas/TicketSummary"
         - type: object
-          additionalProperties: false
           required: [itPriority, owner, version]
           properties:
             itPriority:
@@ -1003,6 +1002,7 @@ components:
             version:
               type: integer
               minimum: 1
+      unevaluatedProperties: false
     StaffTicketListResponse:
       type: object
       additionalProperties: false
