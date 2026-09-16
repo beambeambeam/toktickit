@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { claimApiTicket, createApiTicket, createApiTicketAttachments, createApiUser, getApiAuthMe, getApiCategories, getApiHealth, getApiRelatedSystems, getApiStaffOwners, getApiStaffTickets, getApiTicket, getApiTicketAttachmentContent, getApiTicketAttachments, getApiTickets, getApiUsers, indicateApiTicketResolution, type Options, postApiAuthChangePassword, postApiAuthLogin, postApiAuthLogout, removeApiTicketAttachment, updateApiTicketItPriority, updateApiTicketOwner, updateApiTicketStatus } from '../sdk.gen';
-import type { ClaimApiTicketData, ClaimApiTicketError, ClaimApiTicketResponse, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsError, CreateApiTicketAttachmentsResponse, CreateApiTicketData, CreateApiTicketError, CreateApiTicketResponse, CreateApiUserData, CreateApiUserError, CreateApiUserResponse, GetApiAuthMeData, GetApiAuthMeError, GetApiAuthMeResponse, GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse, GetApiRelatedSystemsData, GetApiRelatedSystemsError, GetApiRelatedSystemsResponse, GetApiStaffOwnersData, GetApiStaffOwnersError, GetApiStaffOwnersResponse, GetApiStaffTicketsData, GetApiStaffTicketsError, GetApiStaffTicketsResponse, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentsData, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, GetApiTicketData, GetApiTicketError, GetApiTicketResponse, GetApiTicketsData, GetApiTicketsError, GetApiTicketsResponse, GetApiUsersData, GetApiUsersError, GetApiUsersResponse, IndicateApiTicketResolutionData, IndicateApiTicketResolutionError, IndicateApiTicketResolutionResponse, PostApiAuthChangePasswordData, PostApiAuthChangePasswordError, PostApiAuthChangePasswordResponse, PostApiAuthLoginData, PostApiAuthLoginError, PostApiAuthLoginResponse, PostApiAuthLogoutData, PostApiAuthLogoutError, PostApiAuthLogoutResponse, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentError, RemoveApiTicketAttachmentResponse, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityError, UpdateApiTicketItPriorityResponse, UpdateApiTicketOwnerData, UpdateApiTicketOwnerError, UpdateApiTicketOwnerResponse, UpdateApiTicketStatusData, UpdateApiTicketStatusError, UpdateApiTicketStatusResponse } from '../types.gen';
+import { claimApiTicket, createApiTicket, createApiTicketAttachments, createApiTicketComment, createApiUser, getApiAuthMe, getApiCategories, getApiHealth, getApiRelatedSystems, getApiStaffOwners, getApiStaffTickets, getApiTicket, getApiTicketAttachmentContent, getApiTicketAttachments, getApiTicketComments, getApiTickets, getApiUsers, indicateApiTicketResolution, type Options, postApiAuthChangePassword, postApiAuthLogin, postApiAuthLogout, removeApiTicketAttachment, updateApiTicketItPriority, updateApiTicketOwner, updateApiTicketStatus } from '../sdk.gen';
+import type { ClaimApiTicketData, ClaimApiTicketError, ClaimApiTicketResponse, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsError, CreateApiTicketAttachmentsResponse, CreateApiTicketCommentData, CreateApiTicketCommentError, CreateApiTicketCommentResponse, CreateApiTicketData, CreateApiTicketError, CreateApiTicketResponse, CreateApiUserData, CreateApiUserError, CreateApiUserResponse, GetApiAuthMeData, GetApiAuthMeError, GetApiAuthMeResponse, GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse, GetApiRelatedSystemsData, GetApiRelatedSystemsError, GetApiRelatedSystemsResponse, GetApiStaffOwnersData, GetApiStaffOwnersError, GetApiStaffOwnersResponse, GetApiStaffTicketsData, GetApiStaffTicketsError, GetApiStaffTicketsResponse, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentsData, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, GetApiTicketCommentsData, GetApiTicketCommentsError, GetApiTicketCommentsResponse, GetApiTicketData, GetApiTicketError, GetApiTicketResponse, GetApiTicketsData, GetApiTicketsError, GetApiTicketsResponse, GetApiUsersData, GetApiUsersError, GetApiUsersResponse, IndicateApiTicketResolutionData, IndicateApiTicketResolutionError, IndicateApiTicketResolutionResponse, PostApiAuthChangePasswordData, PostApiAuthChangePasswordError, PostApiAuthChangePasswordResponse, PostApiAuthLoginData, PostApiAuthLoginError, PostApiAuthLoginResponse, PostApiAuthLogoutData, PostApiAuthLogoutError, PostApiAuthLogoutResponse, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentError, RemoveApiTicketAttachmentResponse, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityError, UpdateApiTicketItPriorityResponse, UpdateApiTicketOwnerData, UpdateApiTicketOwnerError, UpdateApiTicketOwnerResponse, UpdateApiTicketStatusData, UpdateApiTicketStatusError, UpdateApiTicketStatusResponse } from '../types.gen';
 
 /**
  * Sign in
@@ -493,6 +493,45 @@ export const getApiTicketOptions = (options: Options<GetApiTicketData>) => query
     },
     queryKey: getApiTicketQueryKey(options)
 });
+
+export const getApiTicketCommentsQueryKey = (options: Options<GetApiTicketCommentsData>) => createQueryKey('getApiTicketComments', options);
+
+/**
+ * List public Ticket comments
+ *
+ * Requesters can read their own public comments; IT Staff and Administrators can read every Ticket's public comments. The response contains at most the 500 latest comments in chronological order.
+ */
+export const getApiTicketCommentsOptions = (options: Options<GetApiTicketCommentsData>) => queryOptions<GetApiTicketCommentsResponse, GetApiTicketCommentsError, GetApiTicketCommentsResponse, ReturnType<typeof getApiTicketCommentsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiTicketComments({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiTicketCommentsQueryKey(options)
+});
+
+/**
+ * Post a public Ticket comment
+ *
+ * A Requester may post to an owned Ticket and IT Staff may post to any Ticket. Administrators have read-only access.
+ */
+export const createApiTicketCommentMutation = (options?: Partial<Options<CreateApiTicketCommentData>>): UseMutationOptions<CreateApiTicketCommentResponse, CreateApiTicketCommentError, Options<CreateApiTicketCommentData>> => {
+    const mutationOptions: UseMutationOptions<CreateApiTicketCommentResponse, CreateApiTicketCommentError, Options<CreateApiTicketCommentData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createApiTicketComment({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 export const getApiTicketAttachmentsQueryKey = (options: Options<GetApiTicketAttachmentsData>) => createQueryKey('getApiTicketAttachments', options);
 

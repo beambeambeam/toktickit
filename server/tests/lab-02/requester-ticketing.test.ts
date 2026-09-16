@@ -188,6 +188,7 @@ const createListTicketRecord = async (input: {
     data: {
       ...input,
       currentStatus: "New",
+      itPriority: input.requestedPriority,
     },
   });
 

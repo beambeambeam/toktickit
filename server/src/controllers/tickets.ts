@@ -21,10 +21,12 @@ import {
   addAttachmentsForRequester,
   claimTicketForStaff,
   createTicketForRequester,
+  createPublicCommentForUser,
   downloadAttachmentForReader,
   getAttachmentsForReader,
   getTicketForReader,
   indicateTicketResolutionForRequester,
+  listPublicCommentsForReader,
   listStaffOwners,
   listStaffTickets,
   listTicketsForRequester,
@@ -214,6 +216,32 @@ export const getAttachments: RequestHandler = async (request, response) => {
   );
 
   response.json({ attachments });
+};
+
+export const getPublicComments: RequestHandler = async (request, response) => {
+  const user = getAuthenticatedUser(response);
+  const comments = await listPublicCommentsForReader(
+    user.id,
+    user.role,
+    parseId(request.params.ticketId, "ticketId")
+  );
+
+  response.json({ comments });
+};
+
+export const createPublicComment: RequestHandler = async (
+  request,
+  response
+) => {
+  const user = getAuthenticatedUser(response);
+  const comment = await createPublicCommentForUser(
+    user.id,
+    user.role,
+    parseId(request.params.ticketId, "ticketId"),
+    getBodyObject(request.body)
+  );
+
+  response.status(201).json({ comment });
 };
 
 export const addAttachments: RequestHandler = async (request, response) => {

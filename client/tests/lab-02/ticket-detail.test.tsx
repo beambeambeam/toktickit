@@ -20,9 +20,11 @@ import { RequesterTicketDetailPage } from "@/pages/requester-ticket-detail-page"
 const {
   authUser,
   downloadTicketAttachmentMock,
+  getTicketCommentsMock,
   getTicketMock,
   indicateTicketResolutionMock,
   logoutMock,
+  postTicketCommentMock,
   removeTicketAttachmentMock,
   uploadTicketAttachmentsMock,
 } = vi.hoisted(() => ({
@@ -37,9 +39,11 @@ const {
     updatedAt: "2026-09-01T00:00:00.000Z",
   },
   downloadTicketAttachmentMock: vi.fn(),
+  getTicketCommentsMock: vi.fn(),
   getTicketMock: vi.fn(),
   indicateTicketResolutionMock: vi.fn(),
   logoutMock: vi.fn(),
+  postTicketCommentMock: vi.fn(),
   removeTicketAttachmentMock: vi.fn(),
   uploadTicketAttachmentsMock: vi.fn(),
 }));
@@ -56,6 +60,11 @@ vi.mock("@/api/requester", async () => {
     uploadTicketAttachments: uploadTicketAttachmentsMock,
   };
 });
+
+vi.mock("@/api/ticket-comments", () => ({
+  getTicketComments: getTicketCommentsMock,
+  postTicketComment: postTicketCommentMock,
+}));
 
 vi.mock("@tanstack/react-router", async () => {
   const actual = await vi.importActual<typeof TanStackRouter>(
@@ -165,6 +174,8 @@ describe("Requester Ticket Detail page", () => {
     uploadTicketAttachmentsMock.mockReset().mockResolvedValue([]);
     removeTicketAttachmentMock.mockReset();
     downloadTicketAttachmentMock.mockReset();
+    getTicketCommentsMock.mockReset().mockResolvedValue([]);
+    postTicketCommentMock.mockReset();
     indicateTicketResolutionMock.mockReset();
   });
 

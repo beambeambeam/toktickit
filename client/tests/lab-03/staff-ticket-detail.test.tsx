@@ -23,7 +23,9 @@ const {
   claimStaffTicketMock,
   downloadTicketAttachmentMock,
   getStaffOwnersMock,
+  getTicketCommentsMock,
   getTicketMock,
+  postTicketCommentMock,
   refetchAuthMock,
   updateStaffTicketItPriorityMock,
   updateStaffTicketOwnerMock,
@@ -33,7 +35,9 @@ const {
   claimStaffTicketMock: vi.fn(),
   downloadTicketAttachmentMock: vi.fn(),
   getStaffOwnersMock: vi.fn<() => Promise<Owner[]>>(),
+  getTicketCommentsMock: vi.fn(),
   getTicketMock: vi.fn(),
+  postTicketCommentMock: vi.fn(),
   refetchAuthMock: vi.fn(),
   updateStaffTicketItPriorityMock: vi.fn(),
   updateStaffTicketOwnerMock: vi.fn(),
@@ -53,6 +57,14 @@ vi.mock("@tanstack/react-router", async () => {
 });
 
 vi.mock("@/api/query-options", () => ({
+  ticketCommentsQueryOptions: (ticketId: number, principalId: number) => ({
+    queryFn: async () => {
+      const result: unknown = await getTicketCommentsMock(ticketId);
+      return result;
+    },
+    queryKey: ["ticket-comments", principalId, ticketId],
+    retry: false,
+  }),
   ticketQueryOptions: (ticketId: number, principalId: number) => ({
     queryFn: async ({ signal }: { signal: AbortSignal }) => {
       const result: unknown = await getTicketMock(ticketId, signal);
@@ -65,6 +77,11 @@ vi.mock("@/api/query-options", () => ({
 
 vi.mock("@/api/requester", () => ({
   downloadTicketAttachment: downloadTicketAttachmentMock,
+}));
+
+vi.mock("@/api/ticket-comments", () => ({
+  getTicketComments: getTicketCommentsMock,
+  postTicketComment: postTicketCommentMock,
 }));
 
 vi.mock("@/api/staff", () => ({
@@ -215,6 +232,8 @@ describe("Staff Ticket Detail page", () => {
     updateStaffTicketOwnerMock.mockReset();
     updateStaffTicketItPriorityMock.mockReset();
     downloadTicketAttachmentMock.mockReset();
+    getTicketCommentsMock.mockReset().mockResolvedValue([]);
+    postTicketCommentMock.mockReset();
     updateStaffTicketStatusMock.mockReset();
     refetchAuthMock.mockReset().mockResolvedValue(null);
   });

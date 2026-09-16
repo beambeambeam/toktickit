@@ -534,6 +534,66 @@ paths:
           $ref: "#/components/responses/ApiErrorResponse"
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/comments:
+    get:
+      operationId: getApiTicketComments
+      summary: List public Ticket comments
+      description: Requesters can read their own public comments; IT Staff and Administrators can read every Ticket's public comments. The response contains at most the 500 latest comments in chronological order.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+      responses:
+        "200":
+          description: The 500 latest public Ticket comments in chronological order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicCommentListResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+    post:
+      operationId: createApiTicketComment
+      summary: Post a public Ticket comment
+      description: A Requester may post to an owned Ticket and IT Staff may post to any Ticket. Administrators have read-only access.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublicCommentRequest"
+      responses:
+        "201":
+          description: The created public Ticket comment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicCommentResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
   /api/tickets/{ticketId}/attachments:
     get:
       operationId: getApiTicketAttachments
@@ -1285,6 +1345,55 @@ components:
         createdAt:
           type: string
           format: date-time
+    Entry:
+      type: object
+      additionalProperties: false
+      required: [id, content, author, createdAt]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        content:
+          type: string
+        author:
+          type: object
+          additionalProperties: false
+          required: [id, displayName]
+          properties:
+            id:
+              type: integer
+              minimum: 1
+            displayName:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+    PublicCommentRequest:
+      type: object
+      additionalProperties: false
+      required: [content]
+      properties:
+        content:
+          type: string
+          description: Leading and trailing whitespace is trimmed before storage. Length limits apply to the submitted value, which must contain at least one non-whitespace character.
+          minLength: 1
+          maxLength: 5000
+    PublicCommentResponse:
+      type: object
+      additionalProperties: false
+      required: [comment]
+      properties:
+        comment:
+          $ref: "#/components/schemas/Entry"
+    PublicCommentListResponse:
+      type: object
+      additionalProperties: false
+      required: [comments]
+      properties:
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Entry"
     CreateTicketRequest:
       type: object
       additionalProperties: false

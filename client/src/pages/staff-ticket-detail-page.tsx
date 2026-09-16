@@ -27,6 +27,7 @@ import {
 } from "@/components/app-shell";
 import { FormField, ReadOnlyField } from "@/components/form-field";
 import { Icon } from "@/components/icon";
+import { PublicCommentsSection } from "@/components/public-comments-section";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
 import { cn } from "@/lib/class-names";
@@ -773,6 +774,13 @@ const StaffTicketDetailContent = ({
               </div>
             </section>
           ) : null}
+
+          <PublicCommentsSection
+            canPost={user.role === "IT Staff"}
+            currentStatus={ticket.currentStatus}
+            principalId={user.id}
+            ticketId={numericTicketId}
+          />
 
           <section
             aria-labelledby="staff-attachments-heading"
