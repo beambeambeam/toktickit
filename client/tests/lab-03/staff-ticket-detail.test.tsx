@@ -8,6 +8,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -26,6 +27,7 @@ const {
   refetchAuthMock,
   updateStaffTicketItPriorityMock,
   updateStaffTicketOwnerMock,
+  updateStaffTicketStatusMock,
 } = vi.hoisted(() => ({
   authState: { user: null as AuthUser | null },
   claimStaffTicketMock: vi.fn(),
@@ -35,6 +37,7 @@ const {
   refetchAuthMock: vi.fn(),
   updateStaffTicketItPriorityMock: vi.fn(),
   updateStaffTicketOwnerMock: vi.fn(),
+  updateStaffTicketStatusMock: vi.fn(),
 }));
 
 vi.mock("@tanstack/react-router", async () => {
@@ -68,6 +71,7 @@ vi.mock("@/api/staff", () => ({
   claimStaffTicket: claimStaffTicketMock,
   updateStaffTicketItPriority: updateStaffTicketItPriorityMock,
   updateStaffTicketOwner: updateStaffTicketOwnerMock,
+  updateStaffTicketStatus: updateStaffTicketStatusMock,
 }));
 
 vi.mock("@/api/staff-query-options", () => ({
@@ -211,6 +215,7 @@ describe("Staff Ticket Detail page", () => {
     updateStaffTicketOwnerMock.mockReset();
     updateStaffTicketItPriorityMock.mockReset();
     downloadTicketAttachmentMock.mockReset();
+    updateStaffTicketStatusMock.mockReset();
     refetchAuthMock.mockReset().mockResolvedValue(null);
   });
 
@@ -273,6 +278,108 @@ describe("Staff Ticket Detail page", () => {
 
     await screen.findByRole("heading", { name: "Access denied" });
     expect(refetchAuthMock).toHaveBeenCalled();
+  });
+
+  it("shows allowed status transitions and confirms terminal progress", async () => {
+    authState.user = staffUser;
+    updateStaffTicketStatusMock.mockResolvedValue({
+      ...ticket,
+      currentStatus: "Resolved",
+      resolvedAt: "2026-09-02T12:00:00.000Z",
+      statusChangedAt: "2026-09-02T12:00:00.000Z",
+      updatedAt: "2026-09-02T12:00:00.000Z",
+      version: 3,
+    });
+    renderPage();
+
+    await screen.findByText("TKT-20260902-DETAIL01");
+    const statusSelect = screen.getByLabelText("Next status");
+    expect(statusSelect).toHaveProperty("value", "");
+    fireEvent.change(statusSelect, { target: { value: "Resolved" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply Status" }));
+
+    const dialog = await screen.findByRole("alertdialog");
+    expect(
+      within(dialog).getByText(/No Actions Taken entry is required/u)
+    ).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Confirm Resolved" })
+    );
+
+    await waitFor(() => {
+      expect(updateStaffTicketStatusMock).toHaveBeenCalledWith(11, {
+        confirmed: true,
+        currentStatus: "Resolved",
+        version: 2,
+      });
+    });
+    expect(
+      await screen.findByText("Ticket status changed to Resolved.")
+    ).toBeTruthy();
+  });
+
+  it("uses the Ticket version captured when confirmation opens", async () => {
+    authState.user = staffUser;
+    updateStaffTicketStatusMock.mockResolvedValue({
+      ...ticket,
+      currentStatus: "Resolved",
+      version: 3,
+    });
+    const { queryClient } = renderPage();
+
+    await screen.findByText("TKT-20260902-DETAIL01");
+    fireEvent.change(screen.getByLabelText("Next status"), {
+      target: { value: "Resolved" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply Status" }));
+    const dialog = await screen.findByRole("alertdialog");
+
+    queryClient.setQueryData(["ticket", staffUser.id, 11], {
+      ...ticket,
+      currentStatus: "Waiting for Requester",
+      version: 3,
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Confirm Resolved" })
+    );
+
+    await waitFor(() => {
+      expect(updateStaffTicketStatusMock).toHaveBeenCalledWith(11, {
+        confirmed: true,
+        currentStatus: "Resolved",
+        version: 2,
+      });
+    });
+  });
+
+  it("traps confirmation focus, supports Escape, and restores the trigger", async () => {
+    authState.user = staffUser;
+    renderPage();
+
+    await screen.findByText("TKT-20260902-DETAIL01");
+    const trigger = screen.getByRole("button", { name: "Apply Status" });
+    fireEvent.change(screen.getByLabelText("Next status"), {
+      target: { value: "Resolved" },
+    });
+    fireEvent.click(trigger);
+
+    const dialog = await screen.findByRole("alertdialog");
+    const cancel = within(dialog).getByRole("button", { name: "Cancel" });
+    const confirm = within(dialog).getByRole("button", {
+      name: "Confirm Resolved",
+    });
+    expect(document.activeElement).toBe(cancel);
+
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(confirm);
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(document.activeElement).toBe(cancel);
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+    });
+    expect(document.activeElement).toBe(trigger);
   });
 
   it("downloads only active Attachment content", async () => {

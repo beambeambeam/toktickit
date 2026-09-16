@@ -1,9 +1,10 @@
 import { apiClient, getCsrfToken } from "@/api/client";
-import { invalidApiResponse, unwrap } from "@/api/errors";
+import { ApiRequestError, invalidApiResponse, unwrap } from "@/api/errors";
 import {
   claimApiTicket,
   getApiStaffOwners,
   getApiStaffTickets,
+  updateApiTicketStatus,
   updateApiTicketItPriority,
   updateApiTicketOwner,
 } from "@/generated/hey-api/sdk.gen";
@@ -18,6 +19,7 @@ import type {
   QueueSortBy,
   RequestedPriority,
   StaffTicketListResponse,
+  StatusMutationRequest,
   TicketDetail,
   TicketVersionRequest,
 } from "@/generated/hey-api/types.gen";
@@ -47,7 +49,11 @@ const csrfHeaders = (): { "X-CSRF-Token": string } => {
   const token = getCsrfToken();
 
   if (token === null) {
-    throw new Error("Sign in before changing Ticket operations.");
+    throw new ApiRequestError(
+      401,
+      "Sign in to continue.",
+      "AUTHENTICATION_REQUIRED"
+    );
   }
 
   return { "X-CSRF-Token": token };
@@ -150,6 +156,23 @@ export const getStaffOwners = async (
 
   return body.items;
 };
+
+export const updateStaffTicketStatus = async (
+  ticketId: number,
+  input: StatusMutationRequest,
+  signal?: AbortSignal
+): Promise<TicketDetail> =>
+  requireTicketDetail(
+    await unwrap(
+      updateApiTicketStatus({
+        body: input,
+        client: apiClient,
+        headers: csrfHeaders(),
+        path: { ticketId },
+        signal,
+      })
+    )
+  );
 
 export const claimStaffTicket = async (
   ticketId: number,

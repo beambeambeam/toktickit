@@ -16,7 +16,9 @@ import {
   getStaffTickets,
   getTicket,
   getTickets,
+  indicateTicketResolution,
   removeAttachment,
+  updateTicketStatus,
   updateTicketItPriority,
   updateTicketOwner,
 } from "../controllers/tickets.js";
@@ -86,6 +88,26 @@ apiRouter.get(
   requireRole("ITStaff", "Administrator"),
   touchSession,
   getStaffOwners
+);
+apiRouter.post(
+  "/tickets/:ticketId/status",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff"),
+  requireCsrf,
+  touchSession,
+  updateTicketStatus
+);
+apiRouter.put(
+  "/tickets/:ticketId/resolution-indication",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester"),
+  requireCsrf,
+  touchSession,
+  indicateTicketResolution
 );
 apiRouter.post(
   "/tickets/:ticketId/claim",

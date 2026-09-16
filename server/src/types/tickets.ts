@@ -68,6 +68,11 @@ export interface TicketVersionInput {
   version: number;
 }
 
+export interface StatusMutationInput extends TicketVersionInput {
+  confirmed?: boolean;
+  currentStatus: CurrentStatus;
+}
+
 export interface OwnerMutationInput extends TicketVersionInput {
   ownerId: number | null;
 }
