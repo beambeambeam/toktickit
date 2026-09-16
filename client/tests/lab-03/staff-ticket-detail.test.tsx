@@ -19,12 +19,16 @@ import { StaffTicketDetailPage } from "@/pages/staff-ticket-detail-page";
 const {
   authState,
   downloadTicketAttachmentMock,
+  getInternalNotesMock,
   getTicketMock,
+  postInternalNoteMock,
   refetchAuthMock,
 } = vi.hoisted(() => ({
   authState: { user: null as AuthUser | null },
   downloadTicketAttachmentMock: vi.fn(),
+  getInternalNotesMock: vi.fn(),
   getTicketMock: vi.fn(),
+  postInternalNoteMock: vi.fn(),
   refetchAuthMock: vi.fn(),
 }));
 
@@ -41,6 +45,14 @@ vi.mock("@tanstack/react-router", async () => {
 });
 
 vi.mock("@/api/query-options", () => ({
+  internalNotesQueryOptions: (ticketId: number, principalId: number) => ({
+    queryFn: async () => {
+      const result: unknown = await getInternalNotesMock(ticketId);
+      return result;
+    },
+    queryKey: ["internal-notes", principalId, ticketId],
+    retry: false,
+  }),
   ticketQueryOptions: (ticketId: number, principalId: number) => ({
     queryFn: async ({ signal }: { signal: AbortSignal }) => {
       const result: unknown = await getTicketMock(ticketId, signal);
@@ -53,6 +65,11 @@ vi.mock("@/api/query-options", () => ({
 
 vi.mock("@/api/requester", () => ({
   downloadTicketAttachment: downloadTicketAttachmentMock,
+}));
+
+vi.mock("@/api/internal-notes", () => ({
+  getTicketInternalNotes: getInternalNotesMock,
+  postTicketInternalNote: postInternalNoteMock,
 }));
 
 vi.mock("@/context/auth", () => ({
@@ -160,7 +177,9 @@ describe("Staff Ticket Detail page", () => {
   beforeEach(() => {
     authState.user = adminUser;
     getTicketMock.mockReset().mockResolvedValue(ticket);
+    getInternalNotesMock.mockReset().mockResolvedValue([]);
     downloadTicketAttachmentMock.mockReset();
+    postInternalNoteMock.mockReset();
     refetchAuthMock.mockReset().mockResolvedValue(null);
   });
 

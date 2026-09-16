@@ -3,6 +3,11 @@ import { Prisma } from "../generated/prisma/client.js";
 import { findActiveCategory } from "../repositories/categories.js";
 import { findActiveRelatedSystem } from "../repositories/related-systems.js";
 import {
+  createInternalNote,
+  findInternalNoteTicket,
+  findInternalNotesForReader,
+} from "../repositories/ticket-internal-notes.js";
+import {
   countActiveAttachments,
   createAttachments,
   createTicket,
@@ -32,11 +37,13 @@ import {
   toAttachmentMetadata,
   toOperationalSummary,
   toOwner,
+  toTicketEntry,
   toTicketDetail,
   toTicketSummary,
 } from "./ticket-presenters.js";
 import {
   MAX_ACTIVE_ATTACHMENTS,
+  validateInternalNoteContent,
   validateAttachmentFiles,
 } from "./ticket-rules.js";
 import type { AttachmentCandidate } from "./ticket-rules.js";
@@ -219,6 +226,20 @@ export const listTicketsForRequester = async (
 const readerCanAccessTicket = (role: UserRoleValue) =>
   role === "ITStaff" || role === "Administrator";
 
+const internalNoteForbiddenError = () =>
+  new ApiError(
+    403,
+    "FORBIDDEN",
+    "You do not have permission to access Internal Notes."
+  );
+
+const internalNoteTerminalError = () =>
+  new ApiError(
+    409,
+    "TICKET_TERMINAL",
+    "Closed or Cancelled Tickets cannot receive Internal Notes."
+  );
+
 export const listStaffTickets = async (
   currentUserId: number,
   query: StaffTicketListQuery
@@ -305,6 +326,64 @@ export const getAttachmentsForReader = async (
   }
 
   return ticket.attachments.map(toAttachmentMetadata);
+};
+
+export const listInternalNotesForReader = async (
+  role: UserRoleValue,
+  ticketId: number
+) => {
+  if (!readerCanAccessTicket(role)) {
+    throw internalNoteForbiddenError();
+  }
+
+  const notes = await findInternalNotesForReader(ticketId);
+
+  if (notes === null) {
+    throw notFound("Ticket");
+  }
+
+  return notes.map(toTicketEntry);
+};
+
+export const createInternalNoteForUser = async (
+  userId: number,
+  role: UserRoleValue,
+  ticketId: number,
+  body: Record<string, unknown>
+) => {
+  if (role !== "ITStaff") {
+    throw internalNoteForbiddenError();
+  }
+
+  const ticket = await findInternalNoteTicket(ticketId);
+
+  if (ticket === null) {
+    throw notFound("Ticket");
+  }
+
+  if (
+    ticket.currentStatus === "Closed" ||
+    ticket.currentStatus === "Cancelled"
+  ) {
+    throw internalNoteTerminalError();
+  }
+
+  const content = validateInternalNoteContent(body);
+  const result = await createInternalNote(userId, role, ticketId, content);
+
+  if (result.kind === "forbidden") {
+    throw internalNoteForbiddenError();
+  }
+
+  if (result.kind === "not-found") {
+    throw notFound("Ticket");
+  }
+
+  if (result.kind === "terminal") {
+    throw internalNoteTerminalError();
+  }
+
+  return toTicketEntry(result.note);
 };
 
 export const addAttachmentsForRequester = async (

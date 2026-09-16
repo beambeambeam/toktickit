@@ -8,9 +8,11 @@ import {
 } from "../controllers/reference-data.js";
 import {
   addAttachments,
+  createInternalNote,
   createTicket,
   downloadAttachment,
   getAttachments,
+  getInternalNotes,
   getStaffOwners,
   getStaffTickets,
   getTicket,
@@ -137,6 +139,24 @@ apiRouter.get(
   requireRole("Requester", "ITStaff", "Administrator"),
   touchSession,
   getAttachments
+);
+apiRouter.get(
+  "/tickets/:ticketId/internal-notes",
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff", "Administrator"),
+  touchSession,
+  getInternalNotes
+);
+apiRouter.post(
+  "/tickets/:ticketId/internal-notes",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff"),
+  requireCsrf,
+  touchSession,
+  createInternalNote
 );
 apiRouter.post(
   "/tickets/:ticketId/attachments",

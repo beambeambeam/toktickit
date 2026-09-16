@@ -17,11 +17,13 @@ import {
   createTicketForRequester,
   downloadAttachmentForReader,
   getAttachmentsForReader,
+  listInternalNotesForReader,
   getTicketForReader,
   listStaffOwners,
   listStaffTickets,
   listTicketsForRequester,
   removeAttachmentForRequester,
+  createInternalNoteForUser,
 } from "../services/tickets.js";
 
 const parseId = (value: unknown, field: string): number => {
@@ -148,6 +150,28 @@ export const getAttachments: RequestHandler = async (request, response) => {
   );
 
   response.json({ attachments });
+};
+
+export const getInternalNotes: RequestHandler = async (request, response) => {
+  const user = getAuthenticatedUser(response);
+  const internalNotes = await listInternalNotesForReader(
+    user.role,
+    parseId(request.params.ticketId, "ticketId")
+  );
+
+  response.json({ internalNotes });
+};
+
+export const createInternalNote: RequestHandler = async (request, response) => {
+  const user = getAuthenticatedUser(response);
+  const internalNote = await createInternalNoteForUser(
+    user.id,
+    user.role,
+    parseId(request.params.ticketId, "ticketId"),
+    getBodyObject(request.body)
+  );
+
+  response.status(201).json({ internalNote });
 };
 
 export const addAttachments: RequestHandler = async (request, response) => {

@@ -20,6 +20,7 @@ import {
 } from "@/components/app-shell";
 import { ReadOnlyField } from "@/components/form-field";
 import { Icon } from "@/components/icon";
+import { InternalNotesSection } from "@/components/internal-notes-section";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
 import { cn } from "@/lib/class-names";
@@ -264,6 +265,13 @@ const StaffTicketDetailContent = ({
               </div>
             </section>
           ) : null}
+
+          <InternalNotesSection
+            canPost={user.role === "IT Staff"}
+            currentStatus={ticket.currentStatus}
+            principalId={user.id}
+            ticketId={numericTicketId}
+          />
 
           <section
             aria-labelledby="staff-attachments-heading"
