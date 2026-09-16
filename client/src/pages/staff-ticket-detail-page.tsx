@@ -4,7 +4,7 @@ import {
   CancelCircleIcon,
   CheckmarkCircle02Icon,
 } from "@hugeicons/core-free-icons";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
@@ -13,16 +13,23 @@ import { ApiRequestError } from "@/api/errors";
 import { ticketQueryOptions } from "@/api/query-options";
 import { downloadTicketAttachment } from "@/api/requester";
 import {
+  claimStaffTicket,
+  updateStaffTicketItPriority,
+  updateStaffTicketOwner,
+} from "@/api/staff";
+import { staffOwnersQueryOptions } from "@/api/staff-query-options";
+import {
   AccessDenied,
   AppShell,
   AuthLoading,
   AuthRequired,
 } from "@/components/app-shell";
-import { ReadOnlyField } from "@/components/form-field";
+import { FormField, ReadOnlyField } from "@/components/form-field";
 import { Icon } from "@/components/icon";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
 import { cn } from "@/lib/class-names";
+import { isRequestedPriority } from "@/lib/ticket-priorities";
 
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat(undefined, {
@@ -56,6 +63,7 @@ const StaffTicketDetailContent = ({
   ticketId: string;
 }) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const numericTicketId = Number(ticketId);
   const hasValidTicketId =
     /^[1-9]\d*$/u.test(ticketId) &&
@@ -68,7 +76,88 @@ const StaffTicketDetailContent = ({
       !user.mustChangePassword &&
       hasValidTicketId,
   });
+  const ownersQuery = useQuery({
+    ...staffOwnersQueryOptions(),
+    enabled: user?.role === "IT Staff" && !user.mustChangePassword,
+  });
   const [operationError, setOperationError] = useState<string | null>(null);
+  const [operationSuccess, setOperationSuccess] = useState<string | null>(null);
+  const [selectedOwnerId, setSelectedOwnerId] = useState<string | null>(null);
+  const [selectedItPriority, setSelectedItPriority] = useState<string | null>(
+    null
+  );
+
+  const updateDetail = (
+    nextTicket: typeof ticketQuery.data,
+    message: string
+  ) => {
+    if (nextTicket === undefined) {
+      return;
+    }
+
+    queryClient.setQueryData(
+      ["ticket", user?.id ?? 0, numericTicketId],
+      nextTicket
+    );
+    setOperationError(null);
+    setOperationSuccess(message);
+    setSelectedOwnerId(nextTicket.owner?.id.toString() ?? "");
+    setSelectedItPriority(nextTicket.itPriority);
+  };
+
+  const reportMutationError = (error: unknown, fallback: string) => {
+    if (error instanceof ApiRequestError && error.status === 403) {
+      onAccessError(error);
+      return;
+    }
+
+    setOperationSuccess(null);
+    setOperationError(error instanceof Error ? error.message : fallback);
+  };
+
+  const claimMutation = useMutation({
+    mutationFn: async (version: number) =>
+      await claimStaffTicket(numericTicketId, { version }),
+    onError: (error: unknown) => {
+      reportMutationError(error, "Unable to claim the Ticket.");
+      if (error instanceof ApiRequestError && error.status === 409) {
+        void ticketQuery.refetch();
+      }
+    },
+    onSuccess: (nextTicket) => {
+      updateDetail(nextTicket, "Ticket claimed successfully.");
+    },
+  });
+
+  const ownerMutation = useMutation({
+    mutationFn: async (input: { ownerId: number | null; version: number }) =>
+      await updateStaffTicketOwner(numericTicketId, input),
+    onError: (error: unknown) => {
+      reportMutationError(error, "Unable to save the Ticket Owner.");
+      if (error instanceof ApiRequestError && error.status === 409) {
+        void ticketQuery.refetch();
+      }
+    },
+    onSuccess: (nextTicket) => {
+      updateDetail(nextTicket, "Ticket Owner saved successfully.");
+    },
+  });
+
+  const priorityMutation = useMutation({
+    mutationFn: async (input: {
+      itPriority: "Low" | "Medium" | "High" | "Urgent";
+      version: number;
+    }) => await updateStaffTicketItPriority(numericTicketId, input),
+    onError: (error: unknown) => {
+      reportMutationError(error, "Unable to save IT Priority.");
+      if (error instanceof ApiRequestError && error.status === 409) {
+        void ticketQuery.refetch();
+      }
+    },
+    onSuccess: (nextTicket) => {
+      updateDetail(nextTicket, "IT Priority saved successfully.");
+    },
+  });
 
   useEffect(() => {
     if (
@@ -88,6 +177,16 @@ const StaffTicketDetailContent = ({
   }
 
   const ticket = ticketQuery.data;
+  const ownerValue = selectedOwnerId ?? ticket?.owner?.id.toString() ?? "";
+  const itPriorityValue = selectedItPriority ?? ticket?.itPriority ?? "Low";
+  const canOperate =
+    user.role === "IT Staff" &&
+    ticket !== undefined &&
+    !["Resolved", "Closed", "Cancelled"].includes(ticket.currentStatus);
+  const operationBusy =
+    claimMutation.isPending ||
+    ownerMutation.isPending ||
+    priorityMutation.isPending;
 
   const download = async (attachmentId: number) => {
     try {
@@ -128,8 +227,8 @@ const StaffTicketDetailContent = ({
     >
       <div className="page-actions">
         <p className="page-description">
-          Read-only operational view. Submitted Ticket data and evidence cannot
-          be changed here.
+          Submitted Ticket data and evidence stay read-only. IT Staff can manage
+          ownership and IT Priority below.
         </p>
         <Link className="button button-secondary" to="/staff/tickets">
           <Icon icon={ArrowLeft01Icon} /> Back to Ticket Queue
@@ -238,6 +337,180 @@ const StaffTicketDetailContent = ({
               </div>
             </div>
           </section>
+
+          {user.role === "IT Staff" ? (
+            <section
+              aria-labelledby="staff-operations-heading"
+              className="surface-card form-section"
+            >
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">Staff actions</p>
+                  <h2 id="staff-operations-heading">Operational controls</h2>
+                </div>
+                <span className="required-note">
+                  Version {ticket.version} · Requested Priority stays{" "}
+                  {ticket.requestedPriority}
+                </span>
+              </div>
+
+              {canOperate ? (
+                <div className="form-grid-two">
+                  <FormField htmlFor="ticket-owner" label="Ticket Owner">
+                    <select
+                      disabled={
+                        ownersQuery.isPending ||
+                        ownersQuery.isError ||
+                        operationBusy
+                      }
+                      id="ticket-owner"
+                      onChange={(event) => {
+                        setSelectedOwnerId(event.target.value);
+                        setOperationError(null);
+                        setOperationSuccess(null);
+                      }}
+                      value={ownerValue}
+                    >
+                      <option value="">Unassigned</option>
+                      {ticket.owner !== null &&
+                      ownersQuery.data?.some(
+                        (owner) => owner.id === ticket.owner?.id
+                      ) !== true ? (
+                        <option value={ticket.owner.id}>
+                          {ticket.owner.displayName} (historical)
+                        </option>
+                      ) : null}
+                      {ownersQuery.data?.map((owner) => (
+                        <option key={owner.id} value={owner.id}>
+                          {owner.displayName} · {owner.role}
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
+                  <div className="form-field">
+                    <span className="field-label">Owner action</span>
+                    <button
+                      className="button button-secondary"
+                      disabled={
+                        ticket.owner !== null ||
+                        operationBusy ||
+                        ownersQuery.isError
+                      }
+                      onClick={() => {
+                        setOperationError(null);
+                        setOperationSuccess(null);
+                        claimMutation.mutate(ticket.version);
+                      }}
+                      type="button"
+                    >
+                      {claimMutation.isPending ? "Claiming…" : "Claim Ticket"}
+                    </button>
+                  </div>
+                  <div className="form-field">
+                    <span className="field-label">Save Owner</span>
+                    <button
+                      className="button button-primary"
+                      disabled={
+                        ownersQuery.isPending ||
+                        ownersQuery.isError ||
+                        operationBusy
+                      }
+                      onClick={() => {
+                        const submittedOwnerValue = selectedOwnerId ?? "";
+                        const ownerId =
+                          submittedOwnerValue.length === 0
+                            ? null
+                            : Number(submittedOwnerValue);
+                        setOperationError(null);
+                        setOperationSuccess(null);
+                        ownerMutation.mutate({
+                          ownerId,
+                          version: ticket.version,
+                        });
+                      }}
+                      type="button"
+                    >
+                      {ownerMutation.isPending ? "Saving…" : "Save Owner"}
+                    </button>
+                  </div>
+                  <FormField htmlFor="ticket-it-priority" label="IT Priority">
+                    <select
+                      disabled={operationBusy}
+                      id="ticket-it-priority"
+                      onChange={(event) => {
+                        if (isRequestedPriority(event.target.value)) {
+                          setSelectedItPriority(event.target.value);
+                          setOperationError(null);
+                          setOperationSuccess(null);
+                        }
+                      }}
+                      value={itPriorityValue}
+                    >
+                      <option value="Low">Low</option>
+                      <option value="Medium">Medium</option>
+                      <option value="High">High</option>
+                      <option value="Urgent">Urgent</option>
+                    </select>
+                  </FormField>
+                  <div className="form-field">
+                    <span className="field-label">Priority action</span>
+                    <button
+                      className="button button-primary"
+                      disabled={operationBusy}
+                      onClick={() => {
+                        if (!isRequestedPriority(itPriorityValue)) {
+                          return;
+                        }
+
+                        setOperationError(null);
+                        setOperationSuccess(null);
+                        priorityMutation.mutate({
+                          itPriority: itPriorityValue,
+                          version: ticket.version,
+                        });
+                      }}
+                      type="button"
+                    >
+                      {priorityMutation.isPending
+                        ? "Saving…"
+                        : "Save IT Priority"}
+                    </button>
+                  </div>
+                </div>
+              ) : (
+                <p className="context-note">
+                  This Ticket is terminal. Owner and IT Priority changes are no
+                  longer available.
+                </p>
+              )}
+
+              {ownersQuery.isError ? (
+                <div className="feedback feedback-warning" role="alert">
+                  <strong>Owners unavailable.</strong>
+                  <span>Retry before saving an assignment.</span>
+                  <button
+                    className="button button-secondary"
+                    onClick={() => void ownersQuery.refetch()}
+                    type="button"
+                  >
+                    Retry owners
+                  </button>
+                </div>
+              ) : null}
+              <div
+                aria-live="polite"
+                className="operation-status"
+                role="status"
+              >
+                {operationSuccess === null ? null : (
+                  <span className="success-message">{operationSuccess}</span>
+                )}
+                {operationError === null ? null : (
+                  <span className="error-message">{operationError}</span>
+                )}
+              </div>
+            </section>
+          ) : null}
 
           {ticket.resolutionIndication ? (
             <section
