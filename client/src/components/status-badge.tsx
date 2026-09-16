@@ -25,7 +25,13 @@ const getBadgeIcon = (kind: StatusBadgeProps["kind"]) => {
 };
 
 export const StatusBadge = ({ kind, value }: StatusBadgeProps) => (
-  <span className={cn("status-badge", `${kind}-badge`, value.toLowerCase())}>
+  <span
+    className={cn(
+      "status-badge",
+      `${kind}-badge`,
+      kind === "owner" ? undefined : value.toLowerCase()
+    )}
+  >
     <Icon icon={getBadgeIcon(kind)} /> {value}
   </span>
 );
