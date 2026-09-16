@@ -8,12 +8,16 @@ import {
 import {
   parseStaffTicketListQuery,
   parseTicketListQuery,
+  validateClaimInput,
+  validateItPriorityMutation,
+  validateOwnerMutation,
   validateRemovalReason,
   validateTicketFields,
 } from "../services/ticket-rules.js";
 import type { AttachmentCandidate } from "../services/ticket-rules.js";
 import {
   addAttachmentsForRequester,
+  claimTicketForStaff,
   createTicketForRequester,
   downloadAttachmentForReader,
   getAttachmentsForReader,
@@ -22,6 +26,8 @@ import {
   listStaffTickets,
   listTicketsForRequester,
   removeAttachmentForRequester,
+  updateTicketItPriorityForStaff,
+  updateTicketOwnerForStaff,
 } from "../services/tickets.js";
 
 const parseId = (value: unknown, field: string): number => {
@@ -126,6 +132,39 @@ export const getStaffTickets: RequestHandler = async (request, response) => {
 
 export const getStaffOwners: RequestHandler = async (_request, response) => {
   response.json({ items: await listStaffOwners() });
+};
+
+export const claimTicket: RequestHandler = async (request, response) => {
+  const ticket = await claimTicketForStaff(
+    getAuthenticatedUserId(response),
+    parseId(request.params.ticketId, "ticketId"),
+    validateClaimInput(request.body)
+  );
+
+  response.json(ticket);
+};
+
+export const updateTicketOwner: RequestHandler = async (request, response) => {
+  const ticket = await updateTicketOwnerForStaff(
+    getAuthenticatedUserId(response),
+    parseId(request.params.ticketId, "ticketId"),
+    validateOwnerMutation(request.body)
+  );
+
+  response.json(ticket);
+};
+
+export const updateTicketItPriority: RequestHandler = async (
+  request,
+  response
+) => {
+  const ticket = await updateTicketItPriorityForStaff(
+    getAuthenticatedUserId(response),
+    parseId(request.params.ticketId, "ticketId"),
+    validateItPriorityMutation(request.body)
+  );
+
+  response.json(ticket);
 };
 
 export const getTicket: RequestHandler = async (request, response) => {

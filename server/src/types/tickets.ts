@@ -64,6 +64,18 @@ export interface TicketFields {
   summary: string;
 }
 
+export interface TicketVersionInput {
+  version: number;
+}
+
+export interface OwnerMutationInput extends TicketVersionInput {
+  ownerId: number | null;
+}
+
+export interface ItPriorityMutationInput extends TicketVersionInput {
+  itPriority: RequestedPriority;
+}
+
 export interface OwnerRecord {
   displayName: string;
   id: number;

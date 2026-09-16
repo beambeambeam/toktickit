@@ -199,6 +199,105 @@ paths:
           $ref: "#/components/responses/ApiErrorResponse"
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/claim:
+    post:
+      operationId: claimApiTicket
+      summary: Claim an unassigned Ticket
+      description: Assigns the current IT Staff member when the Ticket is unassigned.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketVersionRequest"
+      responses:
+        "200":
+          description: The updated Ticket.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketDetail"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/owner:
+    put:
+      operationId: updateApiTicketOwner
+      summary: Assign a Ticket Owner
+      description: Assigns, reassigns, or unassigns a Ticket Owner.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OwnerMutationRequest"
+      responses:
+        "200":
+          description: The updated Ticket.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketDetail"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/it-priority:
+    patch:
+      operationId: updateApiTicketItPriority
+      summary: Set a Ticket IT Priority
+      description: Sets the operational IT Priority without changing Requested Priority.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ItPriorityMutationRequest"
+      responses:
+        "200":
+          description: The updated Ticket.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketDetail"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
   /api/users:
     get:
       operationId: getApiUsers
@@ -816,6 +915,37 @@ components:
       type: object
       additionalProperties: false
       maxProperties: 0
+    TicketVersionRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version:
+          type: integer
+          minimum: 1
+    OwnerMutationRequest:
+      type: object
+      additionalProperties: false
+      required: [ownerId, version]
+      properties:
+        ownerId:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: "null"
+        version:
+          type: integer
+          minimum: 1
+    ItPriorityMutationRequest:
+      type: object
+      additionalProperties: false
+      required: [itPriority, version]
+      properties:
+        itPriority:
+          $ref: "#/components/schemas/RequestedPriority"
+        version:
+          type: integer
+          minimum: 1
     RequestedPriority:
       type: string
       enum: [Low, Medium, High, Urgent]

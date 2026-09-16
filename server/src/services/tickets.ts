@@ -3,6 +3,7 @@ import { Prisma } from "../generated/prisma/client.js";
 import { findActiveCategory } from "../repositories/categories.js";
 import { findActiveRelatedSystem } from "../repositories/related-systems.js";
 import {
+  claimTicket,
   countActiveAttachments,
   createAttachments,
   createTicket,
@@ -15,11 +16,16 @@ import {
   findTicketById,
   findTicketSummaries,
   removeAttachment,
+  updateTicketItPriority,
+  updateTicketOwner,
 } from "../repositories/tickets.js";
 import type {
+  ItPriorityMutationInput,
+  OwnerMutationInput,
   StaffTicketListQuery,
   TicketFields,
   TicketListQuery,
+  TicketVersionInput,
 } from "../types/tickets.js";
 import type { UserRoleValue } from "../types/users.js";
 import {
@@ -274,6 +280,99 @@ export const listStaffOwners = async () => {
     );
   }
 };
+
+const resolveTicketMutation = (
+  outcome: Awaited<ReturnType<typeof claimTicket>>
+) => {
+  switch (outcome.kind) {
+    case "actor-ineligible": {
+      throw new ApiError(
+        403,
+        "FORBIDDEN",
+        "You do not have permission to update Ticket operations."
+      );
+    }
+    case "not-found": {
+      throw notFound("Ticket");
+    }
+    case "owner-ineligible": {
+      throw new ApiError(
+        409,
+        "OWNER_INELIGIBLE",
+        "The selected Ticket Owner is not currently eligible."
+      );
+    }
+    case "version-conflict": {
+      throw new ApiError(
+        409,
+        "VERSION_CONFLICT",
+        "The Ticket changed before this action was saved. Refresh and try again."
+      );
+    }
+    case "assignment-conflict": {
+      throw new ApiError(
+        409,
+        "ASSIGNMENT_CONFLICT",
+        "The Ticket has already been claimed. Refresh to see its current Owner."
+      );
+    }
+    case "terminal": {
+      throw new ApiError(
+        409,
+        "TICKET_TERMINAL",
+        "Terminal Tickets cannot change Owner or IT Priority."
+      );
+    }
+    case "unchanged":
+    case "success": {
+      return toTicketDetail(outcome.ticket);
+    }
+    default: {
+      throw new ApiError(
+        500,
+        "TICKET_MUTATION_FAILURE",
+        "Unable to update the Ticket."
+      );
+    }
+  }
+};
+
+export const claimTicketForStaff = async (
+  currentUserId: number,
+  ticketId: number,
+  input: TicketVersionInput
+) =>
+  resolveTicketMutation(
+    await claimTicket(currentUserId, ticketId, input.version)
+  );
+
+export const updateTicketOwnerForStaff = async (
+  currentUserId: number,
+  ticketId: number,
+  input: OwnerMutationInput
+) =>
+  resolveTicketMutation(
+    await updateTicketOwner(
+      currentUserId,
+      ticketId,
+      input.ownerId,
+      input.version
+    )
+  );
+
+export const updateTicketItPriorityForStaff = async (
+  currentUserId: number,
+  ticketId: number,
+  input: ItPriorityMutationInput
+) =>
+  resolveTicketMutation(
+    await updateTicketItPriority(
+      currentUserId,
+      ticketId,
+      input.itPriority,
+      input.version
+    )
+  );
 
 export const getTicketForReader = async (
   userId: number,

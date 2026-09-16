@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { createApiTicket, createApiTicketAttachments, createApiUser, getApiAuthMe, getApiCategories, getApiHealth, getApiRelatedSystems, getApiStaffOwners, getApiStaffTickets, getApiTicket, getApiTicketAttachmentContent, getApiTicketAttachments, getApiTickets, getApiUsers, type Options, postApiAuthChangePassword, postApiAuthLogin, postApiAuthLogout, removeApiTicketAttachment } from '../sdk.gen';
-import type { CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsError, CreateApiTicketAttachmentsResponse, CreateApiTicketData, CreateApiTicketError, CreateApiTicketResponse, CreateApiUserData, CreateApiUserError, CreateApiUserResponse, GetApiAuthMeData, GetApiAuthMeError, GetApiAuthMeResponse, GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse, GetApiRelatedSystemsData, GetApiRelatedSystemsError, GetApiRelatedSystemsResponse, GetApiStaffOwnersData, GetApiStaffOwnersError, GetApiStaffOwnersResponse, GetApiStaffTicketsData, GetApiStaffTicketsError, GetApiStaffTicketsResponse, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentsData, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, GetApiTicketData, GetApiTicketError, GetApiTicketResponse, GetApiTicketsData, GetApiTicketsError, GetApiTicketsResponse, GetApiUsersData, GetApiUsersError, GetApiUsersResponse, PostApiAuthChangePasswordData, PostApiAuthChangePasswordError, PostApiAuthChangePasswordResponse, PostApiAuthLoginData, PostApiAuthLoginError, PostApiAuthLoginResponse, PostApiAuthLogoutData, PostApiAuthLogoutError, PostApiAuthLogoutResponse, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentError, RemoveApiTicketAttachmentResponse } from '../types.gen';
+import { claimApiTicket, createApiTicket, createApiTicketAttachments, createApiUser, getApiAuthMe, getApiCategories, getApiHealth, getApiRelatedSystems, getApiStaffOwners, getApiStaffTickets, getApiTicket, getApiTicketAttachmentContent, getApiTicketAttachments, getApiTickets, getApiUsers, type Options, postApiAuthChangePassword, postApiAuthLogin, postApiAuthLogout, removeApiTicketAttachment, updateApiTicketItPriority, updateApiTicketOwner } from '../sdk.gen';
+import type { ClaimApiTicketData, ClaimApiTicketError, ClaimApiTicketResponse, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsError, CreateApiTicketAttachmentsResponse, CreateApiTicketData, CreateApiTicketError, CreateApiTicketResponse, CreateApiUserData, CreateApiUserError, CreateApiUserResponse, GetApiAuthMeData, GetApiAuthMeError, GetApiAuthMeResponse, GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse, GetApiRelatedSystemsData, GetApiRelatedSystemsError, GetApiRelatedSystemsResponse, GetApiStaffOwnersData, GetApiStaffOwnersError, GetApiStaffOwnersResponse, GetApiStaffTicketsData, GetApiStaffTicketsError, GetApiStaffTicketsResponse, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentsData, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, GetApiTicketData, GetApiTicketError, GetApiTicketResponse, GetApiTicketsData, GetApiTicketsError, GetApiTicketsResponse, GetApiUsersData, GetApiUsersError, GetApiUsersResponse, PostApiAuthChangePasswordData, PostApiAuthChangePasswordError, PostApiAuthChangePasswordResponse, PostApiAuthLoginData, PostApiAuthLoginError, PostApiAuthLoginResponse, PostApiAuthLogoutData, PostApiAuthLogoutError, PostApiAuthLogoutResponse, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentError, RemoveApiTicketAttachmentResponse, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityError, UpdateApiTicketItPriorityResponse, UpdateApiTicketOwnerData, UpdateApiTicketOwnerError, UpdateApiTicketOwnerResponse } from '../types.gen';
 
 /**
  * Sign in
@@ -248,6 +248,63 @@ export const getApiStaffOwnersOptions = (options?: Options<GetApiStaffOwnersData
     },
     queryKey: getApiStaffOwnersQueryKey(options)
 });
+
+/**
+ * Claim an unassigned Ticket
+ *
+ * Assigns the current IT Staff member when the Ticket is unassigned.
+ */
+export const claimApiTicketMutation = (options?: Partial<Options<ClaimApiTicketData>>): UseMutationOptions<ClaimApiTicketResponse, ClaimApiTicketError, Options<ClaimApiTicketData>> => {
+    const mutationOptions: UseMutationOptions<ClaimApiTicketResponse, ClaimApiTicketError, Options<ClaimApiTicketData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await claimApiTicket({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Assign a Ticket Owner
+ *
+ * Assigns, reassigns, or unassigns a Ticket Owner.
+ */
+export const updateApiTicketOwnerMutation = (options?: Partial<Options<UpdateApiTicketOwnerData>>): UseMutationOptions<UpdateApiTicketOwnerResponse, UpdateApiTicketOwnerError, Options<UpdateApiTicketOwnerData>> => {
+    const mutationOptions: UseMutationOptions<UpdateApiTicketOwnerResponse, UpdateApiTicketOwnerError, Options<UpdateApiTicketOwnerData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateApiTicketOwner({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Set a Ticket IT Priority
+ *
+ * Sets the operational IT Priority without changing Requested Priority.
+ */
+export const updateApiTicketItPriorityMutation = (options?: Partial<Options<UpdateApiTicketItPriorityData>>): UseMutationOptions<UpdateApiTicketItPriorityResponse, UpdateApiTicketItPriorityError, Options<UpdateApiTicketItPriorityData>> => {
+    const mutationOptions: UseMutationOptions<UpdateApiTicketItPriorityResponse, UpdateApiTicketItPriorityError, Options<UpdateApiTicketItPriorityData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateApiTicketItPriority({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 export const getApiUsersQueryKey = (options?: Options<GetApiUsersData>) => createQueryKey('getApiUsers', options);
 
