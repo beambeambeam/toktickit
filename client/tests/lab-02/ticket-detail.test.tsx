@@ -20,8 +20,11 @@ import { RequesterTicketDetailPage } from "@/pages/requester-ticket-detail-page"
 const {
   authUser,
   downloadTicketAttachmentMock,
+  getTicketCommentsMock,
   getTicketMock,
+  indicateTicketResolutionMock,
   logoutMock,
+  postTicketCommentMock,
   removeTicketAttachmentMock,
   uploadTicketAttachmentsMock,
 } = vi.hoisted(() => ({
@@ -36,8 +39,11 @@ const {
     updatedAt: "2026-09-01T00:00:00.000Z",
   },
   downloadTicketAttachmentMock: vi.fn(),
+  getTicketCommentsMock: vi.fn(),
   getTicketMock: vi.fn(),
+  indicateTicketResolutionMock: vi.fn(),
   logoutMock: vi.fn(),
+  postTicketCommentMock: vi.fn(),
   removeTicketAttachmentMock: vi.fn(),
   uploadTicketAttachmentsMock: vi.fn(),
 }));
@@ -49,10 +55,16 @@ vi.mock("@/api/requester", async () => {
     ...actual,
     downloadTicketAttachment: downloadTicketAttachmentMock,
     getTicket: getTicketMock,
+    indicateTicketResolution: indicateTicketResolutionMock,
     removeTicketAttachment: removeTicketAttachmentMock,
     uploadTicketAttachments: uploadTicketAttachmentsMock,
   };
 });
+
+vi.mock("@/api/ticket-comments", () => ({
+  getTicketComments: getTicketCommentsMock,
+  postTicketComment: postTicketCommentMock,
+}));
 
 vi.mock("@tanstack/react-router", async () => {
   const actual = await vi.importActual<typeof TanStackRouter>(
@@ -162,6 +174,9 @@ describe("Requester Ticket Detail page", () => {
     uploadTicketAttachmentsMock.mockReset().mockResolvedValue([]);
     removeTicketAttachmentMock.mockReset();
     downloadTicketAttachmentMock.mockReset();
+    getTicketCommentsMock.mockReset().mockResolvedValue([]);
+    postTicketCommentMock.mockReset();
+    indicateTicketResolutionMock.mockReset();
   });
 
   afterEach(() => {
@@ -235,6 +250,33 @@ describe("Requester Ticket Detail page", () => {
 
     await screen.findByRole("heading", { name: "Invalid Ticket Number" });
     expect(getTicketMock).not.toHaveBeenCalled();
+  });
+
+  it("lets the owning Requester indicate apparent resolution", async () => {
+    const indication = {
+      author: { displayName: owner.displayName, id: owner.id },
+      createdAt: "2026-09-02T12:00:00.000Z",
+    };
+    indicateTicketResolutionMock.mockResolvedValue(indication);
+    getTicketMock
+      .mockResolvedValueOnce(ticket)
+      .mockResolvedValue({ ...ticket, resolutionIndication: indication });
+    renderTicketDetail();
+
+    await screen.findByText("Problem Appears Resolved");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Problem Appears Resolved" })
+    );
+
+    await waitFor(() => {
+      expect(indicateTicketResolutionMock).toHaveBeenCalledWith(11);
+    });
+    expect(
+      await screen.findByText(/apparent-resolution indication was recorded/u)
+    ).toBeTruthy();
+    expect(
+      await screen.findByText("Staff will formally resolve the Ticket.")
+    ).toBeTruthy();
   });
 
   it("rejects an invalid file selection without uploading", async () => {

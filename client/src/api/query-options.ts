@@ -5,6 +5,7 @@ import { ApiRequestError } from "@/api/errors";
 import { getTicketInternalNotes } from "@/api/internal-notes";
 import { getRelatedSystems, getTicket, getTickets } from "@/api/requester";
 import type { TicketListParams } from "@/api/requester";
+import { getTicketComments } from "@/api/ticket-comments";
 import { getUsers } from "@/api/users";
 import type { UserListParams } from "@/api/users";
 
@@ -44,6 +45,16 @@ export const internalNotesQueryOptions = (
     queryFn: async ({ signal }) =>
       await getTicketInternalNotes(ticketId, signal),
     queryKey: ["internal-notes", principalId, ticketId],
+    retry: 1,
+  });
+
+export const ticketCommentsQueryOptions = (
+  ticketId: number,
+  principalId: number
+) =>
+  queryOptions({
+    queryFn: async ({ signal }) => await getTicketComments(ticketId, signal),
+    queryKey: ["ticket-comments", principalId, ticketId],
     retry: 1,
   });
 

@@ -192,6 +192,7 @@ export const createUsersAdminFixture = async (): Promise<UsersAdminFixture> => {
       await activeDatabase.session.deleteMany();
       await activeDatabase.loginAttempt.deleteMany();
       await activeDatabase.internalNote.deleteMany();
+      await activeDatabase.publicComment.deleteMany();
       await activeDatabase.attachment.deleteMany();
       await activeDatabase.ticket.deleteMany();
       await activeDatabase.user.deleteMany();
