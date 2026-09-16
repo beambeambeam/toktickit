@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { SubmitEvent } from "react";
 
 import { ApiConnectionError } from "@/api/client";
 import { ApiRequestError } from "@/api/errors";
 import { postTicketInternalNote } from "@/api/internal-notes";
 import { internalNotesQueryOptions } from "@/api/query-options";
-import { FormField } from "@/components/form-field";
+import { fieldDescribedBy, FormField } from "@/components/form-field";
 import type { CurrentStatus, Entry } from "@/generated/hey-api/types.gen";
 
 const MAX_INTERNAL_NOTE_CODE_POINTS = 5000;
@@ -53,6 +53,9 @@ const InternalNotesSectionContent = ({
 }: InternalNotesSectionProps) => {
   const queryClient = useQueryClient();
   const notesQuery = useQuery(internalNotesQueryOptions(ticketId, principalId));
+  const noteFieldId = `internal-note-${ticketId}`;
+  const noteHelpId = `internal-note-help-${ticketId}`;
+  const noteInputRef = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
   const [operationError, setOperationError] = useState<string | null>(null);
@@ -91,6 +94,7 @@ const InternalNotesSectionContent = ({
         `Internal Note must contain 1–${MAX_INTERNAL_NOTE_CODE_POINTS} Unicode code points after trimming.`
       );
       setOperationError(null);
+      noteInputRef.current?.focus();
       return;
     }
 
@@ -127,14 +131,21 @@ const InternalNotesSectionContent = ({
       <form className="internal-note-compose" onSubmit={submit}>
         <FormField
           error={validationError ?? undefined}
-          htmlFor={`internal-note-${ticketId}`}
+          htmlFor={noteFieldId}
           label="Internal Note"
           required
         >
           <textarea
-            aria-describedby={`internal-note-help-${ticketId}`}
+            aria-describedby={
+              [
+                noteHelpId,
+                fieldDescribedBy(noteFieldId, validationError !== null),
+              ]
+                .filter((value): value is string => value !== undefined)
+                .join(" ") || undefined
+            }
             aria-invalid={Boolean(validationError)}
-            id={`internal-note-${ticketId}`}
+            id={noteFieldId}
             onChange={(event) => {
               setDraft(event.target.value);
               setValidationError(null);
@@ -142,11 +153,12 @@ const InternalNotesSectionContent = ({
               setSuccessMessage(null);
             }}
             placeholder="Record a private operational note"
+            ref={noteInputRef}
             rows={5}
             value={draft}
           />
         </FormField>
-        <p className="field-help" id={`internal-note-help-${ticketId}`}>
+        <p className="field-help" id={noteHelpId}>
           Plain text only. {codePointLength(draft.trim())} /{" "}
           {MAX_INTERNAL_NOTE_CODE_POINTS} Unicode code points after trimming.
         </p>

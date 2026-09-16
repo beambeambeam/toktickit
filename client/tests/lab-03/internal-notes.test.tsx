@@ -144,6 +144,22 @@ describe("Internal Notes section", () => {
     ).toHaveProperty("value", "");
   });
 
+  it("focuses invalid input and describes its validation error", async () => {
+    renderSection();
+    const composer = await screen.findByRole("textbox", {
+      name: "Internal Note",
+    });
+    fireEvent.change(composer, { target: { value: " \t" } });
+    fireEvent.click(screen.getByRole("button", { name: "Add Internal Note" }));
+
+    await screen.findByText(/Internal Note must contain 1–5000/u);
+    expect(document.activeElement).toBe(composer);
+    expect(composer.getAttribute("aria-describedby")).toBe(
+      "internal-note-help-11 internal-note-11-error"
+    );
+    expect(postInternalNoteMock).not.toHaveBeenCalled();
+  });
+
   it("hides the composer for terminal Tickets and read-only Administrators", async () => {
     getInternalNotesMock.mockResolvedValueOnce([]);
     renderSection({ currentStatus: "Closed" });
