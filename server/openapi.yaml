@@ -428,6 +428,99 @@ paths:
           $ref: "#/components/responses/ApiErrorResponse"
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
+  /api/users/{userId}:
+    get:
+      operationId: getApiUser
+      summary: Get a user
+      description: Returns one user for the Administrator edit form.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: The requested user without credential secrets.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+    patch:
+      operationId: updateApiUser
+      summary: Edit a user account
+      description: Updates editable account access fields atomically.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: The updated user without credential secrets.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/users/{userId}/initial-password:
+    post:
+      operationId: resetApiUserInitialPassword
+      summary: Reset a user's initial password
+      description: Revokes all target sessions and requires password replacement at next login.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InitialPasswordResetRequest"
+      responses:
+        "200":
+          description: The reset user without credential secrets.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
   /api/health:
     get:
       operationId: getApiHealth
@@ -794,6 +887,13 @@ components:
       schema:
         type: integer
         minimum: 1
+    UserId:
+      name: userId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
     AttachmentId:
       name: attachmentId
       in: path
@@ -1063,6 +1163,42 @@ components:
       properties:
         user:
           $ref: "#/components/schemas/User"
+    UserResponse:
+      type: object
+      additionalProperties: false
+      required: [user]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+    UpdateUserRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        role:
+          $ref: "#/components/schemas/UserRole"
+        isActive:
+          type: boolean
+    InitialPasswordResetRequest:
+      type: object
+      additionalProperties: false
+      required: [initialPassword, confirmed]
+      properties:
+        initialPassword:
+          type: string
+          minLength: 15
+          maxLength: 128
+        confirmed:
+          type: boolean
+          const: true
     TicketRequester:
       type: object
       additionalProperties: false

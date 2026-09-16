@@ -17,3 +17,15 @@ export interface CreateUserInput {
   isActive: boolean;
   role: UserRoleValue;
 }
+
+export interface UpdateUserInput {
+  displayName?: string;
+  email?: string;
+  isActive?: boolean;
+  role?: UserRoleValue;
+}
+
+export interface ResetInitialPasswordInput {
+  confirmed: true;
+  initialPassword: string;
+}

@@ -6,7 +6,7 @@ import { getTicketInternalNotes } from "@/api/internal-notes";
 import { getRelatedSystems, getTicket, getTickets } from "@/api/requester";
 import type { TicketListParams } from "@/api/requester";
 import { getTicketComments } from "@/api/ticket-comments";
-import { getUsers } from "@/api/users";
+import { getUser, getUsers } from "@/api/users";
 import type { UserListParams } from "@/api/users";
 
 export const activeCategoriesQueryOptions = (
@@ -67,4 +67,11 @@ export const usersQueryOptions = (params: UserListParams) =>
         error instanceof ApiRequestError &&
         (error.status === 401 || error.status === 403)
       ) && failureCount < 1,
+  });
+
+export const userQueryOptions = (userId: number, principalId: number) =>
+  queryOptions({
+    queryFn: async ({ signal }) => await getUser(userId, signal),
+    queryKey: ["user", principalId, userId],
+    retry: 1,
   });

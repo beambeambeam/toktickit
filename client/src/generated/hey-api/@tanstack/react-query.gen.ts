@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { claimApiTicket, createApiTicket, createApiTicketAttachments, createApiTicketComment, createApiTicketInternalNote, createApiUser, getApiAuthMe, getApiCategories, getApiHealth, getApiRelatedSystems, getApiStaffOwners, getApiStaffTickets, getApiTicket, getApiTicketAttachmentContent, getApiTicketAttachments, getApiTicketComments, getApiTicketInternalNotes, getApiTickets, getApiUsers, indicateApiTicketResolution, type Options, postApiAuthChangePassword, postApiAuthLogin, postApiAuthLogout, removeApiTicketAttachment, updateApiTicketItPriority, updateApiTicketOwner, updateApiTicketStatus } from '../sdk.gen';
-import type { ClaimApiTicketData, ClaimApiTicketError, ClaimApiTicketResponse, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsError, CreateApiTicketAttachmentsResponse, CreateApiTicketCommentData, CreateApiTicketCommentError, CreateApiTicketCommentResponse, CreateApiTicketData, CreateApiTicketError, CreateApiTicketInternalNoteData, CreateApiTicketInternalNoteError, CreateApiTicketInternalNoteResponse, CreateApiTicketResponse, CreateApiUserData, CreateApiUserError, CreateApiUserResponse, GetApiAuthMeData, GetApiAuthMeError, GetApiAuthMeResponse, GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse, GetApiRelatedSystemsData, GetApiRelatedSystemsError, GetApiRelatedSystemsResponse, GetApiStaffOwnersData, GetApiStaffOwnersError, GetApiStaffOwnersResponse, GetApiStaffTicketsData, GetApiStaffTicketsError, GetApiStaffTicketsResponse, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentsData, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, GetApiTicketCommentsData, GetApiTicketCommentsError, GetApiTicketCommentsResponse, GetApiTicketData, GetApiTicketError, GetApiTicketInternalNotesData, GetApiTicketInternalNotesError, GetApiTicketInternalNotesResponse, GetApiTicketResponse, GetApiTicketsData, GetApiTicketsError, GetApiTicketsResponse, GetApiUsersData, GetApiUsersError, GetApiUsersResponse, IndicateApiTicketResolutionData, IndicateApiTicketResolutionError, IndicateApiTicketResolutionResponse, PostApiAuthChangePasswordData, PostApiAuthChangePasswordError, PostApiAuthChangePasswordResponse, PostApiAuthLoginData, PostApiAuthLoginError, PostApiAuthLoginResponse, PostApiAuthLogoutData, PostApiAuthLogoutError, PostApiAuthLogoutResponse, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentError, RemoveApiTicketAttachmentResponse, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityError, UpdateApiTicketItPriorityResponse, UpdateApiTicketOwnerData, UpdateApiTicketOwnerError, UpdateApiTicketOwnerResponse, UpdateApiTicketStatusData, UpdateApiTicketStatusError, UpdateApiTicketStatusResponse } from '../types.gen';
+import { claimApiTicket, createApiTicket, createApiTicketAttachments, createApiTicketComment, createApiTicketInternalNote, createApiUser, getApiAuthMe, getApiCategories, getApiHealth, getApiRelatedSystems, getApiStaffOwners, getApiStaffTickets, getApiTicket, getApiTicketAttachmentContent, getApiTicketAttachments, getApiTicketComments, getApiTicketInternalNotes, getApiTickets, getApiUser, getApiUsers, indicateApiTicketResolution, type Options, postApiAuthChangePassword, postApiAuthLogin, postApiAuthLogout, removeApiTicketAttachment, resetApiUserInitialPassword, updateApiTicketItPriority, updateApiTicketOwner, updateApiTicketStatus, updateApiUser } from '../sdk.gen';
+import type { ClaimApiTicketData, ClaimApiTicketError, ClaimApiTicketResponse, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsError, CreateApiTicketAttachmentsResponse, CreateApiTicketCommentData, CreateApiTicketCommentError, CreateApiTicketCommentResponse, CreateApiTicketData, CreateApiTicketError, CreateApiTicketInternalNoteData, CreateApiTicketInternalNoteError, CreateApiTicketInternalNoteResponse, CreateApiTicketResponse, CreateApiUserData, CreateApiUserError, CreateApiUserResponse, GetApiAuthMeData, GetApiAuthMeError, GetApiAuthMeResponse, GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse, GetApiRelatedSystemsData, GetApiRelatedSystemsError, GetApiRelatedSystemsResponse, GetApiStaffOwnersData, GetApiStaffOwnersError, GetApiStaffOwnersResponse, GetApiStaffTicketsData, GetApiStaffTicketsError, GetApiStaffTicketsResponse, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentsData, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, GetApiTicketCommentsData, GetApiTicketCommentsError, GetApiTicketCommentsResponse, GetApiTicketData, GetApiTicketError, GetApiTicketInternalNotesData, GetApiTicketInternalNotesError, GetApiTicketInternalNotesResponse, GetApiTicketResponse, GetApiTicketsData, GetApiTicketsError, GetApiTicketsResponse, GetApiUserData, GetApiUserError, GetApiUserResponse, GetApiUsersData, GetApiUsersError, GetApiUsersResponse, IndicateApiTicketResolutionData, IndicateApiTicketResolutionError, IndicateApiTicketResolutionResponse, PostApiAuthChangePasswordData, PostApiAuthChangePasswordError, PostApiAuthChangePasswordResponse, PostApiAuthLoginData, PostApiAuthLoginError, PostApiAuthLoginResponse, PostApiAuthLogoutData, PostApiAuthLogoutError, PostApiAuthLogoutResponse, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentError, RemoveApiTicketAttachmentResponse, ResetApiUserInitialPasswordData, ResetApiUserInitialPasswordError, ResetApiUserInitialPasswordResponse, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityError, UpdateApiTicketItPriorityResponse, UpdateApiTicketOwnerData, UpdateApiTicketOwnerError, UpdateApiTicketOwnerResponse, UpdateApiTicketStatusData, UpdateApiTicketStatusError, UpdateApiTicketStatusResponse, UpdateApiUserData, UpdateApiUserError, UpdateApiUserResponse } from '../types.gen';
 
 /**
  * Sign in
@@ -373,6 +373,64 @@ export const createApiUserMutation = (options?: Partial<Options<CreateApiUserDat
     const mutationOptions: UseMutationOptions<CreateApiUserResponse, CreateApiUserError, Options<CreateApiUserData>> = {
         mutationFn: async (fnOptions) => {
             const { data } = await createApiUser({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getApiUserQueryKey = (options: Options<GetApiUserData>) => createQueryKey('getApiUser', options);
+
+/**
+ * Get a user
+ *
+ * Returns one user for the Administrator edit form.
+ */
+export const getApiUserOptions = (options: Options<GetApiUserData>) => queryOptions<GetApiUserResponse, GetApiUserError, GetApiUserResponse, ReturnType<typeof getApiUserQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiUser({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiUserQueryKey(options)
+});
+
+/**
+ * Edit a user account
+ *
+ * Updates editable account access fields atomically.
+ */
+export const updateApiUserMutation = (options?: Partial<Options<UpdateApiUserData>>): UseMutationOptions<UpdateApiUserResponse, UpdateApiUserError, Options<UpdateApiUserData>> => {
+    const mutationOptions: UseMutationOptions<UpdateApiUserResponse, UpdateApiUserError, Options<UpdateApiUserData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateApiUser({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Reset a user's initial password
+ *
+ * Revokes all target sessions and requires password replacement at next login.
+ */
+export const resetApiUserInitialPasswordMutation = (options?: Partial<Options<ResetApiUserInitialPasswordData>>): UseMutationOptions<ResetApiUserInitialPasswordResponse, ResetApiUserInitialPasswordError, Options<ResetApiUserInitialPasswordData>> => {
+    const mutationOptions: UseMutationOptions<ResetApiUserInitialPasswordResponse, ResetApiUserInitialPasswordError, Options<ResetApiUserInitialPasswordData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await resetApiUserInitialPassword({
                 ...options,
                 ...fnOptions,
                 throwOnError: true

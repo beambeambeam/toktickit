@@ -13,6 +13,13 @@ export interface UserFormValues {
   role: UserRole | "";
 }
 
+export interface UserEditFormValues {
+  displayName: string;
+  email: string;
+  isActive: boolean;
+  role: UserRole | "";
+}
+
 export type UserFieldErrors = Partial<Record<keyof UserFormValues, string>>;
 
 const isUserField = (value: string): value is keyof UserFormValues =>
@@ -48,6 +55,33 @@ export const validateUserForm = (values: UserFormValues): UserFieldErrors => {
   if (passwordLength < 15 || passwordLength > 128) {
     errors.initialPassword =
       "Initial password must contain 15–128 Unicode characters.";
+  }
+
+  return errors;
+};
+
+export const validateUserEditForm = (
+  values: UserEditFormValues
+): UserFieldErrors => {
+  const errors: UserFieldErrors = {};
+  const displayName = values.displayName.trim();
+  const email = values.email.trim();
+
+  if (
+    displayName.length < 1 ||
+    // oxlint-disable-next-line unicorn/prefer-spread -- user contract counts Unicode code points.
+    Array.from(displayName).length > MAX_DISPLAY_NAME_LENGTH
+  ) {
+    errors.displayName =
+      "Name must contain 1–100 Unicode characters after trimming.";
+  }
+
+  if (email.length === 0 || email.length > 254 || !isEmail(email)) {
+    errors.email = "Enter a valid email address (up to 254 characters).";
+  }
+
+  if (values.role === "") {
+    errors.role = "Choose Requester, IT Staff, or Administrator.";
   }
 
   return errors;

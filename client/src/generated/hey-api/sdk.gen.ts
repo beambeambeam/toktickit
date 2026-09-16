@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { ClaimApiTicketData, ClaimApiTicketErrors, ClaimApiTicketResponses, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsErrors, CreateApiTicketAttachmentsResponses, CreateApiTicketCommentData, CreateApiTicketCommentErrors, CreateApiTicketCommentResponses, CreateApiTicketData, CreateApiTicketErrors, CreateApiTicketInternalNoteData, CreateApiTicketInternalNoteErrors, CreateApiTicketInternalNoteResponses, CreateApiTicketResponses, CreateApiUserData, CreateApiUserErrors, CreateApiUserResponses, GetApiAuthMeData, GetApiAuthMeErrors, GetApiAuthMeResponses, GetApiCategoriesData, GetApiCategoriesErrors, GetApiCategoriesResponses, GetApiHealthData, GetApiHealthErrors, GetApiHealthResponses, GetApiRelatedSystemsData, GetApiRelatedSystemsErrors, GetApiRelatedSystemsResponses, GetApiStaffOwnersData, GetApiStaffOwnersErrors, GetApiStaffOwnersResponses, GetApiStaffTicketsData, GetApiStaffTicketsErrors, GetApiStaffTicketsResponses, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentErrors, GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentsData, GetApiTicketAttachmentsErrors, GetApiTicketAttachmentsResponses, GetApiTicketCommentsData, GetApiTicketCommentsErrors, GetApiTicketCommentsResponses, GetApiTicketData, GetApiTicketErrors, GetApiTicketInternalNotesData, GetApiTicketInternalNotesErrors, GetApiTicketInternalNotesResponses, GetApiTicketResponses, GetApiTicketsData, GetApiTicketsErrors, GetApiTicketsResponses, GetApiUsersData, GetApiUsersErrors, GetApiUsersResponses, IndicateApiTicketResolutionData, IndicateApiTicketResolutionErrors, IndicateApiTicketResolutionResponses, PostApiAuthChangePasswordData, PostApiAuthChangePasswordErrors, PostApiAuthChangePasswordResponses, PostApiAuthLoginData, PostApiAuthLoginErrors, PostApiAuthLoginResponses, PostApiAuthLogoutData, PostApiAuthLogoutErrors, PostApiAuthLogoutResponses, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentErrors, RemoveApiTicketAttachmentResponses, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityErrors, UpdateApiTicketItPriorityResponses, UpdateApiTicketOwnerData, UpdateApiTicketOwnerErrors, UpdateApiTicketOwnerResponses, UpdateApiTicketStatusData, UpdateApiTicketStatusErrors, UpdateApiTicketStatusResponses } from './types.gen';
+import type { ClaimApiTicketData, ClaimApiTicketErrors, ClaimApiTicketResponses, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsErrors, CreateApiTicketAttachmentsResponses, CreateApiTicketCommentData, CreateApiTicketCommentErrors, CreateApiTicketCommentResponses, CreateApiTicketData, CreateApiTicketErrors, CreateApiTicketInternalNoteData, CreateApiTicketInternalNoteErrors, CreateApiTicketInternalNoteResponses, CreateApiTicketResponses, CreateApiUserData, CreateApiUserErrors, CreateApiUserResponses, GetApiAuthMeData, GetApiAuthMeErrors, GetApiAuthMeResponses, GetApiCategoriesData, GetApiCategoriesErrors, GetApiCategoriesResponses, GetApiHealthData, GetApiHealthErrors, GetApiHealthResponses, GetApiRelatedSystemsData, GetApiRelatedSystemsErrors, GetApiRelatedSystemsResponses, GetApiStaffOwnersData, GetApiStaffOwnersErrors, GetApiStaffOwnersResponses, GetApiStaffTicketsData, GetApiStaffTicketsErrors, GetApiStaffTicketsResponses, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentErrors, GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentsData, GetApiTicketAttachmentsErrors, GetApiTicketAttachmentsResponses, GetApiTicketCommentsData, GetApiTicketCommentsErrors, GetApiTicketCommentsResponses, GetApiTicketData, GetApiTicketErrors, GetApiTicketInternalNotesData, GetApiTicketInternalNotesErrors, GetApiTicketInternalNotesResponses, GetApiTicketResponses, GetApiTicketsData, GetApiTicketsErrors, GetApiTicketsResponses, GetApiUserData, GetApiUserErrors, GetApiUserResponses, GetApiUsersData, GetApiUsersErrors, GetApiUsersResponses, IndicateApiTicketResolutionData, IndicateApiTicketResolutionErrors, IndicateApiTicketResolutionResponses, PostApiAuthChangePasswordData, PostApiAuthChangePasswordErrors, PostApiAuthChangePasswordResponses, PostApiAuthLoginData, PostApiAuthLoginErrors, PostApiAuthLoginResponses, PostApiAuthLogoutData, PostApiAuthLogoutErrors, PostApiAuthLogoutResponses, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentErrors, RemoveApiTicketAttachmentResponses, ResetApiUserInitialPasswordData, ResetApiUserInitialPasswordErrors, ResetApiUserInitialPasswordResponses, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityErrors, UpdateApiTicketItPriorityResponses, UpdateApiTicketOwnerData, UpdateApiTicketOwnerErrors, UpdateApiTicketOwnerResponses, UpdateApiTicketStatusData, UpdateApiTicketStatusErrors, UpdateApiTicketStatusResponses, UpdateApiUserData, UpdateApiUserErrors, UpdateApiUserResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -259,6 +259,59 @@ export const createApiUser = <ThrowOnError extends boolean = false>(options: Opt
             type: 'apiKey'
         }],
     url: '/api/users',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Get a user
+ *
+ * Returns one user for the Administrator edit form.
+ */
+export const getApiUser = <ThrowOnError extends boolean = false>(options: Options<GetApiUserData, ThrowOnError>): RequestResult<GetApiUserResponses, GetApiUserErrors, ThrowOnError> => (options.client ?? client).get<GetApiUserResponses, GetApiUserErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/users/{userId}',
+    ...options
+});
+
+/**
+ * Edit a user account
+ *
+ * Updates editable account access fields atomically.
+ */
+export const updateApiUser = <ThrowOnError extends boolean = false>(options: Options<UpdateApiUserData, ThrowOnError>): RequestResult<UpdateApiUserResponses, UpdateApiUserErrors, ThrowOnError> => (options.client ?? client).patch<UpdateApiUserResponses, UpdateApiUserErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/users/{userId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Reset a user's initial password
+ *
+ * Revokes all target sessions and requires password replacement at next login.
+ */
+export const resetApiUserInitialPassword = <ThrowOnError extends boolean = false>(options: Options<ResetApiUserInitialPasswordData, ThrowOnError>): RequestResult<ResetApiUserInitialPasswordResponses, ResetApiUserInitialPasswordErrors, ThrowOnError> => (options.client ?? client).post<ResetApiUserInitialPasswordResponses, ResetApiUserInitialPasswordErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/users/{userId}/initial-password',
     ...options,
     headers: {
         'Content-Type': 'application/json',

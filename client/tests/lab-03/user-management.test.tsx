@@ -9,6 +9,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -20,15 +21,21 @@ import { UserManagementPage } from "@/pages/user-management-page";
 const {
   authState,
   createUserMock,
+  getUserMock,
   getUsersMock,
   navigateMock,
+  resetUserInitialPasswordMock,
   refetchAuthMock,
+  updateUserMock,
 } = vi.hoisted(() => ({
   authState: { user: null as AuthUser | null },
   createUserMock: vi.fn(),
+  getUserMock: vi.fn(),
   getUsersMock: vi.fn(),
   navigateMock: vi.fn(),
   refetchAuthMock: vi.fn(),
+  resetUserInitialPasswordMock: vi.fn(),
+  updateUserMock: vi.fn(),
 }));
 
 vi.mock("@tanstack/react-router", async () => {
@@ -45,7 +52,10 @@ vi.mock("@tanstack/react-router", async () => {
 
 vi.mock("@/api/users", () => ({
   createUser: createUserMock,
+  getUser: getUserMock,
   getUsers: getUsersMock,
+  resetUserInitialPassword: resetUserInitialPasswordMock,
+  updateUser: updateUserMock,
 }));
 
 vi.mock("@/context/auth", () => ({
@@ -126,10 +136,14 @@ describe("Administrator user management", () => {
   beforeEach(() => {
     authState.user = adminUser;
     createUserMock.mockReset();
+    getUserMock.mockReset();
     getUsersMock.mockReset();
     navigateMock.mockReset();
+    resetUserInitialPasswordMock.mockReset();
     refetchAuthMock.mockReset();
+    updateUserMock.mockReset();
     getUsersMock.mockResolvedValue(users);
+    getUserMock.mockResolvedValue(users[1]);
   });
 
   afterEach(() => {
@@ -227,6 +241,176 @@ describe("Administrator user management", () => {
       ""
     );
     expect(screen.queryByText(initialPassword)).toBeNull();
+  });
+
+  it("edits an account and performs a separate confirmed initial-password reset", async () => {
+    renderPage();
+    await screen.findAllByText("Ada Requester");
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Edit Ada Requester" })[0]
+    );
+    expect(await screen.findByDisplayValue("Ada Requester")).toBeTruthy();
+
+    fireEvent.change(screen.getByDisplayValue("Ada Requester"), {
+      target: { value: "Ada Updated" },
+    });
+    updateUserMock.mockResolvedValueOnce({
+      ...users[1],
+      displayName: "Ada Updated",
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+
+    await waitFor(() => {
+      expect(updateUserMock).toHaveBeenCalledWith(2, {
+        displayName: "Ada Updated",
+        email: "ada@example.test",
+        isActive: true,
+        role: "Requester",
+      });
+    });
+    expect(
+      await screen.findByText("Ada Updated was updated successfully.")
+    ).toBeTruthy();
+
+    const resetPassword = "replacement initial password";
+    fireEvent.change(screen.getByLabelText(/^New initial password/u), {
+      target: { value: resetPassword },
+    });
+    resetUserInitialPasswordMock.mockResolvedValueOnce({
+      ...users[1],
+      displayName: "Ada Updated",
+      mustChangePassword: true,
+    });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Reset Initial Password" })
+    );
+    const confirmation = await screen.findByRole("alertdialog");
+    fireEvent.click(
+      within(confirmation).getByRole("button", { name: "Confirm reset" })
+    );
+
+    await waitFor(() => {
+      expect(resetUserInitialPasswordMock).toHaveBeenCalledWith(2, {
+        confirmed: true,
+        initialPassword: resetPassword,
+      });
+    });
+    expect(
+      await screen.findByText(/Ada Updated's initial password was reset/u)
+    ).toBeTruthy();
+    expect(screen.getByLabelText(/^New initial password/u)).toHaveProperty(
+      "value",
+      ""
+    );
+    expect(screen.queryByText(resetPassword)).toBeNull();
+  });
+
+  it("requires an accessible confirmation before resetting a password", async () => {
+    renderPage();
+    await screen.findAllByText("Ada Requester");
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Edit Ada Requester" })[0]
+    );
+    await screen.findByDisplayValue("Ada Requester");
+    fireEvent.change(screen.getByLabelText(/^New initial password/u), {
+      target: { value: "replacement initial password" },
+    });
+
+    fireEvent.click(
+      screen.getByRole("button", { name: "Reset Initial Password" })
+    );
+    const confirmation = await screen.findByRole("alertdialog");
+    const cancel = within(confirmation).getByRole("button", {
+      name: "Cancel",
+    });
+    expect(
+      within(confirmation).getByRole("heading", {
+        name: "Reset initial password?",
+      })
+    ).toBeTruthy();
+    expect(document.activeElement).toBe(cancel);
+    fireEvent.click(cancel);
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(resetUserInitialPasswordMock).not.toHaveBeenCalled();
+  });
+
+  it("initializes the edit form from the fetched account detail", async () => {
+    getUserMock.mockResolvedValueOnce({
+      ...users[1],
+      displayName: "Fresh Ada Detail",
+      email: "fresh-ada@example.test",
+      isActive: false,
+      role: "IT Staff",
+    });
+    renderPage();
+    await screen.findAllByText("Ada Requester");
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Edit Ada Requester" })[0]
+    );
+
+    expect(await screen.findByDisplayValue("Fresh Ada Detail")).toBeTruthy();
+    expect(screen.getByDisplayValue("fresh-ada@example.test")).toBeTruthy();
+    expect(screen.getByDisplayValue("IT Staff")).toBeTruthy();
+    expect(
+      screen.getByRole("checkbox", { name: "Active account" })
+    ).toHaveProperty("checked", false);
+  });
+
+  it("keeps edit values after a duplicate email conflict", async () => {
+    resetUserInitialPasswordMock.mockReset();
+    updateUserMock.mockRejectedValueOnce(
+      new ApiRequestError(409, "Duplicate email", "EMAIL_CONFLICT")
+    );
+    renderPage();
+    await screen.findAllByText("Ada Requester");
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Edit Ada Requester" })[0]
+    );
+    await screen.findByDisplayValue("Ada Requester");
+    fireEvent.change(screen.getByDisplayValue("Ada Requester"), {
+      target: { value: "Ada Kept" },
+    });
+    fireEvent.change(screen.getByDisplayValue("ada@example.test"), {
+      target: { value: "duplicate@example.test" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+
+    expect(
+      await screen.findByText(
+        "That email address is already in use. Enter a unique email address."
+      )
+    ).toBeTruthy();
+    expect(screen.getByDisplayValue("Ada Kept")).toHaveProperty(
+      "value",
+      "Ada Kept"
+    );
+    expect(screen.getByDisplayValue("duplicate@example.test")).toHaveProperty(
+      "value",
+      "duplicate@example.test"
+    );
+  });
+
+  it("forces login after a self-demotion or self-reset", async () => {
+    getUserMock.mockResolvedValueOnce(adminUser);
+    updateUserMock.mockResolvedValueOnce({ ...adminUser, role: "IT Staff" });
+    renderPage();
+    await screen.findAllByText("Ada Requester");
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Edit Ari Administrator" })[0]
+    );
+    await screen.findByDisplayValue("Ari Administrator");
+    fireEvent.change(screen.getByDisplayValue("Administrator"), {
+      target: { value: "IT Staff" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save Changes" }));
+
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledWith({
+        replace: true,
+        to: "/login",
+      });
+    });
+    expect(refetchAuthMock).toHaveBeenCalledTimes(1);
   });
 
   it("does not fetch or expose the management screen to non-Administrators", () => {
