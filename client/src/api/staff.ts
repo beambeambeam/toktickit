@@ -1,21 +1,27 @@
 import { apiClient, getCsrfToken } from "@/api/client";
 import { ApiRequestError, invalidApiResponse, unwrap } from "@/api/errors";
 import {
+  claimApiTicket,
   getApiStaffOwners,
   getApiStaffTickets,
   updateApiTicketStatus,
+  updateApiTicketItPriority,
+  updateApiTicketOwner,
 } from "@/generated/hey-api/sdk.gen";
 import type {
   CurrentStatus,
+  ItPriorityMutationRequest,
   OperationalTicketSummary,
   Owner,
   OwnerListResponse,
+  OwnerMutationRequest,
   QueuePageSize,
   QueueSortBy,
   RequestedPriority,
   StaffTicketListResponse,
   StatusMutationRequest,
   TicketDetail,
+  TicketVersionRequest,
 } from "@/generated/hey-api/types.gen";
 import { isRequestedPriority } from "@/lib/ticket-priorities";
 import { isCurrentStatus } from "@/lib/ticket-statuses";
@@ -159,6 +165,57 @@ export const updateStaffTicketStatus = async (
   requireTicketDetail(
     await unwrap(
       updateApiTicketStatus({
+        body: input,
+        client: apiClient,
+        headers: csrfHeaders(),
+        path: { ticketId },
+        signal,
+      })
+    )
+  );
+
+export const claimStaffTicket = async (
+  ticketId: number,
+  input: TicketVersionRequest,
+  signal?: AbortSignal
+): Promise<TicketDetail> =>
+  requireTicketDetail(
+    await unwrap(
+      claimApiTicket({
+        body: input,
+        client: apiClient,
+        headers: csrfHeaders(),
+        path: { ticketId },
+        signal,
+      })
+    )
+  );
+
+export const updateStaffTicketOwner = async (
+  ticketId: number,
+  input: OwnerMutationRequest,
+  signal?: AbortSignal
+): Promise<TicketDetail> =>
+  requireTicketDetail(
+    await unwrap(
+      updateApiTicketOwner({
+        body: input,
+        client: apiClient,
+        headers: csrfHeaders(),
+        path: { ticketId },
+        signal,
+      })
+    )
+  );
+
+export const updateStaffTicketItPriority = async (
+  ticketId: number,
+  input: ItPriorityMutationRequest,
+  signal?: AbortSignal
+): Promise<TicketDetail> =>
+  requireTicketDetail(
+    await unwrap(
+      updateApiTicketItPriority({
         body: input,
         client: apiClient,
         headers: csrfHeaders(),

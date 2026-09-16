@@ -15,19 +15,28 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthUser } from "@/api/auth";
 import { ApiRequestError } from "@/api/errors";
+import type { Owner } from "@/generated/hey-api/types.gen";
 import { StaffTicketDetailPage } from "@/pages/staff-ticket-detail-page";
 
 const {
   authState,
+  claimStaffTicketMock,
   downloadTicketAttachmentMock,
+  getStaffOwnersMock,
   getTicketMock,
   refetchAuthMock,
+  updateStaffTicketItPriorityMock,
+  updateStaffTicketOwnerMock,
   updateStaffTicketStatusMock,
 } = vi.hoisted(() => ({
   authState: { user: null as AuthUser | null },
+  claimStaffTicketMock: vi.fn(),
   downloadTicketAttachmentMock: vi.fn(),
+  getStaffOwnersMock: vi.fn<() => Promise<Owner[]>>(),
   getTicketMock: vi.fn(),
   refetchAuthMock: vi.fn(),
+  updateStaffTicketItPriorityMock: vi.fn(),
+  updateStaffTicketOwnerMock: vi.fn(),
   updateStaffTicketStatusMock: vi.fn(),
 }));
 
@@ -59,7 +68,18 @@ vi.mock("@/api/requester", () => ({
 }));
 
 vi.mock("@/api/staff", () => ({
+  claimStaffTicket: claimStaffTicketMock,
+  updateStaffTicketItPriority: updateStaffTicketItPriorityMock,
+  updateStaffTicketOwner: updateStaffTicketOwnerMock,
   updateStaffTicketStatus: updateStaffTicketStatusMock,
+}));
+
+vi.mock("@/api/staff-query-options", () => ({
+  staffOwnersQueryOptions: () => ({
+    queryFn: async () => await getStaffOwnersMock(),
+    queryKey: ["staff-owners"],
+    retry: false,
+  }),
 }));
 
 vi.mock("@/context/auth", () => ({
@@ -93,7 +113,7 @@ const adminUser: AuthUser = {
 const staffUser: AuthUser = {
   ...adminUser,
   displayName: "Iris IT Staff",
-  email: "iris@example.test",
+  email: "staff@example.test",
   id: 10,
   role: "IT Staff",
 };
@@ -175,6 +195,25 @@ describe("Staff Ticket Detail page", () => {
   beforeEach(() => {
     authState.user = adminUser;
     getTicketMock.mockReset().mockResolvedValue(ticket);
+    getStaffOwnersMock.mockReset().mockResolvedValue([
+      {
+        displayName: "Iris IT Staff",
+        id: 10,
+        isActive: true,
+        isEligible: true,
+        role: "IT Staff",
+      },
+      {
+        displayName: "Jules IT Staff",
+        id: 12,
+        isActive: true,
+        isEligible: true,
+        role: "IT Staff",
+      },
+    ]);
+    claimStaffTicketMock.mockReset();
+    updateStaffTicketOwnerMock.mockReset();
+    updateStaffTicketItPriorityMock.mockReset();
     downloadTicketAttachmentMock.mockReset();
     updateStaffTicketStatusMock.mockReset();
     refetchAuthMock.mockReset().mockResolvedValue(null);
@@ -362,5 +401,73 @@ describe("Staff Ticket Detail page", () => {
       expect(downloadTicketAttachmentMock).toHaveBeenCalledWith(11, 101);
     });
     expect(clickSpy).toHaveBeenCalled();
+  });
+
+  it("preserves the current Owner when Save Owner is unchanged", async () => {
+    authState.user = staffUser;
+    updateStaffTicketOwnerMock.mockResolvedValue(ticket);
+
+    renderPage();
+    await screen.findByText("TKT-20260902-DETAIL01");
+    fireEvent.click(screen.getByRole("button", { name: "Save Owner" }));
+
+    await waitFor(() => {
+      expect(updateStaffTicketOwnerMock).toHaveBeenCalledWith(11, {
+        ownerId: staffUser.id,
+        version: ticket.version,
+      });
+    });
+  });
+
+  it("lets IT Staff save Owner and IT Priority with the current version", async () => {
+    authState.user = staffUser;
+    const unassignedTicket = { ...ticket, owner: null };
+    getTicketMock.mockResolvedValue(unassignedTicket);
+    const updatedTicket = {
+      ...unassignedTicket,
+      itPriority: "Urgent" as const,
+      owner: {
+        displayName: "Jules IT Staff",
+        id: 12,
+        isActive: true,
+        isEligible: true,
+        role: "IT Staff" as const,
+      },
+      version: 4,
+    };
+    updateStaffTicketOwnerMock.mockResolvedValue({
+      ...updatedTicket,
+      itPriority: "High" as const,
+      version: 3,
+    });
+    updateStaffTicketItPriorityMock.mockResolvedValue(updatedTicket);
+
+    renderPage();
+    await screen.findByText("TKT-20260902-DETAIL01");
+
+    fireEvent.change(screen.getByLabelText("Ticket Owner"), {
+      target: { value: "12" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save Owner" }));
+    await waitFor(() => {
+      expect(updateStaffTicketOwnerMock).toHaveBeenCalledWith(11, {
+        ownerId: 12,
+        version: 2,
+      });
+    });
+
+    fireEvent.change(screen.getByLabelText("IT Priority"), {
+      target: { value: "Urgent" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Save IT Priority" }));
+    await waitFor(() => {
+      expect(updateStaffTicketItPriorityMock).toHaveBeenCalledWith(11, {
+        itPriority: "Urgent",
+        version: 3,
+      });
+    });
+    expect(
+      await screen.findByText("IT Priority saved successfully.")
+    ).toBeTruthy();
   });
 });

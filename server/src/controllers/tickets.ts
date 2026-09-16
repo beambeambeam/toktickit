@@ -9,6 +9,9 @@ import {
   parseStaffTicketListQuery,
   parseTicketListQuery,
   validateEmptyRequest,
+  validateClaimInput,
+  validateItPriorityMutation,
+  validateOwnerMutation,
   validateRemovalReason,
   validateStatusMutation,
   validateTicketFields,
@@ -16,6 +19,7 @@ import {
 import type { AttachmentCandidate } from "../services/ticket-rules.js";
 import {
   addAttachmentsForRequester,
+  claimTicketForStaff,
   createTicketForRequester,
   downloadAttachmentForReader,
   getAttachmentsForReader,
@@ -26,6 +30,8 @@ import {
   listTicketsForRequester,
   removeAttachmentForRequester,
   updateTicketStatusForStaff,
+  updateTicketItPriorityForStaff,
+  updateTicketOwnerForStaff,
 } from "../services/tickets.js";
 
 const parseId = (value: unknown, field: string): number => {
@@ -142,6 +148,16 @@ export const updateTicketStatus: RequestHandler = async (request, response) => {
   response.json(ticket);
 };
 
+export const claimTicket: RequestHandler = async (request, response) => {
+  const ticket = await claimTicketForStaff(
+    getAuthenticatedUserId(response),
+    parseId(request.params.ticketId, "ticketId"),
+    validateClaimInput(request.body)
+  );
+
+  response.json(ticket);
+};
+
 export const indicateTicketResolution: RequestHandler = async (
   request,
   response
@@ -153,6 +169,29 @@ export const indicateTicketResolution: RequestHandler = async (
   );
 
   response.json(indication);
+};
+
+export const updateTicketOwner: RequestHandler = async (request, response) => {
+  const ticket = await updateTicketOwnerForStaff(
+    getAuthenticatedUserId(response),
+    parseId(request.params.ticketId, "ticketId"),
+    validateOwnerMutation(request.body)
+  );
+
+  response.json(ticket);
+};
+
+export const updateTicketItPriority: RequestHandler = async (
+  request,
+  response
+) => {
+  const ticket = await updateTicketItPriorityForStaff(
+    getAuthenticatedUserId(response),
+    parseId(request.params.ticketId, "ticketId"),
+    validateItPriorityMutation(request.body)
+  );
+
+  response.json(ticket);
 };
 
 export const getTicket: RequestHandler = async (request, response) => {

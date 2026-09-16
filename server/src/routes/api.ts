@@ -8,6 +8,7 @@ import {
 } from "../controllers/reference-data.js";
 import {
   addAttachments,
+  claimTicket,
   createTicket,
   downloadAttachment,
   getAttachments,
@@ -18,6 +19,8 @@ import {
   indicateTicketResolution,
   removeAttachment,
   updateTicketStatus,
+  updateTicketItPriority,
+  updateTicketOwner,
 } from "../controllers/tickets.js";
 import { createUser, getUsers } from "../controllers/users.js";
 import { apiErrorHandler, apiNotFound } from "../middlewares/api-errors.js";
@@ -105,6 +108,36 @@ apiRouter.put(
   requireCsrf,
   touchSession,
   indicateTicketResolution
+);
+apiRouter.post(
+  "/tickets/:ticketId/claim",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff"),
+  requireCsrf,
+  touchSession,
+  claimTicket
+);
+apiRouter.put(
+  "/tickets/:ticketId/owner",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff"),
+  requireCsrf,
+  touchSession,
+  updateTicketOwner
+);
+apiRouter.patch(
+  "/tickets/:ticketId/it-priority",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff"),
+  requireCsrf,
+  touchSession,
+  updateTicketItPriority
 );
 apiRouter.get("/health", getHealth);
 apiRouter.get(
