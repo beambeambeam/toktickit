@@ -305,6 +305,28 @@ describe("Administrator user management", () => {
     expect(screen.queryByText(resetPassword)).toBeNull();
   });
 
+  it("initializes the edit form from the fetched account detail", async () => {
+    getUserMock.mockResolvedValueOnce({
+      ...users[1],
+      displayName: "Fresh Ada Detail",
+      email: "fresh-ada@example.test",
+      isActive: false,
+      role: "IT Staff",
+    });
+    renderPage();
+    await screen.findAllByText("Ada Requester");
+    fireEvent.click(
+      screen.getAllByRole("button", { name: "Edit Ada Requester" })[0]
+    );
+
+    expect(await screen.findByDisplayValue("Fresh Ada Detail")).toBeTruthy();
+    expect(screen.getByDisplayValue("fresh-ada@example.test")).toBeTruthy();
+    expect(screen.getByDisplayValue("IT Staff")).toBeTruthy();
+    expect(
+      screen.getByRole("checkbox", { name: "Active account" })
+    ).toHaveProperty("checked", false);
+  });
+
   it("keeps edit values after a duplicate email conflict", async () => {
     resetUserInitialPasswordMock.mockReset();
     updateUserMock.mockRejectedValueOnce(

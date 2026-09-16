@@ -56,6 +56,13 @@ const initialEditFormValues: UserEditFormValues = {
   role: "",
 };
 
+const toEditFormValues = (user: User): UserEditFormValues => ({
+  displayName: user.displayName,
+  email: user.email,
+  isActive: user.isActive,
+  role: user.role,
+});
+
 const userFieldIds: readonly (readonly [keyof UserFormValues, string])[] = [
   ["displayName", "user-display-name"],
   ["email", "user-email"],
@@ -746,6 +753,11 @@ const UserManagementContent = ({
     ...userQueryOptions(editingUserId ?? 0, principalId),
     enabled: editingUserId !== null,
   });
+  const currentEditValues =
+    editValues ??
+    (editUserQuery.data?.id === editingUserId
+      ? toEditFormValues(editUserQuery.data)
+      : null);
   useEffect(() => {
     if (
       usersQuery.error instanceof ApiRequestError &&
@@ -800,19 +812,19 @@ const UserManagementContent = ({
 
   const updateMutation = useMutation({
     mutationFn: async () => {
-      if (editingUserId === null || editValues === null) {
+      if (editingUserId === null || currentEditValues === null) {
         throw new Error("Choose a user to edit.");
       }
 
-      if (editValues.role === "") {
+      if (currentEditValues.role === "") {
         throw new Error("Choose a role.");
       }
 
       return await updateUser(editingUserId, {
-        displayName: editValues.displayName.trim(),
-        email: editValues.email.trim(),
-        isActive: editValues.isActive,
-        role: editValues.role,
+        displayName: currentEditValues.displayName.trim(),
+        email: currentEditValues.email.trim(),
+        isActive: currentEditValues.isActive,
+        role: currentEditValues.role,
       });
     },
     onError: (error: unknown) => {
@@ -835,12 +847,7 @@ const UserManagementContent = ({
       }
 
       setEditSuccessMessage(`${user.displayName} was updated successfully.`);
-      setEditValues({
-        displayName: user.displayName,
-        email: user.email,
-        isActive: user.isActive,
-        role: user.role,
-      });
+      setEditValues(toEditFormValues(user));
       await queryClient.invalidateQueries({ queryKey: ["users"] });
       await queryClient.invalidateQueries({ queryKey: ["user"] });
     },
@@ -953,12 +960,7 @@ const UserManagementContent = ({
   const openEditForm = (user: User) => {
     setIsCreateFormVisible(false);
     setEditingUserId(user.id);
-    setEditValues({
-      displayName: user.displayName,
-      email: user.email,
-      isActive: user.isActive,
-      role: user.role,
-    });
+    setEditValues(null);
     setEditFieldErrors({});
     setEditSubmitError(null);
     setEditSuccessMessage(null);
@@ -1001,9 +1003,16 @@ const UserManagementContent = ({
     field: Field,
     value: UserEditFormValues[Field]
   ) => {
-    setEditValues((current) =>
-      current === null ? current : { ...current, [field]: value }
-    );
+    setEditValues((current) => {
+      const baseValues =
+        current ??
+        (editUserQuery.data === undefined
+          ? null
+          : toEditFormValues(editUserQuery.data));
+      return baseValues === null
+        ? baseValues
+        : { ...baseValues, [field]: value };
+    });
     setEditFieldErrors((current) => ({ ...current, [field]: undefined }));
     setEditSubmitError(null);
     setEditSuccessMessage(null);
@@ -1012,11 +1021,11 @@ const UserManagementContent = ({
   const submitEditUser = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (editValues === null) {
+    if (currentEditValues === null) {
       return;
     }
 
-    const errors = validateUserEditForm(editValues);
+    const errors = validateUserEditForm(currentEditValues);
     setEditFieldErrors(errors);
     setEditSubmitError(null);
     setEditSuccessMessage(null);
@@ -1198,7 +1207,7 @@ const UserManagementContent = ({
           submitError={editSubmitError}
           successMessage={editSuccessMessage}
           user={editUserQuery.data ?? null}
-          values={editValues}
+          values={currentEditValues}
         />
       )}
 
