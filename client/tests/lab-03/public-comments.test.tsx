@@ -143,6 +143,24 @@ describe("Public Comments section", () => {
     ).toHaveProperty("value", "");
   });
 
+  it("focuses invalid input and describes its validation error", async () => {
+    renderSection();
+    const composer = await screen.findByRole("textbox", {
+      name: "Public Comment",
+    });
+    fireEvent.change(composer, { target: { value: " \t" } });
+    fireEvent.click(
+      screen.getByRole("button", { name: "Post Public Comment" })
+    );
+
+    await screen.findByText(/Comment must contain 1–5000/u);
+    expect(document.activeElement).toBe(composer);
+    expect(composer.getAttribute("aria-describedby")).toBe(
+      "public-comment-help-11 public-comment-11-error"
+    );
+    expect(postTicketCommentMock).not.toHaveBeenCalled();
+  });
+
   it("hides the composer for terminal Tickets and read-only Administrators", async () => {
     getTicketCommentsMock.mockResolvedValueOnce([]);
     renderSection({ currentStatus: "Closed" });

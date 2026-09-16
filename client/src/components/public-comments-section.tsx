@@ -1,12 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { SubmitEvent } from "react";
 
 import { ApiConnectionError } from "@/api/client";
 import { ApiRequestError } from "@/api/errors";
 import { ticketCommentsQueryOptions } from "@/api/query-options";
 import { postTicketComment } from "@/api/ticket-comments";
-import { FormField } from "@/components/form-field";
+import { fieldDescribedBy, FormField } from "@/components/form-field";
 import type { CurrentStatus, Entry } from "@/generated/hey-api/types.gen";
 
 const MAX_COMMENT_CODE_POINTS = 5000;
@@ -55,6 +55,9 @@ const PublicCommentsSectionContent = ({
   const commentsQuery = useQuery(
     ticketCommentsQueryOptions(ticketId, principalId)
   );
+  const commentFieldId = `public-comment-${ticketId}`;
+  const commentHelpId = `public-comment-help-${ticketId}`;
+  const commentInputRef = useRef<HTMLTextAreaElement>(null);
   const [draft, setDraft] = useState("");
   const [validationError, setValidationError] = useState<string | null>(null);
   const [operationError, setOperationError] = useState<string | null>(null);
@@ -97,6 +100,7 @@ const PublicCommentsSectionContent = ({
         `Comment must contain 1–${MAX_COMMENT_CODE_POINTS} submitted Unicode code points and at least one non-whitespace character.`
       );
       setOperationError(null);
+      commentInputRef.current?.focus();
       return;
     }
 
@@ -133,14 +137,21 @@ const PublicCommentsSectionContent = ({
       <form className="public-comment-compose" onSubmit={submit}>
         <FormField
           error={validationError ?? undefined}
-          htmlFor={`public-comment-${ticketId}`}
+          htmlFor={commentFieldId}
           label="Public Comment"
           required
         >
           <textarea
-            aria-describedby={`public-comment-help-${ticketId}`}
+            aria-describedby={
+              [
+                commentHelpId,
+                fieldDescribedBy(commentFieldId, validationError !== null),
+              ]
+                .filter((value): value is string => value !== undefined)
+                .join(" ") || undefined
+            }
             aria-invalid={Boolean(validationError)}
-            id={`public-comment-${ticketId}`}
+            id={commentFieldId}
             onChange={(event) => {
               setDraft(event.target.value);
               setValidationError(null);
@@ -148,11 +159,12 @@ const PublicCommentsSectionContent = ({
               setSuccessMessage(null);
             }}
             placeholder="Write an update for the shared Ticket conversation"
+            ref={commentInputRef}
             rows={5}
             value={draft}
           />
         </FormField>
-        <p className="field-help" id={`public-comment-help-${ticketId}`}>
+        <p className="field-help" id={commentHelpId}>
           Plain text only. {codePointLength(draft)} / {MAX_COMMENT_CODE_POINTS}{" "}
           submitted Unicode code points.
         </p>
