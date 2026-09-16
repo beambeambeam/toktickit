@@ -313,6 +313,36 @@ describe("Staff Ticket Detail page", () => {
     });
   });
 
+  it("traps confirmation focus, supports Escape, and restores the trigger", async () => {
+    authState.user = staffUser;
+    renderPage();
+
+    await screen.findByText("TKT-20260902-DETAIL01");
+    const trigger = screen.getByRole("button", { name: "Apply Status" });
+    fireEvent.change(screen.getByLabelText("Next status"), {
+      target: { value: "Resolved" },
+    });
+    fireEvent.click(trigger);
+
+    const dialog = await screen.findByRole("alertdialog");
+    const cancel = within(dialog).getByRole("button", { name: "Cancel" });
+    const confirm = within(dialog).getByRole("button", {
+      name: "Confirm Resolved",
+    });
+    expect(document.activeElement).toBe(cancel);
+
+    fireEvent.keyDown(document, { key: "Tab", shiftKey: true });
+    expect(document.activeElement).toBe(confirm);
+    fireEvent.keyDown(document, { key: "Tab" });
+    expect(document.activeElement).toBe(cancel);
+    fireEvent.keyDown(document, { key: "Escape" });
+
+    await waitFor(() => {
+      expect(screen.queryByRole("alertdialog")).toBeNull();
+    });
+    expect(document.activeElement).toBe(trigger);
+  });
+
   it("downloads only active Attachment content", async () => {
     downloadTicketAttachmentMock.mockResolvedValue({
       blob: new Blob(["evidence"], { type: "application/pdf" }),

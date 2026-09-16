@@ -67,6 +67,9 @@ interface StatusConfirmation {
   version: number;
 }
 
+const focusableDialogSelector =
+  'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+
 // oxlint-disable-next-line complexity -- this page renders documented read-only detail and attachment states.
 const StaffTicketDetailContent = ({
   onAccessError,
@@ -95,6 +98,74 @@ const StaffTicketDetailContent = ({
   const [selectedStatus, setSelectedStatus] = useState<CurrentStatus | "">("");
   const [statusConfirmation, setStatusConfirmation] =
     useState<StatusConfirmation | null>(null);
+  const statusTriggerRef = useRef<HTMLButtonElement | null>(null);
+  const statusDialogRef = useRef<HTMLDivElement | null>(null);
+  const statusCancelRef = useRef<HTMLButtonElement | null>(null);
+  const wasStatusConfirmationOpen = useRef(false);
+
+  useEffect(() => {
+    let cleanup: (() => void) | undefined;
+
+    if (statusConfirmation === null) {
+      if (wasStatusConfirmationOpen.current) {
+        wasStatusConfirmationOpen.current = false;
+        statusTriggerRef.current?.focus();
+      }
+    } else {
+      wasStatusConfirmationOpen.current = true;
+      statusCancelRef.current?.focus();
+      const dialog = statusDialogRef.current;
+
+      if (dialog !== null) {
+        const handleKeyDown = (event: KeyboardEvent) => {
+          if (event.key === "Escape") {
+            event.preventDefault();
+            setStatusConfirmation(null);
+            return;
+          }
+
+          if (event.key !== "Tab") {
+            return;
+          }
+
+          const focusableElements = [
+            ...dialog.querySelectorAll<HTMLElement>(focusableDialogSelector),
+          ];
+          const [firstFocusable, ...remainingFocusableElements] =
+            focusableElements;
+          const lastFocusable = remainingFocusableElements.pop();
+
+          if (firstFocusable === undefined || lastFocusable === undefined) {
+            return;
+          }
+
+          if (!dialog.contains(document.activeElement)) {
+            event.preventDefault();
+            firstFocusable.focus();
+          } else if (
+            event.shiftKey &&
+            document.activeElement === firstFocusable
+          ) {
+            event.preventDefault();
+            lastFocusable.focus();
+          } else if (
+            !event.shiftKey &&
+            document.activeElement === lastFocusable
+          ) {
+            event.preventDefault();
+            firstFocusable.focus();
+          }
+        };
+
+        document.addEventListener("keydown", handleKeyDown);
+        cleanup = () => {
+          document.removeEventListener("keydown", handleKeyDown);
+        };
+      }
+    }
+
+    return cleanup;
+  }, [statusConfirmation]);
 
   const statusMutation = useMutation({
     mutationFn: async (input: {
@@ -351,6 +422,7 @@ const StaffTicketDetailContent = ({
                       disabled={
                         selectedStatus === "" || statusMutation.isPending
                       }
+                      ref={statusTriggerRef}
                       onClick={() => {
                         if (selectedStatus === "") {
                           return;
@@ -522,7 +594,10 @@ const StaffTicketDetailContent = ({
           className="dialog-backdrop"
           role="alertdialog"
         >
-          <div className="surface-card confirmation-dialog">
+          <div
+            className="surface-card confirmation-dialog"
+            ref={statusDialogRef}
+          >
             <p className="eyebrow">Confirm workflow action</p>
             <h2 id="status-confirmation-title">
               Mark Ticket {statusConfirmation.status}?
@@ -534,6 +609,7 @@ const StaffTicketDetailContent = ({
               <button
                 className="button button-secondary"
                 disabled={statusMutation.isPending}
+                ref={statusCancelRef}
                 onClick={() => {
                   setStatusConfirmation(null);
                 }}
