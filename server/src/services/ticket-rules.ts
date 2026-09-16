@@ -1,9 +1,11 @@
 import path from "node:path";
 
 import { ApiError } from "../errors/api-error.js";
+import { statusRequiresConfirmation } from "../types/ticket-workflow.js";
 import type {
   CurrentStatus,
   RequestedPriority,
+  StatusMutationInput,
   TicketFields,
   TicketListQuery,
   StaffTicketListQuery,
@@ -189,6 +191,90 @@ const isRequestedPriority = (value: string): value is RequestedPriority =>
 
 const isCurrentStatus = (value: string): value is CurrentStatus =>
   currentStatuses.some((status) => status === value);
+
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const isPositiveSafeInteger = (value: unknown): value is number =>
+  typeof value === "number" &&
+  Number.isSafeInteger(value) &&
+  value > 0 &&
+  value <= MAX_POSTGRES_INT;
+
+const parseVersion = (value: unknown): number => {
+  if (!isPositiveSafeInteger(value)) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "version",
+      reason: "Version must be a positive integer.",
+    });
+  }
+
+  return value;
+};
+
+export const validateStatusMutation = (body: unknown): StatusMutationInput => {
+  if (!isRecord(body)) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "body",
+      reason: "Current Status and version are required.",
+    });
+  }
+
+  const keys = Object.keys(body);
+  if (
+    keys.length < 2 ||
+    keys.length > 3 ||
+    !keys.includes("currentStatus") ||
+    !keys.includes("version") ||
+    keys.some(
+      (field) => !["confirmed", "currentStatus", "version"].includes(field)
+    )
+  ) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "body",
+      reason: "Current Status and version are required.",
+    });
+  }
+
+  const { confirmed, currentStatus, version } = body;
+
+  if (typeof currentStatus !== "string" || !isCurrentStatus(currentStatus)) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "currentStatus",
+      reason: "Current Status is invalid.",
+    });
+  }
+
+  if (confirmed !== undefined && typeof confirmed !== "boolean") {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "confirmed",
+      reason: "confirmed must be a boolean.",
+    });
+  }
+
+  if (statusRequiresConfirmation(currentStatus) && confirmed !== true) {
+    throw new ApiError(
+      400,
+      "CONFIRMATION_REQUIRED",
+      "Confirm this terminal Ticket transition before continuing.",
+      { field: "confirmed", reason: "Set confirmed to true." }
+    );
+  }
+
+  const parsedVersion = parseVersion(version);
+  return confirmed === undefined
+    ? { currentStatus, version: parsedVersion }
+    : { confirmed, currentStatus, version: parsedVersion };
+};
+
+export const validateEmptyRequest = (body: unknown): void => {
+  if (!isRecord(body) || Object.keys(body).length !== 0) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "body",
+      reason: "Request body must be empty.",
+    });
+  }
+};
 
 const isTicketSortField = (value: string): value is TicketSortField =>
   ticketSortFields.some((field) => field === value);

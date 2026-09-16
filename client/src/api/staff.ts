@@ -1,8 +1,9 @@
-import { apiClient } from "@/api/client";
-import { invalidApiResponse, unwrap } from "@/api/errors";
+import { apiClient, getCsrfToken } from "@/api/client";
+import { ApiRequestError, invalidApiResponse, unwrap } from "@/api/errors";
 import {
   getApiStaffOwners,
   getApiStaffTickets,
+  updateApiTicketStatus,
 } from "@/generated/hey-api/sdk.gen";
 import type {
   CurrentStatus,
@@ -13,6 +14,8 @@ import type {
   QueueSortBy,
   RequestedPriority,
   StaffTicketListResponse,
+  StatusMutationRequest,
+  TicketDetail,
 } from "@/generated/hey-api/types.gen";
 import { isRequestedPriority } from "@/lib/ticket-priorities";
 import { isCurrentStatus } from "@/lib/ticket-statuses";
@@ -35,6 +38,22 @@ export interface StaffTicketListParams {
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
   typeof value === "object" && value !== null && !Array.isArray(value);
+
+const csrfHeaders = (): { "X-CSRF-Token": string } => {
+  const token = getCsrfToken();
+
+  if (token === null) {
+    throw new ApiRequestError(
+      401,
+      "Sign in to continue.",
+      "AUTHENTICATION_REQUIRED"
+    );
+  }
+
+  return { "X-CSRF-Token": token };
+};
+
+const requireTicketDetail = (value: TicketDetail): TicketDetail => value;
 
 const isPositiveSafeInteger = (value: unknown): value is number =>
   typeof value === "number" && Number.isSafeInteger(value) && value > 0;
@@ -131,3 +150,20 @@ export const getStaffOwners = async (
 
   return body.items;
 };
+
+export const updateStaffTicketStatus = async (
+  ticketId: number,
+  input: StatusMutationRequest,
+  signal?: AbortSignal
+): Promise<TicketDetail> =>
+  requireTicketDetail(
+    await unwrap(
+      updateApiTicketStatus({
+        body: input,
+        client: apiClient,
+        headers: csrfHeaders(),
+        path: { ticketId },
+        signal,
+      })
+    )
+  );

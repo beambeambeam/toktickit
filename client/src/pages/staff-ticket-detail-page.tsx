@@ -4,7 +4,7 @@ import {
   CancelCircleIcon,
   CheckmarkCircle02Icon,
 } from "@hugeicons/core-free-icons";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useEffect, useRef, useState } from "react";
 
@@ -12,17 +12,20 @@ import { ApiConnectionError } from "@/api/client";
 import { ApiRequestError } from "@/api/errors";
 import { ticketQueryOptions } from "@/api/query-options";
 import { downloadTicketAttachment } from "@/api/requester";
+import { updateStaffTicketStatus } from "@/api/staff";
 import {
   AccessDenied,
   AppShell,
   AuthLoading,
   AuthRequired,
 } from "@/components/app-shell";
-import { ReadOnlyField } from "@/components/form-field";
+import { FormField, ReadOnlyField } from "@/components/form-field";
 import { Icon } from "@/components/icon";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
 import { cn } from "@/lib/class-names";
+import { allowedNextStatuses, isCurrentStatus } from "@/lib/ticket-statuses";
+import type { CurrentStatus } from "@/lib/ticket-statuses";
 
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat(undefined, {
@@ -47,6 +50,18 @@ const getDetailErrorMessage = (error: unknown): string => {
   return "This Ticket could not be loaded. Try again.";
 };
 
+const getStatusConfirmationMessage = (status: CurrentStatus): string => {
+  if (status === "Resolved") {
+    return "This formally marks the Ticket resolved. No Actions Taken entry is required. Staff can reopen it if the problem returns.";
+  }
+
+  if (status === "Closed") {
+    return "This closes the resolved Ticket. Closed Tickets have no further workflow transitions.";
+  }
+
+  return "This cancels the Ticket. Cancelled Tickets have no further workflow transitions.";
+};
+
 // oxlint-disable-next-line complexity -- this page renders documented read-only detail and attachment states.
 const StaffTicketDetailContent = ({
   onAccessError,
@@ -56,6 +71,7 @@ const StaffTicketDetailContent = ({
   ticketId: string;
 }) => {
   const { user } = useAuth();
+  const queryClient = useQueryClient();
   const numericTicketId = Number(ticketId);
   const hasValidTicketId =
     /^[1-9]\d*$/u.test(ticketId) &&
@@ -69,6 +85,46 @@ const StaffTicketDetailContent = ({
       hasValidTicketId,
   });
   const [operationError, setOperationError] = useState<string | null>(null);
+  const [statusError, setStatusError] = useState<string | null>(null);
+  const [statusSuccess, setStatusSuccess] = useState<string | null>(null);
+  const [selectedStatus, setSelectedStatus] = useState<CurrentStatus | "">("");
+  const [statusToConfirm, setStatusToConfirm] = useState<CurrentStatus | null>(
+    null
+  );
+
+  const statusMutation = useMutation({
+    mutationFn: async (input: {
+      confirmed?: boolean;
+      currentStatus: CurrentStatus;
+      version: number;
+    }) => await updateStaffTicketStatus(numericTicketId, input),
+    onError: (error: unknown) => {
+      if (error instanceof ApiRequestError && error.status === 403) {
+        onAccessError(error);
+        return;
+      }
+
+      setStatusSuccess(null);
+      setStatusError(
+        error instanceof Error
+          ? error.message
+          : "Unable to update the Ticket status."
+      );
+      if (error instanceof ApiRequestError && error.status === 409) {
+        setSelectedStatus("");
+        void ticketQuery.refetch();
+      }
+    },
+    onSuccess: (nextTicket) => {
+      queryClient.setQueryData(
+        ["ticket", user?.id ?? 0, numericTicketId],
+        nextTicket
+      );
+      setSelectedStatus("");
+      setStatusError(null);
+      setStatusSuccess(`Ticket status changed to ${nextTicket.currentStatus}.`);
+    },
+  });
 
   useEffect(() => {
     if (
@@ -88,6 +144,7 @@ const StaffTicketDetailContent = ({
   }
 
   const ticket = ticketQuery.data;
+  const nextStatuses = ticket ? allowedNextStatuses[ticket.currentStatus] : [];
 
   const download = async (attachmentId: number) => {
     try {
@@ -239,6 +296,103 @@ const StaffTicketDetailContent = ({
             </div>
           </section>
 
+          {user.role === "IT Staff" ? (
+            <section
+              aria-labelledby="staff-status-heading"
+              className="surface-card form-section"
+            >
+              <div className="section-heading">
+                <div>
+                  <p className="eyebrow">Staff workflow</p>
+                  <h2 id="staff-status-heading">Progress Ticket</h2>
+                </div>
+                <span className="required-note">
+                  Current status: {ticket.currentStatus} · Version{" "}
+                  {ticket.version}
+                </span>
+              </div>
+
+              {nextStatuses.length === 0 ? (
+                <p className="context-note">
+                  This Ticket has no available next status. Closed and Cancelled
+                  Tickets cannot be progressed.
+                </p>
+              ) : (
+                <div className="form-grid-two">
+                  <FormField htmlFor="ticket-next-status" label="Next status">
+                    <select
+                      disabled={statusMutation.isPending}
+                      id="ticket-next-status"
+                      onChange={(event) => {
+                        if (isCurrentStatus(event.target.value)) {
+                          setSelectedStatus(event.target.value);
+                          setStatusError(null);
+                          setStatusSuccess(null);
+                        }
+                      }}
+                      value={selectedStatus}
+                    >
+                      <option value="">Choose a next status</option>
+                      {nextStatuses.map((status) => (
+                        <option key={status} value={status}>
+                          {status}
+                        </option>
+                      ))}
+                    </select>
+                  </FormField>
+                  <div className="form-field">
+                    <span className="field-label">Workflow action</span>
+                    <button
+                      className="button button-primary"
+                      disabled={
+                        selectedStatus === "" || statusMutation.isPending
+                      }
+                      onClick={() => {
+                        if (selectedStatus === "") {
+                          return;
+                        }
+
+                        if (
+                          selectedStatus === "Resolved" ||
+                          selectedStatus === "Closed" ||
+                          selectedStatus === "Cancelled"
+                        ) {
+                          setStatusToConfirm(selectedStatus);
+                          return;
+                        }
+
+                        setStatusError(null);
+                        setStatusSuccess(null);
+                        statusMutation.mutate({
+                          currentStatus: selectedStatus,
+                          version: ticket.version,
+                        });
+                      }}
+                      type="button"
+                    >
+                      {statusMutation.isPending ? "Applying…" : "Apply Status"}
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div
+                aria-live="polite"
+                className="operation-status"
+                role="status"
+              >
+                {statusSuccess === null ? null : (
+                  <span className="success-message">{statusSuccess}</span>
+                )}
+                {statusError === null ? null : (
+                  <span className="error-message" role="alert">
+                    {statusError}
+                  </span>
+                )}
+              </div>
+            </section>
+          ) : null}
+
           {ticket.resolutionIndication ? (
             <section
               aria-labelledby="resolution-indication-heading"
@@ -352,6 +506,68 @@ const StaffTicketDetailContent = ({
           </section>
         </>
       ) : null}
+
+      {statusToConfirm === null ? null : (
+        <div
+          aria-describedby="status-confirmation-description"
+          aria-labelledby="status-confirmation-title"
+          aria-modal="true"
+          className="dialog-backdrop"
+          role="alertdialog"
+        >
+          <div className="surface-card confirmation-dialog">
+            <p className="eyebrow">Confirm workflow action</p>
+            <h2 id="status-confirmation-title">
+              Mark Ticket {statusToConfirm}?
+            </h2>
+            <p id="status-confirmation-description">
+              {getStatusConfirmationMessage(statusToConfirm)}
+            </p>
+            <div className="form-actions">
+              <button
+                className="button button-secondary"
+                disabled={statusMutation.isPending}
+                onClick={() => {
+                  setStatusToConfirm(null);
+                }}
+                type="button"
+              >
+                Cancel
+              </button>
+              <button
+                className="button button-danger"
+                disabled={statusMutation.isPending}
+                onClick={() => {
+                  if (ticket === undefined) {
+                    setStatusToConfirm(null);
+                    return;
+                  }
+
+                  setStatusError(null);
+                  setStatusSuccess(null);
+                  statusMutation.mutate(
+                    {
+                      confirmed: true,
+                      currentStatus: statusToConfirm,
+                      version: ticket.version,
+                    },
+                    {
+                      onSettled: () => {
+                        setStatusToConfirm(null);
+                      },
+                    }
+                  );
+                }}
+                type="button"
+              >
+                {statusMutation.isPending
+                  ? "Applying…"
+                  : `Confirm ${statusToConfirm}`}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </AppShell>
   );
 };

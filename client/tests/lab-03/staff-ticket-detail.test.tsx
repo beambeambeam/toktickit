@@ -8,6 +8,7 @@ import {
   render,
   screen,
   waitFor,
+  within,
 } from "@testing-library/react";
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
@@ -21,11 +22,13 @@ const {
   downloadTicketAttachmentMock,
   getTicketMock,
   refetchAuthMock,
+  updateStaffTicketStatusMock,
 } = vi.hoisted(() => ({
   authState: { user: null as AuthUser | null },
   downloadTicketAttachmentMock: vi.fn(),
   getTicketMock: vi.fn(),
   refetchAuthMock: vi.fn(),
+  updateStaffTicketStatusMock: vi.fn(),
 }));
 
 vi.mock("@tanstack/react-router", async () => {
@@ -55,6 +58,10 @@ vi.mock("@/api/requester", () => ({
   downloadTicketAttachment: downloadTicketAttachmentMock,
 }));
 
+vi.mock("@/api/staff", () => ({
+  updateStaffTicketStatus: updateStaffTicketStatusMock,
+}));
+
 vi.mock("@/context/auth", () => ({
   useAuth: () => ({
     auth:
@@ -81,6 +88,14 @@ const adminUser: AuthUser = {
   mustChangePassword: false,
   role: "Administrator",
   updatedAt: "2026-09-01T00:00:00.000Z",
+};
+
+const staffUser: AuthUser = {
+  ...adminUser,
+  displayName: "Iris IT Staff",
+  email: "iris@example.test",
+  id: 10,
+  role: "IT Staff",
 };
 
 const activeAttachment = {
@@ -161,6 +176,7 @@ describe("Staff Ticket Detail page", () => {
     authState.user = adminUser;
     getTicketMock.mockReset().mockResolvedValue(ticket);
     downloadTicketAttachmentMock.mockReset();
+    updateStaffTicketStatusMock.mockReset();
     refetchAuthMock.mockReset().mockResolvedValue(null);
   });
 
@@ -223,6 +239,44 @@ describe("Staff Ticket Detail page", () => {
 
     await screen.findByRole("heading", { name: "Access denied" });
     expect(refetchAuthMock).toHaveBeenCalled();
+  });
+
+  it("shows allowed status transitions and confirms terminal progress", async () => {
+    authState.user = staffUser;
+    updateStaffTicketStatusMock.mockResolvedValue({
+      ...ticket,
+      currentStatus: "Resolved",
+      resolvedAt: "2026-09-02T12:00:00.000Z",
+      statusChangedAt: "2026-09-02T12:00:00.000Z",
+      updatedAt: "2026-09-02T12:00:00.000Z",
+      version: 3,
+    });
+    renderPage();
+
+    await screen.findByText("TKT-20260902-DETAIL01");
+    const statusSelect = screen.getByLabelText("Next status");
+    expect(statusSelect).toHaveProperty("value", "");
+    fireEvent.change(statusSelect, { target: { value: "Resolved" } });
+    fireEvent.click(screen.getByRole("button", { name: "Apply Status" }));
+
+    const dialog = await screen.findByRole("alertdialog");
+    expect(
+      within(dialog).getByText(/No Actions Taken entry is required/u)
+    ).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Confirm Resolved" })
+    );
+
+    await waitFor(() => {
+      expect(updateStaffTicketStatusMock).toHaveBeenCalledWith(11, {
+        confirmed: true,
+        currentStatus: "Resolved",
+        version: 2,
+      });
+    });
+    expect(
+      await screen.findByText("Ticket status changed to Resolved.")
+    ).toBeTruthy();
   });
 
   it("downloads only active Attachment content", async () => {

@@ -199,6 +199,76 @@ paths:
           $ref: "#/components/responses/ApiErrorResponse"
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/status:
+    post:
+      operationId: updateApiTicketStatus
+      summary: Progress a Ticket
+      description: Applies one approved status transition for IT Staff.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusMutationRequest"
+      responses:
+        "200":
+          description: The updated Ticket.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketDetail"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/resolution-indication:
+    put:
+      operationId: indicateApiTicketResolution
+      summary: Indicate apparent Ticket resolution
+      description: Records an owning Requester's apparent-resolution indication without formally changing status.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmptyRequest"
+      responses:
+        "200":
+          description: The recorded indication.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResolutionIndicationResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
   /api/users:
     get:
       operationId: getApiUsers
@@ -832,6 +902,25 @@ components:
           Reopened,
           Cancelled,
         ]
+    StatusMutationRequest:
+      type: object
+      additionalProperties: false
+      required: [currentStatus, version]
+      properties:
+        currentStatus:
+          $ref: "#/components/schemas/CurrentStatus"
+        version:
+          type: integer
+          minimum: 1
+        confirmed:
+          type: boolean
+    ResolutionIndicationResponse:
+      type: object
+      additionalProperties: false
+      required: [resolutionIndication]
+      properties:
+        resolutionIndication:
+          $ref: "#/components/schemas/ResolutionIndication"
     AttachmentMetadata:
       type: object
       additionalProperties: false

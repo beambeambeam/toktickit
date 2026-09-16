@@ -12,6 +12,7 @@ import type { SubmitEvent } from "react";
 import { ticketQueryOptions } from "@/api/query-options";
 import {
   downloadTicketAttachment,
+  indicateTicketResolution,
   removeTicketAttachment,
   uploadTicketAttachments,
 } from "@/api/requester";
@@ -62,6 +63,10 @@ export const RequesterTicketDetailPage = ({
   const [fileErrors, setFileErrors] = useState<string[]>([]);
   const [operationError, setOperationError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [resolutionError, setResolutionError] = useState<string | null>(null);
+  const [resolutionSuccess, setResolutionSuccess] = useState<string | null>(
+    null
+  );
   const [attachmentToRemove, setAttachmentToRemove] = useState<number | null>(
     null
   );
@@ -132,6 +137,36 @@ export const RequesterTicketDetailPage = ({
     },
   });
 
+  const indicationMutation = useMutation({
+    mutationFn: async () => {
+      if (user === null) {
+        throw new Error("Sign in before indicating resolution.");
+      }
+
+      return await indicateTicketResolution(numericTicketId);
+    },
+    onError: (error: unknown) => {
+      setResolutionSuccess(null);
+      setResolutionError(
+        error instanceof Error
+          ? error.message
+          : "Unable to record the resolution indication."
+      );
+    },
+    onSuccess: (resolutionIndication) => {
+      setResolutionError(null);
+      setResolutionSuccess(
+        "Your apparent-resolution indication was recorded for Staff."
+      );
+      queryClient.setQueryData(
+        ["ticket", principalId, numericTicketId],
+        (current: typeof ticketQuery.data) =>
+          current === undefined ? current : { ...current, resolutionIndication }
+      );
+      void ticketQuery.refetch();
+    },
+  });
+
   if (user === null) {
     return <AuthRequired />;
   }
@@ -145,6 +180,12 @@ export const RequesterTicketDetailPage = ({
   }
 
   const ticket = ticketQuery.data;
+  const isTerminalTicket =
+    ticket !== undefined &&
+    ["Resolved", "Closed", "Cancelled"].includes(ticket.currentStatus);
+  const hasResolutionIndication =
+    ticket?.resolutionIndication !== null &&
+    ticket?.resolutionIndication !== undefined;
 
   const handleFiles = (selectedFiles: File[]) => {
     const result = validateSelectedFiles(selectedFiles);
@@ -295,6 +336,68 @@ export const RequesterTicketDetailPage = ({
                   {ticket.description}
                 </output>
               </div>
+            </div>
+          </section>
+
+          <section
+            aria-labelledby="resolution-action-heading"
+            className="surface-card form-section"
+          >
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Requester feedback</p>
+                <h2 id="resolution-action-heading">Apparent resolution</h2>
+              </div>
+            </div>
+            {ticket.resolutionIndication ? (
+              <div className="readonly-grid">
+                <ReadOnlyField
+                  label="Indicated at"
+                  value={formatDate(ticket.resolutionIndication.createdAt)}
+                />
+                <ReadOnlyField
+                  label="Next step"
+                  value="Staff will formally resolve the Ticket."
+                />
+              </div>
+            ) : null}
+            {!hasResolutionIndication && isTerminalTicket ? (
+              <p className="context-note">
+                This Ticket is already terminal, so a new apparent-resolution
+                indication is unavailable.
+              </p>
+            ) : null}
+            {!hasResolutionIndication && !isTerminalTicket ? (
+              <>
+                <p className="context-note">
+                  If the problem appears resolved, tell Staff. This does not
+                  change the formal Ticket status.
+                </p>
+                <button
+                  className="button button-primary"
+                  disabled={indicationMutation.isPending}
+                  onClick={() => {
+                    setResolutionError(null);
+                    setResolutionSuccess(null);
+                    indicationMutation.mutate();
+                  }}
+                  type="button"
+                >
+                  {indicationMutation.isPending
+                    ? "Recording…"
+                    : "Problem Appears Resolved"}
+                </button>
+              </>
+            ) : null}
+            <div aria-live="polite" className="operation-status" role="status">
+              {resolutionSuccess === null ? null : (
+                <span className="success-message">{resolutionSuccess}</span>
+              )}
+              {resolutionError === null ? null : (
+                <span className="error-message" role="alert">
+                  {resolutionError}
+                </span>
+              )}
             </div>
           </section>
 
