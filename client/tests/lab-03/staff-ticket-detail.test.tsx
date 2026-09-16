@@ -36,12 +36,12 @@ vi.mock("@tanstack/react-router", async () => {
 });
 
 vi.mock("@/api/query-options", () => ({
-  ticketQueryOptions: (ticketId: number) => ({
+  ticketQueryOptions: (ticketId: number, principalId: number) => ({
     queryFn: async ({ signal }: { signal: AbortSignal }) => {
       const result: unknown = await getTicketMock(ticketId, signal);
       return result;
     },
-    queryKey: ["ticket", ticketId],
+    queryKey: ["ticket", principalId, ticketId],
     retry: false,
   }),
 }));
@@ -141,11 +141,14 @@ const renderPage = (ticketId = "11") => {
     },
   });
 
-  return render(
-    <QueryClientProvider client={queryClient}>
-      <StaffTicketDetailPage ticketId={ticketId} />
-    </QueryClientProvider>
-  );
+  return {
+    queryClient,
+    ...render(
+      <QueryClientProvider client={queryClient}>
+        <StaffTicketDetailPage ticketId={ticketId} />
+      </QueryClientProvider>
+    ),
+  };
 };
 
 describe("Staff Ticket Detail page", () => {
@@ -176,6 +179,17 @@ describe("Staff Ticket Detail page", () => {
       screen.queryByRole("button", { name: /Add Attachment/u })
     ).toBeNull();
     expect(screen.queryByRole("button", { name: /Upload/u })).toBeNull();
+  });
+
+  it("scopes detail data to the authenticated principal", async () => {
+    const { queryClient } = renderPage();
+
+    await screen.findByText("TKT-20260902-DETAIL01");
+
+    expect(queryClient.getQueryData(["ticket", adminUser.id, 11])).toEqual(
+      ticket
+    );
+    expect(queryClient.getQueryData(["ticket", 11])).toBeUndefined();
   });
 
   it("shows a retryable failure and avoids the API for an invalid Ticket Number", async () => {

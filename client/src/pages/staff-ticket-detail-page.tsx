@@ -50,7 +50,7 @@ const StaffTicketDetailContent = ({ ticketId }: { ticketId: string }) => {
     Number.isSafeInteger(numericTicketId) &&
     numericTicketId <= 2_147_483_647;
   const ticketQuery = useQuery({
-    ...ticketQueryOptions(numericTicketId),
+    ...ticketQueryOptions(numericTicketId, user?.id ?? 0),
     enabled:
       (user?.role === "IT Staff" || user?.role === "Administrator") &&
       !user.mustChangePassword &&
