@@ -99,6 +99,7 @@ const StaffTicketDetailContent = ({
       ["ticket", user?.id ?? 0, numericTicketId],
       nextTicket
     );
+    void queryClient.invalidateQueries({ queryKey: ["staff-tickets"] });
     setOperationError(null);
     setOperationSuccess(message);
     setSelectedOwnerId(nextTicket.owner?.id.toString() ?? "");
