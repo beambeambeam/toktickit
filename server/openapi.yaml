@@ -365,14 +365,14 @@ paths:
     get:
       operationId: getApiTicketComments
       summary: List public Ticket comments
-      description: Requesters can read their own public comments; IT Staff and Administrators can read every Ticket's public comments.
+      description: Requesters can read their own public comments; IT Staff and Administrators can read every Ticket's public comments. The response contains at most the 500 latest comments in chronological order.
       security:
         - sessionCookie: []
       parameters:
         - $ref: "#/components/parameters/TicketId"
       responses:
         "200":
-          description: The public Ticket comments in chronological order.
+          description: The 500 latest public Ticket comments in chronological order.
           content:
             application/json:
               schema:

@@ -15,10 +15,9 @@ const publicCommentSelect = {
   id: true,
 } satisfies Prisma.PublicCommentSelect;
 
-const publicCommentOrder: Prisma.PublicCommentOrderByWithRelationInput[] = [
-  { createdAt: "asc" },
-  { id: "asc" },
-];
+const publicCommentLatestOrder: Prisma.PublicCommentOrderByWithRelationInput[] =
+  [{ createdAt: "desc" }, { id: "desc" }];
+const MAX_PUBLIC_COMMENTS_PER_READ = 500;
 
 export type PublicCommentRecord = Prisma.PublicCommentGetPayload<{
   select: typeof publicCommentSelect;
@@ -64,11 +63,15 @@ export const findPublicCommentsForReader = async (
     return null;
   }
 
-  return await prisma.publicComment.findMany({
-    orderBy: publicCommentOrder,
+  const comments = await prisma.publicComment.findMany({
+    orderBy: publicCommentLatestOrder,
     select: publicCommentSelect,
+    take: MAX_PUBLIC_COMMENTS_PER_READ,
     where: { ticketId },
   });
+
+  // oxlint-disable-next-line unicorn/no-array-reverse -- Prisma returns a new result array for this bounded read.
+  return comments.reverse();
 };
 
 type PublicCommentCreateOutcome =

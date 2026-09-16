@@ -831,7 +831,7 @@ export type GetApiTicketCommentsError = GetApiTicketCommentsErrors[keyof GetApiT
 
 export type GetApiTicketCommentsResponses = {
     /**
-     * The public Ticket comments in chronological order.
+     * The 500 latest public Ticket comments in chronological order.
      */
     200: PublicCommentListResponse;
 };

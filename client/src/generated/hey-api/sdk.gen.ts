@@ -231,7 +231,7 @@ export const getApiTicket = <ThrowOnError extends boolean = false>(options: Opti
 /**
  * List public Ticket comments
  *
- * Requesters can read their own public comments; IT Staff and Administrators can read every Ticket's public comments.
+ * Requesters can read their own public comments; IT Staff and Administrators can read every Ticket's public comments. The response contains at most the 500 latest comments in chronological order.
  */
 export const getApiTicketComments = <ThrowOnError extends boolean = false>(options: Options<GetApiTicketCommentsData, ThrowOnError>): RequestResult<GetApiTicketCommentsResponses, GetApiTicketCommentsErrors, ThrowOnError> => (options.client ?? client).get<GetApiTicketCommentsResponses, GetApiTicketCommentsErrors, ThrowOnError>({
     security: [{

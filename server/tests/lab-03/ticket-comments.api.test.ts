@@ -188,6 +188,38 @@ describe("Lab 3 public Ticket comments", () => {
     assert.equal(errorCode(foreign), "RESOURCE_NOT_FOUND");
   });
 
+  it("bounds reads to the latest comments while preserving chronological order", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket();
+    const staffUser = await activeFixture.prisma.user.findUniqueOrThrow({
+      where: { email: staffEmail },
+    });
+    const start = new Date("2026-09-10T10:01:00.000Z");
+
+    await activeFixture.prisma.publicComment.createMany({
+      data: Array.from({ length: 501 }, (_, index) => ({
+        authorId: staffUser.id,
+        content: `Bounded comment ${index}`,
+        createdAt: new Date(start.getTime() + index),
+        ticketId: ticket.id,
+      })),
+    });
+
+    const response = await request(activeFixture.app)
+      .get(`/api/tickets/${ticket.id}/comments`)
+      .set("Cookie", staff.cookie)
+      .expect(200);
+    const { comments } = asJsonObject(response.body);
+
+    if (!Array.isArray(comments)) {
+      throw new TypeError("Expected comments to be an array.");
+    }
+
+    assert.equal(comments.length, 500);
+    assert.equal(asJsonObject(comments[0]).content, "Bounded comment 1");
+    assert.equal(asJsonObject(comments.at(-1)).content, "Bounded comment 500");
+  });
+
   it("allows owned Requester and any IT Staff posts with backend attribution", async () => {
     const activeFixture = getFixture();
     const ticket = await createTicket();

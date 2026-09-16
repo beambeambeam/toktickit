@@ -404,7 +404,7 @@ export const getApiTicketCommentsQueryKey = (options: Options<GetApiTicketCommen
 /**
  * List public Ticket comments
  *
- * Requesters can read their own public comments; IT Staff and Administrators can read every Ticket's public comments.
+ * Requesters can read their own public comments; IT Staff and Administrators can read every Ticket's public comments. The response contains at most the 500 latest comments in chronological order.
  */
 export const getApiTicketCommentsOptions = (options: Options<GetApiTicketCommentsData>) => queryOptions<GetApiTicketCommentsResponse, GetApiTicketCommentsError, GetApiTicketCommentsResponse, ReturnType<typeof getApiTicketCommentsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
