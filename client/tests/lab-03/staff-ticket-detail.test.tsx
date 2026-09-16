@@ -296,6 +296,22 @@ describe("Staff Ticket Detail page", () => {
     expect(clickSpy).toHaveBeenCalled();
   });
 
+  it("preserves the current Owner when Save Owner is unchanged", async () => {
+    authState.user = staffUser;
+    updateStaffTicketOwnerMock.mockResolvedValue(ticket);
+
+    renderPage();
+    await screen.findByText("TKT-20260902-DETAIL01");
+    fireEvent.click(screen.getByRole("button", { name: "Save Owner" }));
+
+    await waitFor(() => {
+      expect(updateStaffTicketOwnerMock).toHaveBeenCalledWith(11, {
+        ownerId: staffUser.id,
+        version: ticket.version,
+      });
+    });
+  });
+
   it("lets IT Staff save Owner and IT Priority with the current version", async () => {
     authState.user = staffUser;
     const unassignedTicket = { ...ticket, owner: null };
