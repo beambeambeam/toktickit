@@ -279,6 +279,40 @@ describe("Staff Ticket Detail page", () => {
     ).toBeTruthy();
   });
 
+  it("uses the Ticket version captured when confirmation opens", async () => {
+    authState.user = staffUser;
+    updateStaffTicketStatusMock.mockResolvedValue({
+      ...ticket,
+      currentStatus: "Resolved",
+      version: 3,
+    });
+    const { queryClient } = renderPage();
+
+    await screen.findByText("TKT-20260902-DETAIL01");
+    fireEvent.change(screen.getByLabelText("Next status"), {
+      target: { value: "Resolved" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply Status" }));
+    const dialog = await screen.findByRole("alertdialog");
+
+    queryClient.setQueryData(["ticket", staffUser.id, 11], {
+      ...ticket,
+      currentStatus: "Waiting for Requester",
+      version: 3,
+    });
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Confirm Resolved" })
+    );
+
+    await waitFor(() => {
+      expect(updateStaffTicketStatusMock).toHaveBeenCalledWith(11, {
+        confirmed: true,
+        currentStatus: "Resolved",
+        version: 2,
+      });
+    });
+  });
+
   it("downloads only active Attachment content", async () => {
     downloadTicketAttachmentMock.mockResolvedValue({
       blob: new Blob(["evidence"], { type: "application/pdf" }),

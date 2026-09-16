@@ -62,6 +62,11 @@ const getStatusConfirmationMessage = (status: CurrentStatus): string => {
   return "This cancels the Ticket. Cancelled Tickets have no further workflow transitions.";
 };
 
+interface StatusConfirmation {
+  status: CurrentStatus;
+  version: number;
+}
+
 // oxlint-disable-next-line complexity -- this page renders documented read-only detail and attachment states.
 const StaffTicketDetailContent = ({
   onAccessError,
@@ -88,9 +93,8 @@ const StaffTicketDetailContent = ({
   const [statusError, setStatusError] = useState<string | null>(null);
   const [statusSuccess, setStatusSuccess] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<CurrentStatus | "">("");
-  const [statusToConfirm, setStatusToConfirm] = useState<CurrentStatus | null>(
-    null
-  );
+  const [statusConfirmation, setStatusConfirmation] =
+    useState<StatusConfirmation | null>(null);
 
   const statusMutation = useMutation({
     mutationFn: async (input: {
@@ -357,7 +361,10 @@ const StaffTicketDetailContent = ({
                           selectedStatus === "Closed" ||
                           selectedStatus === "Cancelled"
                         ) {
-                          setStatusToConfirm(selectedStatus);
+                          setStatusConfirmation({
+                            status: selectedStatus,
+                            version: ticket.version,
+                          });
                           return;
                         }
 
@@ -507,7 +514,7 @@ const StaffTicketDetailContent = ({
         </>
       ) : null}
 
-      {statusToConfirm === null ? null : (
+      {statusConfirmation === null ? null : (
         <div
           aria-describedby="status-confirmation-description"
           aria-labelledby="status-confirmation-title"
@@ -518,17 +525,17 @@ const StaffTicketDetailContent = ({
           <div className="surface-card confirmation-dialog">
             <p className="eyebrow">Confirm workflow action</p>
             <h2 id="status-confirmation-title">
-              Mark Ticket {statusToConfirm}?
+              Mark Ticket {statusConfirmation.status}?
             </h2>
             <p id="status-confirmation-description">
-              {getStatusConfirmationMessage(statusToConfirm)}
+              {getStatusConfirmationMessage(statusConfirmation.status)}
             </p>
             <div className="form-actions">
               <button
                 className="button button-secondary"
                 disabled={statusMutation.isPending}
                 onClick={() => {
-                  setStatusToConfirm(null);
+                  setStatusConfirmation(null);
                 }}
                 type="button"
               >
@@ -539,7 +546,7 @@ const StaffTicketDetailContent = ({
                 disabled={statusMutation.isPending}
                 onClick={() => {
                   if (ticket === undefined) {
-                    setStatusToConfirm(null);
+                    setStatusConfirmation(null);
                     return;
                   }
 
@@ -548,12 +555,12 @@ const StaffTicketDetailContent = ({
                   statusMutation.mutate(
                     {
                       confirmed: true,
-                      currentStatus: statusToConfirm,
-                      version: ticket.version,
+                      currentStatus: statusConfirmation.status,
+                      version: statusConfirmation.version,
                     },
                     {
                       onSettled: () => {
-                        setStatusToConfirm(null);
+                        setStatusConfirmation(null);
                       },
                     }
                   );
@@ -562,7 +569,7 @@ const StaffTicketDetailContent = ({
               >
                 {statusMutation.isPending
                   ? "Applying…"
-                  : `Confirm ${statusToConfirm}`}
+                  : `Confirm ${statusConfirmation.status}`}
               </button>
             </div>
           </div>
