@@ -38,17 +38,19 @@ const codePointLength = (value: string): number =>
   // oxlint-disable-next-line unicorn/prefer-spread -- internal-note contract counts Unicode code points.
   Array.from(value).length;
 
-export const InternalNotesSection = ({
-  canPost,
-  currentStatus,
-  principalId,
-  ticketId,
-}: {
+interface InternalNotesSectionProps {
   canPost: boolean;
   currentStatus: CurrentStatus;
   principalId: number;
   ticketId: number;
-}) => {
+}
+
+const InternalNotesSectionContent = ({
+  canPost,
+  currentStatus,
+  principalId,
+  ticketId,
+}: InternalNotesSectionProps) => {
   const queryClient = useQueryClient();
   const notesQuery = useQuery(internalNotesQueryOptions(ticketId, principalId));
   const [draft, setDraft] = useState("");
@@ -231,3 +233,7 @@ export const InternalNotesSection = ({
     </section>
   );
 };
+
+export const InternalNotesSection = (props: InternalNotesSectionProps) => (
+  <InternalNotesSectionContent key={props.ticketId} {...props} />
+);

@@ -42,10 +42,12 @@ const renderSection = ({
   canPost = true,
   currentStatus = "Open" as const,
   principalId = 1,
+  ticketId = 11,
 }: {
   canPost?: boolean;
   currentStatus?: CurrentStatus;
   principalId?: number;
+  ticketId?: number;
 } = {}) => {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -62,7 +64,7 @@ const renderSection = ({
           canPost={canPost}
           currentStatus={currentStatus}
           principalId={principalId}
-          ticketId={11}
+          ticketId={ticketId}
         />
       </QueryClientProvider>
     ),
@@ -117,6 +119,29 @@ describe("Internal Notes section", () => {
     await screen.findByText("The API request failed.");
     expect(composer).toHaveProperty("value", "Keep this private draft");
     expect(postInternalNoteMock).toHaveBeenCalledTimes(1);
+  });
+
+  it("clears the draft when navigating to another Ticket", async () => {
+    const rendered = renderSection();
+    const composer = await screen.findByRole("textbox", {
+      name: "Internal Note",
+    });
+    fireEvent.change(composer, { target: { value: "Ticket A private draft" } });
+
+    rendered.rerender(
+      <QueryClientProvider client={rendered.queryClient}>
+        <InternalNotesSection
+          canPost
+          currentStatus="Open"
+          principalId={1}
+          ticketId={12}
+        />
+      </QueryClientProvider>
+    );
+
+    expect(
+      await screen.findByRole("textbox", { name: "Internal Note" })
+    ).toHaveProperty("value", "");
   });
 
   it("hides the composer for terminal Tickets and read-only Administrators", async () => {
