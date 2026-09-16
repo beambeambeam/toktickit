@@ -5,12 +5,13 @@ import {
   Search01Icon,
   Ticket01Icon,
 } from "@hugeicons/core-free-icons";
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 import type { SubmitEvent } from "react";
 
 import type { AuthUser } from "@/api/auth";
+import { ApiRequestError } from "@/api/errors";
 import {
   activeCategoriesQueryOptions,
   relatedSystemsQueryOptions,
@@ -23,7 +24,12 @@ import {
   staffOwnersQueryOptions,
   staffTicketsQueryOptions,
 } from "@/api/staff-query-options";
-import { AccessDenied, AppShell, AuthRequired } from "@/components/app-shell";
+import {
+  AccessDenied,
+  AppShell,
+  AuthLoading,
+  AuthRequired,
+} from "@/components/app-shell";
 import { Icon } from "@/components/icon";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
@@ -150,15 +156,81 @@ const formatDate = (value: string) =>
     timeStyle: "short",
   }).format(new Date(value));
 
+const getQueueErrorMessage = (
+  error: unknown,
+  ownerIneligible: boolean
+): string => {
+  if (ownerIneligible) {
+    return "The Owner filter was reset while the latest options load.";
+  }
+
+  if (error instanceof Error) {
+    return error.message;
+  }
+
+  return "Try again.";
+};
+
 // oxlint-disable-next-line complexity -- this page renders documented queue filters and data states.
-const StaffTicketQueueContent = ({ user }: { user: AuthUser }) => {
+const StaffTicketQueueContent = ({
+  onAccessError,
+  user,
+}: {
+  onAccessError: (error: ApiRequestError) => void;
+  user: AuthUser;
+}) => {
   const [params, setParams] = useState<StaffTicketListParams>(initialParams);
   const [searchDraft, setSearchDraft] = useState("");
+  const handledOwnerError = useRef<ApiRequestError | null>(null);
 
   const categoriesQuery = useQuery(activeCategoriesQueryOptions());
   const relatedSystemsQuery = useQuery(relatedSystemsQueryOptions());
   const ownersQuery = useQuery(staffOwnersQueryOptions());
   const ticketsQuery = useQuery(staffTicketsQueryOptions(params));
+  const refetchOwners = ownersQuery.refetch;
+
+  useEffect(() => {
+    const accessError = [
+      categoriesQuery.error,
+      relatedSystemsQuery.error,
+      ownersQuery.error,
+      ticketsQuery.error,
+    ].find(
+      (error): error is ApiRequestError =>
+        error instanceof ApiRequestError && error.status === 403
+    );
+
+    if (accessError !== undefined) {
+      onAccessError(accessError);
+    }
+  }, [
+    categoriesQuery.error,
+    onAccessError,
+    ownersQuery.error,
+    relatedSystemsQuery.error,
+    ticketsQuery.error,
+  ]);
+
+  const ownerIneligibleError =
+    ticketsQuery.error instanceof ApiRequestError &&
+    ticketsQuery.error.code === "OWNER_INELIGIBLE"
+      ? ticketsQuery.error
+      : null;
+
+  useEffect(() => {
+    if (ownerIneligibleError === null) {
+      handledOwnerError.current = null;
+      return;
+    }
+
+    if (handledOwnerError.current === ownerIneligibleError) {
+      return;
+    }
+
+    handledOwnerError.current = ownerIneligibleError;
+    setParams((current) => ({ ...current, owner: undefined, page: 1 }));
+    void refetchOwners();
+  }, [ownerIneligibleError, refetchOwners]);
 
   const updateParams = (change: Partial<StaffTicketListParams>) => {
     setParams((current) => ({ ...current, ...change, page: 1 }));
@@ -484,19 +556,26 @@ const StaffTicketQueueContent = ({ user }: { user: AuthUser }) => {
 
         {ticketsQuery.isError ? (
           <div className="feedback feedback-error" role="alert">
-            <strong>Could not load the Ticket Queue.</strong>
+            <strong>
+              {ownerIneligibleError === null
+                ? "Could not load the Ticket Queue."
+                : "The selected Ticket Owner is no longer available."}
+            </strong>
             <span>
-              {ticketsQuery.error instanceof Error
-                ? ticketsQuery.error.message
-                : "Try again."}
+              {getQueueErrorMessage(
+                ticketsQuery.error,
+                ownerIneligibleError !== null
+              )}
             </span>
-            <button
-              className="button button-secondary"
-              onClick={() => void ticketsQuery.refetch()}
-              type="button"
-            >
-              Retry
-            </button>
+            {ownerIneligibleError === null ? (
+              <button
+                className="button button-secondary"
+                onClick={() => void ticketsQuery.refetch()}
+                type="button"
+              >
+                Retry
+              </button>
+            ) : null}
           </div>
         ) : null}
 
@@ -711,7 +790,35 @@ const StaffTicketQueueContent = ({ user }: { user: AuthUser }) => {
 };
 
 export const StaffTicketQueuePage = () => {
-  const { user } = useAuth();
+  const { refetchAuth, user } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [accessError, setAccessError] = useState<ApiRequestError | null>(null);
+  const handledAccessError = useRef<ApiRequestError | null>(null);
+
+  useEffect(() => {
+    if (accessError === null || handledAccessError.current === accessError) {
+      return;
+    }
+
+    handledAccessError.current = accessError;
+    void queryClient.cancelQueries({ queryKey: ["staff-tickets"] });
+    queryClient.removeQueries({ queryKey: ["staff-tickets"] });
+    void queryClient.cancelQueries({ queryKey: ["staff-owners"] });
+    queryClient.removeQueries({ queryKey: ["staff-owners"] });
+    void refetchAuth();
+    if (accessError.code === "PASSWORD_CHANGE_REQUIRED") {
+      void navigate({ replace: true, to: "/change-password" });
+    }
+  }, [accessError, navigate, queryClient, refetchAuth]);
+
+  if (accessError !== null) {
+    return accessError.code === "PASSWORD_CHANGE_REQUIRED" ? (
+      <AuthLoading />
+    ) : (
+      <AccessDenied />
+    );
+  }
 
   if (user === null) {
     return <AuthRequired />;
@@ -725,5 +832,11 @@ export const StaffTicketQueuePage = () => {
     return <AccessDenied />;
   }
 
-  return <StaffTicketQueueContent key={user.id} user={user} />;
+  return (
+    <StaffTicketQueueContent
+      key={user.id}
+      onAccessError={setAccessError}
+      user={user}
+    />
+  );
 };

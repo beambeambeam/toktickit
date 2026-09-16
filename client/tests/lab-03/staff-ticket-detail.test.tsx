@@ -13,15 +13,20 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthUser } from "@/api/auth";
+import { ApiRequestError } from "@/api/errors";
 import { StaffTicketDetailPage } from "@/pages/staff-ticket-detail-page";
 
-const { authState, downloadTicketAttachmentMock, getTicketMock } = vi.hoisted(
-  () => ({
-    authState: { user: null as AuthUser | null },
-    downloadTicketAttachmentMock: vi.fn(),
-    getTicketMock: vi.fn(),
-  })
-);
+const {
+  authState,
+  downloadTicketAttachmentMock,
+  getTicketMock,
+  refetchAuthMock,
+} = vi.hoisted(() => ({
+  authState: { user: null as AuthUser | null },
+  downloadTicketAttachmentMock: vi.fn(),
+  getTicketMock: vi.fn(),
+  refetchAuthMock: vi.fn(),
+}));
 
 vi.mock("@tanstack/react-router", async () => {
   const actual = await vi.importActual<typeof TanStackRouter>(
@@ -62,7 +67,7 @@ vi.mock("@/context/auth", () => ({
     isRefreshing: false,
     login: vi.fn(),
     logout: vi.fn(),
-    refetchAuth: vi.fn(),
+    refetchAuth: refetchAuthMock,
     user: authState.user,
   }),
 }));
@@ -156,6 +161,7 @@ describe("Staff Ticket Detail page", () => {
     authState.user = adminUser;
     getTicketMock.mockReset().mockResolvedValue(ticket);
     downloadTicketAttachmentMock.mockReset();
+    refetchAuthMock.mockReset().mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -207,6 +213,16 @@ describe("Staff Ticket Detail page", () => {
     renderPage("not-a-ticket");
     await screen.findByRole("heading", { name: "Invalid Ticket Number" });
     expect(getTicketMock).not.toHaveBeenCalled();
+  });
+
+  it("shows access denial and refreshes auth after a detail 403", async () => {
+    getTicketMock.mockRejectedValue(
+      new ApiRequestError(403, "Access forbidden", "FORBIDDEN")
+    );
+    renderPage();
+
+    await screen.findByRole("heading", { name: "Access denied" });
+    expect(refetchAuthMock).toHaveBeenCalled();
   });
 
   it("downloads only active Attachment content", async () => {

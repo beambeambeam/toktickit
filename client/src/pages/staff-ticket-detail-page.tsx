@@ -4,14 +4,20 @@ import {
   CancelCircleIcon,
   CheckmarkCircle02Icon,
 } from "@hugeicons/core-free-icons";
-import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { useEffect, useRef, useState } from "react";
 
 import { ApiConnectionError } from "@/api/client";
+import { ApiRequestError } from "@/api/errors";
 import { ticketQueryOptions } from "@/api/query-options";
 import { downloadTicketAttachment } from "@/api/requester";
-import { AccessDenied, AppShell, AuthRequired } from "@/components/app-shell";
+import {
+  AccessDenied,
+  AppShell,
+  AuthLoading,
+  AuthRequired,
+} from "@/components/app-shell";
 import { ReadOnlyField } from "@/components/form-field";
 import { Icon } from "@/components/icon";
 import { StatusBadge } from "@/components/status-badge";
@@ -42,7 +48,13 @@ const getDetailErrorMessage = (error: unknown): string => {
 };
 
 // oxlint-disable-next-line complexity -- this page renders documented read-only detail and attachment states.
-const StaffTicketDetailContent = ({ ticketId }: { ticketId: string }) => {
+const StaffTicketDetailContent = ({
+  onAccessError,
+  ticketId,
+}: {
+  onAccessError: (error: ApiRequestError) => void;
+  ticketId: string;
+}) => {
   const { user } = useAuth();
   const numericTicketId = Number(ticketId);
   const hasValidTicketId =
@@ -57,6 +69,15 @@ const StaffTicketDetailContent = ({ ticketId }: { ticketId: string }) => {
       hasValidTicketId,
   });
   const [operationError, setOperationError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (
+      ticketQuery.error instanceof ApiRequestError &&
+      ticketQuery.error.status === 403
+    ) {
+      onAccessError(ticketQuery.error);
+    }
+  }, [onAccessError, ticketQuery.error]);
 
   if (user === null || user.mustChangePassword) {
     return <AuthRequired />;
@@ -82,6 +103,11 @@ const StaffTicketDetailContent = ({ ticketId }: { ticketId: string }) => {
       window.URL.revokeObjectURL(url);
       setOperationError(null);
     } catch (error: unknown) {
+      if (error instanceof ApiRequestError && error.status === 403) {
+        onAccessError(error);
+        return;
+      }
+
       setOperationError(
         error instanceof Error
           ? error.message
@@ -331,7 +357,33 @@ const StaffTicketDetailContent = ({ ticketId }: { ticketId: string }) => {
 };
 
 export const StaffTicketDetailPage = ({ ticketId }: { ticketId: string }) => {
-  const { user } = useAuth();
+  const { refetchAuth, user } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+  const [accessError, setAccessError] = useState<ApiRequestError | null>(null);
+  const handledAccessError = useRef<ApiRequestError | null>(null);
+
+  useEffect(() => {
+    if (accessError === null || handledAccessError.current === accessError) {
+      return;
+    }
+
+    handledAccessError.current = accessError;
+    void queryClient.cancelQueries({ queryKey: ["ticket"] });
+    queryClient.removeQueries({ queryKey: ["ticket"] });
+    void refetchAuth();
+    if (accessError.code === "PASSWORD_CHANGE_REQUIRED") {
+      void navigate({ replace: true, to: "/change-password" });
+    }
+  }, [accessError, navigate, queryClient, refetchAuth]);
+
+  if (accessError !== null) {
+    return accessError.code === "PASSWORD_CHANGE_REQUIRED" ? (
+      <AuthLoading />
+    ) : (
+      <AccessDenied />
+    );
+  }
 
   if (user === null || user.mustChangePassword) {
     return <AuthRequired />;
@@ -341,5 +393,11 @@ export const StaffTicketDetailPage = ({ ticketId }: { ticketId: string }) => {
     return <AccessDenied />;
   }
 
-  return <StaffTicketDetailContent key={user.id} ticketId={ticketId} />;
+  return (
+    <StaffTicketDetailContent
+      key={user.id}
+      onAccessError={setAccessError}
+      ticketId={ticketId}
+    />
+  );
 };

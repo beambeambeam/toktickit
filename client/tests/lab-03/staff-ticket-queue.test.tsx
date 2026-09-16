@@ -13,16 +13,23 @@ import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthUser } from "@/api/auth";
+import { ApiRequestError } from "@/api/errors";
 import type { StaffTicketListParams } from "@/api/staff";
 import { StaffTicketQueuePage } from "@/pages/staff-ticket-queue-page";
 
-const { authState, getStaffOwnersMock, getStaffTicketsMock, navigateMock } =
-  vi.hoisted(() => ({
-    authState: { user: null as AuthUser | null },
-    getStaffOwnersMock: vi.fn(),
-    getStaffTicketsMock: vi.fn(),
-    navigateMock: vi.fn(),
-  }));
+const {
+  authState,
+  getStaffOwnersMock,
+  getStaffTicketsMock,
+  navigateMock,
+  refetchAuthMock,
+} = vi.hoisted(() => ({
+  authState: { user: null as AuthUser | null },
+  getStaffOwnersMock: vi.fn(),
+  getStaffTicketsMock: vi.fn(),
+  navigateMock: vi.fn(),
+  refetchAuthMock: vi.fn(),
+}));
 
 vi.mock("@tanstack/react-router", async () => {
   const actual = await vi.importActual<typeof TanStackRouter>(
@@ -86,7 +93,7 @@ vi.mock("@/context/auth", () => ({
     isRefreshing: false,
     login: vi.fn(),
     logout: vi.fn(),
-    refetchAuth: vi.fn(),
+    refetchAuth: refetchAuthMock,
     user: authState.user,
   }),
 }));
@@ -173,6 +180,7 @@ describe("Staff Ticket Queue page", () => {
     ]);
     getStaffTicketsMock.mockReset().mockResolvedValue(queueResponse);
     navigateMock.mockReset();
+    refetchAuthMock.mockReset().mockResolvedValue(null);
   });
 
   afterEach(() => {
@@ -261,6 +269,64 @@ describe("Staff Ticket Queue page", () => {
     getStaffTicketsMock.mockResolvedValue(queueResponse);
     fireEvent.click(screen.getByRole("button", { name: "Retry" }));
     await screen.findAllByText("TKT-20260902-QUEUE01");
+  });
+
+  it("shows access denial and refreshes auth after a queue 403", async () => {
+    getStaffTicketsMock.mockRejectedValue(
+      new ApiRequestError(403, "Access forbidden", "FORBIDDEN")
+    );
+    renderPage();
+
+    await screen.findByRole(
+      "heading",
+      { name: "Access denied" },
+      { timeout: 5000 }
+    );
+    expect(refetchAuthMock).toHaveBeenCalled();
+  });
+
+  it("resets an owner filter when the selected owner is no longer eligible", async () => {
+    getStaffTicketsMock
+      .mockResolvedValueOnce(queueResponse)
+      .mockRejectedValueOnce(
+        new ApiRequestError(
+          400,
+          "The selected Ticket Owner is no longer eligible.",
+          "OWNER_INELIGIBLE"
+        )
+      )
+      .mockRejectedValueOnce(
+        new ApiRequestError(
+          400,
+          "The selected Ticket Owner is no longer eligible.",
+          "OWNER_INELIGIBLE"
+        )
+      )
+      .mockResolvedValue(queueResponse);
+    renderPage();
+
+    await screen.findAllByText("TKT-20260902-QUEUE01");
+    fireEvent.change(screen.getByLabelText("Ticket Owner"), {
+      target: { value: "10" },
+    });
+
+    await waitFor(
+      () => {
+        expect(screen.getByLabelText("Ticket Owner")).toHaveProperty(
+          "value",
+          ""
+        );
+        expect(getStaffTicketsMock).toHaveBeenLastCalledWith(
+          expect.objectContaining({
+            owner: undefined,
+            page: 1,
+          }),
+          expect.anything()
+        );
+      },
+      { timeout: 5000 }
+    );
+    expect(getStaffOwnersMock).toHaveBeenCalledTimes(2);
   });
 
   it("distinguishes an empty queue from filtered no-results", async () => {
