@@ -31,6 +31,12 @@ export default defineConfig({
         "no-restricted-imports": "off",
       },
     },
+    {
+      files: ["e2e/**/*.ts"],
+      rules: {
+        "no-restricted-imports": "off",
+      },
+    },
   ],
   rules: {
     "func-style": ["error", "expression", { allowArrowFunctions: true }],

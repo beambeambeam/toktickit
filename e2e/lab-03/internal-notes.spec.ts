@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
+import { captureLab3Evidence } from "./evidence.js";
+
 const apiUrl = process.env.E2E_API_URL ?? "http://localhost:3000";
 const password = "correct horse battery staple";
 const origin = "http://localhost:5173";
@@ -107,6 +109,13 @@ test("keeps Internal Notes private across the staff and requester journey", asyn
   await expect(
     page.getByText("Administrator access is read-only for Internal Notes.")
   ).toBeVisible();
+  await captureLab3Evidence(page, testInfo, {
+    directory: "staff-ticket-detail",
+    name: "internal-note-admin-read.png",
+    role: "Administrator",
+    scenario: "Administrator read-only Internal Note",
+    stateSource: "natural",
+  });
 
   await logOut(page);
   await expect(page).toHaveURL(/\/login$/u);
