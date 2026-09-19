@@ -78,6 +78,8 @@ const users: readonly E2EUser[] = [
 const generatedAccountEmailPrefixes = [
   "e2e-created-",
   "e2e-lifecycle-",
+  "e2e-race-",
+  "e2e-session-",
 ] as const;
 
 try {
