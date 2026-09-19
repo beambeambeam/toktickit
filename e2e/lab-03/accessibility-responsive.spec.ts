@@ -165,6 +165,11 @@ test("checks readable contrast for the Zen Green operational surface", async ({
   await expect(
     page.getByRole("heading", { name: "Ticket Queue" })
   ).toBeVisible();
+  const visibleQueue = page.locator(
+    ".ticket-table-wrap:visible, .ticket-cards:visible"
+  );
+  await expect(visibleQueue).toBeVisible();
+  await expect(visibleQueue.locator(".status-badge").first()).toBeVisible();
   const colors = await page.evaluate(() =>
     [
       ".app-header",
