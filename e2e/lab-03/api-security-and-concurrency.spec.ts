@@ -530,19 +530,17 @@ test("keeps concurrent claims single-winner and preserves concurrent comments", 
   try {
     requester = await openSession(browser, "e2e-desktop@example.test");
     firstStaff = await openSession(browser, "e2e-staff@example.test");
-    secondStaff = await openSession(browser, "e2e-staff@example.test");
+    secondStaff = await openSession(browser, "e2e-staff-second@example.test");
     if (firstStaff === undefined || secondStaff === undefined) {
       throw new Error("Concurrent staff sessions were not initialized.");
     }
-    const winningStaff = firstStaff;
-    const observingStaff = secondStaff;
     const ticket = await createTicket(
       requester,
       `race-${Date.now()}-${test.info().workerIndex}`
     );
 
     const claimResponses = await Promise.all(
-      [winningStaff, observingStaff].map(
+      [firstStaff, secondStaff].map(
         async (session) =>
           await api(session, "POST", `/api/tickets/${ticket.id}/claim`, {
             body: { version: ticket.version },
@@ -564,13 +562,38 @@ test("keeps concurrent claims single-winner and preserves concurrent comments", 
       getString(asJsonObject(conflictBody.error, "claim conflict"), "code")
     );
 
-    const detail = await api(winningStaff, "GET", `/api/tickets/${ticket.id}`);
+    const successfulClaim = claimResponses.find(
+      (response) => response.status() === 200
+    );
+    if (successfulClaim === undefined) {
+      throw new Error("Concurrent claim did not produce a success response.");
+    }
+    const successfulClaimBody = await readJson(successfulClaim);
+    const successfulOwner = asJsonObject(
+      successfulClaimBody.owner,
+      "successful claim owner"
+    );
+    const winningStaffId = getNumber(successfulOwner, "id");
+    const winningStaff = [firstStaff, secondStaff].find(
+      (session) => session.user.id === winningStaffId
+    );
+    if (winningStaff === undefined) {
+      throw new Error("Successful claim owner was not one of the contenders.");
+    }
+    const observingStaff =
+      winningStaff === firstStaff ? secondStaff : firstStaff;
+
+    const detail = await api(
+      observingStaff,
+      "GET",
+      `/api/tickets/${ticket.id}`
+    );
     expect(detail.status()).toBe(200);
     const detailBody = await readJson(detail);
     const claimed = asJsonObject(detailBody, "claimed Ticket");
     expect(asJsonObject(claimed.owner, "Ticket owner")).toHaveProperty(
       "id",
-      winningStaff.user.id
+      winningStaffId
     );
 
     const commentResponses = await Promise.all(

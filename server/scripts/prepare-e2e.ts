@@ -73,6 +73,12 @@ const users: readonly E2EUser[] = [
     mustChangePassword: false,
     role: "ITStaff" as const,
   },
+  {
+    displayName: "E2E Second IT Staff",
+    email: "e2e-staff-second@example.test",
+    mustChangePassword: false,
+    role: "ITStaff" as const,
+  },
 ];
 
 const generatedAccountEmailPrefixes = [
