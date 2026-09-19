@@ -978,7 +978,9 @@ test("serializes duplicate account creation and revokes concurrent target sessio
   }
 });
 
-test("verifies populated-schema migration preservation and collision safety", (_context, testInfo) => {
+test("verifies populated-schema migration preservation and collision safety", ({
+  browser: _browser,
+}, testInfo) => {
   test.skip(
     testInfo.project.name !== "desktop-chromium",
     "The database migration gate runs once in the desktop project."
