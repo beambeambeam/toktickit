@@ -175,12 +175,13 @@ test("checks native Chromium page scale at 200 percent", async ({
       pageScaleFactor: 2,
     });
     await expect
-      .poll( async () =>
-        page.evaluate(() => ({
-          layoutWidth: document.documentElement.clientWidth,
-          scale: visualViewport?.scale ?? 0,
-          visualWidth: visualViewport?.width ?? 0,
-        }))
+      .poll(
+        async () =>
+          await page.evaluate(() => ({
+            layoutWidth: document.documentElement.clientWidth,
+            scale: visualViewport?.scale ?? 0,
+            visualWidth: visualViewport?.width ?? 0,
+          }))
       )
       .toMatchObject({
         layoutWidth: 1440,
