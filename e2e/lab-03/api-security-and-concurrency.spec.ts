@@ -1012,7 +1012,7 @@ test("verifies populated-schema migration preservation and collision safety", ({
       "@toktickit/server",
       "exec",
       "tsx",
-      "scripts/check-migration-preservation.ts",
+      "tests/check-migration-preservation.ts",
     ],
     {
       cwd: path.resolve(import.meta.dirname, "../.."),
