@@ -1,6 +1,6 @@
 # Lab 3 UI Contract — Zen Green
 
-Status: planned under #49. No Lab 3 screenshots or visual pass claimed. [Specification](./specification.md) fixes permissions; [API](./api-spec.md) fixes fields/errors.
+Status: implemented on `lab3-staging` through Issues #50–#57. Real staging screenshots and manifests now exist under `artifacts/lab-03/screenshots/`; the agent visual/accessibility review is recorded in [visual-checklist.md](../../artifacts/lab-03/visual-checklist.md). Uncaptured failure-state coverage, final-main provenance and human review remain pending under [Issue #58](https://github.com/beambeambeam/toktickit/issues/58). [Specification](./specification.md) fixes permissions; [API](./api-spec.md) fixes fields/errors.
 
 ## 1. Reference interpretation
 
@@ -73,3 +73,5 @@ Capture real implementation evidence under `artifacts/lab-03/screenshots/`; per-
 | requester/ | Authenticated Create/My Tickets/Detail continuity, public comment, apparent-resolution indication and foreign resource denial; no selector/private-note UI. |
 
 For each screen/viewport record: source figure/section, actual image, tokens/contrast, hierarchy, role navigation, badges, editable/read-only distinction, field-error placement, busy/disabled state, keyboard focus/names, long-text wrapping, clipping/overlap/overflow and verdict. Label DOM/computed-style/HTTP assertions separately from visual judgement. Screenshots cannot prove backend authorization, session invalidation or migration; link those rows to actual tests. No duplicated image under multiple state labels. All checklist verdicts remain pending until captures are inspected.
+
+Current staging evidence contains 16 unique captures per Playwright project (48 PNGs total across desktop, tablet and mobile): five authentication states, one populated queue, five staff/detail states including public/private entry evidence, four user-management outcomes, and one Requester public-conversation view. Each manifest records the branch, full capture SHA, UTC time, exact command, role, scenario, source-dirty state and seeded/intercepted/natural/normalized state source. The checklist separates machine assertions from agent visual inspection and lists required states not captured by these journeys; it does not convert missing evidence into a pass.

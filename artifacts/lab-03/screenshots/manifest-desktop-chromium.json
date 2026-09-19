@@ -1,8 +1,106 @@
 {
+  "branch": "lab3-staging",
+  "command": "pnpm --filter @toktickit/e2e exec playwright test e2e/lab-03",
+  "commit": "073b49206e3496f1af6820557dbe69ef4ea7ccde",
   "files": [
-    "artifacts/lab-03/screenshots/authentication/desktop-chromium-initial.png",
-    "artifacts/lab-03/screenshots/authentication/desktop-chromium-filled.png"
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/desktop-chromium-login-initial.png",
+      "role": "Anonymous",
+      "scenario": "Login initial",
+      "stateSource": "seeded"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/desktop-chromium-login-filled.png",
+      "role": "Anonymous",
+      "scenario": "Login filled",
+      "stateSource": "seeded"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/desktop-chromium-mandatory-password.png",
+      "role": "Restricted",
+      "scenario": "Mandatory password replacement",
+      "stateSource": "seeded"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/desktop-chromium-authenticated-shell.png",
+      "role": "Requester",
+      "scenario": "Authenticated requester shell",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/desktop-chromium-logout-direct-denial.png",
+      "role": "Anonymous",
+      "scenario": "Logout and direct protected-route denial",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-ticket-detail/desktop-chromium-internal-note-admin-read.png",
+      "role": "Administrator",
+      "scenario": "Administrator read-only Internal Note",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/requester/desktop-chromium-public-conversation.png",
+      "role": "Requester",
+      "scenario": "Shared public conversation",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-queue/desktop-chromium-populated.png",
+      "role": "IT Staff",
+      "scenario": "Populated shared Ticket Queue after fixture normalization",
+      "stateSource": "normalized"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-ticket-detail/desktop-chromium-read-only.png",
+      "role": "IT Staff",
+      "scenario": "Read-only staff Ticket detail after fixture normalization",
+      "stateSource": "normalized"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-ticket-detail/desktop-chromium-operational-controls.png",
+      "role": "IT Staff",
+      "scenario": "Staff ownership and priority controls",
+      "stateSource": "seeded"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-ticket-detail/desktop-chromium-operational-controls-saved.png",
+      "role": "IT Staff",
+      "scenario": "Staff ownership and priority saved",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-ticket-detail/desktop-chromium-workflow-resolved.png",
+      "role": "IT Staff",
+      "scenario": "Resolved staff workflow",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/desktop-chromium-list.png",
+      "role": "Administrator",
+      "scenario": "User Management list",
+      "stateSource": "seeded"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/desktop-chromium-create-success.png",
+      "role": "Administrator",
+      "scenario": "User Management create success",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/desktop-chromium-edit-success.png",
+      "role": "Administrator",
+      "scenario": "User Management edit success",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/desktop-chromium-reset-success.png",
+      "role": "Administrator",
+      "scenario": "User Management reset success",
+      "stateSource": "natural"
+    }
   ],
-  "generatedAt": "2026-09-10T14:06:51.858Z",
-  "project": "desktop-chromium"
+  "generatedAt": "2026-09-19T08:01:46.708Z",
+  "project": "desktop-chromium",
+  "sourceDirty": false
 }

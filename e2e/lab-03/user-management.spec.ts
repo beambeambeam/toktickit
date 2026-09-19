@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
+import { captureLab3Evidence } from "./evidence.js";
+
 const adminEmail = "e2e-admin@example.test";
 const adminPassword = "correct horse battery staple";
 const replacementPassword = "created account replacement phrase";
@@ -39,6 +41,14 @@ test("creates an active user and completes that user's first login", async ({
   await expect(
     page.getByRole("heading", { name: "User Management" })
   ).toBeVisible();
+  await expect(page.getByText("Loading users…")).toBeHidden();
+  await captureLab3Evidence(page, testInfo, {
+    directory: "user-management",
+    name: "list.png",
+    role: "Administrator",
+    scenario: "User Management list",
+    stateSource: "seeded",
+  });
 
   await page.getByRole("button", { exact: true, name: "Create User" }).click();
   await page.getByLabel(/^Name/u).fill("E2E Created Requester");
@@ -53,6 +63,13 @@ test("creates an active user and completes that user's first login", async ({
     })
   ).toBeVisible();
   await expect(page.getByLabel(/^Initial password/u)).toHaveValue("");
+  await captureLab3Evidence(page, testInfo, {
+    directory: "user-management",
+    name: "create-success.png",
+    role: "Administrator",
+    scenario: "User Management create success",
+    stateSource: "natural",
+  });
 
   await logOut(page);
   await expect(page).toHaveURL(/\/login$/u);
@@ -125,6 +142,13 @@ test("edits account access and resets the initial password", async ({
   await expect(
     page.getByText(`${updatedDisplayName} was updated successfully.`)
   ).toBeVisible();
+  await captureLab3Evidence(page, testInfo, {
+    directory: "user-management",
+    name: "edit-success.png",
+    role: "Administrator",
+    scenario: "User Management edit success",
+    stateSource: "natural",
+  });
 
   await editButton(updatedDisplayName).click();
   await expect(
@@ -135,7 +159,9 @@ test("edits account access and resets the initial password", async ({
   await expect(
     page.getByText(`${updatedDisplayName} was updated successfully.`)
   ).toBeVisible();
-  await expect(visibleUser(updatedDisplayName)).toContainText("Inactive");
+  await expect(
+    visibleUser(updatedDisplayName).getByText("Inactive", { exact: true })
+  ).toBeVisible();
 
   await editButton(updatedDisplayName).click();
   await page.getByRole("checkbox", { name: "Active account" }).check();
@@ -143,7 +169,12 @@ test("edits account access and resets the initial password", async ({
   await expect(
     page.getByText(`${updatedDisplayName} was updated successfully.`)
   ).toBeVisible();
-  await expect(visibleUser(updatedDisplayName)).toContainText("Active");
+  await page.reload();
+  await expect(page).toHaveURL(/\/users$/u);
+  await expect(page.getByText("Loading users…")).toBeHidden();
+  await expect(
+    visibleUser(updatedDisplayName).getByText("Active", { exact: true })
+  ).toBeVisible();
 
   await editButton(updatedDisplayName).click();
   await page.getByLabel(/^New initial password/u).fill(resetPassword);
@@ -154,6 +185,13 @@ test("edits account access and resets the initial password", async ({
   await expect(
     page.getByText(`${updatedDisplayName}'s initial password was reset.`)
   ).toBeVisible();
+  await captureLab3Evidence(page, testInfo, {
+    directory: "user-management",
+    name: "reset-success.png",
+    role: "Administrator",
+    scenario: "User Management reset success",
+    stateSource: "natural",
+  });
 
   await logOut(page);
   await expect(page).toHaveURL(/\/login$/u);

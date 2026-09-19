@@ -1,11 +1,13 @@
 import { expect, test } from "@playwright/test";
 
+import { captureLab3Evidence } from "./evidence.js";
+
 const staffEmail = "e2e-staff@example.test";
 const staffPassword = "correct horse battery staple";
 
 test("claims a Ticket and sets its independent IT Priority", async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto("/login");
   await page.getByLabel("Email").fill(staffEmail);
   await page.getByRole("textbox", { name: "Password" }).fill(staffPassword);
@@ -26,6 +28,13 @@ test("claims a Ticket and sets its independent IT Priority", async ({
   await expect(
     page.getByRole("heading", { name: "Operational controls" })
   ).toBeVisible();
+  await captureLab3Evidence(page, testInfo, {
+    directory: "staff-ticket-detail",
+    name: "operational-controls.png",
+    role: "IT Staff",
+    scenario: "Staff ownership and priority controls",
+    stateSource: "seeded",
+  });
 
   const owner = page.getByLabel("Ticket Owner");
   if ((await owner.inputValue()) !== "") {
@@ -51,4 +60,11 @@ test("claims a Ticket and sets its independent IT Priority", async ({
     })
   ).toBeVisible();
   await expect(page.getByLabel("IT Priority")).toHaveValue("Urgent");
+  await captureLab3Evidence(page, testInfo, {
+    directory: "staff-ticket-detail",
+    name: "operational-controls-saved.png",
+    role: "IT Staff",
+    scenario: "Staff ownership and priority saved",
+    stateSource: "natural",
+  });
 });

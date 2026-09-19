@@ -1,12 +1,14 @@
 import { expect, test } from "@playwright/test";
 
+import { captureLab3Evidence } from "./evidence.js";
+
 const staffEmail = "e2e-staff@example.test";
 const staffPassword = "correct horse battery staple";
 const workflowTicketNumber = "TKT-20260901-RES001";
 
 test("progresses and reopens a Ticket through the staff workflow", async ({
   page,
-}) => {
+}, testInfo) => {
   await page.goto("/login");
   await page.getByLabel("Email").fill(staffEmail);
   await page.getByRole("textbox", { name: "Password" }).fill(staffPassword);
@@ -77,4 +79,11 @@ test("progresses and reopens a Ticket through the staff workflow", async ({
   expect(status).toBe("In Progress");
   await applyStatus("Resolved");
   await expect(statusLine).toContainText("Current status: Resolved");
+  await captureLab3Evidence(page, testInfo, {
+    directory: "staff-ticket-detail",
+    name: "workflow-resolved.png",
+    role: "IT Staff",
+    scenario: "Resolved staff workflow",
+    stateSource: "natural",
+  });
 });

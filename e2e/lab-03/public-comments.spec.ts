@@ -1,6 +1,8 @@
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
+import { captureLab3Evidence } from "./evidence.js";
+
 const requesterEmailBySlug: Record<string, string> = {
   "desktop-chromium": "e2e-desktop@example.test",
   "mobile-chromium": "e2e-mobile@example.test",
@@ -17,6 +19,7 @@ const logIn = async (page: Page, email: string) => {
   await page.getByLabel("Email").fill(email);
   await page.getByRole("textbox", { name: "Password" }).fill(requesterPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).not.toHaveURL(/\/login$/u);
 };
 
 const logOut = async (page: Page) => {
@@ -122,4 +125,11 @@ test("keeps the Requester and IT Staff public conversation shared", async ({
   ).toBeVisible();
   await expect(page.getByText(requesterComment, { exact: true })).toBeVisible();
   await expect(page.getByText(staffComment, { exact: true })).toBeVisible();
+  await captureLab3Evidence(page, testInfo, {
+    directory: "requester",
+    name: "public-conversation.png",
+    role: "Requester",
+    scenario: "Shared public conversation",
+    stateSource: "natural",
+  });
 });

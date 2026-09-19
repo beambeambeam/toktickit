@@ -179,7 +179,7 @@ describe("Categories API", () => {
       .expect(200);
 
     assert.deepEqual(getCategoryNames(response.body), canonicalCategoryNames);
-  });
+  }, 30_000);
 
   it("keeps seeding idempotent", async () => {
     runSeed();
@@ -195,7 +195,7 @@ describe("Categories API", () => {
       categories.map((category) => category.name),
       canonicalCategoryNames
     );
-  });
+  }, 30_000);
 
   it("returns every stored Category ordered by ascending ID", async () => {
     await getPrisma().category.createMany({

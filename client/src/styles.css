@@ -877,6 +877,7 @@ button:disabled,
   min-height: var(--control-height);
   padding: 0.4rem 0.7rem;
   font-size: 0.82rem;
+  white-space: nowrap;
 }
 
 .role-badge {
