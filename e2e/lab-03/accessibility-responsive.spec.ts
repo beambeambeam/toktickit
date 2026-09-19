@@ -157,6 +157,59 @@ test("checks 320px layout and 200 percent zoom without horizontal overflow", asy
   });
 });
 
+test("checks native Chromium page scale at 200 percent", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "desktop-chromium",
+    "Native page-scale verification runs once in the desktop Chromium project."
+  );
+
+  await signIn(page, "e2e-desktop@example.test");
+  await page.goto("/tickets");
+  await expect(page.getByRole("heading", { name: "My Tickets" })).toBeVisible();
+
+  const cdpSession = await page.context().newCDPSession(page);
+  try {
+    await cdpSession.send("Emulation.setPageScaleFactor", {
+      pageScaleFactor: 2,
+    });
+    await expect
+      .poll( async () =>
+        page.evaluate(() => ({
+          layoutWidth: document.documentElement.clientWidth,
+          scale: visualViewport?.scale ?? 0,
+          visualWidth: visualViewport?.width ?? 0,
+        }))
+      )
+      .toMatchObject({
+        layoutWidth: 1440,
+        scale: 2,
+        visualWidth: 720,
+      });
+
+    await expect(
+      page.getByRole("heading", { name: "My Tickets" })
+    ).toBeVisible();
+    await expect(
+      page.getByRole("button", { name: /Create Ticket/u })
+    ).toBeVisible();
+    await page.getByRole("button", { name: /Create Ticket/u }).focus();
+    await expect(
+      page.getByRole("button", { name: /Create Ticket/u })
+    ).toBeFocused();
+    await captureLab3Evidence(page, testInfo, {
+      directory: "accessibility",
+      name: "browser-zoom-200.png",
+      role: "Requester",
+      scenario: "Requester workspace at native Chromium 200 percent page scale",
+      stateSource: "natural",
+    });
+  } finally {
+    await cdpSession.send("Emulation.resetPageScaleFactor");
+  }
+});
+
 test("checks readable contrast for the Zen Green operational surface", async ({
   page,
 }, testInfo) => {
