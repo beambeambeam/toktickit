@@ -34,3 +34,7 @@
 | [#67 — edit/reset lifecycle](https://github.com/beambeambeam/toktickit/pull/67) | Reported no bug; left register, issue-linking, and merge-order comments; no formal approval. | Merged by `@Kiatisakk`; `4afd55d8e1cfb64c1746fa4340e84fede25928bb`. |
 | [#68 — integration evidence for #58](https://github.com/beambeambeam/toktickit/pull/68) | Approved `lgtm` against `66d2472`. | Merged by `@Kiatisakk`; `62228a0fe05c3e0e009867af1b1b0029626ef929`. |
 | Release `lab3-staging` → `main` | No release PR found in `beambeambeam/toktickit`. | Pending. |
+
+## Self-review note
+
+Local self-check for PRs #66 and #67: LGTM. This is the submitter's own assessment, not a formal GitHub `APPROVED` review, and it does not replace reciprocal peer approval.
