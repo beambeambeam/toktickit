@@ -3,7 +3,15 @@ import argon2 from "argon2";
 import { prisma } from "../src/db/client.js";
 
 const password = "correct horse battery staple";
-const users = [
+interface E2EUser {
+  displayName: string;
+  email: string;
+  isActive?: boolean;
+  mustChangePassword: boolean;
+  role: "Administrator" | "ITStaff" | "Requester";
+}
+
+const users: readonly E2EUser[] = [
   {
     displayName: "E2E Desktop Requester",
     email: "e2e-desktop@example.test",
@@ -25,6 +33,13 @@ const users = [
   {
     displayName: "E2E Isolation Requester",
     email: "e2e-isolation@example.test",
+    mustChangePassword: false,
+    role: "Requester" as const,
+  },
+  {
+    displayName: "E2E Inactive Requester",
+    email: "e2e-inactive@example.test",
+    isActive: false,
     mustChangePassword: false,
     role: "Requester" as const,
   },
@@ -58,7 +73,7 @@ const users = [
     mustChangePassword: false,
     role: "ITStaff" as const,
   },
-] as const;
+];
 
 try {
   await prisma.loginAttempt.deleteMany();
@@ -80,7 +95,7 @@ try {
         await prisma.user.create({
           data: {
             ...user,
-            isActive: true,
+            isActive: user.isActive ?? true,
             passwordHash,
           },
         });
@@ -90,7 +105,7 @@ try {
       await prisma.user.update({
         data: {
           displayName: user.displayName,
-          isActive: true,
+          isActive: user.isActive ?? true,
           mustChangePassword: user.mustChangePassword,
           passwordHash,
           role: user.role,

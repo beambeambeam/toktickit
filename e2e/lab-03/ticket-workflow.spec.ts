@@ -77,6 +77,33 @@ test("progresses and reopens a Ticket through the staff workflow", async ({
   }
 
   expect(status).toBe("In Progress");
+  await statusSelect.selectOption("Resolved");
+  await page.getByRole("button", { name: "Apply Status" }).click();
+  const confirmation = page.getByRole("alertdialog");
+  await expect(confirmation).toBeVisible();
+  const cancel = confirmation.getByRole("button", { name: "Cancel" });
+  const confirmResolved = confirmation.getByRole("button", {
+    name: "Confirm Resolved",
+  });
+  await expect(cancel).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(confirmResolved).toBeFocused();
+  await page.keyboard.press("Tab");
+  await expect(cancel).toBeFocused();
+  await captureLab3Evidence(page, testInfo, {
+    directory: "accessibility",
+    name: "status-confirmation-keyboard.png",
+    role: "IT Staff",
+    scenario: "Status confirmation focus trap",
+    stateSource: "natural",
+  });
+  await page.keyboard.press("Escape");
+  await expect(confirmation).toHaveCount(0);
+  await expect(
+    page.getByRole("button", { name: "Apply Status" })
+  ).toBeFocused();
+
+  await statusSelect.selectOption("Resolved");
   await applyStatus("Resolved");
   await expect(statusLine).toContainText("Current status: Resolved");
   await captureLab3Evidence(page, testInfo, {
