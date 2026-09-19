@@ -17,7 +17,7 @@
 | [#66 — E2E and visual evidence](https://github.com/Kiatisakk/toktickit/pull/66) | Inline findings were fixed; re-reviewed and approved `LGTM`. | Merged by `@beambeambeam`; `cdefb2d9c6bf0da039adc4e7458f6422b00a1199`. |
 | [#67 — close planned rows and update registers](https://github.com/Kiatisakk/toktickit/pull/67) | Requested migration, API, evidence, documentation, and formatting fixes across several review rounds; final `LGTM`. | Merged by `@beambeambeam`; `01ceb970729eef7cccff3d6d7a8322b44c4d6e52`. |
 | [#68 — post-merge review corrections](https://github.com/Kiatisakk/toktickit/pull/68) | Approved `lgtm`. | Merged by `@beambeambeam`; `f3870945453f767c14cd689aedcf56b97183aff6`. |
-| [#69 — release Lab 3 to `main`](https://github.com/Kiatisakk/toktickit/pull/69) | No review submitted by `@beambeambeam` yet. | Open. |
+| [#69 — release Lab 3 to `main`](https://github.com/Kiatisakk/toktickit/pull/69) | Posted `LGTM` on the merged release PR. | Merged as `150a2208eb06a2c6810290f4d9a7d8eb33dc6e59`. |
 
 ## Kiatisak reviews me (`beambeambeam/toktickit`)
 
@@ -34,7 +34,3 @@
 | [#67 — edit/reset lifecycle](https://github.com/beambeambeam/toktickit/pull/67) | Reported no bug; left register, issue-linking, and merge-order comments; no formal approval. | Merged by `@Kiatisakk`; `4afd55d8e1cfb64c1746fa4340e84fede25928bb`. |
 | [#68 — integration evidence for #58](https://github.com/beambeambeam/toktickit/pull/68) | Approved `lgtm` against `66d2472`. | Merged by `@Kiatisakk`; `62228a0fe05c3e0e009867af1b1b0029626ef929`. |
 | Release `lab3-staging` → `main` | No release PR found in `beambeambeam/toktickit`. | Pending. |
-
-## Self-review note
-
-LGTM
