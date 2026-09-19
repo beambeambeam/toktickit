@@ -12,10 +12,22 @@ import {
 import type { ReactNode } from "react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
-import { RequesterProvider, useRequester } from "@/context/requester";
 import { MyTicketsPage } from "@/pages/my-tickets-page";
 
-const { navigateMock } = vi.hoisted(() => ({ navigateMock: vi.fn() }));
+const { authUser, logoutMock, navigateMock } = vi.hoisted(() => ({
+  authUser: {
+    createdAt: "2026-09-01T00:00:00.000Z",
+    displayName: "Ada Requester",
+    email: "ada@example.test",
+    id: 1,
+    isActive: true,
+    mustChangePassword: false,
+    role: "Requester" as const,
+    updatedAt: "2026-09-01T00:00:00.000Z",
+  },
+  logoutMock: vi.fn(),
+  navigateMock: vi.fn(),
+}));
 
 vi.mock("@tanstack/react-router", async () => {
   const actual = await vi.importActual<typeof TanStackRouter>(
@@ -29,17 +41,19 @@ vi.mock("@tanstack/react-router", async () => {
   };
 });
 
-const owner = {
-  displayName: "Ada Requester",
-  email: "ada@example.test",
-  id: 1,
-};
-
-const otherRequester = {
-  displayName: "Ben Requester",
-  email: "ben@example.test",
-  id: 2,
-};
+vi.mock("@/context/auth", () => ({
+  useAuth: () => ({
+    auth: { csrfToken: "csrf", user: authUser },
+    authError: null,
+    changePassword: vi.fn(),
+    isLoading: false,
+    isRefreshing: false,
+    login: vi.fn(),
+    logout: logoutMock,
+    refetchAuth: vi.fn(),
+    user: authUser,
+  }),
+}));
 
 const category = { id: 1, name: "Network" };
 const relatedSystem = { id: 2, name: "Campus Wi-Fi" };
@@ -54,13 +68,6 @@ const ticket = {
   ticketDate: "2026-09-02T10:00:00.000Z",
   ticketNumber: "TKT-20260902-ABC123",
   updatedAt: "2026-09-02T10:00:00.000Z",
-};
-
-const otherTicket = {
-  ...ticket,
-  id: 12,
-  summary: "Printer outage",
-  ticketNumber: "TKT-20260902-DEF456",
 };
 
 type MockFetchImplementation = (
@@ -119,19 +126,12 @@ const mockApi = () => {
           return await pendingListResponse;
         }
 
-        const requestHeaders =
-          input instanceof Request ? input.headers : undefined;
-        const selectedRequesterId = requestHeaders?.get(
-          "X-Development-Requester-Id"
-        );
         let items = [ticket];
         if (
           listMode === "empty" ||
           (listMode === "search-empty" && requestUrl.searchParams.has("search"))
         ) {
           items = [];
-        } else if (selectedRequesterId === otherRequester.id.toString()) {
-          items = [otherTicket];
         }
         const totalItems = items.length === 0 ? 0 : 21;
 
@@ -154,22 +154,7 @@ const mockApi = () => {
   return fetchMock;
 };
 
-const ContextSwitcher = () => {
-  const { selectRequester } = useRequester();
-
-  return (
-    <button
-      onClick={() => {
-        selectRequester(otherRequester);
-      }}
-      type="button"
-    >
-      Switch requester
-    </button>
-  );
-};
-
-const renderMyTickets = (withContextSwitcher = false) => {
+const renderMyTickets = () => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: {
@@ -181,10 +166,7 @@ const renderMyTickets = (withContextSwitcher = false) => {
 
   const renderResult = render(
     <QueryClientProvider client={queryClient}>
-      <RequesterProvider>
-        <MyTicketsPage />
-        {withContextSwitcher ? <ContextSwitcher /> : null}
-      </RequesterProvider>
+      <MyTicketsPage />
     </QueryClientProvider>
   );
 
@@ -196,11 +178,6 @@ describe("My Tickets page", () => {
     navigateMock.mockReset();
     listMode = "loaded";
     pendingListResponses = [];
-    sessionStorage.clear();
-    sessionStorage.setItem(
-      "toktickit.development-requester",
-      JSON.stringify(owner)
-    );
   });
 
   afterEach(() => {
@@ -248,9 +225,7 @@ describe("My Tickets page", () => {
 
     const refetchResponse = createDeferredResponse();
     pendingListResponses.push(refetchResponse.promise);
-    const refetch = queryClient.refetchQueries({
-      queryKey: ["tickets", owner.id],
-    });
+    const refetch = queryClient.refetchQueries({ queryKey: ["tickets"] });
 
     expect(await screen.findByText("Updating results…")).toBeTruthy();
     expect(ticketList.getAttribute("aria-busy")).toBe("true");
@@ -333,18 +308,20 @@ describe("My Tickets page", () => {
     expect(await screen.findByText("21 total")).toBeTruthy();
   });
 
-  it("removes the previous Requester list before showing replacement data", async () => {
-    mockApi();
-    renderMyTickets(true);
+  it("uses cookie credentials without a requester context header", async () => {
+    const fetchMock = mockApi();
+    renderMyTickets();
 
     await screen.findByText("21 total");
-    fireEvent.click(screen.getByRole("button", { name: "Switch requester" }));
-
-    await waitFor(() => {
-      expect(document.body.textContent).not.toContain(ticket.ticketNumber);
+    const ticketCall = fetchMock.mock.calls.find(([input]) => {
+      const requestUrl = getRequestUrl(input);
+      return requestUrl.pathname === "/api/tickets";
     });
-    await waitFor(() => {
-      expect(document.body.textContent).toContain(otherTicket.ticketNumber);
-    });
+    const request = ticketCall?.[0];
+    if (!(request instanceof Request)) {
+      throw new Error("Expected the API client to pass a Request.");
+    }
+    expect(request.credentials).toBe("include");
+    expect(request.headers.has("X-Development-Requester-Id")).toBe(false);
   });
 });

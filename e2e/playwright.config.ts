@@ -3,7 +3,8 @@ import path from "node:path";
 import { defineConfig } from "@playwright/test";
 
 const repositoryRoot = path.resolve(import.meta.dirname, "..");
-const baseURL = process.env.E2E_BASE_URL ?? "http://localhost:5173";
+const clientPort = process.env.E2E_CLIENT_PORT ?? "5173";
+const baseURL = process.env.E2E_BASE_URL ?? `http://localhost:${clientPort}`;
 const apiURL = process.env.E2E_API_URL ?? "http://localhost:3000";
 const isCI = process.env.CI !== undefined && process.env.CI.length > 0;
 
@@ -35,7 +36,7 @@ export default defineConfig({
     ? [["github"], ["html", { open: "never" }]]
     : [["list"], ["html", { open: "never" }]],
   retries: isCI ? 2 : 0,
-  testDir: "lab-02",
+  testDir: ".",
   timeout: 60_000,
   use: {
     baseURL,
@@ -45,14 +46,14 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: "pnpm dev",
+      command: `CORS_ORIGIN=${baseURL} API_ORIGIN=${apiURL} pnpm dev`,
       cwd: path.join(repositoryRoot, "server"),
       reuseExistingServer: !isCI,
       timeout: 120_000,
       url: `${apiURL}/api/health`,
     },
     {
-      command: "VITE_SHOW_ROUTER_DEVTOOLS=false pnpm dev",
+      command: `VITE_SHOW_ROUTER_DEVTOOLS=false pnpm dev --host 127.0.0.1 --port ${clientPort}`,
       cwd: path.join(repositoryRoot, "client"),
       reuseExistingServer: !isCI,
       timeout: 120_000,

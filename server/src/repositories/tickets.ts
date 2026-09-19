@@ -1,6 +1,15 @@
 import { prisma } from "../db/client.js";
 import { Prisma } from "../generated/prisma/client.js";
-import type { TicketFields, TicketListQuery } from "../types/tickets.js";
+import type {
+  CurrentStatus as PrismaCurrentStatus,
+  UserRole as PrismaUserRole,
+} from "../generated/prisma/enums.js";
+import type {
+  StaffTicketOwnerFilter,
+  StaffTicketListQuery,
+  TicketFields,
+  TicketListQuery,
+} from "../types/tickets.js";
 
 const categorySelection = {
   id: true,
@@ -18,6 +27,13 @@ const requesterSelection = {
   id: true,
 } as const;
 
+const ownerSelection = {
+  displayName: true,
+  id: true,
+  isActive: true,
+  role: true,
+} as const;
+
 const attachmentSelection = {
   byteSize: true,
   id: true,
@@ -25,7 +41,7 @@ const attachmentSelection = {
   originalFilename: true,
   removalReason: true,
   removedAt: true,
-  removedByRequesterId: true,
+  removedByUserId: true,
   storageKey: true,
   uploadedAt: true,
 } as const;
@@ -36,8 +52,12 @@ export const ticketDetailInclude = {
     select: attachmentSelection,
   },
   category: { select: categorySelection },
+  owner: { select: ownerSelection },
   relatedSystem: { select: relatedSystemSelection },
   requester: { select: requesterSelection },
+  resolutionIndicatedBy: {
+    select: { displayName: true, id: true },
+  },
 } satisfies Prisma.TicketInclude;
 
 export const ticketSummaryInclude = {
@@ -49,6 +69,12 @@ export const findOwnedTicket = async (requesterId: number, ticketId: number) =>
   await prisma.ticket.findFirst({
     include: ticketDetailInclude,
     where: { id: ticketId, requesterId },
+  });
+
+export const findTicketById = async (ticketId: number) =>
+  await prisma.ticket.findUnique({
+    include: ticketDetailInclude,
+    where: { id: ticketId },
   });
 
 export const findOwnedAttachment = async (
@@ -68,10 +94,43 @@ export const findOwnedAttachment = async (
     },
   });
 
+export const findReadableAttachment = async (
+  ticketId: number,
+  attachmentId: number
+) =>
+  await prisma.attachment.findFirst({
+    select: {
+      ...attachmentSelection,
+      ticketId: true,
+    },
+    where: {
+      id: attachmentId,
+      removedAt: null,
+      ticketId,
+    },
+  });
+
 export const countActiveAttachments = async (ticketId: number) =>
   await prisma.attachment.count({
     where: { removedAt: null, ticketId },
   });
+
+const escapeLikePattern = (value: string): string =>
+  value.replaceAll("\\", "\\\\").replaceAll("%", "\\%").replaceAll("_", "\\_");
+
+const currentStatusByWire: Record<
+  Exclude<StaffTicketListQuery["currentStatus"], undefined>,
+  PrismaCurrentStatus
+> = {
+  Cancelled: "Cancelled",
+  Closed: "Closed",
+  "In Progress": "InProgress",
+  New: "New",
+  Open: "Open",
+  Reopened: "Reopened",
+  Resolved: "Resolved",
+  "Waiting for Requester": "WaitingForRequester",
+};
 
 const buildTicketWhere = (
   requesterId: number,
@@ -80,7 +139,7 @@ const buildTicketWhere = (
   ...(query.categoryId === undefined ? {} : { categoryId: query.categoryId }),
   ...(query.currentStatus === undefined
     ? {}
-    : { currentStatus: query.currentStatus }),
+    : { currentStatus: currentStatusByWire[query.currentStatus] }),
   ...(query.relatedSystemId === undefined
     ? {}
     : { relatedSystemId: query.relatedSystemId }),
@@ -91,13 +150,128 @@ const buildTicketWhere = (
     ? {}
     : {
         OR: [
-          { ticketNumber: { contains: query.search, mode: "insensitive" } },
-          { summary: { contains: query.search, mode: "insensitive" } },
-          { description: { contains: query.search, mode: "insensitive" } },
+          {
+            ticketNumber: {
+              contains: escapeLikePattern(query.search),
+              mode: "insensitive",
+            },
+          },
+          {
+            summary: {
+              contains: escapeLikePattern(query.search),
+              mode: "insensitive",
+            },
+          },
+          {
+            description: {
+              contains: escapeLikePattern(query.search),
+              mode: "insensitive",
+            },
+          },
         ],
       }),
   requesterId,
 });
+
+const resolveOwnerId = (
+  owner: StaffTicketOwnerFilter,
+  currentUserId: number
+): number | null => {
+  if (owner === "me") {
+    return currentUserId;
+  }
+
+  if (owner === "unassigned") {
+    return null;
+  }
+
+  return owner;
+};
+
+const buildStaffTicketWhere = (
+  query: StaffTicketListQuery,
+  currentUserId: number
+): Prisma.TicketWhereInput => ({
+  ...(query.categoryId === undefined ? {} : { categoryId: query.categoryId }),
+  ...(query.currentStatus === undefined
+    ? {}
+    : { currentStatus: currentStatusByWire[query.currentStatus] }),
+  ...(query.itPriority === undefined ? {} : { itPriority: query.itPriority }),
+  ...(query.owner === undefined
+    ? {}
+    : { ownerId: resolveOwnerId(query.owner, currentUserId) }),
+  ...(query.relatedSystemId === undefined
+    ? {}
+    : { relatedSystemId: query.relatedSystemId }),
+  ...(query.requestedPriority === undefined
+    ? {}
+    : { requestedPriority: query.requestedPriority }),
+  ...(query.search === undefined
+    ? {}
+    : {
+        OR: [
+          {
+            ticketNumber: {
+              contains: escapeLikePattern(query.search),
+              mode: "insensitive",
+            },
+          },
+          {
+            summary: {
+              contains: escapeLikePattern(query.search),
+              mode: "insensitive",
+            },
+          },
+        ],
+      }),
+});
+
+const staffTicketSummaryInclude = {
+  category: { select: categorySelection },
+  owner: { select: ownerSelection },
+  relatedSystem: { select: relatedSystemSelection },
+} satisfies Prisma.TicketInclude;
+
+export const findEligibleOwners = async () =>
+  await prisma.user.findMany({
+    orderBy: [{ displayName: "asc" }, { id: "asc" }],
+    select: ownerSelection,
+    where: { isActive: true, role: { in: ["ITStaff", "Administrator"] } },
+  });
+
+export const findEligibleOwner = async (id: number) =>
+  await prisma.user.findFirst({
+    select: ownerSelection,
+    where: { id, isActive: true, role: { in: ["ITStaff", "Administrator"] } },
+  });
+
+export const findStaffTicketSummaries = async (
+  currentUserId: number,
+  query: StaffTicketListQuery
+) => {
+  const where = buildStaffTicketWhere(query, currentUserId);
+  const direction = query.sortDirection;
+  const orderBy: Prisma.TicketOrderByWithRelationInput[] = [
+    { [query.sortBy]: direction },
+    { id: direction },
+  ];
+
+  return await prisma.$transaction(
+    async (database) => {
+      const totalItems = await database.ticket.count({ where });
+      const items = await database.ticket.findMany({
+        include: staffTicketSummaryInclude,
+        orderBy,
+        skip: (query.page - 1) * query.pageSize,
+        take: query.pageSize,
+        where,
+      });
+
+      return { items, totalItems };
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead }
+  );
+};
 
 export const findTicketSummaries = async (
   requesterId: number,
@@ -152,9 +326,11 @@ export const insertTicket = async (
       categoryId: fields.categoryId,
       currentStatus: "New",
       description: fields.description,
+      itPriority: fields.requestedPriority,
       relatedSystemId: fields.relatedSystemId,
       requestedPriority: fields.requestedPriority,
       requesterId,
+      statusChangedAt: ticketDate,
       summary: fields.summary,
       ticketDate,
       ticketNumber,
@@ -238,6 +414,247 @@ export const touchTicket = async (database: TicketDatabase, ticketId: number) =>
     where: { id: ticketId },
   });
 
+type TicketDetailDatabaseRecord = Prisma.TicketGetPayload<{
+  include: typeof ticketDetailInclude;
+}>;
+
+type TicketMutationOutcome =
+  | { kind: "actor-ineligible" }
+  | { kind: "not-found" }
+  | { kind: "owner-ineligible" }
+  | { kind: "version-conflict" }
+  | { kind: "assignment-conflict" }
+  | { kind: "terminal" }
+  | { kind: "unchanged"; ticket: TicketDetailDatabaseRecord }
+  | { kind: "success"; ticket: TicketDetailDatabaseRecord };
+
+const terminalStatuses = new Set<PrismaCurrentStatus>([
+  "Resolved",
+  "Closed",
+  "Cancelled",
+]);
+
+const lockUserForOwnerMutation = async (
+  database: TicketDatabase,
+  userId: number
+) => {
+  await database.$queryRaw(
+    Prisma.sql`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`
+  );
+};
+
+const lockUsersForOwnerMutation = async (
+  database: TicketDatabase,
+  userIds: readonly number[]
+) => {
+  const sortedUserIds = [...new Set(userIds)];
+  // oxlint-disable-next-line unicorn/no-array-sort -- copy is local to this transaction.
+  sortedUserIds.sort((left, right) => left - right);
+  for (const userId of sortedUserIds) {
+    // Account lifecycle mutations use the same ascending user lock order.
+    // oxlint-disable-next-line no-await-in-loop
+    await lockUserForOwnerMutation(database, userId);
+  }
+};
+
+const lockTicketForMutation = async (
+  database: TicketDatabase,
+  ticketId: number
+) => {
+  await database.$queryRaw(
+    Prisma.sql`SELECT "id" FROM "Ticket" WHERE "id" = ${ticketId} FOR UPDATE`
+  );
+};
+
+const findLockedTicket = async (
+  database: TicketDatabase,
+  ticketId: number
+): Promise<TicketDetailDatabaseRecord | null> =>
+  await database.ticket.findUnique({
+    include: ticketDetailInclude,
+    where: { id: ticketId },
+  });
+
+const isEligibleOwner = (user: {
+  isActive: boolean;
+  role: PrismaUserRole;
+}): boolean =>
+  user.isActive && (user.role === "ITStaff" || user.role === "Administrator");
+
+const isEligibleStaffActor = (
+  user: {
+    isActive: boolean;
+    mustChangePassword: boolean;
+    role: PrismaUserRole;
+  } | null
+): boolean =>
+  user !== null &&
+  user.isActive &&
+  !user.mustChangePassword &&
+  user.role === "ITStaff";
+
+const findStaffActor = async (database: TicketDatabase, userId: number) =>
+  await database.user.findUnique({
+    select: { isActive: true, mustChangePassword: true, role: true },
+    where: { id: userId },
+  });
+
+export const claimTicket = async (
+  currentUserId: number,
+  ticketId: number,
+  version: number
+): Promise<TicketMutationOutcome> =>
+  await prisma.$transaction(async (database) => {
+    // Owner rows are locked before Ticket rows. Account lifecycle mutations use
+    // the same order when removing owner eligibility.
+    await lockUsersForOwnerMutation(database, [currentUserId]);
+    const currentUser = await findStaffActor(database, currentUserId);
+
+    if (!isEligibleStaffActor(currentUser)) {
+      return { kind: "actor-ineligible" };
+    }
+
+    await lockTicketForMutation(database, ticketId);
+    const ticket = await findLockedTicket(database, ticketId);
+
+    if (ticket === null) {
+      return { kind: "not-found" };
+    }
+
+    if (ticket.version !== version) {
+      return { kind: "version-conflict" };
+    }
+
+    if (terminalStatuses.has(ticket.currentStatus)) {
+      return { kind: "terminal" };
+    }
+
+    if (ticket.ownerId !== null) {
+      return { kind: "assignment-conflict" };
+    }
+
+    const updated = await database.ticket.update({
+      data: {
+        ownerId: currentUserId,
+        updatedAt: new Date(),
+        version: ticket.version + 1,
+      },
+      include: ticketDetailInclude,
+      where: { id: ticketId },
+    });
+
+    return { kind: "success", ticket: updated };
+  });
+
+export const updateTicketOwner = async (
+  currentUserId: number,
+  ticketId: number,
+  ownerId: number | null,
+  version: number
+): Promise<TicketMutationOutcome> =>
+  await prisma.$transaction(async (database) => {
+    await lockUsersForOwnerMutation(
+      database,
+      ownerId === null ? [currentUserId] : [currentUserId, ownerId]
+    );
+    const currentUser = await findStaffActor(database, currentUserId);
+
+    if (!isEligibleStaffActor(currentUser)) {
+      return { kind: "actor-ineligible" };
+    }
+
+    let ownerEligible = true;
+
+    if (ownerId !== null) {
+      const owner = await database.user.findUnique({
+        select: { isActive: true, role: true },
+        where: { id: ownerId },
+      });
+      ownerEligible = owner !== null && isEligibleOwner(owner);
+    }
+
+    await lockTicketForMutation(database, ticketId);
+    const ticket = await findLockedTicket(database, ticketId);
+
+    if (ticket === null) {
+      return { kind: "not-found" };
+    }
+
+    if (ticket.version !== version) {
+      return { kind: "version-conflict" };
+    }
+
+    if (terminalStatuses.has(ticket.currentStatus)) {
+      return { kind: "terminal" };
+    }
+
+    if (!ownerEligible) {
+      return { kind: "owner-ineligible" };
+    }
+
+    if (ticket.ownerId === ownerId) {
+      return { kind: "unchanged", ticket };
+    }
+
+    const updated = await database.ticket.update({
+      data: {
+        ownerId,
+        updatedAt: new Date(),
+        version: ticket.version + 1,
+      },
+      include: ticketDetailInclude,
+      where: { id: ticketId },
+    });
+
+    return { kind: "success", ticket: updated };
+  });
+
+export const updateTicketItPriority = async (
+  currentUserId: number,
+  ticketId: number,
+  itPriority: "Low" | "Medium" | "High" | "Urgent",
+  version: number
+): Promise<TicketMutationOutcome> =>
+  await prisma.$transaction(async (database) => {
+    await lockUsersForOwnerMutation(database, [currentUserId]);
+    const currentUser = await findStaffActor(database, currentUserId);
+
+    if (!isEligibleStaffActor(currentUser)) {
+      return { kind: "actor-ineligible" };
+    }
+
+    await lockTicketForMutation(database, ticketId);
+    const ticket = await findLockedTicket(database, ticketId);
+
+    if (ticket === null) {
+      return { kind: "not-found" };
+    }
+
+    if (ticket.version !== version) {
+      return { kind: "version-conflict" };
+    }
+
+    if (terminalStatuses.has(ticket.currentStatus)) {
+      return { kind: "terminal" };
+    }
+
+    if (ticket.itPriority === itPriority) {
+      return { kind: "unchanged", ticket };
+    }
+
+    const updated = await database.ticket.update({
+      data: {
+        itPriority,
+        updatedAt: new Date(),
+        version: ticket.version + 1,
+      },
+      include: ticketDetailInclude,
+      where: { id: ticketId },
+    });
+
+    return { kind: "success", ticket: updated };
+  });
+
 export const createAttachments = async (
   ticketId: number,
   attachments: readonly {
@@ -276,7 +693,7 @@ export const removeAttachment = async (
       data: {
         removalReason: reason,
         removedAt,
-        removedByRequesterId: requesterId,
+        removedByUserId: requesterId,
       },
       where: {
         id: attachmentId,

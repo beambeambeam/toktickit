@@ -3,8 +3,27 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { createApiTicket, createApiTicketAttachments, getApiCategories, getApiDevelopmentRequesters, getApiHealth, getApiRelatedSystems, getApiTicket, getApiTicketAttachmentContent, getApiTicketAttachments, getApiTickets, type Options, removeApiTicketAttachment } from '../sdk.gen';
-import type { CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsError, CreateApiTicketAttachmentsResponse, CreateApiTicketData, CreateApiTicketError, CreateApiTicketResponse, GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiDevelopmentRequestersData, GetApiDevelopmentRequestersError, GetApiDevelopmentRequestersResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse, GetApiRelatedSystemsData, GetApiRelatedSystemsError, GetApiRelatedSystemsResponse, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentsData, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, GetApiTicketData, GetApiTicketError, GetApiTicketResponse, GetApiTicketsData, GetApiTicketsError, GetApiTicketsResponse, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentError, RemoveApiTicketAttachmentResponse } from '../types.gen';
+import { claimApiTicket, createApiTicket, createApiTicketAttachments, createApiTicketComment, createApiTicketInternalNote, createApiUser, getApiAuthMe, getApiCategories, getApiHealth, getApiRelatedSystems, getApiStaffOwners, getApiStaffTickets, getApiTicket, getApiTicketAttachmentContent, getApiTicketAttachments, getApiTicketComments, getApiTicketInternalNotes, getApiTickets, getApiUser, getApiUsers, indicateApiTicketResolution, type Options, postApiAuthChangePassword, postApiAuthLogin, postApiAuthLogout, removeApiTicketAttachment, resetApiUserInitialPassword, updateApiTicketItPriority, updateApiTicketOwner, updateApiTicketStatus, updateApiUser } from '../sdk.gen';
+import type { ClaimApiTicketData, ClaimApiTicketError, ClaimApiTicketResponse, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsError, CreateApiTicketAttachmentsResponse, CreateApiTicketCommentData, CreateApiTicketCommentError, CreateApiTicketCommentResponse, CreateApiTicketData, CreateApiTicketError, CreateApiTicketInternalNoteData, CreateApiTicketInternalNoteError, CreateApiTicketInternalNoteResponse, CreateApiTicketResponse, CreateApiUserData, CreateApiUserError, CreateApiUserResponse, GetApiAuthMeData, GetApiAuthMeError, GetApiAuthMeResponse, GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse, GetApiRelatedSystemsData, GetApiRelatedSystemsError, GetApiRelatedSystemsResponse, GetApiStaffOwnersData, GetApiStaffOwnersError, GetApiStaffOwnersResponse, GetApiStaffTicketsData, GetApiStaffTicketsError, GetApiStaffTicketsResponse, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentsData, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, GetApiTicketCommentsData, GetApiTicketCommentsError, GetApiTicketCommentsResponse, GetApiTicketData, GetApiTicketError, GetApiTicketInternalNotesData, GetApiTicketInternalNotesError, GetApiTicketInternalNotesResponse, GetApiTicketResponse, GetApiTicketsData, GetApiTicketsError, GetApiTicketsResponse, GetApiUserData, GetApiUserError, GetApiUserResponse, GetApiUsersData, GetApiUsersError, GetApiUsersResponse, IndicateApiTicketResolutionData, IndicateApiTicketResolutionError, IndicateApiTicketResolutionResponse, PostApiAuthChangePasswordData, PostApiAuthChangePasswordError, PostApiAuthChangePasswordResponse, PostApiAuthLoginData, PostApiAuthLoginError, PostApiAuthLoginResponse, PostApiAuthLogoutData, PostApiAuthLogoutError, PostApiAuthLogoutResponse, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentError, RemoveApiTicketAttachmentResponse, ResetApiUserInitialPasswordData, ResetApiUserInitialPasswordError, ResetApiUserInitialPasswordResponse, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityError, UpdateApiTicketItPriorityResponse, UpdateApiTicketOwnerData, UpdateApiTicketOwnerError, UpdateApiTicketOwnerResponse, UpdateApiTicketStatusData, UpdateApiTicketStatusError, UpdateApiTicketStatusResponse, UpdateApiUserData, UpdateApiUserError, UpdateApiUserResponse } from '../types.gen';
+
+/**
+ * Sign in
+ *
+ * Creates a restricted or normal opaque session for an active User.
+ */
+export const postApiAuthLoginMutation = (options?: Partial<Options<PostApiAuthLoginData>>): UseMutationOptions<PostApiAuthLoginResponse, PostApiAuthLoginError, Options<PostApiAuthLoginData>> => {
+    const mutationOptions: UseMutationOptions<PostApiAuthLoginResponse, PostApiAuthLoginError, Options<PostApiAuthLoginData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await postApiAuthLogin({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 export type QueryKey<TOptions extends Options> = [
     Pick<TOptions, 'baseUrl' | 'body' | 'headers' | 'path' | 'query'> & {
@@ -37,6 +56,58 @@ const createQueryKey = <TOptions extends Options>(id: string, options?: TOptions
         params.query = options.query;
     }
     return [params];
+};
+
+export const getApiAuthMeQueryKey = (options?: Options<GetApiAuthMeData>) => createQueryKey('getApiAuthMe', options);
+
+/**
+ * Get the current User
+ */
+export const getApiAuthMeOptions = (options?: Options<GetApiAuthMeData>) => queryOptions<GetApiAuthMeResponse, GetApiAuthMeError, GetApiAuthMeResponse, ReturnType<typeof getApiAuthMeQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiAuthMe({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiAuthMeQueryKey(options)
+});
+
+/**
+ * Change the current password
+ */
+export const postApiAuthChangePasswordMutation = (options?: Partial<Options<PostApiAuthChangePasswordData>>): UseMutationOptions<PostApiAuthChangePasswordResponse, PostApiAuthChangePasswordError, Options<PostApiAuthChangePasswordData>> => {
+    const mutationOptions: UseMutationOptions<PostApiAuthChangePasswordResponse, PostApiAuthChangePasswordError, Options<PostApiAuthChangePasswordData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await postApiAuthChangePassword({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Revoke the current session
+ */
+export const postApiAuthLogoutMutation = (options?: Partial<Options<PostApiAuthLogoutData>>): UseMutationOptions<PostApiAuthLogoutResponse, PostApiAuthLogoutError, Options<PostApiAuthLogoutData>> => {
+    const mutationOptions: UseMutationOptions<PostApiAuthLogoutResponse, PostApiAuthLogoutError, Options<PostApiAuthLogoutData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await postApiAuthLogout({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
 };
 
 export const getApiCategoriesQueryKey = (options?: Options<GetApiCategoriesData>) => createQueryKey('getApiCategories', options);
@@ -79,16 +150,16 @@ export const getApiRelatedSystemsOptions = (options?: Options<GetApiRelatedSyste
     queryKey: getApiRelatedSystemsQueryKey(options)
 });
 
-export const getApiDevelopmentRequestersQueryKey = (options?: Options<GetApiDevelopmentRequestersData>) => createQueryKey('getApiDevelopmentRequesters', options);
+export const getApiStaffTicketsQueryKey = (options?: Options<GetApiStaffTicketsData>) => createQueryKey('getApiStaffTickets', options);
 
 /**
- * List active Development Requesters
+ * List the shared Ticket Queue
  *
- * Returns active test-context Requesters only.
+ * Returns operational Ticket summaries for IT Staff and read-only Administrators.
  */
-export const getApiDevelopmentRequestersOptions = (options?: Options<GetApiDevelopmentRequestersData>) => queryOptions<GetApiDevelopmentRequestersResponse, GetApiDevelopmentRequestersError, GetApiDevelopmentRequestersResponse, ReturnType<typeof getApiDevelopmentRequestersQueryKey>>({
+export const getApiStaffTicketsOptions = (options?: Options<GetApiStaffTicketsData>) => queryOptions<GetApiStaffTicketsResponse, GetApiStaffTicketsError, GetApiStaffTicketsResponse, ReturnType<typeof getApiStaffTicketsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getApiDevelopmentRequesters({
+        const { data } = await getApiStaffTickets({
             ...options,
             ...queryKey[0],
             signal,
@@ -96,47 +167,7 @@ export const getApiDevelopmentRequestersOptions = (options?: Options<GetApiDevel
         });
         return data;
     },
-    queryKey: getApiDevelopmentRequestersQueryKey(options)
-});
-
-export const getApiHealthQueryKey = (options?: Options<GetApiHealthData>) => createQueryKey('getApiHealth', options);
-
-/**
- * Check API liveness
- *
- * Returns a static response when the API process is alive.
- */
-export const getApiHealthOptions = (options?: Options<GetApiHealthData>) => queryOptions<GetApiHealthResponse, GetApiHealthError, GetApiHealthResponse, ReturnType<typeof getApiHealthQueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getApiHealth({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: getApiHealthQueryKey(options)
-});
-
-export const getApiTicketsQueryKey = (options: Options<GetApiTicketsData>) => createQueryKey('getApiTickets', options);
-
-/**
- * List owned requester Tickets
- *
- * Returns only Tickets owned by the validated Development Requester context.
- */
-export const getApiTicketsOptions = (options: Options<GetApiTicketsData>) => queryOptions<GetApiTicketsResponse, GetApiTicketsError, GetApiTicketsResponse, ReturnType<typeof getApiTicketsQueryKey>>({
-    queryFn: async ({ queryKey, signal }) => {
-        const { data } = await getApiTickets({
-            ...options,
-            ...queryKey[0],
-            signal,
-            throwOnError: true
-        });
-        return data;
-    },
-    queryKey: getApiTicketsQueryKey(options)
+    queryKey: getApiStaffTicketsQueryKey(options)
 });
 
 const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'headers' | 'path' | 'query'>>(queryKey: QueryKey<Options>, page: K) => {
@@ -168,14 +199,296 @@ const createInfiniteParams = <K extends Pick<QueryKey<Options>[0], 'body' | 'hea
     return params as unknown as typeof page;
 };
 
-export const getApiTicketsInfiniteQueryKey = (options: Options<GetApiTicketsData>): QueryKey<Options<GetApiTicketsData>> => createQueryKey('getApiTickets', options, true);
+export const getApiStaffTicketsInfiniteQueryKey = (options?: Options<GetApiStaffTicketsData>): QueryKey<Options<GetApiStaffTicketsData>> => createQueryKey('getApiStaffTickets', options, true);
+
+/**
+ * List the shared Ticket Queue
+ *
+ * Returns operational Ticket summaries for IT Staff and read-only Administrators.
+ */
+export const getApiStaffTicketsInfiniteOptions = (options?: Options<GetApiStaffTicketsData>) => {
+    const opts = infiniteQueryOptions<GetApiStaffTicketsResponse, GetApiStaffTicketsError, InfiniteData<GetApiStaffTicketsResponse>, QueryKey<Options<GetApiStaffTicketsData>>, number | Pick<QueryKey<Options<GetApiStaffTicketsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetApiStaffTicketsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getApiStaffTickets({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getApiStaffTicketsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+export const getApiStaffOwnersQueryKey = (options?: Options<GetApiStaffOwnersData>) => createQueryKey('getApiStaffOwners', options);
+
+/**
+ * List eligible Ticket Owners
+ */
+export const getApiStaffOwnersOptions = (options?: Options<GetApiStaffOwnersData>) => queryOptions<GetApiStaffOwnersResponse, GetApiStaffOwnersError, GetApiStaffOwnersResponse, ReturnType<typeof getApiStaffOwnersQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiStaffOwners({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiStaffOwnersQueryKey(options)
+});
+
+/**
+ * Progress a Ticket
+ *
+ * Applies one approved status transition for IT Staff.
+ */
+export const updateApiTicketStatusMutation = (options?: Partial<Options<UpdateApiTicketStatusData>>): UseMutationOptions<UpdateApiTicketStatusResponse, UpdateApiTicketStatusError, Options<UpdateApiTicketStatusData>> => {
+    const mutationOptions: UseMutationOptions<UpdateApiTicketStatusResponse, UpdateApiTicketStatusError, Options<UpdateApiTicketStatusData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateApiTicketStatus({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Indicate apparent Ticket resolution
+ *
+ * Records an owning Requester's apparent-resolution indication without formally changing status.
+ */
+export const indicateApiTicketResolutionMutation = (options?: Partial<Options<IndicateApiTicketResolutionData>>): UseMutationOptions<IndicateApiTicketResolutionResponse, IndicateApiTicketResolutionError, Options<IndicateApiTicketResolutionData>> => {
+    const mutationOptions: UseMutationOptions<IndicateApiTicketResolutionResponse, IndicateApiTicketResolutionError, Options<IndicateApiTicketResolutionData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await indicateApiTicketResolution({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Claim an unassigned Ticket
+ *
+ * Assigns the current IT Staff member when the Ticket is unassigned.
+ */
+export const claimApiTicketMutation = (options?: Partial<Options<ClaimApiTicketData>>): UseMutationOptions<ClaimApiTicketResponse, ClaimApiTicketError, Options<ClaimApiTicketData>> => {
+    const mutationOptions: UseMutationOptions<ClaimApiTicketResponse, ClaimApiTicketError, Options<ClaimApiTicketData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await claimApiTicket({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Assign a Ticket Owner
+ *
+ * Assigns, reassigns, or unassigns a Ticket Owner.
+ */
+export const updateApiTicketOwnerMutation = (options?: Partial<Options<UpdateApiTicketOwnerData>>): UseMutationOptions<UpdateApiTicketOwnerResponse, UpdateApiTicketOwnerError, Options<UpdateApiTicketOwnerData>> => {
+    const mutationOptions: UseMutationOptions<UpdateApiTicketOwnerResponse, UpdateApiTicketOwnerError, Options<UpdateApiTicketOwnerData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateApiTicketOwner({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Set a Ticket IT Priority
+ *
+ * Sets the operational IT Priority without changing Requested Priority.
+ */
+export const updateApiTicketItPriorityMutation = (options?: Partial<Options<UpdateApiTicketItPriorityData>>): UseMutationOptions<UpdateApiTicketItPriorityResponse, UpdateApiTicketItPriorityError, Options<UpdateApiTicketItPriorityData>> => {
+    const mutationOptions: UseMutationOptions<UpdateApiTicketItPriorityResponse, UpdateApiTicketItPriorityError, Options<UpdateApiTicketItPriorityData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateApiTicketItPriority({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getApiUsersQueryKey = (options?: Options<GetApiUsersData>) => createQueryKey('getApiUsers', options);
+
+/**
+ * List users
+ *
+ * Returns users for Administrator account management.
+ */
+export const getApiUsersOptions = (options?: Options<GetApiUsersData>) => queryOptions<GetApiUsersResponse, GetApiUsersError, GetApiUsersResponse, ReturnType<typeof getApiUsersQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiUsers({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiUsersQueryKey(options)
+});
+
+/**
+ * Create a user account
+ *
+ * Creates one active or inactive one-role account with an initial password.
+ */
+export const createApiUserMutation = (options?: Partial<Options<CreateApiUserData>>): UseMutationOptions<CreateApiUserResponse, CreateApiUserError, Options<CreateApiUserData>> => {
+    const mutationOptions: UseMutationOptions<CreateApiUserResponse, CreateApiUserError, Options<CreateApiUserData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createApiUser({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getApiUserQueryKey = (options: Options<GetApiUserData>) => createQueryKey('getApiUser', options);
+
+/**
+ * Get a user
+ *
+ * Returns one user for the Administrator edit form.
+ */
+export const getApiUserOptions = (options: Options<GetApiUserData>) => queryOptions<GetApiUserResponse, GetApiUserError, GetApiUserResponse, ReturnType<typeof getApiUserQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiUser({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiUserQueryKey(options)
+});
+
+/**
+ * Edit a user account
+ *
+ * Updates editable account access fields atomically.
+ */
+export const updateApiUserMutation = (options?: Partial<Options<UpdateApiUserData>>): UseMutationOptions<UpdateApiUserResponse, UpdateApiUserError, Options<UpdateApiUserData>> => {
+    const mutationOptions: UseMutationOptions<UpdateApiUserResponse, UpdateApiUserError, Options<UpdateApiUserData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await updateApiUser({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Reset a user's initial password
+ *
+ * Revokes all target sessions and requires password replacement at next login.
+ */
+export const resetApiUserInitialPasswordMutation = (options?: Partial<Options<ResetApiUserInitialPasswordData>>): UseMutationOptions<ResetApiUserInitialPasswordResponse, ResetApiUserInitialPasswordError, Options<ResetApiUserInitialPasswordData>> => {
+    const mutationOptions: UseMutationOptions<ResetApiUserInitialPasswordResponse, ResetApiUserInitialPasswordError, Options<ResetApiUserInitialPasswordData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await resetApiUserInitialPassword({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getApiHealthQueryKey = (options?: Options<GetApiHealthData>) => createQueryKey('getApiHealth', options);
+
+/**
+ * Check API liveness
+ *
+ * Returns a static response when the API process is alive.
+ */
+export const getApiHealthOptions = (options?: Options<GetApiHealthData>) => queryOptions<GetApiHealthResponse, GetApiHealthError, GetApiHealthResponse, ReturnType<typeof getApiHealthQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiHealth({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiHealthQueryKey(options)
+});
+
+export const getApiTicketsQueryKey = (options?: Options<GetApiTicketsData>) => createQueryKey('getApiTickets', options);
 
 /**
  * List owned requester Tickets
  *
- * Returns only Tickets owned by the validated Development Requester context.
+ * Returns only Tickets owned by the authenticated Requester.
  */
-export const getApiTicketsInfiniteOptions = (options: Options<GetApiTicketsData>) => {
+export const getApiTicketsOptions = (options?: Options<GetApiTicketsData>) => queryOptions<GetApiTicketsResponse, GetApiTicketsError, GetApiTicketsResponse, ReturnType<typeof getApiTicketsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiTickets({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiTicketsQueryKey(options)
+});
+
+export const getApiTicketsInfiniteQueryKey = (options?: Options<GetApiTicketsData>): QueryKey<Options<GetApiTicketsData>> => createQueryKey('getApiTickets', options, true);
+
+/**
+ * List owned requester Tickets
+ *
+ * Returns only Tickets owned by the authenticated Requester.
+ */
+export const getApiTicketsInfiniteOptions = (options?: Options<GetApiTicketsData>) => {
     const opts = infiniteQueryOptions<GetApiTicketsResponse, GetApiTicketsError, InfiniteData<GetApiTicketsResponse>, QueryKey<Options<GetApiTicketsData>>, number | Pick<QueryKey<Options<GetApiTicketsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
     // @ts-ignore
     {
@@ -203,7 +516,7 @@ export const getApiTicketsInfiniteOptions = (options: Options<GetApiTicketsData>
 /**
  * Create a requester Ticket
  *
- * Creates one Ticket owned by the validated Development Requester context.
+ * Creates one Ticket owned by the authenticated Requester.
  */
 export const createApiTicketMutation = (options?: Partial<Options<CreateApiTicketData>>): UseMutationOptions<CreateApiTicketResponse, CreateApiTicketError, Options<CreateApiTicketData>> => {
     const mutationOptions: UseMutationOptions<CreateApiTicketResponse, CreateApiTicketError, Options<CreateApiTicketData>> = {
@@ -222,7 +535,9 @@ export const createApiTicketMutation = (options?: Partial<Options<CreateApiTicke
 export const getApiTicketQueryKey = (options: Options<GetApiTicketData>) => createQueryKey('getApiTicket', options);
 
 /**
- * Get an owned Ticket
+ * Get a Ticket
+ *
+ * Requesters can read their own Tickets; IT Staff and Administrators can read every Ticket.
  */
 export const getApiTicketOptions = (options: Options<GetApiTicketData>) => queryOptions<GetApiTicketResponse, GetApiTicketError, GetApiTicketResponse, ReturnType<typeof getApiTicketQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -237,10 +552,90 @@ export const getApiTicketOptions = (options: Options<GetApiTicketData>) => query
     queryKey: getApiTicketQueryKey(options)
 });
 
+export const getApiTicketInternalNotesQueryKey = (options: Options<GetApiTicketInternalNotesData>) => createQueryKey('getApiTicketInternalNotes', options);
+
+/**
+ * List private Internal Notes
+ *
+ * IT Staff and Administrators can read every Ticket's private Internal Notes. Requesters cannot access this resource.
+ */
+export const getApiTicketInternalNotesOptions = (options: Options<GetApiTicketInternalNotesData>) => queryOptions<GetApiTicketInternalNotesResponse, GetApiTicketInternalNotesError, GetApiTicketInternalNotesResponse, ReturnType<typeof getApiTicketInternalNotesQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiTicketInternalNotes({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiTicketInternalNotesQueryKey(options)
+});
+
+/**
+ * Add a private Internal Note
+ *
+ * IT Staff can append a private Internal Note to any non-terminal Ticket. Administrators and Requesters cannot write notes.
+ */
+export const createApiTicketInternalNoteMutation = (options?: Partial<Options<CreateApiTicketInternalNoteData>>): UseMutationOptions<CreateApiTicketInternalNoteResponse, CreateApiTicketInternalNoteError, Options<CreateApiTicketInternalNoteData>> => {
+    const mutationOptions: UseMutationOptions<CreateApiTicketInternalNoteResponse, CreateApiTicketInternalNoteError, Options<CreateApiTicketInternalNoteData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createApiTicketInternalNote({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getApiTicketCommentsQueryKey = (options: Options<GetApiTicketCommentsData>) => createQueryKey('getApiTicketComments', options);
+
+/**
+ * List public Ticket comments
+ *
+ * Requesters can read their own public comments; IT Staff and Administrators can read every Ticket's public comments. The response contains at most the 500 latest comments in chronological order.
+ */
+export const getApiTicketCommentsOptions = (options: Options<GetApiTicketCommentsData>) => queryOptions<GetApiTicketCommentsResponse, GetApiTicketCommentsError, GetApiTicketCommentsResponse, ReturnType<typeof getApiTicketCommentsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiTicketComments({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiTicketCommentsQueryKey(options)
+});
+
+/**
+ * Post a public Ticket comment
+ *
+ * A Requester may post to an owned Ticket and IT Staff may post to any Ticket. Administrators have read-only access.
+ */
+export const createApiTicketCommentMutation = (options?: Partial<Options<CreateApiTicketCommentData>>): UseMutationOptions<CreateApiTicketCommentResponse, CreateApiTicketCommentError, Options<CreateApiTicketCommentData>> => {
+    const mutationOptions: UseMutationOptions<CreateApiTicketCommentResponse, CreateApiTicketCommentError, Options<CreateApiTicketCommentData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createApiTicketComment({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
 export const getApiTicketAttachmentsQueryKey = (options: Options<GetApiTicketAttachmentsData>) => createQueryKey('getApiTicketAttachments', options);
 
 /**
- * List owned Ticket Attachment metadata
+ * List Ticket Attachment metadata
+ *
+ * Requesters can read their own Ticket Attachments; IT Staff and Administrators can read every Ticket's metadata.
  */
 export const getApiTicketAttachmentsOptions = (options: Options<GetApiTicketAttachmentsData>) => queryOptions<GetApiTicketAttachmentsResponse, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, ReturnType<typeof getApiTicketAttachmentsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -275,7 +670,9 @@ export const createApiTicketAttachmentsMutation = (options?: Partial<Options<Cre
 export const getApiTicketAttachmentContentQueryKey = (options: Options<GetApiTicketAttachmentContentData>) => createQueryKey('getApiTicketAttachmentContent', options);
 
 /**
- * Download an active owned Attachment
+ * Download an active Attachment
+ *
+ * Requesters can download active Attachments from their own Tickets; IT Staff and Administrators can download active Attachments from every Ticket.
  */
 export const getApiTicketAttachmentContentOptions = (options: Options<GetApiTicketAttachmentContentData>) => queryOptions<GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, ReturnType<typeof getApiTicketAttachmentContentQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {

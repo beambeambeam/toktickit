@@ -3,15 +3,47 @@ import { Prisma } from "../generated/prisma/client.js";
 import { findActiveCategory } from "../repositories/categories.js";
 import { findActiveRelatedSystem } from "../repositories/related-systems.js";
 import {
+  createPublicComment,
+  findPublicCommentsForReader,
+  findTicketForPublicComments,
+} from "../repositories/ticket-comments.js";
+import {
+  createInternalNote,
+  findInternalNoteTicket,
+  findInternalNotesForReader,
+} from "../repositories/ticket-internal-notes.js";
+import {
+  indicateTicketResolution,
+  updateTicketStatus,
+} from "../repositories/ticket-workflow.js";
+import {
+  claimTicket,
   countActiveAttachments,
   createAttachments,
   createTicket,
+  findEligibleOwner,
+  findEligibleOwners,
   findOwnedAttachment,
   findOwnedTicket,
+  findReadableAttachment,
+  findStaffTicketSummaries,
+  findTicketById,
   findTicketSummaries,
   removeAttachment,
+  updateTicketItPriority,
+  updateTicketOwner,
 } from "../repositories/tickets.js";
-import type { TicketFields, TicketListQuery } from "../types/tickets.js";
+import { currentStatusToPrisma } from "../types/ticket-workflow.js";
+import type {
+  ItPriorityMutationInput,
+  OwnerMutationInput,
+  StaffTicketListQuery,
+  StatusMutationInput,
+  TicketFields,
+  TicketListQuery,
+  TicketVersionInput,
+} from "../types/tickets.js";
+import type { UserRoleValue } from "../types/users.js";
 import {
   removeAttachmentFiles,
   readAttachmentFile,
@@ -20,11 +52,16 @@ import {
 import { createTicketNumber } from "./ticket-number.js";
 import {
   toAttachmentMetadata,
+  toOperationalSummary,
+  toOwner,
+  toTicketEntry,
   toTicketDetail,
   toTicketSummary,
 } from "./ticket-presenters.js";
 import {
   MAX_ACTIVE_ATTACHMENTS,
+  validateInternalNoteContent,
+  validatePublicCommentContent,
   validateAttachmentFiles,
 } from "./ticket-rules.js";
 import type { AttachmentCandidate } from "./ticket-rules.js";
@@ -204,11 +241,294 @@ export const listTicketsForRequester = async (
   }
 };
 
-export const getTicketForRequester = async (
-  requesterId: number,
+const readerCanAccessTicket = (role: UserRoleValue) =>
+  role === "ITStaff" || role === "Administrator";
+
+const internalNoteForbiddenError = () =>
+  new ApiError(
+    403,
+    "FORBIDDEN",
+    "You do not have permission to access Internal Notes."
+  );
+
+const internalNoteTerminalError = () =>
+  new ApiError(
+    409,
+    "TICKET_TERMINAL",
+    "Closed or Cancelled Tickets cannot receive Internal Notes."
+  );
+
+export const listStaffTickets = async (
+  currentUserId: number,
+  query: StaffTicketListQuery
+) => {
+  try {
+    if (typeof query.owner === "number") {
+      const owner = await findEligibleOwner(query.owner);
+
+      if (owner === null) {
+        throw new ApiError(
+          400,
+          "OWNER_INELIGIBLE",
+          "The selected Ticket Owner is not currently eligible.",
+          {
+            field: "owner",
+            reason: "Choose an active IT Staff or Administrator.",
+          }
+        );
+      }
+    }
+
+    const result = await findStaffTicketSummaries(currentUserId, query);
+
+    return {
+      items: result.items.map(toOperationalSummary),
+      page: query.page,
+      pageSize: query.pageSize,
+      totalItems: result.totalItems,
+      totalPages: Math.ceil(result.totalItems / query.pageSize),
+    };
+  } catch (error: unknown) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    throw new ApiError(
+      500,
+      "TICKET_QUEUE_FAILURE",
+      "Unable to load the shared Ticket Queue."
+    );
+  }
+};
+
+export const listStaffOwners = async () => {
+  try {
+    const owners = await findEligibleOwners();
+    return owners.map(toOwner);
+  } catch {
+    throw new ApiError(
+      500,
+      "TICKET_OWNER_LIST_FAILURE",
+      "Unable to load eligible Ticket Owners."
+    );
+  }
+};
+
+const resolveStatusMutation = (
+  outcome: Awaited<ReturnType<typeof updateTicketStatus>>
+) => {
+  switch (outcome.kind) {
+    case "actor-ineligible": {
+      throw new ApiError(
+        403,
+        "FORBIDDEN",
+        "You do not have permission to progress this Ticket."
+      );
+    }
+    case "confirmation-required": {
+      throw new ApiError(
+        400,
+        "CONFIRMATION_REQUIRED",
+        "Confirm this terminal Ticket transition before continuing.",
+        { field: "confirmed", reason: "Set confirmed to true." }
+      );
+    }
+    case "invalid-transition": {
+      throw new ApiError(
+        409,
+        "INVALID_TRANSITION",
+        "That Ticket status transition is not allowed. Refresh and choose an available transition."
+      );
+    }
+    case "not-found": {
+      throw notFound("Ticket");
+    }
+    case "owner-required": {
+      throw new ApiError(
+        409,
+        "OWNER_REQUIRED",
+        "An active eligible Ticket Owner is required for this status."
+      );
+    }
+    case "version-conflict": {
+      throw new ApiError(
+        409,
+        "VERSION_CONFLICT",
+        "The Ticket changed before this action was saved. Refresh and try again."
+      );
+    }
+    case "success": {
+      return toTicketDetail(outcome.ticket);
+    }
+    default: {
+      throw new ApiError(
+        500,
+        "TICKET_STATUS_FAILURE",
+        "Unable to update the Ticket status."
+      );
+    }
+  }
+};
+
+const resolveTicketMutation = (
+  outcome: Awaited<ReturnType<typeof claimTicket>>
+) => {
+  switch (outcome.kind) {
+    case "actor-ineligible": {
+      throw new ApiError(
+        403,
+        "FORBIDDEN",
+        "You do not have permission to update Ticket operations."
+      );
+    }
+    case "not-found": {
+      throw notFound("Ticket");
+    }
+    case "owner-ineligible": {
+      throw new ApiError(
+        409,
+        "OWNER_INELIGIBLE",
+        "The selected Ticket Owner is not currently eligible."
+      );
+    }
+    case "version-conflict": {
+      throw new ApiError(
+        409,
+        "VERSION_CONFLICT",
+        "The Ticket changed before this action was saved. Refresh and try again."
+      );
+    }
+    case "assignment-conflict": {
+      throw new ApiError(
+        409,
+        "ASSIGNMENT_CONFLICT",
+        "The Ticket has already been claimed. Refresh to see its current Owner."
+      );
+    }
+    case "terminal": {
+      throw new ApiError(
+        409,
+        "TICKET_TERMINAL",
+        "Terminal Tickets cannot change Owner or IT Priority."
+      );
+    }
+    case "unchanged":
+    case "success": {
+      return toTicketDetail(outcome.ticket);
+    }
+    default: {
+      throw new ApiError(
+        500,
+        "TICKET_MUTATION_FAILURE",
+        "Unable to update the Ticket."
+      );
+    }
+  }
+};
+
+export const updateTicketStatusForStaff = async (
+  currentUserId: number,
+  ticketId: number,
+  input: StatusMutationInput
+) =>
+  resolveStatusMutation(
+    await updateTicketStatus(
+      currentUserId,
+      ticketId,
+      currentStatusToPrisma[input.currentStatus],
+      input.version,
+      input.confirmed
+    )
+  );
+
+export const indicateTicketResolutionForRequester = async (
+  currentUserId: number,
   ticketId: number
 ) => {
-  const ticket = await findOwnedTicket(requesterId, ticketId);
+  const outcome = await indicateTicketResolution(currentUserId, ticketId);
+
+  switch (outcome.kind) {
+    case "actor-ineligible": {
+      throw new ApiError(
+        403,
+        "FORBIDDEN",
+        "You do not have permission to indicate this Ticket resolution."
+      );
+    }
+    case "not-found": {
+      throw notFound("Ticket");
+    }
+    case "terminal": {
+      throw new ApiError(
+        409,
+        "TICKET_TERMINAL",
+        "Terminal Tickets cannot receive a resolution indication."
+      );
+    }
+    case "success":
+    case "unchanged": {
+      return {
+        resolutionIndication: {
+          author: outcome.indication.author,
+          createdAt: outcome.indication.createdAt.toISOString(),
+        },
+      };
+    }
+    default: {
+      throw new ApiError(
+        500,
+        "TICKET_INDICATION_FAILURE",
+        "Unable to record the resolution indication."
+      );
+    }
+  }
+};
+
+export const claimTicketForStaff = async (
+  currentUserId: number,
+  ticketId: number,
+  input: TicketVersionInput
+) =>
+  resolveTicketMutation(
+    await claimTicket(currentUserId, ticketId, input.version)
+  );
+
+export const updateTicketOwnerForStaff = async (
+  currentUserId: number,
+  ticketId: number,
+  input: OwnerMutationInput
+) =>
+  resolveTicketMutation(
+    await updateTicketOwner(
+      currentUserId,
+      ticketId,
+      input.ownerId,
+      input.version
+    )
+  );
+
+export const updateTicketItPriorityForStaff = async (
+  currentUserId: number,
+  ticketId: number,
+  input: ItPriorityMutationInput
+) =>
+  resolveTicketMutation(
+    await updateTicketItPriority(
+      currentUserId,
+      ticketId,
+      input.itPriority,
+      input.version
+    )
+  );
+
+export const getTicketForReader = async (
+  userId: number,
+  role: UserRoleValue,
+  ticketId: number
+) => {
+  const ticket = readerCanAccessTicket(role)
+    ? await findTicketById(ticketId)
+    : await findOwnedTicket(userId, ticketId);
 
   if (ticket === null) {
     throw notFound("Ticket");
@@ -217,17 +537,140 @@ export const getTicketForRequester = async (
   return toTicketDetail(ticket);
 };
 
-export const getAttachmentsForRequester = async (
-  requesterId: number,
+export const getAttachmentsForReader = async (
+  userId: number,
+  role: UserRoleValue,
   ticketId: number
 ) => {
-  const ticket = await findOwnedTicket(requesterId, ticketId);
+  const ticket = readerCanAccessTicket(role)
+    ? await findTicketById(ticketId)
+    : await findOwnedTicket(userId, ticketId);
 
   if (ticket === null) {
     throw notFound("Ticket");
   }
 
   return ticket.attachments.map(toAttachmentMetadata);
+};
+
+export const listInternalNotesForReader = async (
+  role: UserRoleValue,
+  ticketId: number
+) => {
+  if (!readerCanAccessTicket(role)) {
+    throw internalNoteForbiddenError();
+  }
+
+  const notes = await findInternalNotesForReader(ticketId);
+
+  if (notes === null) {
+    throw notFound("Ticket");
+  }
+
+  return notes.map(toTicketEntry);
+};
+
+export const createInternalNoteForUser = async (
+  userId: number,
+  role: UserRoleValue,
+  ticketId: number,
+  body: Record<string, unknown>
+) => {
+  if (role !== "ITStaff") {
+    throw internalNoteForbiddenError();
+  }
+
+  const ticket = await findInternalNoteTicket(ticketId);
+
+  if (ticket === null) {
+    throw notFound("Ticket");
+  }
+
+  if (
+    ticket.currentStatus === "Closed" ||
+    ticket.currentStatus === "Cancelled"
+  ) {
+    throw internalNoteTerminalError();
+  }
+
+  const content = validateInternalNoteContent(body);
+  const result = await createInternalNote(userId, role, ticketId, content);
+
+  if (result.kind === "forbidden") {
+    throw internalNoteForbiddenError();
+  }
+
+  if (result.kind === "not-found") {
+    throw notFound("Ticket");
+  }
+
+  if (result.kind === "terminal") {
+    throw internalNoteTerminalError();
+  }
+
+  return toTicketEntry(result.note);
+};
+
+const ticketTerminalError = () =>
+  new ApiError(
+    409,
+    "TICKET_TERMINAL",
+    "Closed or Cancelled Tickets cannot receive public comments."
+  );
+
+export const listPublicCommentsForReader = async (
+  userId: number,
+  role: UserRoleValue,
+  ticketId: number
+) => {
+  const comments = await findPublicCommentsForReader(userId, role, ticketId);
+
+  if (comments === null) {
+    throw notFound("Ticket");
+  }
+
+  return comments.map(toTicketEntry);
+};
+
+export const createPublicCommentForUser = async (
+  userId: number,
+  role: UserRoleValue,
+  ticketId: number,
+  body: Record<string, unknown>
+) => {
+  const ticket = await findTicketForPublicComments(userId, role, ticketId);
+
+  if (ticket === null) {
+    throw notFound("Ticket");
+  }
+
+  if (
+    ticket.currentStatus === "Closed" ||
+    ticket.currentStatus === "Cancelled"
+  ) {
+    throw ticketTerminalError();
+  }
+
+  const content = validatePublicCommentContent(body);
+  const result = await createPublicComment(userId, role, ticketId, content);
+
+  if (result.kind === "forbidden") {
+    throw new ApiError(
+      403,
+      "FORBIDDEN",
+      "You do not have permission to post public comments."
+    );
+  }
+
+  if (result.kind === "not-found") {
+    throw notFound("Ticket");
+  }
+
+  if (result.kind === "terminal") {
+    throw ticketTerminalError();
+  }
+
+  return toTicketEntry(result.comment);
 };
 
 export const addAttachmentsForRequester = async (
@@ -286,16 +729,15 @@ export const addAttachmentsForRequester = async (
   }
 };
 
-export const downloadAttachmentForRequester = async (
-  requesterId: number,
+export const downloadAttachmentForReader = async (
+  userId: number,
+  role: UserRoleValue,
   ticketId: number,
   attachmentId: number
 ) => {
-  const attachment = await findOwnedAttachment(
-    requesterId,
-    ticketId,
-    attachmentId
-  );
+  const attachment = readerCanAccessTicket(role)
+    ? await findReadableAttachment(ticketId, attachmentId)
+    : await findOwnedAttachment(userId, ticketId, attachmentId);
 
   if (attachment === null) {
     throw notFound("Attachment");

@@ -25,6 +25,8 @@ export default defineConfig({
       "tests/lab-01/**/*.test.tsx",
       "tests/lab-02/**/*.test.ts",
       "tests/lab-02/**/*.test.tsx",
+      "tests/lab-03/**/*.test.ts",
+      "tests/lab-03/**/*.test.tsx",
     ],
     setupFiles: ["tests/setup.ts"],
   },

@@ -1,5 +1,7 @@
+import { AlertCircleIcon } from "@hugeicons/core-free-icons";
 import type { ReactNode } from "react";
 
+import { Icon } from "@/components/icon";
 import { cn } from "@/lib/class-names";
 
 interface FormFieldProps {
@@ -37,7 +39,7 @@ export const FormField = ({
       {children}
       {error !== undefined && error.length > 0 ? (
         <p className="field-error" id={errorId} role="alert">
-          <span aria-hidden="true">!</span> {error}
+          <Icon icon={AlertCircleIcon} /> {error}
         </p>
       ) : null}
     </div>

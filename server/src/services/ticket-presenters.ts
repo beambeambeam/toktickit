@@ -1,3 +1,8 @@
+import type { CurrentStatus as PrismaCurrentStatus } from "../generated/prisma/enums.js";
+import type { CurrentStatus, OwnerRecord } from "../types/tickets.js";
+import { toUserRoleLabel } from "../types/users.js";
+import type { UserRoleValue } from "../types/users.js";
+
 export interface AttachmentRecord {
   byteSize: number;
   id: number;
@@ -11,7 +16,7 @@ export interface AttachmentRecord {
 
 export interface TicketSummaryRecord {
   category: { id: number; name: string };
-  currentStatus: string;
+  currentStatus: PrismaCurrentStatus;
   id: number;
   relatedSystem: { id: number; name: string };
   requestedPriority: string;
@@ -21,10 +26,75 @@ export interface TicketSummaryRecord {
   updatedAt: Date;
 }
 
-export type TicketDetailRecord = TicketSummaryRecord & {
-  attachments: AttachmentRecord[];
-  description: string;
-  requester: { displayName: string; email: string; id: number };
+export interface TicketOwnerRecord {
+  displayName: string;
+  id: number;
+  isActive: boolean;
+  role: UserRoleValue;
+}
+
+export interface TicketResolutionIndicationRecord {
+  displayName: string;
+  id: number;
+}
+
+export interface TicketEntryRecord {
+  author: { displayName: string; id: number };
+  content: string;
+  createdAt: Date;
+  id: number;
+}
+
+export interface OperationalTicketRecord {
+  itPriority: string;
+  owner: TicketOwnerRecord | null;
+  version: number;
+}
+
+export type TicketDetailRecord = TicketSummaryRecord &
+  OperationalTicketRecord & {
+    attachments: AttachmentRecord[];
+    description: string;
+    requester: { displayName: string; email: string; id: number };
+    resolutionIndicatedAt: Date | null;
+    resolutionIndicatedBy: TicketResolutionIndicationRecord | null;
+    statusChangedAt: Date;
+    resolvedAt: Date | null;
+    reopenedAt: Date | null;
+    closedAt: Date | null;
+    cancelledAt: Date | null;
+  };
+
+const currentStatusLabels: Record<PrismaCurrentStatus, CurrentStatus> = {
+  Cancelled: "Cancelled",
+  Closed: "Closed",
+  InProgress: "In Progress",
+  New: "New",
+  Open: "Open",
+  Reopened: "Reopened",
+  Resolved: "Resolved",
+  WaitingForRequester: "Waiting for Requester",
+};
+
+const toCurrentStatus = (value: PrismaCurrentStatus): CurrentStatus =>
+  currentStatusLabels[value];
+
+export const toOwner = (
+  owner: TicketOwnerRecord | null
+): OwnerRecord | null => {
+  if (owner === null) {
+    return null;
+  }
+
+  return {
+    displayName: owner.displayName,
+    id: owner.id,
+    isActive: owner.isActive,
+    isEligible:
+      owner.isActive &&
+      (owner.role === "ITStaff" || owner.role === "Administrator"),
+    role: toUserRoleLabel(owner.role),
+  };
 };
 
 const iso = (date: Date | null): string | null => date?.toISOString() ?? null;
@@ -43,7 +113,7 @@ export const toAttachmentMetadata = (attachment: AttachmentRecord) => ({
 
 export const toTicketSummary = (ticket: TicketSummaryRecord) => ({
   category: ticket.category,
-  currentStatus: ticket.currentStatus,
+  currentStatus: toCurrentStatus(ticket.currentStatus),
   id: ticket.id,
   relatedSystem: ticket.relatedSystem,
   requestedPriority: ticket.requestedPriority,
@@ -53,9 +123,44 @@ export const toTicketSummary = (ticket: TicketSummaryRecord) => ({
   updatedAt: ticket.updatedAt.toISOString(),
 });
 
+export const toTicketEntry = (entry: TicketEntryRecord) => ({
+  author: entry.author,
+  content: entry.content,
+  createdAt: entry.createdAt.toISOString(),
+  id: entry.id,
+});
+
 export const toTicketDetail = (ticket: TicketDetailRecord) => ({
   ...toTicketSummary(ticket),
   attachments: ticket.attachments.map(toAttachmentMetadata),
+  cancelledAt: iso(ticket.cancelledAt),
+  closedAt: iso(ticket.closedAt),
   description: ticket.description,
+  itPriority: ticket.itPriority,
+  owner: toOwner(ticket.owner),
+  reopenedAt: iso(ticket.reopenedAt),
   requester: ticket.requester,
+  resolutionIndication:
+    ticket.resolutionIndicatedAt !== null &&
+    ticket.resolutionIndicatedBy !== null
+      ? {
+          author: {
+            displayName: ticket.resolutionIndicatedBy.displayName,
+            id: ticket.resolutionIndicatedBy.id,
+          },
+          createdAt: ticket.resolutionIndicatedAt.toISOString(),
+        }
+      : null,
+  resolvedAt: iso(ticket.resolvedAt),
+  statusChangedAt: ticket.statusChangedAt.toISOString(),
+  version: ticket.version,
+});
+
+export const toOperationalSummary = (
+  ticket: TicketSummaryRecord & OperationalTicketRecord
+) => ({
+  ...toTicketSummary(ticket),
+  itPriority: ticket.itPriority,
+  owner: toOwner(ticket.owner),
+  version: ticket.version,
 });

@@ -1,58 +1,299 @@
 import express, { Router } from "express";
 
+import { changePassword, getMe, login, logout } from "../controllers/auth.js";
 import { getHealth } from "../controllers/health.js";
 import {
   getCategories,
-  getDevelopmentRequesters,
   getRelatedSystems,
 } from "../controllers/reference-data.js";
 import {
   addAttachments,
+  createInternalNote,
+  claimTicket,
+  createPublicComment,
   createTicket,
   downloadAttachment,
   getAttachments,
+  getInternalNotes,
+  getStaffOwners,
+  getStaffTickets,
   getTicket,
+  getPublicComments,
   getTickets,
+  indicateTicketResolution,
   removeAttachment,
+  updateTicketStatus,
+  updateTicketItPriority,
+  updateTicketOwner,
 } from "../controllers/tickets.js";
+import {
+  createUser,
+  getUser,
+  getUsers,
+  resetUserInitialPassword,
+  updateUser,
+} from "../controllers/users.js";
 import { apiErrorHandler, apiNotFound } from "../middlewares/api-errors.js";
-import { requireRequesterContext } from "../middlewares/requester-context.js";
+import {
+  requireAllowedOrigin,
+  requireCsrf,
+  requireRole,
+  requireSession,
+  requireUnrestricted,
+  touchSession,
+} from "../middlewares/auth-context.js";
 import { parseAttachmentUpload } from "../middlewares/uploads.js";
 
 export const apiRouter = Router();
 
 apiRouter.use(express.json({ limit: "1mb" }));
-apiRouter.get("/categories", getCategories);
-apiRouter.get("/related-systems", getRelatedSystems);
-apiRouter.get("/development-requesters", getDevelopmentRequesters);
+apiRouter.use((_request, response, next) => {
+  response.set("Cache-Control", "no-store");
+  next();
+});
+
+apiRouter.post("/auth/login", requireAllowedOrigin, login);
+apiRouter.get("/auth/me", requireSession, touchSession, getMe);
+apiRouter.post(
+  "/auth/change-password",
+  requireAllowedOrigin,
+  requireSession,
+  requireCsrf,
+  changePassword
+);
+apiRouter.post(
+  "/auth/logout",
+  requireAllowedOrigin,
+  requireSession,
+  requireCsrf,
+  logout
+);
+
+apiRouter.get(
+  "/categories",
+  requireSession,
+  requireUnrestricted,
+  touchSession,
+  getCategories
+);
+apiRouter.get(
+  "/related-systems",
+  requireSession,
+  requireUnrestricted,
+  touchSession,
+  getRelatedSystems
+);
+apiRouter.get(
+  "/staff/tickets",
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff", "Administrator"),
+  touchSession,
+  getStaffTickets
+);
+apiRouter.get(
+  "/staff/owners",
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff", "Administrator"),
+  touchSession,
+  getStaffOwners
+);
+apiRouter.post(
+  "/tickets/:ticketId/status",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff"),
+  requireCsrf,
+  touchSession,
+  updateTicketStatus
+);
+apiRouter.put(
+  "/tickets/:ticketId/resolution-indication",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester"),
+  requireCsrf,
+  touchSession,
+  indicateTicketResolution
+);
+apiRouter.post(
+  "/tickets/:ticketId/claim",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff"),
+  requireCsrf,
+  touchSession,
+  claimTicket
+);
+apiRouter.put(
+  "/tickets/:ticketId/owner",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff"),
+  requireCsrf,
+  touchSession,
+  updateTicketOwner
+);
+apiRouter.patch(
+  "/tickets/:ticketId/it-priority",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff"),
+  requireCsrf,
+  touchSession,
+  updateTicketItPriority
+);
 apiRouter.get("/health", getHealth);
+apiRouter.get(
+  "/users",
+  requireSession,
+  requireUnrestricted,
+  requireRole("Administrator"),
+  touchSession,
+  getUsers
+);
+apiRouter.post(
+  "/users",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("Administrator"),
+  requireCsrf,
+  touchSession,
+  createUser
+);
+apiRouter.get(
+  "/users/:userId",
+  requireSession,
+  requireUnrestricted,
+  requireRole("Administrator"),
+  touchSession,
+  getUser
+);
+apiRouter.patch(
+  "/users/:userId",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("Administrator"),
+  requireCsrf,
+  touchSession,
+  updateUser
+);
+apiRouter.post(
+  "/users/:userId/initial-password",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("Administrator"),
+  requireCsrf,
+  touchSession,
+  resetUserInitialPassword
+);
 apiRouter.post(
   "/tickets",
-  requireRequesterContext,
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester"),
+  requireCsrf,
+  touchSession,
   parseAttachmentUpload,
   createTicket
 );
-apiRouter.get("/tickets", requireRequesterContext, getTickets);
-apiRouter.get("/tickets/:ticketId", requireRequesterContext, getTicket);
+apiRouter.get(
+  "/tickets",
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester"),
+  touchSession,
+  getTickets
+);
+apiRouter.get(
+  "/tickets/:ticketId",
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester", "ITStaff", "Administrator"),
+  touchSession,
+  getTicket
+);
 apiRouter.get(
   "/tickets/:ticketId/attachments",
-  requireRequesterContext,
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester", "ITStaff", "Administrator"),
+  touchSession,
   getAttachments
+);
+apiRouter.get(
+  "/tickets/:ticketId/internal-notes",
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff", "Administrator"),
+  touchSession,
+  getInternalNotes
+);
+apiRouter.post(
+  "/tickets/:ticketId/internal-notes",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff"),
+  requireCsrf,
+  touchSession,
+  createInternalNote
+);
+apiRouter.get(
+  "/tickets/:ticketId/comments",
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester", "ITStaff", "Administrator"),
+  touchSession,
+  getPublicComments
+);
+apiRouter.post(
+  "/tickets/:ticketId/comments",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester", "ITStaff"),
+  requireCsrf,
+  touchSession,
+  createPublicComment
 );
 apiRouter.post(
   "/tickets/:ticketId/attachments",
-  requireRequesterContext,
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester"),
+  requireCsrf,
+  touchSession,
   parseAttachmentUpload,
   addAttachments
 );
 apiRouter.get(
   "/tickets/:ticketId/attachments/:attachmentId/content",
-  requireRequesterContext,
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester", "ITStaff", "Administrator"),
+  touchSession,
   downloadAttachment
 );
 apiRouter.delete(
   "/tickets/:ticketId/attachments/:attachmentId",
-  requireRequesterContext,
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester"),
+  requireCsrf,
+  touchSession,
   removeAttachment
 );
 apiRouter.use(apiNotFound);

@@ -30,13 +30,19 @@ Apply the committed migrations:
 pnpm db:migrate
 ```
 
-Seed the canonical Lab 2 reference data:
+Seed the canonical reference data and local demonstration Users:
 
 ```sh
 pnpm db:seed
 ```
 
-The seed is safe to run repeatedly. It uses reference-data names/emails as idempotency keys and preserves unrelated records. It creates the Lab 2 Categories, Related Systems, four active Development Requesters, and one inactive Requester used to verify active-only selection.
+The seed is safe to run repeatedly. It uses immutable `seedKey` values and preserves edited, deactivated and credentialed rows. It creates reference data, active Requester/IT Staff/Administrator fixtures, and inactive fixtures for each role. Seeded Users intentionally have no usable credential until the explicit bootstrap step:
+
+```sh
+BOOTSTRAP_PASSWORD='use a local 15+ character passphrase' pnpm db:bootstrap -- --email ada@example.test
+```
+
+Bootstrap hashes the supplied password with Argon2id and fills only the selected User's missing hash. Omit `--email` to bootstrap every credential-less User. It never changes an existing password or account state; reruns report skipped Users. Keep the password out of shell history when possible and never commit it.
 
 Ticket Attachments are stored outside the public application bundle under `ATTACHMENT_STORAGE_DIR`. The default is `server/.data/attachments`; override it for local/test storage. Files use generated opaque storage keys and are removed on failed persistence attempts.
 

@@ -1,19 +1,32 @@
+import {
+  ArrowLeft01Icon,
+  ArrowRight01Icon,
+  RefreshIcon,
+  Search01Icon,
+  Ticket01Icon,
+} from "@hugeicons/core-free-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import type { SubmitEvent } from "react";
 
+import type { AuthUser } from "@/api/auth";
 import {
   activeCategoriesQueryOptions,
   relatedSystemsQueryOptions,
   ticketsQueryOptions,
-} from "@/api/lab2-options";
+} from "@/api/query-options";
 import type { TicketListParams } from "@/api/requester";
-import { AppShell, RequesterRequired } from "@/components/app-shell";
+import {
+  AppShell,
+  AuthRequired,
+  RequesterAccessDenied,
+} from "@/components/app-shell";
+import { Icon } from "@/components/icon";
 import { StatusBadge } from "@/components/status-badge";
-import { useRequester } from "@/context/requester";
-import type { DevelopmentRequester } from "@/generated/hey-api/types.gen";
+import { useAuth } from "@/context/auth";
 import { isRequestedPriority } from "@/lib/ticket-priorities";
+import { currentStatuses, isCurrentStatus } from "@/lib/ticket-statuses";
 
 const initialParams: TicketListParams = {
   page: 1,
@@ -117,21 +130,15 @@ const getPageTokens = (
 };
 
 // oxlint-disable-next-line complexity -- this page renders the documented loading, error, empty, and data states.
-const MyTicketsContent = ({
-  requester,
-}: {
-  requester: DevelopmentRequester;
-}) => {
+const MyTicketsContent = ({ user }: { user: AuthUser }) => {
   const navigate = useNavigate();
   const [params, setParams] = useState<TicketListParams>(initialParams);
   const [searchDraft, setSearchDraft] = useState("");
-  const requesterId = requester.id;
 
   const categoriesQuery = useQuery(activeCategoriesQueryOptions());
   const relatedSystemsQuery = useQuery(relatedSystemsQueryOptions());
   const ticketsQuery = useQuery({
-    ...ticketsQueryOptions(requesterId ?? 0, params),
-    enabled: requesterId !== undefined,
+    ...ticketsQueryOptions(params),
   });
 
   const updateParams = (change: Partial<TicketListParams>) => {
@@ -184,17 +191,19 @@ const MyTicketsContent = ({
     <AppShell eyebrow="Requester workspace" title="My Tickets">
       <div className="page-actions">
         <p className="page-description">
-          View and track support requests owned by {requester.displayName}.
+          View and track support requests owned by {user.displayName}.
         </p>
         <div className="button-row">
-          <button
-            className="button button-tertiary"
-            disabled={!hasActiveFilters}
-            onClick={clearFilters}
-            type="button"
-          >
-            ↻ Clear Filters
-          </button>
+          {showNoResults ? null : (
+            <button
+              className="button button-tertiary"
+              disabled={!hasActiveFilters}
+              onClick={clearFilters}
+              type="button"
+            >
+              <Icon icon={RefreshIcon} /> Clear Filters
+            </button>
+          )}
           <button
             className="button button-primary"
             onClick={() => void navigate({ to: "/create" })}
@@ -210,7 +219,9 @@ const MyTicketsContent = ({
           <div className="search-field">
             <label htmlFor="ticket-search">Search</label>
             <div className="input-with-icon">
-              <span aria-hidden="true">⌕</span>
+              <span aria-hidden="true">
+                <Icon icon={Search01Icon} />
+              </span>
               <input
                 id="ticket-search"
                 onChange={(event) => {
@@ -296,13 +307,19 @@ const MyTicketsContent = ({
               id="ticket-status-filter"
               onChange={(event) => {
                 updateParams({
-                  currentStatus: event.target.value ? "New" : undefined,
+                  currentStatus: isCurrentStatus(event.target.value)
+                    ? event.target.value
+                    : undefined,
                 });
               }}
               value={params.currentStatus ?? ""}
             >
               <option value="">All Statuses</option>
-              <option value="New">New</option>
+              {currentStatuses.map((status) => (
+                <option key={status} value={status}>
+                  {status}
+                </option>
+              ))}
             </select>
           </div>
           <div className="filter-field">
@@ -428,10 +445,10 @@ const MyTicketsContent = ({
         {showEmpty ? (
           <div className="empty-state">
             <div aria-hidden="true" className="empty-icon">
-              ▤
+              <Icon icon={Ticket01Icon} />
             </div>
             <h3>No Tickets yet</h3>
-            <p>{requester.displayName} has not created a support request.</p>
+            <p>{user.displayName} has not created a support request.</p>
             <button
               className="button button-primary"
               onClick={() => void navigate({ to: "/create" })}
@@ -445,7 +462,7 @@ const MyTicketsContent = ({
         {showNoResults ? (
           <div className="empty-state">
             <div aria-hidden="true" className="empty-icon">
-              ⌕
+              <Icon icon={Search01Icon} />
             </div>
             <h3>No matching Tickets</h3>
             <p>Try a different search or clear the active filters.</p>
@@ -462,7 +479,7 @@ const MyTicketsContent = ({
         {showPageEmpty ? (
           <div className="empty-state">
             <div aria-hidden="true" className="empty-icon">
-              ▤
+              <Icon icon={Ticket01Icon} />
             </div>
             <h3>No Tickets on this page</h3>
             <p>Use the page controls to return to a page with Tickets.</p>
@@ -474,7 +491,7 @@ const MyTicketsContent = ({
               }}
               type="button"
             >
-              ← Previous page
+              <Icon icon={ArrowLeft01Icon} /> Previous page
             </button>
           </div>
         ) : null}
@@ -484,7 +501,7 @@ const MyTicketsContent = ({
             <div className="ticket-table-wrap">
               <table className="ticket-table">
                 <caption className="visually-hidden">
-                  Tickets owned by {requester.displayName}
+                  Tickets owned by {user.displayName}
                 </caption>
                 <thead>
                   <tr>
@@ -590,7 +607,7 @@ const MyTicketsContent = ({
                 }}
                 type="button"
               >
-                ← Previous
+                <Icon icon={ArrowLeft01Icon} /> Previous
               </button>
               <span>
                 Page {page} of {totalPages > 0 ? totalPages : 1}
@@ -632,7 +649,7 @@ const MyTicketsContent = ({
                 }}
                 type="button"
               >
-                Next →
+                Next <Icon icon={ArrowRight01Icon} />
               </button>
             </nav>
           </>
@@ -643,11 +660,19 @@ const MyTicketsContent = ({
 };
 
 export const MyTicketsPage = () => {
-  const { requester } = useRequester();
+  const { user } = useAuth();
 
-  if (requester === null) {
-    return <RequesterRequired />;
+  if (user === null) {
+    return <AuthRequired />;
   }
 
-  return <MyTicketsContent key={requester.id} requester={requester} />;
+  if (user.mustChangePassword) {
+    return <AuthRequired />;
+  }
+
+  if (user.role !== "Requester") {
+    return <RequesterAccessDenied />;
+  }
+
+  return <MyTicketsContent key={user.id} user={user} />;
 };

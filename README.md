@@ -5,7 +5,7 @@ TokTickit is a pnpm workspace containing the client and server applications.
 ## Requirements
 
 - Node.js `>=22.18.0`
-- pnpm `11.13.0`
+- pnpm `11.25.0`
 
 Check installed versions:
 
@@ -71,7 +71,7 @@ pnpm db:stop
 
 Start PostgreSQL before starting the server. The server verifies its Prisma connection before opening the HTTP listener.
 
-The web app starts with a testing-only Development Requester selection. After selection, requester-scoped calls use the validated `X-Development-Requester-Id` context to create and view owned Tickets. Authentication is intentionally deferred to Lab 3. Ticket Attachments are written to the server's non-public `ATTACHMENT_STORAGE_DIR` (default: `server/.data/attachments`).
+The web app uses the Lab 3 email/password session flow. Requester-scoped calls use the authenticated User from the HttpOnly session cookie; mutating calls also send the in-memory CSRF token. First-login accounts must replace their issued password before opening the workspace. Ticket Attachments are written to the server's non-public `ATTACHMENT_STORAGE_DIR` (default: `server/.data/attachments`).
 
 ## Verification
 
@@ -114,6 +114,23 @@ pnpm test:e2e
 
 Playwright starts the client and API automatically. Override their addresses with `E2E_BASE_URL` and `E2E_API_URL` when those services already run elsewhere. The E2E global setup removes tickets created by previous E2E runs (E2E-pattern summaries only) so the empty-state evidence holds on every run; it never touches reference data.
 
+For Lab 3 evidence, use a fresh disposable PostgreSQL database and temporary Attachment directory; do not point the browser suite at a shared development database. The global setup provisions local-only fixture accounts in `server/scripts/prepare-e2e.ts`. Their password is `correct horse battery staple` and is test data only; never reuse it outside local E2E:
+
+| Role | Fixture email |
+| --- | --- |
+| Requester | `e2e-desktop@example.test`, `e2e-tablet@example.test`, `e2e-mobile@example.test` |
+| First-login Requester | `e2e-first-login-desktop@example.test`, `e2e-first-login-tablet@example.test`, `e2e-first-login-mobile@example.test` |
+| IT Staff | `e2e-staff@example.test` |
+| Administrator | `e2e-admin@example.test` |
+
+Run the committed Lab 3 browser journeys with the direct filter used by the evidence manifests:
+
+```sh
+pnpm --filter @toktickit/e2e exec playwright test e2e/lab-03
+```
+
+Committed visual evidence is under `artifacts/lab-03/screenshots/`, with per-viewport manifests and the inspection record at `artifacts/lab-03/visual-checklist.md`. Temporary reports remain ignored under `e2e/test-results/` and `e2e/playwright-report/`.
+
 Interactive commands:
 
 ```sh
@@ -121,4 +138,4 @@ pnpm test:e2e:headed
 pnpm test:e2e:ui
 ```
 
-Failure screenshots, traces, videos, and the HTML report are generated under `e2e/test-results/` and `e2e/playwright-report/`; both are ignored by Git. Required course evidence belongs under `artifacts/lab-02/screenshots/` with the comparison record in `artifacts/lab-02/visual-checklist.md`, and is committed separately from temporary Playwright diagnostics.
+Failure screenshots, traces, videos, and the HTML report are generated under `e2e/test-results/` and `e2e/playwright-report/`; both are ignored by Git. Lab 2 evidence remains under `artifacts/lab-02/`; Lab 3 integrated evidence belongs under `artifacts/lab-03/` and is committed separately from temporary Playwright diagnostics.

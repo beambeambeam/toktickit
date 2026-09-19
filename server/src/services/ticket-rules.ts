@@ -1,18 +1,29 @@
 import path from "node:path";
 
 import { ApiError } from "../errors/api-error.js";
+import { statusRequiresConfirmation } from "../types/ticket-workflow.js";
 import type {
   CurrentStatus,
+  ItPriorityMutationInput,
+  OwnerMutationInput,
   RequestedPriority,
+  StatusMutationInput,
   TicketFields,
   TicketListQuery,
+  StaffTicketListQuery,
+  StaffTicketOwnerFilter,
+  StaffTicketSortField,
   TicketSortDirection,
   TicketSortField,
+  TicketVersionInput,
 } from "../types/tickets.js";
 
 export type {
   CurrentStatus,
   RequestedPriority,
+  StaffTicketListQuery,
+  StaffTicketOwnerFilter,
+  StaffTicketSortField,
   TicketFields,
   TicketListQuery,
   TicketSortDirection,
@@ -25,9 +36,20 @@ export const MIN_SUMMARY_LENGTH = 5;
 export const MAX_SUMMARY_LENGTH = 120;
 export const MIN_DESCRIPTION_LENGTH = 20;
 export const MAX_DESCRIPTION_LENGTH = 4000;
+export const MAX_INTERNAL_NOTE_CODE_POINTS = 5000;
+export const MAX_PUBLIC_COMMENT_CODE_POINTS = 5000;
 
 export const requestedPriorities = ["Low", "Medium", "High", "Urgent"] as const;
-export const currentStatuses = ["New"] as const;
+export const currentStatuses = [
+  "New",
+  "Open",
+  "In Progress",
+  "Waiting for Requester",
+  "Resolved",
+  "Closed",
+  "Reopened",
+  "Cancelled",
+] as const;
 export const ticketSortFields = [
   "ticketNumber",
   "ticketDate",
@@ -35,6 +57,13 @@ export const ticketSortFields = [
   "requestedPriority",
   "currentStatus",
   "updatedAt",
+] as const;
+
+export const staffTicketSortFields = [
+  "ticketDate",
+  "updatedAt",
+  "itPriority",
+  "ticketNumber",
 ] as const;
 
 export interface AttachmentCandidate {
@@ -106,10 +135,13 @@ const getOptionalSingleValue = (
   return value;
 };
 
+const MAX_POSTGRES_INT = 2_147_483_647;
+
 const parsePositiveInteger = (
   value: string | undefined,
   field: string,
-  issues: ValidationIssue[]
+  issues: ValidationIssue[],
+  maximum = Number.MAX_SAFE_INTEGER
 ): number | undefined => {
   if (value === undefined || !/^[1-9]\d*$/u.test(value)) {
     issues.push({ field, reason: `${field} must be a positive integer.` });
@@ -118,7 +150,7 @@ const parsePositiveInteger = (
 
   const parsed = Number(value);
 
-  if (!Number.isSafeInteger(parsed) || parsed < 1) {
+  if (!Number.isSafeInteger(parsed) || parsed < 1 || parsed > maximum) {
     issues.push({ field, reason: `${field} must be a positive integer.` });
     return undefined;
   }
@@ -129,9 +161,12 @@ const parsePositiveInteger = (
 const parseOptionalPositiveInteger = (
   value: string | undefined,
   field: string,
-  issues: ValidationIssue[]
+  issues: ValidationIssue[],
+  maximum = Number.MAX_SAFE_INTEGER
 ): number | undefined =>
-  value === undefined ? undefined : parsePositiveInteger(value, field, issues);
+  value === undefined
+    ? undefined
+    : parsePositiveInteger(value, field, issues, maximum);
 
 const parsePageSize = (
   value: string,
@@ -159,14 +194,172 @@ const parsePageSize = (
 const isRequestedPriority = (value: string): value is RequestedPriority =>
   requestedPriorities.some((priority) => priority === value);
 
+const isRecord = (value: unknown): value is Record<string, unknown> =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const isExactObject = (
+  value: unknown,
+  fields: readonly string[]
+): value is Record<string, unknown> => {
+  if (!isRecord(value)) {
+    return false;
+  }
+
+  const keys = Object.keys(value);
+  return (
+    keys.length === fields.length &&
+    fields.every((field) => keys.includes(field))
+  );
+};
+
+const isPositiveSafeInteger = (value: unknown): value is number =>
+  typeof value === "number" &&
+  Number.isSafeInteger(value) &&
+  value > 0 &&
+  value <= MAX_POSTGRES_INT;
+
+const parseVersion = (value: unknown): number => {
+  if (!isPositiveSafeInteger(value)) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "version",
+      reason: "Version must be a positive integer.",
+    });
+  }
+
+  return value;
+};
+
+export const validateClaimInput = (body: unknown): TicketVersionInput => {
+  if (!isExactObject(body, ["version"])) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "body",
+      reason: "Version is required.",
+    });
+  }
+
+  return { version: parseVersion(body.version) };
+};
+
+export const validateOwnerMutation = (body: unknown): OwnerMutationInput => {
+  if (!isExactObject(body, ["ownerId", "version"])) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "body",
+      reason: "Owner ID and version are required; owner ID may be null.",
+    });
+  }
+
+  const { ownerId } = body;
+  if (ownerId !== null && !isPositiveSafeInteger(ownerId)) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "ownerId",
+      reason: "Owner ID must be a positive integer or null.",
+    });
+  }
+
+  return { ownerId, version: parseVersion(body.version) };
+};
+
+export const validateItPriorityMutation = (
+  body: unknown
+): ItPriorityMutationInput => {
+  if (!isExactObject(body, ["itPriority", "version"])) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "body",
+      reason: "IT Priority and version are required.",
+    });
+  }
+
+  const { itPriority, version } = body;
+  if (typeof itPriority !== "string" || !isRequestedPriority(itPriority)) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "itPriority",
+      reason: "IT Priority must be Low, Medium, High, or Urgent.",
+    });
+  }
+
+  return { itPriority, version: parseVersion(version) };
+};
+
 const isCurrentStatus = (value: string): value is CurrentStatus =>
   currentStatuses.some((status) => status === value);
+
+export const validateStatusMutation = (body: unknown): StatusMutationInput => {
+  if (!isRecord(body)) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "body",
+      reason: "Current Status and version are required.",
+    });
+  }
+
+  const keys = Object.keys(body);
+  if (
+    keys.length < 2 ||
+    keys.length > 3 ||
+    !keys.includes("currentStatus") ||
+    !keys.includes("version") ||
+    keys.some(
+      (field) => !["confirmed", "currentStatus", "version"].includes(field)
+    )
+  ) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "body",
+      reason: "Current Status and version are required.",
+    });
+  }
+
+  const { confirmed, currentStatus, version } = body;
+
+  if (typeof currentStatus !== "string" || !isCurrentStatus(currentStatus)) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "currentStatus",
+      reason: "Current Status is invalid.",
+    });
+  }
+
+  if (confirmed !== undefined && typeof confirmed !== "boolean") {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "confirmed",
+      reason: "confirmed must be a boolean.",
+    });
+  }
+
+  if (statusRequiresConfirmation(currentStatus) && confirmed !== true) {
+    throw new ApiError(
+      400,
+      "CONFIRMATION_REQUIRED",
+      "Confirm this terminal Ticket transition before continuing.",
+      { field: "confirmed", reason: "Set confirmed to true." }
+    );
+  }
+
+  const parsedVersion = parseVersion(version);
+  return confirmed === undefined
+    ? { currentStatus, version: parsedVersion }
+    : { confirmed, currentStatus, version: parsedVersion };
+};
+
+export const validateEmptyRequest = (body: unknown): void => {
+  if (!isRecord(body) || Object.keys(body).length !== 0) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "body",
+      reason: "Request body must be empty.",
+    });
+  }
+};
 
 const isTicketSortField = (value: string): value is TicketSortField =>
   ticketSortFields.some((field) => field === value);
 
 const isTicketSortDirection = (value: string): value is TicketSortDirection =>
   value === "asc" || value === "desc";
+
+const isStaffTicketSortField = (value: string): value is StaffTicketSortField =>
+  staffTicketSortFields.some((field) => field === value);
+
+const isStaffTicketOwnerFilter = (
+  value: string
+): value is Exclude<StaffTicketOwnerFilter, number> =>
+  value === "me" || value === "unassigned";
 
 const parseOptionalEnum = <T extends string>(
   value: string | undefined,
@@ -191,15 +384,34 @@ export const validateTicketFields = (
   input: Record<string, unknown>
 ): TicketFields => {
   const issues: ValidationIssue[] = [];
+  const allowedFields = new Set([
+    "categoryId",
+    "description",
+    "relatedSystemId",
+    "requestedPriority",
+    "summary",
+  ]);
+
+  for (const field of Object.keys(input)) {
+    if (!allowedFields.has(field)) {
+      issues.push({
+        field,
+        reason: "Request field is not supported.",
+      });
+    }
+  }
+
   const categoryId = parsePositiveInteger(
     getSingleValue(input, "categoryId", issues),
     "categoryId",
-    issues
+    issues,
+    MAX_POSTGRES_INT
   );
   const relatedSystemId = parsePositiveInteger(
     getSingleValue(input, "relatedSystemId", issues),
     "relatedSystemId",
-    issues
+    issues,
+    MAX_POSTGRES_INT
   );
   const summaryValue = getSingleValue(input, "summary", issues);
   const descriptionValue = getSingleValue(input, "description", issues);
@@ -276,6 +488,87 @@ export const validateRemovalReason = (value: unknown): string => {
   return reason;
 };
 
+export const validateInternalNoteContent = (
+  input: Record<string, unknown>
+): string => {
+  const fields = Object.keys(input);
+  const unsupportedField = fields.find((field) => field !== "content");
+  const value = input.content;
+
+  if (unsupportedField !== undefined) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: unsupportedField,
+      reason: "Request field is not supported.",
+    });
+  }
+
+  if (typeof value !== "string") {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "content",
+      reason: "Content is required.",
+    });
+  }
+
+  const content = value.trim();
+  // oxlint-disable-next-line unicorn/prefer-spread -- internal-note contract counts Unicode code points.
+  const codePointLength = Array.from(content).length;
+
+  if (codePointLength < 1 || codePointLength > MAX_INTERNAL_NOTE_CODE_POINTS) {
+    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
+      field: "content",
+      reason: `Content must contain 1–${MAX_INTERNAL_NOTE_CODE_POINTS} Unicode code points after trimming.`,
+    });
+  }
+
+  return content;
+};
+
+export const validatePublicCommentContent = (
+  input: Record<string, unknown>
+): string => {
+  const issues: ValidationIssue[] = [];
+
+  for (const field of Object.keys(input)) {
+    if (field !== "content") {
+      issues.push({ field, reason: "Request field is not supported." });
+    }
+  }
+
+  const value = input.content;
+  if (typeof value !== "string") {
+    issues.push({ field: "content", reason: "Content is required." });
+  }
+
+  const rawContent = typeof value === "string" ? value : undefined;
+  const content = rawContent?.trim();
+  const rawCodePointLength =
+    rawContent === undefined
+      ? 0
+      : // oxlint-disable-next-line unicorn/prefer-spread -- comment contract counts Unicode code points.
+        Array.from(rawContent).length;
+  const codePointLength =
+    content === undefined
+      ? 0
+      : // oxlint-disable-next-line unicorn/prefer-spread -- comment contract counts Unicode code points.
+        Array.from(content).length;
+
+  if (
+    content !== undefined &&
+    (codePointLength < 1 || rawCodePointLength > MAX_PUBLIC_COMMENT_CODE_POINTS)
+  ) {
+    issues.push({
+      field: "content",
+      reason: `Content must contain 1–${MAX_PUBLIC_COMMENT_CODE_POINTS} submitted Unicode code points and at least one non-whitespace character.`,
+    });
+  }
+
+  if (issues.length > 0 || content === undefined) {
+    throw createValidationError(issues);
+  }
+
+  return content;
+};
+
 const allowedQueryFields = new Set([
   "categoryId",
   "currentStatus",
@@ -308,19 +601,21 @@ export const parseTicketListQuery = (
   const categoryId = parseOptionalPositiveInteger(
     getOptionalSingleValue(input, "categoryId", issues),
     "categoryId",
-    issues
+    issues,
+    MAX_POSTGRES_INT
   );
   const relatedSystemId = parseOptionalPositiveInteger(
     getOptionalSingleValue(input, "relatedSystemId", issues),
     "relatedSystemId",
-    issues
+    issues,
+    MAX_POSTGRES_INT
   );
   const pageValue = getOptionalSingleValue(input, "page", issues);
   const pageSizeValue = getOptionalSingleValue(input, "pageSize", issues);
   const page =
     pageValue === undefined
       ? 1
-      : parsePositiveInteger(pageValue, "page", issues);
+      : parsePositiveInteger(pageValue, "page", issues, MAX_POSTGRES_INT);
   const pageSize =
     pageSizeValue === undefined ? 10 : parsePageSize(pageSizeValue, issues);
   const requestedPriority = parseOptionalEnum(
@@ -334,7 +629,7 @@ export const parseTicketListQuery = (
     getOptionalSingleValue(input, "currentStatus", issues),
     "currentStatus",
     isCurrentStatus,
-    "Current status must be New.",
+    "Current status is not supported.",
     issues
   );
   const sortBy = parseOptionalEnum(
@@ -352,6 +647,14 @@ export const parseTicketListQuery = (
     issues
   );
   const searchValue = getOptionalSingleValue(input, "search", issues);
+  const normalizedSearch = searchValue?.trim();
+
+  if (normalizedSearch !== undefined && normalizedSearch.length > 200) {
+    issues.push({
+      field: "search",
+      reason: "Search must contain at most 200 characters.",
+    });
+  }
 
   if (issues.length > 0 || page === undefined || pageSize === undefined) {
     throw createValidationError(issues);
@@ -363,7 +666,6 @@ export const parseTicketListQuery = (
     sortBy: sortBy ?? "updatedAt",
     sortDirection: sortDirection ?? "desc",
   };
-  const normalizedSearch = searchValue?.trim();
 
   if (categoryId !== undefined) {
     query.categoryId = categoryId;
@@ -375,6 +677,178 @@ export const parseTicketListQuery = (
 
   if (normalizedSearch !== undefined && normalizedSearch.length > 0) {
     query.search = normalizedSearch;
+  }
+
+  if (relatedSystemId !== undefined) {
+    query.relatedSystemId = relatedSystemId;
+  }
+
+  if (requestedPriority !== undefined) {
+    query.requestedPriority = requestedPriority;
+  }
+
+  return query;
+};
+
+const staffAllowedQueryFields = new Set([
+  "categoryId",
+  "currentStatus",
+  "itPriority",
+  "owner",
+  "page",
+  "pageSize",
+  "relatedSystemId",
+  "requestedPriority",
+  "search",
+  "sortBy",
+  "sortDirection",
+]);
+
+const parseStaffPageSize = (
+  value: string,
+  issues: ValidationIssue[]
+): 10 | 20 | 50 | undefined => {
+  if (value === "10") {
+    return 10;
+  }
+
+  if (value === "20") {
+    return 20;
+  }
+
+  if (value === "50") {
+    return 50;
+  }
+
+  issues.push({
+    field: "pageSize",
+    reason: "Page size must be 10, 20, or 50.",
+  });
+  return undefined;
+};
+
+const appendStaffUnsupportedQueryIssues = (
+  input: Record<string, unknown>,
+  issues: ValidationIssue[]
+) => {
+  for (const field of Object.keys(input)) {
+    if (!staffAllowedQueryFields.has(field)) {
+      issues.push({ field, reason: "Query parameter is not supported." });
+    }
+  }
+};
+
+// oxlint-disable-next-line complexity -- this parser validates the complete documented queue contract.
+export const parseStaffTicketListQuery = (
+  input: Record<string, unknown>
+): StaffTicketListQuery => {
+  const issues: ValidationIssue[] = [];
+  appendStaffUnsupportedQueryIssues(input, issues);
+
+  const categoryId = parseOptionalPositiveInteger(
+    getOptionalSingleValue(input, "categoryId", issues),
+    "categoryId",
+    issues,
+    MAX_POSTGRES_INT
+  );
+  const currentStatus = parseOptionalEnum(
+    getOptionalSingleValue(input, "currentStatus", issues),
+    "currentStatus",
+    isCurrentStatus,
+    "Current status is not supported.",
+    issues
+  );
+  const itPriority = parseOptionalEnum(
+    getOptionalSingleValue(input, "itPriority", issues),
+    "itPriority",
+    isRequestedPriority,
+    "IT priority must be Low, Medium, High, or Urgent.",
+    issues
+  );
+  const ownerValue = getOptionalSingleValue(input, "owner", issues);
+  let owner: StaffTicketOwnerFilter | undefined;
+
+  if (ownerValue !== undefined) {
+    owner = isStaffTicketOwnerFilter(ownerValue)
+      ? ownerValue
+      : parsePositiveInteger(ownerValue, "owner", issues, MAX_POSTGRES_INT);
+  }
+
+  const pageValue = getOptionalSingleValue(input, "page", issues);
+  const page =
+    pageValue === undefined
+      ? 1
+      : parsePositiveInteger(pageValue, "page", issues, MAX_POSTGRES_INT);
+  const pageSizeValue = getOptionalSingleValue(input, "pageSize", issues);
+  const pageSize =
+    pageSizeValue === undefined
+      ? 20
+      : parseStaffPageSize(pageSizeValue, issues);
+  const relatedSystemId = parseOptionalPositiveInteger(
+    getOptionalSingleValue(input, "relatedSystemId", issues),
+    "relatedSystemId",
+    issues,
+    MAX_POSTGRES_INT
+  );
+  const requestedPriority = parseOptionalEnum(
+    getOptionalSingleValue(input, "requestedPriority", issues),
+    "requestedPriority",
+    isRequestedPriority,
+    "Requested priority must be Low, Medium, High, or Urgent.",
+    issues
+  );
+  const searchValue = getOptionalSingleValue(input, "search", issues);
+  const normalizedSearch = searchValue?.trim();
+  if (normalizedSearch !== undefined && normalizedSearch.length > 200) {
+    issues.push({
+      field: "search",
+      reason: "Search must contain at most 200 characters.",
+    });
+  }
+  const sortBy = parseOptionalEnum(
+    getOptionalSingleValue(input, "sortBy", issues),
+    "sortBy",
+    isStaffTicketSortField,
+    "Queue sort field is not supported.",
+    issues
+  );
+  const sortDirection = parseOptionalEnum(
+    getOptionalSingleValue(input, "sortDirection", issues),
+    "sortDirection",
+    isTicketSortDirection,
+    "Sort direction must be asc or desc.",
+    issues
+  );
+
+  if (issues.length > 0 || page === undefined || pageSize === undefined) {
+    throw createValidationError(issues);
+  }
+
+  const query: StaffTicketListQuery = {
+    page,
+    pageSize,
+    sortBy: sortBy ?? "updatedAt",
+    sortDirection: sortDirection ?? "desc",
+  };
+
+  if (categoryId !== undefined) {
+    query.categoryId = categoryId;
+  }
+
+  if (currentStatus !== undefined) {
+    query.currentStatus = currentStatus;
+  }
+
+  if (itPriority !== undefined) {
+    query.itPriority = itPriority;
+  }
+
+  if (normalizedSearch !== undefined && normalizedSearch.length > 0) {
+    query.search = normalizedSearch;
+  }
+
+  if (owner !== undefined) {
+    query.owner = owner;
   }
 
   if (relatedSystemId !== undefined) {

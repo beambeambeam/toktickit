@@ -1,19 +1,32 @@
+import {
+  ArrowLeft01Icon,
+  Attachment01Icon,
+  CancelCircleIcon,
+  CheckmarkCircle02Icon,
+} from "@hugeicons/core-free-icons";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 import type { SubmitEvent } from "react";
 
-import { ticketQueryOptions } from "@/api/lab2-options";
+import { ticketQueryOptions } from "@/api/query-options";
 import {
   downloadTicketAttachment,
+  indicateTicketResolution,
   removeTicketAttachment,
   uploadTicketAttachments,
 } from "@/api/requester";
-import { AppShell, RequesterRequired } from "@/components/app-shell";
+import {
+  AppShell,
+  AuthRequired,
+  RequesterAccessDenied,
+} from "@/components/app-shell";
 import { AttachmentPicker } from "@/components/attachment-picker";
 import { FormField, ReadOnlyField } from "@/components/form-field";
+import { Icon } from "@/components/icon";
+import { PublicCommentsSection } from "@/components/public-comments-section";
 import { StatusBadge } from "@/components/status-badge";
-import { useRequester } from "@/context/requester";
+import { useAuth } from "@/context/auth";
 import { cn } from "@/lib/class-names";
 import { validateSelectedFiles } from "@/lib/ticket-rules";
 
@@ -34,19 +47,27 @@ export const RequesterTicketDetailPage = ({
 }: {
   ticketId: string;
 }) => {
-  const { requester } = useRequester();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
+  const principalId = user?.id ?? 0;
   const numericTicketId = Number(ticketId);
   const hasValidTicketId =
     Number.isSafeInteger(numericTicketId) && numericTicketId > 0;
   const ticketQuery = useQuery({
-    ...ticketQueryOptions(requester?.id ?? 0, numericTicketId),
-    enabled: requester !== null && hasValidTicketId,
+    ...ticketQueryOptions(numericTicketId, principalId),
+    enabled:
+      user?.role === "Requester" &&
+      !user.mustChangePassword &&
+      hasValidTicketId,
   });
   const [files, setFiles] = useState<File[]>([]);
   const [fileErrors, setFileErrors] = useState<string[]>([]);
   const [operationError, setOperationError] = useState<string | null>(null);
   const [successMessage, setSuccessMessage] = useState<string | null>(null);
+  const [resolutionError, setResolutionError] = useState<string | null>(null);
+  const [resolutionSuccess, setResolutionSuccess] = useState<string | null>(
+    null
+  );
   const [attachmentToRemove, setAttachmentToRemove] = useState<number | null>(
     null
   );
@@ -55,15 +76,11 @@ export const RequesterTicketDetailPage = ({
 
   const uploadMutation = useMutation({
     mutationFn: async () => {
-      if (requester === null) {
-        throw new Error("Select a Development Requester first.");
+      if (user === null) {
+        throw new Error("Sign in before adding Attachments.");
       }
 
-      return await uploadTicketAttachments(
-        requester.id,
-        numericTicketId,
-        files
-      );
+      return await uploadTicketAttachments(numericTicketId, files);
     },
     onError: (error: unknown) => {
       setOperationError(
@@ -77,7 +94,7 @@ export const RequesterTicketDetailPage = ({
       setOperationError(null);
       setSuccessMessage("Attachment(s) added successfully.");
       void queryClient.invalidateQueries({
-        queryKey: ["ticket", requester?.id, numericTicketId],
+        queryKey: ["ticket", principalId, numericTicketId],
       });
     },
   });
@@ -90,12 +107,11 @@ export const RequesterTicketDetailPage = ({
       attachmentId: number;
       reason: string;
     }) => {
-      if (requester === null) {
-        throw new Error("Select a Development Requester first.");
+      if (user === null) {
+        throw new Error("Sign in before removing Attachments.");
       }
 
       return await removeTicketAttachment(
-        requester.id,
         numericTicketId,
         attachmentId,
         reason
@@ -117,16 +133,60 @@ export const RequesterTicketDetailPage = ({
         "Attachment removed. Its metadata remains in the Ticket history."
       );
       void queryClient.invalidateQueries({
-        queryKey: ["ticket", requester?.id, numericTicketId],
+        queryKey: ["ticket", principalId, numericTicketId],
       });
     },
   });
 
-  if (requester === null) {
-    return <RequesterRequired />;
+  const indicationMutation = useMutation({
+    mutationFn: async () => {
+      if (user === null) {
+        throw new Error("Sign in before indicating resolution.");
+      }
+
+      return await indicateTicketResolution(numericTicketId);
+    },
+    onError: (error: unknown) => {
+      setResolutionSuccess(null);
+      setResolutionError(
+        error instanceof Error
+          ? error.message
+          : "Unable to record the resolution indication."
+      );
+    },
+    onSuccess: (resolutionIndication) => {
+      setResolutionError(null);
+      setResolutionSuccess(
+        "Your apparent-resolution indication was recorded for Staff."
+      );
+      queryClient.setQueryData(
+        ["ticket", principalId, numericTicketId],
+        (current: typeof ticketQuery.data) =>
+          current === undefined ? current : { ...current, resolutionIndication }
+      );
+      void ticketQuery.refetch();
+    },
+  });
+
+  if (user === null) {
+    return <AuthRequired />;
+  }
+
+  if (user.mustChangePassword) {
+    return <AuthRequired />;
+  }
+
+  if (user.role !== "Requester") {
+    return <RequesterAccessDenied />;
   }
 
   const ticket = ticketQuery.data;
+  const isTerminalTicket =
+    ticket !== undefined &&
+    ["Resolved", "Closed", "Cancelled"].includes(ticket.currentStatus);
+  const hasResolutionIndication =
+    ticket?.resolutionIndication !== null &&
+    ticket?.resolutionIndication !== undefined;
 
   const handleFiles = (selectedFiles: File[]) => {
     const result = validateSelectedFiles(selectedFiles);
@@ -161,7 +221,6 @@ export const RequesterTicketDetailPage = ({
   const download = async (attachmentId: number) => {
     try {
       const result = await downloadTicketAttachment(
-        requester.id,
         numericTicketId,
         attachmentId
       );
@@ -188,7 +247,7 @@ export const RequesterTicketDetailPage = ({
           Read-only view of your saved support request.
         </p>
         <Link className="button button-secondary" to="/tickets">
-          ← Back to My Tickets
+          <Icon icon={ArrowLeft01Icon} /> Back to My Tickets
         </Link>
       </div>
 
@@ -259,6 +318,11 @@ export const RequesterTicketDetailPage = ({
                 label="Requested Priority"
                 value={ticket.requestedPriority}
               />
+              <ReadOnlyField label="IT Priority" value={ticket.itPriority} />
+              <ReadOnlyField
+                label="Ticket Owner"
+                value={ticket.owner?.displayName ?? "Unassigned"}
+              />
               <ReadOnlyField
                 label="Current Status"
                 value={ticket.currentStatus}
@@ -273,6 +337,75 @@ export const RequesterTicketDetailPage = ({
                   {ticket.description}
                 </output>
               </div>
+            </div>
+          </section>
+
+          <PublicCommentsSection
+            canPost
+            currentStatus={ticket.currentStatus}
+            principalId={principalId}
+            ticketId={numericTicketId}
+          />
+
+          <section
+            aria-labelledby="resolution-action-heading"
+            className="surface-card form-section"
+          >
+            <div className="section-heading">
+              <div>
+                <p className="eyebrow">Requester feedback</p>
+                <h2 id="resolution-action-heading">Apparent resolution</h2>
+              </div>
+            </div>
+            {ticket.resolutionIndication ? (
+              <div className="readonly-grid">
+                <ReadOnlyField
+                  label="Indicated at"
+                  value={formatDate(ticket.resolutionIndication.createdAt)}
+                />
+                <ReadOnlyField
+                  label="Next step"
+                  value="Staff will formally resolve the Ticket."
+                />
+              </div>
+            ) : null}
+            {!hasResolutionIndication && isTerminalTicket ? (
+              <p className="context-note">
+                This Ticket is already terminal, so a new apparent-resolution
+                indication is unavailable.
+              </p>
+            ) : null}
+            {!hasResolutionIndication && !isTerminalTicket ? (
+              <>
+                <p className="context-note">
+                  If the problem appears resolved, tell Staff. This does not
+                  change the formal Ticket status.
+                </p>
+                <button
+                  className="button button-primary"
+                  disabled={indicationMutation.isPending}
+                  onClick={() => {
+                    setResolutionError(null);
+                    setResolutionSuccess(null);
+                    indicationMutation.mutate();
+                  }}
+                  type="button"
+                >
+                  {indicationMutation.isPending
+                    ? "Recording…"
+                    : "Problem Appears Resolved"}
+                </button>
+              </>
+            ) : null}
+            <div aria-live="polite" className="operation-status" role="status">
+              {resolutionSuccess === null ? null : (
+                <span className="success-message">{resolutionSuccess}</span>
+              )}
+              {resolutionError === null ? null : (
+                <span className="error-message" role="alert">
+                  {resolutionError}
+                </span>
+              )}
             </div>
           </section>
 
@@ -332,7 +465,7 @@ export const RequesterTicketDetailPage = ({
                 >
                   <div className="attachment-item-main">
                     <span aria-hidden="true" className="attachment-icon">
-                      ▧
+                      <Icon icon={Attachment01Icon} />
                     </span>
                     <div>
                       <h3>{attachment.originalFilename}</h3>
@@ -360,7 +493,13 @@ export const RequesterTicketDetailPage = ({
                       )}
                     >
                       <span aria-hidden="true">
-                        {attachment.state === "Active" ? "●" : "×"}
+                        <Icon
+                          icon={
+                            attachment.state === "Active"
+                              ? CheckmarkCircle02Icon
+                              : CancelCircleIcon
+                          }
+                        />
                       </span>{" "}
                       {attachment.state}
                     </span>
@@ -393,7 +532,9 @@ export const RequesterTicketDetailPage = ({
 
             <div aria-live="polite" className="operation-status" role="status">
               {successMessage !== null && successMessage.length > 0 ? (
-                <span className="success-message">✓ {successMessage}</span>
+                <span className="success-message">
+                  <Icon icon={CheckmarkCircle02Icon} /> {successMessage}
+                </span>
               ) : null}
               {operationError !== null && operationError.length > 0 ? (
                 <span className="error-message">{operationError}</span>

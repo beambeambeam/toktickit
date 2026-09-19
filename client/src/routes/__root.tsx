@@ -1,7 +1,7 @@
 import { createRootRoute, Outlet } from "@tanstack/react-router";
 import { lazy, Suspense } from "react";
 
-import { RequesterProvider } from "@/context/requester";
+import { AuthProvider } from "@/context/auth";
 
 const showRouterDevtools =
   import.meta.env.DEV && import.meta.env.VITE_SHOW_ROUTER_DEVTOOLS !== "false";
@@ -17,11 +17,11 @@ const TanStackRouterDevtools = showRouterDevtools
 
 export const Route = createRootRoute({
   component: () => (
-    <RequesterProvider>
+    <AuthProvider>
       <Outlet />
       <Suspense fallback={null}>
         {TanStackRouterDevtools ? <TanStackRouterDevtools /> : null}
       </Suspense>
-    </RequesterProvider>
+    </AuthProvider>
   ),
 });

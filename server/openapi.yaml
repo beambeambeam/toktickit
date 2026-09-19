@@ -7,11 +7,107 @@ servers:
   - url: http://localhost:3000
     description: Local development server
 paths:
+  /api/auth/login:
+    post:
+      operationId: postApiAuthLogin
+      summary: Sign in
+      description: Creates a restricted or normal opaque session for an active User.
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/LoginRequest"
+      responses:
+        "200":
+          description: The authenticated User and CSRF token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "429":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/auth/me:
+    get:
+      operationId: getApiAuthMe
+      summary: Get the current User
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: The current User and CSRF token.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/auth/change-password:
+    post:
+      operationId: postApiAuthChangePassword
+      summary: Change the current password
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ChangePasswordRequest"
+      responses:
+        "200":
+          description: The rotated unrestricted session.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/AuthResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "429":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/auth/logout:
+    post:
+      operationId: postApiAuthLogout
+      summary: Revoke the current session
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmptyRequest"
+      responses:
+        "204":
+          description: The session was revoked.
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
   /api/categories:
     get:
       operationId: getApiCategories
       summary: List active Categories
       description: Returns active Categories in display order.
+      security:
+        - sessionCookie: []
       responses:
         "200":
           description: The active Categories.
@@ -39,6 +135,8 @@ paths:
       operationId: getApiRelatedSystems
       summary: List active Related Systems
       description: Returns active Related Systems in display order.
+      security:
+        - sessionCookie: []
       responses:
         "200":
           description: The active Related Systems.
@@ -48,18 +146,379 @@ paths:
                 $ref: "#/components/schemas/RelatedSystemListResponse"
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
-  /api/development-requesters:
+  /api/staff/tickets:
     get:
-      operationId: getApiDevelopmentRequesters
-      summary: List active Development Requesters
-      description: Returns active test-context Requesters only.
+      operationId: getApiStaffTickets
+      summary: List the shared Ticket Queue
+      description: Returns operational Ticket summaries for IT Staff and read-only Administrators.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/Search"
+        - $ref: "#/components/parameters/CategoryId"
+        - $ref: "#/components/parameters/RelatedSystemId"
+        - $ref: "#/components/parameters/RequestedPriority"
+        - $ref: "#/components/parameters/ItPriority"
+        - $ref: "#/components/parameters/CurrentStatus"
+        - $ref: "#/components/parameters/Owner"
+        - $ref: "#/components/parameters/QueueSortBy"
+        - $ref: "#/components/parameters/SortDirection"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/QueuePageSize"
       responses:
         "200":
-          description: The active Development Requesters.
+          description: The shared operational Ticket page.
           content:
             application/json:
               schema:
-                $ref: "#/components/schemas/DevelopmentRequesterListResponse"
+                $ref: "#/components/schemas/StaffTicketListResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/staff/owners:
+    get:
+      operationId: getApiStaffOwners
+      summary: List eligible Ticket Owners
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: Active IT Staff and Administrators eligible for assignment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OwnerListResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/status:
+    post:
+      operationId: updateApiTicketStatus
+      summary: Progress a Ticket
+      description: Applies one approved status transition for IT Staff.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/StatusMutationRequest"
+      responses:
+        "200":
+          description: The updated Ticket.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketDetail"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/resolution-indication:
+    put:
+      operationId: indicateApiTicketResolution
+      summary: Indicate apparent Ticket resolution
+      description: Records an owning Requester's apparent-resolution indication without formally changing status.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EmptyRequest"
+      responses:
+        "200":
+          description: The recorded indication.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ResolutionIndicationResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/claim:
+    post:
+      operationId: claimApiTicket
+      summary: Claim an unassigned Ticket
+      description: Assigns the current IT Staff member when the Ticket is unassigned.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/TicketVersionRequest"
+      responses:
+        "200":
+          description: The updated Ticket.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketDetail"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/owner:
+    put:
+      operationId: updateApiTicketOwner
+      summary: Assign a Ticket Owner
+      description: Assigns, reassigns, or unassigns a Ticket Owner.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/OwnerMutationRequest"
+      responses:
+        "200":
+          description: The updated Ticket.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketDetail"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/it-priority:
+    patch:
+      operationId: updateApiTicketItPriority
+      summary: Set a Ticket IT Priority
+      description: Sets the operational IT Priority without changing Requested Priority.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ItPriorityMutationRequest"
+      responses:
+        "200":
+          description: The updated Ticket.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketDetail"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/users:
+    get:
+      operationId: getApiUsers
+      summary: List users
+      description: Returns users for Administrator account management.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/UserSearch"
+        - $ref: "#/components/parameters/UserRole"
+      responses:
+        "200":
+          description: The matching users.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserListResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+    post:
+      operationId: createApiUser
+      summary: Create a user account
+      description: Creates one active or inactive one-role account with an initial password.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateUserRequest"
+      responses:
+        "201":
+          description: The created user without credential secrets.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/CreateUserResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/users/{userId}:
+    get:
+      operationId: getApiUser
+      summary: Get a user
+      description: Returns one user for the Administrator edit form.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/UserId"
+      responses:
+        "200":
+          description: The requested user without credential secrets.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/User"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+    patch:
+      operationId: updateApiUser
+      summary: Edit a user account
+      description: Updates editable account access fields atomically.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/UpdateUserRequest"
+      responses:
+        "200":
+          description: The updated user without credential secrets.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/users/{userId}/initial-password:
+    post:
+      operationId: resetApiUserInitialPassword
+      summary: Reset a user's initial password
+      description: Revokes all target sessions and requires password replacement at next login.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/UserId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InitialPasswordResetRequest"
+      responses:
+        "200":
+          description: The reset user without credential secrets.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/UserResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
   /api/health:
@@ -89,9 +548,11 @@ paths:
     post:
       operationId: createApiTicket
       summary: Create a requester Ticket
-      description: Creates one Ticket owned by the validated Development Requester context.
+      description: Creates one Ticket owned by the authenticated Requester.
+      security:
+        - sessionCookie: []
       parameters:
-        - $ref: "#/components/parameters/DevelopmentRequesterId"
+        - $ref: "#/components/parameters/CsrfToken"
       requestBody:
         required: true
         content:
@@ -120,9 +581,10 @@ paths:
     get:
       operationId: getApiTickets
       summary: List owned requester Tickets
-      description: Returns only Tickets owned by the validated Development Requester context.
+      description: Returns only Tickets owned by the authenticated Requester.
+      security:
+        - sessionCookie: []
       parameters:
-        - $ref: "#/components/parameters/DevelopmentRequesterId"
         - $ref: "#/components/parameters/Search"
         - $ref: "#/components/parameters/CategoryId"
         - $ref: "#/components/parameters/RelatedSystemId"
@@ -146,13 +608,15 @@ paths:
   /api/tickets/{ticketId}:
     get:
       operationId: getApiTicket
-      summary: Get an owned Ticket
+      summary: Get a Ticket
+      description: Requesters can read their own Tickets; IT Staff and Administrators can read every Ticket.
+      security:
+        - sessionCookie: []
       parameters:
-        - $ref: "#/components/parameters/DevelopmentRequesterId"
         - $ref: "#/components/parameters/TicketId"
       responses:
         "200":
-          description: The owned Ticket Detail.
+          description: The Ticket Detail for the permitted reader.
           content:
             application/json:
               schema:
@@ -163,16 +627,138 @@ paths:
           $ref: "#/components/responses/ApiErrorResponse"
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
-  /api/tickets/{ticketId}/attachments:
+  /api/tickets/{ticketId}/internal-notes:
     get:
-      operationId: getApiTicketAttachments
-      summary: List owned Ticket Attachment metadata
+      operationId: getApiTicketInternalNotes
+      summary: List private Internal Notes
+      description: IT Staff and Administrators can read every Ticket's private Internal Notes. Requesters cannot access this resource.
+      security:
+        - sessionCookie: []
       parameters:
-        - $ref: "#/components/parameters/DevelopmentRequesterId"
         - $ref: "#/components/parameters/TicketId"
       responses:
         "200":
-          description: Attachment metadata for the owned Ticket.
+          description: The private Internal Notes in chronological order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalNoteListResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+    post:
+      operationId: createApiTicketInternalNote
+      summary: Add a private Internal Note
+      description: IT Staff can append a private Internal Note to any non-terminal Ticket. Administrators and Requesters cannot write notes.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/InternalNoteRequest"
+      responses:
+        "201":
+          description: The created private Internal Note.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/InternalNoteResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/comments:
+    get:
+      operationId: getApiTicketComments
+      summary: List public Ticket comments
+      description: Requesters can read their own public comments; IT Staff and Administrators can read every Ticket's public comments. The response contains at most the 500 latest comments in chronological order.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+      responses:
+        "200":
+          description: The 500 latest public Ticket comments in chronological order.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicCommentListResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+    post:
+      operationId: createApiTicketComment
+      summary: Post a public Ticket comment
+      description: A Requester may post to an owned Ticket and IT Staff may post to any Ticket. Administrators have read-only access.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/PublicCommentRequest"
+      responses:
+        "201":
+          description: The created public Ticket comment.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/PublicCommentResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/attachments:
+    get:
+      operationId: getApiTicketAttachments
+      summary: List Ticket Attachment metadata
+      description: Requesters can read their own Ticket Attachments; IT Staff and Administrators can read every Ticket's metadata.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+      responses:
+        "200":
+          description: Attachment metadata for the permitted Ticket.
           content:
             application/json:
               schema:
@@ -186,8 +772,10 @@ paths:
     post:
       operationId: createApiTicketAttachments
       summary: Add Attachments to an owned Ticket
+      security:
+        - sessionCookie: []
       parameters:
-        - $ref: "#/components/parameters/DevelopmentRequesterId"
+        - $ref: "#/components/parameters/CsrfToken"
         - $ref: "#/components/parameters/TicketId"
       requestBody:
         required: true
@@ -217,9 +805,11 @@ paths:
   /api/tickets/{ticketId}/attachments/{attachmentId}/content:
     get:
       operationId: getApiTicketAttachmentContent
-      summary: Download an active owned Attachment
+      summary: Download an active Attachment
+      description: Requesters can download active Attachments from their own Tickets; IT Staff and Administrators can download active Attachments from every Ticket.
+      security:
+        - sessionCookie: []
       parameters:
-        - $ref: "#/components/parameters/DevelopmentRequesterId"
         - $ref: "#/components/parameters/TicketId"
         - $ref: "#/components/parameters/AttachmentId"
       responses:
@@ -256,8 +846,10 @@ paths:
     delete:
       operationId: removeApiTicketAttachment
       summary: Soft-remove an owned Attachment
+      security:
+        - sessionCookie: []
       parameters:
-        - $ref: "#/components/parameters/DevelopmentRequesterId"
+        - $ref: "#/components/parameters/CsrfToken"
         - $ref: "#/components/parameters/TicketId"
         - $ref: "#/components/parameters/AttachmentId"
       requestBody:
@@ -281,16 +873,22 @@ paths:
           $ref: "#/components/responses/ApiErrorResponse"
 components:
   parameters:
-    DevelopmentRequesterId:
-      name: X-Development-Requester-Id
+    CsrfToken:
+      name: X-CSRF-Token
       in: header
       required: true
-      description: Temporary Lab 2 test context; not authentication.
+      description: Synchronizer token returned by login or current-user retrieval.
+      schema:
+        type: string
+    TicketId:
+      name: ticketId
+      in: path
+      required: true
       schema:
         type: integer
         minimum: 1
-    TicketId:
-      name: ticketId
+    UserId:
+      name: userId
       in: path
       required: true
       schema:
@@ -309,6 +907,21 @@ components:
       required: false
       schema:
         type: string
+        maxLength: 200
+    UserSearch:
+      name: search
+      in: query
+      required: false
+      description: Literal case-insensitive substring of user name or email.
+      schema:
+        type: string
+        maxLength: 200
+    UserRole:
+      name: role
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/UserRole"
     CategoryId:
       name: categoryId
       in: query
@@ -335,6 +948,23 @@ components:
       required: false
       schema:
         $ref: "#/components/schemas/CurrentStatus"
+    ItPriority:
+      name: itPriority
+      in: query
+      required: false
+      schema:
+        $ref: "#/components/schemas/RequestedPriority"
+    Owner:
+      name: owner
+      in: query
+      required: false
+      description: Eligible owner ID, me, or unassigned.
+      schema:
+        oneOf:
+          - type: integer
+            minimum: 1
+          - type: string
+            enum: [me, unassigned]
     SortBy:
       name: sortBy
       in: query
@@ -359,6 +989,14 @@ components:
         type: string
         enum: [asc, desc]
         default: desc
+    QueueSortBy:
+      name: sortBy
+      in: query
+      required: false
+      schema:
+        type: string
+        enum: [ticketDate, updatedAt, itPriority, ticketNumber]
+        default: updatedAt
     Page:
       name: page
       in: query
@@ -375,6 +1013,19 @@ components:
         type: integer
         enum: [10, 25, 50]
         default: 10
+    QueuePageSize:
+      name: pageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        enum: [10, 20, 50]
+        default: 20
+  securitySchemes:
+    sessionCookie:
+      type: apiKey
+      in: cookie
+      name: toktickit_session
   responses:
     ApiErrorResponse:
       description: The API could not complete the request.
@@ -438,7 +1089,117 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/RelatedSystem"
-    DevelopmentRequester:
+    User:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          displayName,
+          email,
+          role,
+          isActive,
+          mustChangePassword,
+          createdAt,
+          updatedAt,
+        ]
+      properties:
+        id:
+          type: integer
+        displayName:
+          type: string
+        email:
+          type: string
+          format: email
+        role:
+          $ref: "#/components/schemas/UserRole"
+        isActive:
+          type: boolean
+        mustChangePassword:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+    UserRole:
+      type: string
+      enum: [Requester, IT Staff, Administrator]
+    UserListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/User"
+    CreateUserRequest:
+      type: object
+      additionalProperties: false
+      required: [displayName, email, role, isActive, initialPassword]
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        role:
+          $ref: "#/components/schemas/UserRole"
+        isActive:
+          type: boolean
+        initialPassword:
+          type: string
+          minLength: 15
+          maxLength: 128
+    CreateUserResponse:
+      type: object
+      additionalProperties: false
+      required: [user]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+    UserResponse:
+      type: object
+      additionalProperties: false
+      required: [user]
+      properties:
+        user:
+          $ref: "#/components/schemas/User"
+    UpdateUserRequest:
+      type: object
+      additionalProperties: false
+      minProperties: 1
+      properties:
+        displayName:
+          type: string
+          minLength: 1
+          maxLength: 100
+        email:
+          type: string
+          format: email
+          maxLength: 254
+        role:
+          $ref: "#/components/schemas/UserRole"
+        isActive:
+          type: boolean
+    InitialPasswordResetRequest:
+      type: object
+      additionalProperties: false
+      required: [initialPassword, confirmed]
+      properties:
+        initialPassword:
+          type: string
+          minLength: 15
+          maxLength: 128
+        confirmed:
+          type: boolean
+          const: true
+    TicketRequester:
       type: object
       additionalProperties: false
       required: [id, displayName, email]
@@ -450,21 +1211,106 @@ components:
         email:
           type: string
           format: email
-    DevelopmentRequesterListResponse:
+    AuthResponse:
       type: object
       additionalProperties: false
-      required: [items]
+      required: [user, csrfToken]
       properties:
-        items:
-          type: array
-          items:
-            $ref: "#/components/schemas/DevelopmentRequester"
+        user:
+          $ref: "#/components/schemas/User"
+        csrfToken:
+          type: string
+          minLength: 43
+          maxLength: 43
+    LoginRequest:
+      type: object
+      additionalProperties: false
+      required: [email, password]
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+    ChangePasswordRequest:
+      type: object
+      additionalProperties: false
+      required: [currentPassword, newPassword]
+      properties:
+        currentPassword:
+          type: string
+        newPassword:
+          type: string
+    EmptyRequest:
+      type: object
+      additionalProperties: false
+      maxProperties: 0
+    TicketVersionRequest:
+      type: object
+      additionalProperties: false
+      required: [version]
+      properties:
+        version:
+          type: integer
+          minimum: 1
+    OwnerMutationRequest:
+      type: object
+      additionalProperties: false
+      required: [ownerId, version]
+      properties:
+        ownerId:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: "null"
+        version:
+          type: integer
+          minimum: 1
+    ItPriorityMutationRequest:
+      type: object
+      additionalProperties: false
+      required: [itPriority, version]
+      properties:
+        itPriority:
+          $ref: "#/components/schemas/RequestedPriority"
+        version:
+          type: integer
+          minimum: 1
     RequestedPriority:
       type: string
       enum: [Low, Medium, High, Urgent]
     CurrentStatus:
       type: string
-      enum: [New]
+      enum:
+        [
+          New,
+          Open,
+          In Progress,
+          Waiting for Requester,
+          Resolved,
+          Closed,
+          Reopened,
+          Cancelled,
+        ]
+    StatusMutationRequest:
+      type: object
+      additionalProperties: false
+      required: [currentStatus, version]
+      properties:
+        currentStatus:
+          $ref: "#/components/schemas/CurrentStatus"
+        version:
+          type: integer
+          minimum: 1
+        confirmed:
+          type: boolean
+    ResolutionIndicationResponse:
+      type: object
+      additionalProperties: false
+      required: [resolutionIndication]
+      properties:
+        resolutionIndication:
+          $ref: "#/components/schemas/ResolutionIndication"
     AttachmentMetadata:
       type: object
       additionalProperties: false
@@ -550,16 +1396,58 @@ components:
         - $ref: "#/components/schemas/TicketSummary"
         - type: object
           additionalProperties: false
-          required: [requester, description, attachments]
+          required:
+            [
+              requester,
+              description,
+              attachments,
+              itPriority,
+              owner,
+              version,
+              resolutionIndication,
+              statusChangedAt,
+              resolvedAt,
+              reopenedAt,
+              closedAt,
+              cancelledAt,
+            ]
           properties:
             requester:
-              $ref: "#/components/schemas/DevelopmentRequester"
+              $ref: "#/components/schemas/TicketRequester"
             description:
               type: string
             attachments:
               type: array
               items:
                 $ref: "#/components/schemas/AttachmentMetadata"
+            itPriority:
+              $ref: "#/components/schemas/RequestedPriority"
+            owner:
+              oneOf:
+                - $ref: "#/components/schemas/Owner"
+                - type: "null"
+            version:
+              type: integer
+              minimum: 1
+            resolutionIndication:
+              oneOf:
+                - $ref: "#/components/schemas/ResolutionIndication"
+                - type: "null"
+            statusChangedAt:
+              type: string
+              format: date-time
+            resolvedAt:
+              type: [string, "null"]
+              format: date-time
+            reopenedAt:
+              type: [string, "null"]
+              format: date-time
+            closedAt:
+              type: [string, "null"]
+              format: date-time
+            cancelledAt:
+              type: [string, "null"]
+              format: date-time
     TicketListResponse:
       type: object
       additionalProperties: false
@@ -578,6 +1466,155 @@ components:
           type: integer
         totalPages:
           type: integer
+    OperationalTicketSummary:
+      allOf:
+        - $ref: "#/components/schemas/TicketSummary"
+        - type: object
+          required: [itPriority, owner, version]
+          properties:
+            itPriority:
+              $ref: "#/components/schemas/RequestedPriority"
+            owner:
+              oneOf:
+                - $ref: "#/components/schemas/Owner"
+                - type: "null"
+            version:
+              type: integer
+              minimum: 1
+      unevaluatedProperties: false
+    StaffTicketListResponse:
+      type: object
+      additionalProperties: false
+      required: [items, page, pageSize, totalItems, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/OperationalTicketSummary"
+        page:
+          type: integer
+        pageSize:
+          type: integer
+          enum: [10, 20, 50]
+        totalItems:
+          type: integer
+        totalPages:
+          type: integer
+    Owner:
+      type: object
+      additionalProperties: false
+      required: [id, displayName, role, isActive, isEligible]
+      properties:
+        id:
+          type: integer
+        displayName:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+        isActive:
+          type: boolean
+        isEligible:
+          type: boolean
+    OwnerListResponse:
+      type: object
+      additionalProperties: false
+      required: [items]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/Owner"
+    ResolutionIndication:
+      type: object
+      additionalProperties: false
+      required: [author, createdAt]
+      properties:
+        author:
+          type: object
+          additionalProperties: false
+          required: [id, displayName]
+          properties:
+            id:
+              type: integer
+            displayName:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+    Entry:
+      type: object
+      additionalProperties: false
+      required: [id, content, author, createdAt]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        content:
+          type: string
+        author:
+          type: object
+          additionalProperties: false
+          required: [id, displayName]
+          properties:
+            id:
+              type: integer
+              minimum: 1
+            displayName:
+              type: string
+        createdAt:
+          type: string
+          format: date-time
+    InternalNoteRequest:
+      type: object
+      additionalProperties: false
+      required: [content]
+      properties:
+        content:
+          type: string
+          minLength: 1
+          maxLength: 5000
+    InternalNoteResponse:
+      type: object
+      additionalProperties: false
+      required: [internalNote]
+      properties:
+        internalNote:
+          $ref: "#/components/schemas/Entry"
+    InternalNoteListResponse:
+      type: object
+      additionalProperties: false
+      required: [internalNotes]
+      properties:
+        internalNotes:
+          type: array
+          items:
+            $ref: "#/components/schemas/Entry"
+    PublicCommentRequest:
+      type: object
+      additionalProperties: false
+      required: [content]
+      properties:
+        content:
+          type: string
+          description: Leading and trailing whitespace is trimmed before storage. Length limits apply to the submitted value, which must contain at least one non-whitespace character.
+          minLength: 1
+          maxLength: 5000
+    PublicCommentResponse:
+      type: object
+      additionalProperties: false
+      required: [comment]
+      properties:
+        comment:
+          $ref: "#/components/schemas/Entry"
+    PublicCommentListResponse:
+      type: object
+      additionalProperties: false
+      required: [comments]
+      properties:
+        comments:
+          type: array
+          items:
+            $ref: "#/components/schemas/Entry"
     CreateTicketRequest:
       type: object
       additionalProperties: false

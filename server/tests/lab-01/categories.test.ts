@@ -4,6 +4,7 @@ import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
 import { fileURLToPath } from "node:url";
 
+import argon2 from "argon2";
 import type { Express } from "express";
 import { Client, escapeIdentifier } from "pg";
 import request from "supertest";
@@ -66,6 +67,7 @@ let adminClientConnected = false;
 
 let app: Express;
 let prisma: PrismaClient | undefined;
+let authCookie: string;
 
 const getPrisma = (): PrismaClient => {
   if (prisma === undefined) {
@@ -104,7 +106,37 @@ beforeAll(async () => {
 });
 
 beforeEach(async () => {
-  await getPrisma().category.deleteMany();
+  const database = getPrisma();
+  await database.session.deleteMany();
+  await database.attachment.deleteMany();
+  await database.ticket.deleteMany();
+  await database.category.deleteMany();
+  const passwordHash = await argon2.hash("correct horse battery staple", {
+    memoryCost: 19_456,
+    parallelism: 1,
+    timeCost: 2,
+    type: argon2.argon2id,
+  });
+  await database.user.upsert({
+    create: {
+      displayName: "Category Tester",
+      email: "category-tester@example.test",
+      mustChangePassword: false,
+      passwordHash,
+    },
+    update: { mustChangePassword: false, passwordHash },
+    where: { email: "category-tester@example.test" },
+  });
+  const login = await request(app)
+    .post("/api/auth/login")
+    .set("Origin", "http://localhost:5173")
+    .send({
+      email: "category-tester@example.test",
+      password: "correct horse battery staple",
+    })
+    .expect(200);
+  const [sessionCookie] = login.headers["set-cookie"];
+  [authCookie] = sessionCookie.split(";");
 });
 
 afterAll(async () => {
@@ -142,11 +174,12 @@ describe("Categories API", () => {
 
     const response = await request(app)
       .get("/api/categories")
+      .set("Cookie", authCookie)
       .expect("Content-Type", /json/u)
       .expect(200);
 
     assert.deepEqual(getCategoryNames(response.body), canonicalCategoryNames);
-  });
+  }, 30_000);
 
   it("keeps seeding idempotent", async () => {
     runSeed();
@@ -162,7 +195,7 @@ describe("Categories API", () => {
       categories.map((category) => category.name),
       canonicalCategoryNames
     );
-  });
+  }, 30_000);
 
   it("returns every stored Category ordered by ascending ID", async () => {
     await getPrisma().category.createMany({
@@ -175,6 +208,7 @@ describe("Categories API", () => {
 
     const response = await request(app)
       .get("/api/categories")
+      .set("Cookie", authCookie)
       .expect("Content-Type", /json/u)
       .expect(200);
 
@@ -190,6 +224,7 @@ describe("Categories API", () => {
   it("returns an empty array when no Categories are stored", async () => {
     await request(app)
       .get("/api/categories")
+      .set("Cookie", authCookie)
       .expect("Content-Type", /json/u)
       .expect(200, { items: [] });
   });
@@ -202,6 +237,7 @@ describe("Categories API", () => {
     try {
       await request(app)
         .get("/api/categories")
+        .set("Cookie", authCookie)
         .expect("Content-Type", /json/u)
         .expect(500, {
           error: {

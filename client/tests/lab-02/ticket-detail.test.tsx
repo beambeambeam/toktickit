@@ -15,17 +15,35 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type * as RequesterApi from "@/api/requester";
 import { ApiRequestError } from "@/api/requester";
-import { RequesterProvider } from "@/context/requester";
 import { RequesterTicketDetailPage } from "@/pages/requester-ticket-detail-page";
 
 const {
+  authUser,
   downloadTicketAttachmentMock,
+  getTicketCommentsMock,
   getTicketMock,
+  indicateTicketResolutionMock,
+  logoutMock,
+  postTicketCommentMock,
   removeTicketAttachmentMock,
   uploadTicketAttachmentsMock,
 } = vi.hoisted(() => ({
+  authUser: {
+    createdAt: "2026-09-01T00:00:00.000Z",
+    displayName: "Ada Requester",
+    email: "ada@example.test",
+    id: 1,
+    isActive: true,
+    mustChangePassword: false,
+    role: "Requester" as const,
+    updatedAt: "2026-09-01T00:00:00.000Z",
+  },
   downloadTicketAttachmentMock: vi.fn(),
+  getTicketCommentsMock: vi.fn(),
   getTicketMock: vi.fn(),
+  indicateTicketResolutionMock: vi.fn(),
+  logoutMock: vi.fn(),
+  postTicketCommentMock: vi.fn(),
   removeTicketAttachmentMock: vi.fn(),
   uploadTicketAttachmentsMock: vi.fn(),
 }));
@@ -37,10 +55,16 @@ vi.mock("@/api/requester", async () => {
     ...actual,
     downloadTicketAttachment: downloadTicketAttachmentMock,
     getTicket: getTicketMock,
+    indicateTicketResolution: indicateTicketResolutionMock,
     removeTicketAttachment: removeTicketAttachmentMock,
     uploadTicketAttachments: uploadTicketAttachmentsMock,
   };
 });
+
+vi.mock("@/api/ticket-comments", () => ({
+  getTicketComments: getTicketCommentsMock,
+  postTicketComment: postTicketCommentMock,
+}));
 
 vi.mock("@tanstack/react-router", async () => {
   const actual = await vi.importActual<typeof TanStackRouter>(
@@ -53,11 +77,21 @@ vi.mock("@tanstack/react-router", async () => {
   };
 });
 
-const owner = {
-  displayName: "Ada Requester",
-  email: "ada@example.test",
-  id: 1,
-};
+vi.mock("@/context/auth", () => ({
+  useAuth: () => ({
+    auth: { csrfToken: "csrf", user: authUser },
+    authError: null,
+    changePassword: vi.fn(),
+    isLoading: false,
+    isRefreshing: false,
+    login: vi.fn(),
+    logout: logoutMock,
+    refetchAuth: vi.fn(),
+    user: authUser,
+  }),
+}));
+
+const owner = authUser;
 
 const category = { id: 1, name: "Network" };
 const relatedSystem = { id: 2, name: "Campus Wi-Fi" };
@@ -91,6 +125,8 @@ const ticket = {
   description:
     "The requester cannot reach the campus network from the assigned device.",
   id: 11,
+  itPriority: "High" as const,
+  owner: null,
   relatedSystem,
   requestedPriority: "High" as const,
   requester: owner,
@@ -112,9 +148,7 @@ const renderTicketDetail = (ticketId = "11") => {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <RequesterProvider>
-        <RequesterTicketDetailPage ticketId={ticketId} />
-      </RequesterProvider>
+      <RequesterTicketDetailPage ticketId={ticketId} />
     </QueryClientProvider>
   );
 };
@@ -136,15 +170,13 @@ const createDeferredTicket = () => {
 
 describe("Requester Ticket Detail page", () => {
   beforeEach(() => {
-    sessionStorage.clear();
-    sessionStorage.setItem(
-      "toktickit.development-requester",
-      JSON.stringify(owner)
-    );
     getTicketMock.mockReset().mockResolvedValue(ticket);
     uploadTicketAttachmentsMock.mockReset().mockResolvedValue([]);
     removeTicketAttachmentMock.mockReset();
     downloadTicketAttachmentMock.mockReset();
+    getTicketCommentsMock.mockReset().mockResolvedValue([]);
+    postTicketCommentMock.mockReset();
+    indicateTicketResolutionMock.mockReset();
   });
 
   afterEach(() => {
@@ -172,7 +204,7 @@ describe("Requester Ticket Detail page", () => {
       screen.getByText("Duplicate evidence file", { exact: false })
     ).toBeTruthy();
     expect(screen.getByRole("button", { name: "Download" })).toBeTruthy();
-    expect(getTicketMock).toHaveBeenCalledWith(1, 11, expect.anything());
+    expect(getTicketMock).toHaveBeenCalledWith(11, expect.anything());
   });
 
   it("announces loading while the Ticket loads", async () => {
@@ -220,6 +252,33 @@ describe("Requester Ticket Detail page", () => {
     expect(getTicketMock).not.toHaveBeenCalled();
   });
 
+  it("lets the owning Requester indicate apparent resolution", async () => {
+    const indication = {
+      author: { displayName: owner.displayName, id: owner.id },
+      createdAt: "2026-09-02T12:00:00.000Z",
+    };
+    indicateTicketResolutionMock.mockResolvedValue(indication);
+    getTicketMock
+      .mockResolvedValueOnce(ticket)
+      .mockResolvedValue({ ...ticket, resolutionIndication: indication });
+    renderTicketDetail();
+
+    await screen.findByText("Problem Appears Resolved");
+    fireEvent.click(
+      screen.getByRole("button", { name: "Problem Appears Resolved" })
+    );
+
+    await waitFor(() => {
+      expect(indicateTicketResolutionMock).toHaveBeenCalledWith(11);
+    });
+    expect(
+      await screen.findByText(/apparent-resolution indication was recorded/u)
+    ).toBeTruthy();
+    expect(
+      await screen.findByText("Staff will formally resolve the Ticket.")
+    ).toBeTruthy();
+  });
+
   it("rejects an invalid file selection without uploading", async () => {
     renderTicketDetail();
 
@@ -264,7 +323,7 @@ describe("Requester Ticket Detail page", () => {
     fireEvent.click(addButton);
 
     await waitFor(() => {
-      expect(uploadTicketAttachmentsMock).toHaveBeenCalledWith(1, 11, [file]);
+      expect(uploadTicketAttachmentsMock).toHaveBeenCalledWith(11, [file]);
     });
     await screen.findByText("Attachment(s) added successfully.", {
       exact: false,
@@ -336,7 +395,6 @@ describe("Requester Ticket Detail page", () => {
 
     await waitFor(() => {
       expect(removeTicketAttachmentMock).toHaveBeenCalledWith(
-        1,
         11,
         101,
         "Duplicate evidence file"
@@ -365,7 +423,7 @@ describe("Requester Ticket Detail page", () => {
     fireEvent.click(screen.getByRole("button", { name: "Download" }));
 
     await waitFor(() => {
-      expect(downloadTicketAttachmentMock).toHaveBeenCalledWith(1, 11, 101);
+      expect(downloadTicketAttachmentMock).toHaveBeenCalledWith(11, 101);
     });
     expect(clickSpy).toHaveBeenCalled();
   });

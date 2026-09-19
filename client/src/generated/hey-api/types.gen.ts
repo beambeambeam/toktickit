@@ -34,19 +34,103 @@ export type RelatedSystemListResponse = {
     items: Array<RelatedSystem>;
 };
 
-export type DevelopmentRequester = {
+export type User = {
+    id: number;
+    displayName: string;
+    email: string;
+    role: UserRole;
+    isActive: boolean;
+    mustChangePassword: boolean;
+    createdAt: string;
+    updatedAt: string;
+};
+
+export type UserRole = 'Requester' | 'IT Staff' | 'Administrator';
+
+export type UserListResponse = {
+    items: Array<User>;
+};
+
+export type CreateUserRequest = {
+    displayName: string;
+    email: string;
+    role: UserRole;
+    isActive: boolean;
+    initialPassword: string;
+};
+
+export type CreateUserResponse = {
+    user: User;
+};
+
+export type UserResponse = {
+    user: User;
+};
+
+export type UpdateUserRequest = {
+    displayName?: string;
+    email?: string;
+    role?: UserRole;
+    isActive?: boolean;
+};
+
+export type InitialPasswordResetRequest = {
+    initialPassword: string;
+    confirmed: true;
+};
+
+export type TicketRequester = {
     id: number;
     displayName: string;
     email: string;
 };
 
-export type DevelopmentRequesterListResponse = {
-    items: Array<DevelopmentRequester>;
+export type AuthResponse = {
+    user: User;
+    csrfToken: string;
+};
+
+export type LoginRequest = {
+    email: string;
+    password: string;
+};
+
+export type ChangePasswordRequest = {
+    currentPassword: string;
+    newPassword: string;
+};
+
+export type EmptyRequest = {
+    [key: string]: never;
+};
+
+export type TicketVersionRequest = {
+    version: number;
+};
+
+export type OwnerMutationRequest = {
+    ownerId: number | null;
+    version: number;
+};
+
+export type ItPriorityMutationRequest = {
+    itPriority: RequestedPriority;
+    version: number;
 };
 
 export type RequestedPriority = 'Low' | 'Medium' | 'High' | 'Urgent';
 
-export type CurrentStatus = 'New';
+export type CurrentStatus = 'New' | 'Open' | 'In Progress' | 'Waiting for Requester' | 'Resolved' | 'Closed' | 'Reopened' | 'Cancelled';
+
+export type StatusMutationRequest = {
+    currentStatus: CurrentStatus;
+    version: number;
+    confirmed?: boolean;
+};
+
+export type ResolutionIndicationResponse = {
+    resolutionIndication: ResolutionIndication;
+};
 
 export type AttachmentMetadata = {
     id: number;
@@ -76,9 +160,18 @@ export type TicketSummary = {
 };
 
 export type TicketDetail = TicketSummary & {
-    requester: DevelopmentRequester;
+    requester: TicketRequester;
     description: string;
     attachments: Array<AttachmentMetadata>;
+    itPriority: RequestedPriority;
+    owner: Owner | null;
+    version: number;
+    resolutionIndication: ResolutionIndication | null;
+    statusChangedAt: string;
+    resolvedAt: string | null;
+    reopenedAt: string | null;
+    closedAt: string | null;
+    cancelledAt: string | null;
 };
 
 export type TicketListResponse = {
@@ -87,6 +180,77 @@ export type TicketListResponse = {
     pageSize: 10 | 25 | 50;
     totalItems: number;
     totalPages: number;
+};
+
+export type OperationalTicketSummary = TicketSummary & {
+    itPriority: RequestedPriority;
+    owner: Owner | null;
+    version: number;
+};
+
+export type StaffTicketListResponse = {
+    items: Array<OperationalTicketSummary>;
+    page: number;
+    pageSize: 10 | 20 | 50;
+    totalItems: number;
+    totalPages: number;
+};
+
+export type Owner = {
+    id: number;
+    displayName: string;
+    role: UserRole;
+    isActive: boolean;
+    isEligible: boolean;
+};
+
+export type OwnerListResponse = {
+    items: Array<Owner>;
+};
+
+export type ResolutionIndication = {
+    author: {
+        id: number;
+        displayName: string;
+    };
+    createdAt: string;
+};
+
+export type Entry = {
+    id: number;
+    content: string;
+    author: {
+        id: number;
+        displayName: string;
+    };
+    createdAt: string;
+};
+
+export type InternalNoteRequest = {
+    content: string;
+};
+
+export type InternalNoteResponse = {
+    internalNote: Entry;
+};
+
+export type InternalNoteListResponse = {
+    internalNotes: Array<Entry>;
+};
+
+export type PublicCommentRequest = {
+    /**
+     * Leading and trailing whitespace is trimmed before storage. Length limits apply to the submitted value, which must contain at least one non-whitespace character.
+     */
+    content: string;
+};
+
+export type PublicCommentResponse = {
+    comment: Entry;
+};
+
+export type PublicCommentListResponse = {
+    comments: Array<Entry>;
 };
 
 export type CreateTicketRequest = {
@@ -120,15 +284,24 @@ export type HealthResponse = {
 };
 
 /**
- * Temporary Lab 2 test context; not authentication.
+ * Synchronizer token returned by login or current-user retrieval.
  */
-export type DevelopmentRequesterId = number;
+export type CsrfToken = string;
 
 export type TicketId = number;
+
+export type UserId = number;
 
 export type AttachmentId = number;
 
 export type Search = string;
+
+/**
+ * Literal case-insensitive substring of user name or email.
+ */
+export type UserSearch = string;
+
+export type UserRole2 = UserRole;
 
 export type CategoryId = number;
 
@@ -138,13 +311,168 @@ export type RequestedPriority2 = RequestedPriority;
 
 export type CurrentStatus2 = CurrentStatus;
 
+export type ItPriority = RequestedPriority;
+
+/**
+ * Eligible owner ID, me, or unassigned.
+ */
+export type Owner2 = number | 'me' | 'unassigned';
+
 export type SortBy = 'ticketNumber' | 'ticketDate' | 'summary' | 'requestedPriority' | 'currentStatus' | 'updatedAt';
 
 export type SortDirection = 'asc' | 'desc';
 
+export type QueueSortBy = 'ticketDate' | 'updatedAt' | 'itPriority' | 'ticketNumber';
+
 export type Page = number;
 
 export type PageSize = 10 | 25 | 50;
+
+export type QueuePageSize = 10 | 20 | 50;
+
+export type PostApiAuthLoginData = {
+    body: LoginRequest;
+    path?: never;
+    query?: never;
+    url: '/api/auth/login';
+};
+
+export type PostApiAuthLoginErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    429: ApiError;
+};
+
+export type PostApiAuthLoginError = PostApiAuthLoginErrors[keyof PostApiAuthLoginErrors];
+
+export type PostApiAuthLoginResponses = {
+    /**
+     * The authenticated User and CSRF token.
+     */
+    200: AuthResponse;
+};
+
+export type PostApiAuthLoginResponse = PostApiAuthLoginResponses[keyof PostApiAuthLoginResponses];
+
+export type GetApiAuthMeData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/auth/me';
+};
+
+export type GetApiAuthMeErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+};
+
+export type GetApiAuthMeError = GetApiAuthMeErrors[keyof GetApiAuthMeErrors];
+
+export type GetApiAuthMeResponses = {
+    /**
+     * The current User and CSRF token.
+     */
+    200: AuthResponse;
+};
+
+export type GetApiAuthMeResponse = GetApiAuthMeResponses[keyof GetApiAuthMeResponses];
+
+export type PostApiAuthChangePasswordData = {
+    body: ChangePasswordRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/auth/change-password';
+};
+
+export type PostApiAuthChangePasswordErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    429: ApiError;
+};
+
+export type PostApiAuthChangePasswordError = PostApiAuthChangePasswordErrors[keyof PostApiAuthChangePasswordErrors];
+
+export type PostApiAuthChangePasswordResponses = {
+    /**
+     * The rotated unrestricted session.
+     */
+    200: AuthResponse;
+};
+
+export type PostApiAuthChangePasswordResponse = PostApiAuthChangePasswordResponses[keyof PostApiAuthChangePasswordResponses];
+
+export type PostApiAuthLogoutData = {
+    body: EmptyRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/auth/logout';
+};
+
+export type PostApiAuthLogoutErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+};
+
+export type PostApiAuthLogoutError = PostApiAuthLogoutErrors[keyof PostApiAuthLogoutErrors];
+
+export type PostApiAuthLogoutResponses = {
+    /**
+     * The session was revoked.
+     */
+    204: void;
+};
+
+export type PostApiAuthLogoutResponse = PostApiAuthLogoutResponses[keyof PostApiAuthLogoutResponses];
 
 export type GetApiCategoriesData = {
     body?: never;
@@ -196,30 +524,586 @@ export type GetApiRelatedSystemsResponses = {
 
 export type GetApiRelatedSystemsResponse = GetApiRelatedSystemsResponses[keyof GetApiRelatedSystemsResponses];
 
-export type GetApiDevelopmentRequestersData = {
+export type GetApiStaffTicketsData = {
     body?: never;
     path?: never;
-    query?: never;
-    url: '/api/development-requesters';
+    query?: {
+        search?: string;
+        categoryId?: number;
+        relatedSystemId?: number;
+        requestedPriority?: RequestedPriority;
+        itPriority?: RequestedPriority;
+        currentStatus?: CurrentStatus;
+        /**
+         * Eligible owner ID, me, or unassigned.
+         */
+        owner?: number | 'me' | 'unassigned';
+        sortBy?: 'ticketDate' | 'updatedAt' | 'itPriority' | 'ticketNumber';
+        sortDirection?: 'asc' | 'desc';
+        page?: number;
+        pageSize?: 10 | 20 | 50;
+    };
+    url: '/api/staff/tickets';
 };
 
-export type GetApiDevelopmentRequestersErrors = {
+export type GetApiStaffTicketsErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
     /**
      * The API could not complete the request.
      */
     500: ApiError;
 };
 
-export type GetApiDevelopmentRequestersError = GetApiDevelopmentRequestersErrors[keyof GetApiDevelopmentRequestersErrors];
+export type GetApiStaffTicketsError = GetApiStaffTicketsErrors[keyof GetApiStaffTicketsErrors];
 
-export type GetApiDevelopmentRequestersResponses = {
+export type GetApiStaffTicketsResponses = {
     /**
-     * The active Development Requesters.
+     * The shared operational Ticket page.
      */
-    200: DevelopmentRequesterListResponse;
+    200: StaffTicketListResponse;
 };
 
-export type GetApiDevelopmentRequestersResponse = GetApiDevelopmentRequestersResponses[keyof GetApiDevelopmentRequestersResponses];
+export type GetApiStaffTicketsResponse = GetApiStaffTicketsResponses[keyof GetApiStaffTicketsResponses];
+
+export type GetApiStaffOwnersData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/staff/owners';
+};
+
+export type GetApiStaffOwnersErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiStaffOwnersError = GetApiStaffOwnersErrors[keyof GetApiStaffOwnersErrors];
+
+export type GetApiStaffOwnersResponses = {
+    /**
+     * Active IT Staff and Administrators eligible for assignment.
+     */
+    200: OwnerListResponse;
+};
+
+export type GetApiStaffOwnersResponse = GetApiStaffOwnersResponses[keyof GetApiStaffOwnersResponses];
+
+export type UpdateApiTicketStatusData = {
+    body: StatusMutationRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/status';
+};
+
+export type UpdateApiTicketStatusErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type UpdateApiTicketStatusError = UpdateApiTicketStatusErrors[keyof UpdateApiTicketStatusErrors];
+
+export type UpdateApiTicketStatusResponses = {
+    /**
+     * The updated Ticket.
+     */
+    200: TicketDetail;
+};
+
+export type UpdateApiTicketStatusResponse = UpdateApiTicketStatusResponses[keyof UpdateApiTicketStatusResponses];
+
+export type IndicateApiTicketResolutionData = {
+    body: EmptyRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/resolution-indication';
+};
+
+export type IndicateApiTicketResolutionErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type IndicateApiTicketResolutionError = IndicateApiTicketResolutionErrors[keyof IndicateApiTicketResolutionErrors];
+
+export type IndicateApiTicketResolutionResponses = {
+    /**
+     * The recorded indication.
+     */
+    200: ResolutionIndicationResponse;
+};
+
+export type IndicateApiTicketResolutionResponse = IndicateApiTicketResolutionResponses[keyof IndicateApiTicketResolutionResponses];
+
+export type ClaimApiTicketData = {
+    body: TicketVersionRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/claim';
+};
+
+export type ClaimApiTicketErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type ClaimApiTicketError = ClaimApiTicketErrors[keyof ClaimApiTicketErrors];
+
+export type ClaimApiTicketResponses = {
+    /**
+     * The updated Ticket.
+     */
+    200: TicketDetail;
+};
+
+export type ClaimApiTicketResponse = ClaimApiTicketResponses[keyof ClaimApiTicketResponses];
+
+export type UpdateApiTicketOwnerData = {
+    body: OwnerMutationRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/owner';
+};
+
+export type UpdateApiTicketOwnerErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type UpdateApiTicketOwnerError = UpdateApiTicketOwnerErrors[keyof UpdateApiTicketOwnerErrors];
+
+export type UpdateApiTicketOwnerResponses = {
+    /**
+     * The updated Ticket.
+     */
+    200: TicketDetail;
+};
+
+export type UpdateApiTicketOwnerResponse = UpdateApiTicketOwnerResponses[keyof UpdateApiTicketOwnerResponses];
+
+export type UpdateApiTicketItPriorityData = {
+    body: ItPriorityMutationRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/it-priority';
+};
+
+export type UpdateApiTicketItPriorityErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+};
+
+export type UpdateApiTicketItPriorityError = UpdateApiTicketItPriorityErrors[keyof UpdateApiTicketItPriorityErrors];
+
+export type UpdateApiTicketItPriorityResponses = {
+    /**
+     * The updated Ticket.
+     */
+    200: TicketDetail;
+};
+
+export type UpdateApiTicketItPriorityResponse = UpdateApiTicketItPriorityResponses[keyof UpdateApiTicketItPriorityResponses];
+
+export type GetApiUsersData = {
+    body?: never;
+    path?: never;
+    query?: {
+        /**
+         * Literal case-insensitive substring of user name or email.
+         */
+        search?: string;
+        role?: UserRole;
+    };
+    url: '/api/users';
+};
+
+export type GetApiUsersErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiUsersError = GetApiUsersErrors[keyof GetApiUsersErrors];
+
+export type GetApiUsersResponses = {
+    /**
+     * The matching users.
+     */
+    200: UserListResponse;
+};
+
+export type GetApiUsersResponse = GetApiUsersResponses[keyof GetApiUsersResponses];
+
+export type CreateApiUserData = {
+    body: CreateUserRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path?: never;
+    query?: never;
+    url: '/api/users';
+};
+
+export type CreateApiUserErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type CreateApiUserError = CreateApiUserErrors[keyof CreateApiUserErrors];
+
+export type CreateApiUserResponses = {
+    /**
+     * The created user without credential secrets.
+     */
+    201: CreateUserResponse;
+};
+
+export type CreateApiUserResponse = CreateApiUserResponses[keyof CreateApiUserResponses];
+
+export type GetApiUserData = {
+    body?: never;
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/api/users/{userId}';
+};
+
+export type GetApiUserErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiUserError = GetApiUserErrors[keyof GetApiUserErrors];
+
+export type GetApiUserResponses = {
+    /**
+     * The requested user without credential secrets.
+     */
+    200: User;
+};
+
+export type GetApiUserResponse = GetApiUserResponses[keyof GetApiUserResponses];
+
+export type UpdateApiUserData = {
+    body: UpdateUserRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/api/users/{userId}';
+};
+
+export type UpdateApiUserErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type UpdateApiUserError = UpdateApiUserErrors[keyof UpdateApiUserErrors];
+
+export type UpdateApiUserResponses = {
+    /**
+     * The updated user without credential secrets.
+     */
+    200: UserResponse;
+};
+
+export type UpdateApiUserResponse = UpdateApiUserResponses[keyof UpdateApiUserResponses];
+
+export type ResetApiUserInitialPasswordData = {
+    body: InitialPasswordResetRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        userId: number;
+    };
+    query?: never;
+    url: '/api/users/{userId}/initial-password';
+};
+
+export type ResetApiUserInitialPasswordErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type ResetApiUserInitialPasswordError = ResetApiUserInitialPasswordErrors[keyof ResetApiUserInitialPasswordErrors];
+
+export type ResetApiUserInitialPasswordResponses = {
+    /**
+     * The reset user without credential secrets.
+     */
+    200: UserResponse;
+};
+
+export type ResetApiUserInitialPasswordResponse = ResetApiUserInitialPasswordResponses[keyof ResetApiUserInitialPasswordResponses];
 
 export type GetApiHealthData = {
     body?: never;
@@ -248,12 +1132,6 @@ export type GetApiHealthResponse = GetApiHealthResponses[keyof GetApiHealthRespo
 
 export type GetApiTicketsData = {
     body?: never;
-    headers: {
-        /**
-         * Temporary Lab 2 test context; not authentication.
-         */
-        'X-Development-Requester-Id': number;
-    };
     path?: never;
     query?: {
         search?: string;
@@ -295,9 +1173,9 @@ export type CreateApiTicketData = {
     body: CreateTicketRequest;
     headers: {
         /**
-         * Temporary Lab 2 test context; not authentication.
+         * Synchronizer token returned by login or current-user retrieval.
          */
-        'X-Development-Requester-Id': number;
+        'X-CSRF-Token': string;
     };
     path?: never;
     query?: never;
@@ -344,12 +1222,6 @@ export type CreateApiTicketResponse = CreateApiTicketResponses[keyof CreateApiTi
 
 export type GetApiTicketData = {
     body?: never;
-    headers: {
-        /**
-         * Temporary Lab 2 test context; not authentication.
-         */
-        'X-Development-Requester-Id': number;
-    };
     path: {
         ticketId: number;
     };
@@ -376,21 +1248,207 @@ export type GetApiTicketError = GetApiTicketErrors[keyof GetApiTicketErrors];
 
 export type GetApiTicketResponses = {
     /**
-     * The owned Ticket Detail.
+     * The Ticket Detail for the permitted reader.
      */
     200: TicketDetail;
 };
 
 export type GetApiTicketResponse = GetApiTicketResponses[keyof GetApiTicketResponses];
 
-export type GetApiTicketAttachmentsData = {
+export type GetApiTicketInternalNotesData = {
     body?: never;
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/internal-notes';
+};
+
+export type GetApiTicketInternalNotesErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiTicketInternalNotesError = GetApiTicketInternalNotesErrors[keyof GetApiTicketInternalNotesErrors];
+
+export type GetApiTicketInternalNotesResponses = {
+    /**
+     * The private Internal Notes in chronological order.
+     */
+    200: InternalNoteListResponse;
+};
+
+export type GetApiTicketInternalNotesResponse = GetApiTicketInternalNotesResponses[keyof GetApiTicketInternalNotesResponses];
+
+export type CreateApiTicketInternalNoteData = {
+    body: InternalNoteRequest;
     headers: {
         /**
-         * Temporary Lab 2 test context; not authentication.
+         * Synchronizer token returned by login or current-user retrieval.
          */
-        'X-Development-Requester-Id': number;
+        'X-CSRF-Token': string;
     };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/internal-notes';
+};
+
+export type CreateApiTicketInternalNoteErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type CreateApiTicketInternalNoteError = CreateApiTicketInternalNoteErrors[keyof CreateApiTicketInternalNoteErrors];
+
+export type CreateApiTicketInternalNoteResponses = {
+    /**
+     * The created private Internal Note.
+     */
+    201: InternalNoteResponse;
+};
+
+export type CreateApiTicketInternalNoteResponse = CreateApiTicketInternalNoteResponses[keyof CreateApiTicketInternalNoteResponses];
+
+export type GetApiTicketCommentsData = {
+    body?: never;
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/comments';
+};
+
+export type GetApiTicketCommentsErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiTicketCommentsError = GetApiTicketCommentsErrors[keyof GetApiTicketCommentsErrors];
+
+export type GetApiTicketCommentsResponses = {
+    /**
+     * The 500 latest public Ticket comments in chronological order.
+     */
+    200: PublicCommentListResponse;
+};
+
+export type GetApiTicketCommentsResponse = GetApiTicketCommentsResponses[keyof GetApiTicketCommentsResponses];
+
+export type CreateApiTicketCommentData = {
+    body: PublicCommentRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/comments';
+};
+
+export type CreateApiTicketCommentErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type CreateApiTicketCommentError = CreateApiTicketCommentErrors[keyof CreateApiTicketCommentErrors];
+
+export type CreateApiTicketCommentResponses = {
+    /**
+     * The created public Ticket comment.
+     */
+    201: PublicCommentResponse;
+};
+
+export type CreateApiTicketCommentResponse = CreateApiTicketCommentResponses[keyof CreateApiTicketCommentResponses];
+
+export type GetApiTicketAttachmentsData = {
+    body?: never;
     path: {
         ticketId: number;
     };
@@ -417,7 +1475,7 @@ export type GetApiTicketAttachmentsError = GetApiTicketAttachmentsErrors[keyof G
 
 export type GetApiTicketAttachmentsResponses = {
     /**
-     * Attachment metadata for the owned Ticket.
+     * Attachment metadata for the permitted Ticket.
      */
     200: AttachmentListResponse;
 };
@@ -428,9 +1486,9 @@ export type CreateApiTicketAttachmentsData = {
     body: AttachmentUploadRequest;
     headers: {
         /**
-         * Temporary Lab 2 test context; not authentication.
+         * Synchronizer token returned by login or current-user retrieval.
          */
-        'X-Development-Requester-Id': number;
+        'X-CSRF-Token': string;
     };
     path: {
         ticketId: number;
@@ -479,12 +1537,6 @@ export type CreateApiTicketAttachmentsResponse = CreateApiTicketAttachmentsRespo
 
 export type GetApiTicketAttachmentContentData = {
     body?: never;
-    headers: {
-        /**
-         * Temporary Lab 2 test context; not authentication.
-         */
-        'X-Development-Requester-Id': number;
-    };
     path: {
         ticketId: number;
         attachmentId: number;
@@ -523,9 +1575,9 @@ export type RemoveApiTicketAttachmentData = {
     body: RemoveAttachmentRequest;
     headers: {
         /**
-         * Temporary Lab 2 test context; not authentication.
+         * Synchronizer token returned by login or current-user retrieval.
          */
-        'X-Development-Requester-Id': number;
+        'X-CSRF-Token': string;
     };
     path: {
         ticketId: number;
