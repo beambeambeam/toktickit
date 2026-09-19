@@ -75,7 +75,51 @@ const users: readonly E2EUser[] = [
   },
 ];
 
+const generatedAccountEmailPrefixes = [
+  "e2e-created-",
+  "e2e-lifecycle-",
+] as const;
+
 try {
+  const generatedUsers = await prisma.user.findMany({
+    select: { id: true },
+    where: {
+      OR: generatedAccountEmailPrefixes.map((prefix) => ({
+        email: { startsWith: prefix },
+      })),
+      tickets: { none: {} },
+    },
+  });
+  const generatedUserIds = generatedUsers.map((user) => user.id);
+
+  if (generatedUserIds.length > 0) {
+    await prisma.session.deleteMany({
+      where: { userId: { in: generatedUserIds } },
+    });
+    await prisma.internalNote.deleteMany({
+      where: { authorId: { in: generatedUserIds } },
+    });
+    await prisma.publicComment.deleteMany({
+      where: { authorId: { in: generatedUserIds } },
+    });
+    await prisma.attachment.updateMany({
+      data: { removedByUserId: null },
+      where: { removedByUserId: { in: generatedUserIds } },
+    });
+    await prisma.ticket.updateMany({
+      data: { ownerId: null, resolutionIndicatedByUserId: null },
+      where: {
+        OR: [
+          { ownerId: { in: generatedUserIds } },
+          { resolutionIndicatedByUserId: { in: generatedUserIds } },
+        ],
+      },
+    });
+    await prisma.user.deleteMany({
+      where: { id: { in: generatedUserIds } },
+    });
+  }
+
   await prisma.loginAttempt.deleteMany();
 
   await Promise.all(
