@@ -1,6 +1,6 @@
 # Lab 3 Specification — Sprint 3 Engineering Contract
 
-Status: prepared for external review under [Issue #49](https://github.com/beambeambeam/toktickit/issues/49), implementing the planning baseline in [Issue #48](https://github.com/beambeambeam/toktickit/issues/48). This is a contract, not evidence that the application is implemented or approved. Baseline: `ad5640b`, shared by `main` and `origin/lab3-staging` when work began on 2026-09-08.
+Status: implemented on `lab3-staging` through Issues #50–#57. The contract was approved in [PR #59](https://github.com/beambeambeam/toktickit/pull/59); release-to-`main`, final-main evidence and submission gates remain tracked under [Issue #58](https://github.com/beambeambeam/toktickit/issues/58). Baseline: `ad5640b`, shared by `main` and `origin/lab3-staging` when work began on 2026-09-08.
 
 Sources: local `reports/lab03/labsheet.md` §§1–14 and its page images; preserved [Lab 2 contract](../lab-02/specification.md). The report source is local and ignored by Git. The six tracked documents here contain the implementable decisions. Companion contracts: [API](./api-spec.md), [UI](./ui-spec.md), [tests](./tests.md), [reviewer](./reviewer.md), [AI use](./ai-use.md).
 

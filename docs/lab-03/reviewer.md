@@ -2,23 +2,30 @@
 
 ## Status and review basis
 
-Prepared under [Issue #49](https://github.com/beambeambeam/toktickit/issues/49) on 2026-09-08, branch `feature/49-sprint-3-engineering-contract`, baseline `ad5640b`. Scope: the six Lab 3 documents, checked against Issue #48, local labsheet §§1–14 and the Lab 2 contract. No application implementation or external approval is claimed.
+Prepared under [Issue #49](https://github.com/beambeambeam/toktickit/issues/49) on 2026-09-08 and updated for [Issue #58](https://github.com/beambeambeam/toktickit/issues/58) on 2026-09-19. The integrated implementation is on `lab3-staging`; baseline `ad5640b` remains the pre-Lab-3 starting point. This record distinguishes formal GitHub reviews, agent review and the still-pending release/submission gates.
 
 ## Participants and external evidence
 
 | Role | Confirmed record |
 | --- | --- |
 | Repository owner | GitHub @beambeambeam; existing Lab 2 record identifies Supawit Marayat. |
-| Lab 3 peer reviewer | Not yet confirmed for this increment. Do not carry Lab 2 approval into Lab 3. |
-| Agent contract review | Two-axis Standards/Spec review against ad5640b; advisory only. |
+| Lab 3 peer reviewer | Kiatisakk formally approved PRs #59–#65. PRs #66 and #67 have substantive comments but no formal APPROVED review; do not claim blanket Lab 3 approval. |
+| Agent review | Two-axis Standards/Spec review for the contract, plus the #58 implementation diff review recorded below; advisory only. |
 
 | Deliverable | PR / reviewer / comments / response / approval / merge |
 | --- | --- |
-| #49 contract → lab3-staging | [PR #59](https://github.com/beambeambeam/toktickit/pull/59), reviewer Kiatisakk, reviewed commit `27aa9bbcbc9353e4785cf87b04e33428b495c3ed`; [changes-requested review](https://github.com/beambeambeam/toktickit/pull/59#pullrequestreview-5153448021) with inline findings on [E2E-01 seed state](https://github.com/beambeambeam/toktickit/pull/59#discussion_r3967618584), [inactive feedback](https://github.com/beambeambeam/toktickit/pull/59#discussion_r3967618595), and [password rules](https://github.com/beambeambeam/toktickit/pull/59#discussion_r3967618606) / working-tree response makes E2E-01 disposable-fixture based, documents ordered inactive feedback, and records the deliberate password-policy departure; fix commit and re-review pending / changes requested; no approval or merge. |
-| #50 authentication → lab3-staging | [PR #60](https://github.com/beambeambeam/toktickit/pull/60), reviewer Kiatisakk, reviewed commit `57bd6a26dbc4ab533a1f58c65f576b5c3ca89260`; [changes-requested review](https://github.com/beambeambeam/toktickit/pull/60#pullrequestreview-5166607869) found proxy trust/cookie flags, leaked login reservations, inactive-account throttling, password-change 429 UX and evidence ownership issues. Follow-up response fixes those findings, adds auth/cache regression coverage, and records Lab 2 selector/evidence adaptations; fix is the current PR head, re-review pending / no approval or merge. |
-| #51–57 features → lab3-staging | Pending implementation and reviewed PRs. |
+| #49 contract → lab3-staging | [PR #59](https://github.com/beambeambeam/toktickit/pull/59), Kiatisakk; changes requested against `27aa9bb`, resolved and formally approved against `a9b0432`; merged by beambeambeam as `e23a7f90ec2e675d9ae75f3e9407583763b55936`. Findings covered fixture isolation, ordered inactive feedback and password-policy documentation. |
+| #50 authentication → lab3-staging | [PR #60](https://github.com/beambeambeam/toktickit/pull/60), Kiatisakk; changes requested against `57bd6a`, resolved and formally approved against `0059970`; merged as `d2d0bdec05d394dd4ab269459fbe00531eaabb93`. Findings covered proxy/cookie handling, rate-limit reservations, change-password cleanup and evidence ownership. |
+| #51 queue/detail → lab3-staging | [PR #62](https://github.com/beambeambeam/toktickit/pull/62), Kiatisakk; changes requested against `ec0f6fff`, formally approved against `3ffac5c`; merged as `a9071bef46e46b9fd1fdaf383267f6d3c83f3f7b`. Queue/detail 403 handling and contract/test-register follow-up were addressed. |
+| #52 ownership/priority → lab3-staging | [PR #63](https://github.com/beambeambeam/toktickit/pull/63), Kiatisakk; changes requested against `fd68a301`, formally approved against `6c762be5`; merged as `3966b72556383ae3d42ccb8e1097d01f37c143fc`. Owner-save semantics, actor rechecks, browser journey and register follow-up were addressed. |
+| #53 workflow/indication → lab3-staging | [PR #64](https://github.com/beambeambeam/toktickit/pull/64), Kiatisakk; changes requested against `e55ce2ff`, formally approved against `5aac231`; merged as `a587a7bd7731a657dcb85d7ea7fa9fd2dea61f00`. Confirmation focus note and browser/register follow-up were addressed. |
+| #54 public comments → lab3-staging | [PR #65](https://github.com/beambeambeam/toktickit/pull/65), Kiatisakk; changes requested against `d37a451e`, formally approved against `fc5d0af`; merged as `8a396e0308e65a6e048251fa80dcb481f4004b53`. Textarea feedback and Requester/staff browser coverage were addressed. |
+| #55 internal notes → lab3-staging | [PR #66](https://github.com/beambeambeam/toktickit/pull/66), Kiatisakk; substantive comment review against `7ea430c2`, no formal APPROVED review; merged as `9fb7e205d91345d1e02163e60adaef87ace79b5c`. Comments were non-blocking and concerned `aria-describedby`, test-register maintenance and issue linking. |
+| #56 user list/create → lab3-staging | [PR #61](https://github.com/beambeambeam/toktickit/pull/61), Kiatisakk; changes requested against `43803a8`, formally approved against `b8dd1e6`; merged as `1e6616557c5d895329edcca683354aad8b273de2`. Created-account first-login, authorization, duplicate-race and register gaps were addressed. |
+| #57 edit/reset lifecycle → lab3-staging | [PR #67](https://github.com/beambeambeam/toktickit/pull/67), Kiatisakk; substantive comment review against `807cffe0`, no formal APPROVED review; merged as `4afd55d8e1cfb64c1746fa4340e84fede25928bb`. No bug was reported; register, issue-linking and merge-order comments remain recorded as process notes. |
+| #58 integration evidence → lab3-staging | This working-tree implementation adds isolated API/browser verification, manifest-backed screenshots, visual review and release traceability. No external PR, peer approval or final-`main` result is claimed here. |
 | Release lab3-staging → main | Pending release PR, reviewer and final merge SHA. |
-| Reciprocal peer review | No Lab 3 evidence recorded. |
+| Reciprocal peer review | Pending. The feature review history above is not a reciprocal peer-review sign-off for the final integrated release. |
 
 For each actual review append date, exact reviewed commit, reviewer identity, PR/comment links, actionable comments, author responses/fix commits, re-review outcome, formal approval and merge actor/SHA. Record requested changes and unresolved findings honestly. Agent findings belong in their own section, never in the peer approval column.
 
@@ -28,7 +35,7 @@ On 2026-09-14, Kiatisakk reviewed commit `43803a88ec0fdf3b8ce60902d9cc31c31c6e40
 
 ## PR #61 acceptance coverage response
 
-Kiatisakk's [2026-09-14 acceptance-coverage finding](https://github.com/beambeambeam/toktickit/pull/61#discussion_r4002899385), against `43803a88ec0fdf3b8ce60902d9cc31c31c6e40a2`, requested proof of created-account password replacement, authorization, duplicate races, search/filter behavior and create-to-first-login. The response adds endpoint and lifecycle suites plus a browser test and updates the API-05/UI-06/E2E-04 register to actual paths and partial status. The API fixture requires an explicit disposable test-server URL and never falls back to the shared local database. Integration/E2E execution and re-review remain pending; neither passing database behavior nor reviewer approval is claimed. #56 is explicitly linked to PR #61 through GitHub's closing-issue relationship for the non-default target branch, but acceptance must be verified before merge.
+Kiatisakk's [2026-09-14 acceptance-coverage finding](https://github.com/beambeambeam/toktickit/pull/61#discussion_r4002899385), against `43803a88ec0fdf3b8ce60902d9cc31c31c6e40a2`, requested proof of created-account password replacement, authorization, duplicate races, search/filter behavior and create-to-first-login. The response adds endpoint and lifecycle suites plus a browser test and updates the API-05/UI-06/E2E-04 register to actual paths and partial status. The API fixture requires an explicit disposable test-server URL and never falls back to the shared local database. The #58 isolated run now executes the suites inside the full 120-test server total and the six lifecycle browser cases across three projects; final-main provenance and remaining negative-case coverage are still pending.
 
 ## Agent review
 
@@ -40,6 +47,12 @@ One scope suggestion was not adopted: the reviewer considered one seeded example
 
 Standards: one prose finding fixed, one clarity suggestion adopted. Spec: five findings fixed, one seed-distribution suggestion retained with rationale. Verification results belong in [tests.md](./tests.md). No invented “LGTM”, student response or reviewer signature.
 
+### #58 working-tree review outcome
+
+The two-axis review of the staged integration diff found no documented standards violation. It identified judgement-call smells around evidence setup living in global Playwright setup, repeated project-name slug logic and a vague variable name; the variable was clarified, while the small shared test helpers remain intentionally local to the specs. The spec review found evidence-provenance, accidental-manifest-reset and queue-state-label defects. These were corrected by recording full SHA plus source-dirty state, resetting Lab 3 manifests only for full/Lab 3 runs, and labeling the UI-normalized queue/detail captures `normalized` rather than `seeded`. The review also flagged the Lab 1 seed timeout and tablet button wrapping as scope concerns; both directly support #58's full CI and responsive evidence and are documented in [tests.md](./tests.md) and [visual-checklist.md](../../artifacts/lab-03/visual-checklist.md).
+
+The review did not convert the remaining external gates into passes: there is still no release PR to `main`, reciprocal peer sign-off, complete prompt count, student reflection or final PDF. No #58 peer approval is claimed.
+
 ## Open completion gates
 
-External contract approval is outstanding before feature implementation. Feature reviews, release integration, final-main test/capture provenance, student reflection and final PDF submission remain pending. A prepared contract is not a completed Lab 3 product; do not close the parent or mark downstream work Done from this record.
+The contract and #49–#65 feature review gates are recorded; #66/#67 have no formal approval, and no release PR from `lab3-staging` to `main` exists yet. Final-main test/build/browser provenance, reciprocal peer review, Kanban status, six-to-ten prompt record, the student's genuine reflection and the single nine-part PDF remain pending. Do not close the parent or mark downstream work Done from this record.
