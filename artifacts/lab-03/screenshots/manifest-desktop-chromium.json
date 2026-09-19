@@ -1,7 +1,7 @@
 {
   "branch": "docs/update-wrapup-for-lab3",
   "command": "pnpm --filter @toktickit/e2e exec playwright test e2e/lab-03",
-  "commit": "154ef178575388cd57112514cad91659cc51b15f",
+  "commit": "f6a5a0555df8631269e09ffcb1e516f79253adde",
   "files": [
     {
       "path": "artifacts/lab-03/screenshots/accessibility/desktop-chromium-keyboard-focus.png",
@@ -19,6 +19,12 @@
       "path": "artifacts/lab-03/screenshots/accessibility/desktop-chromium-zoom-200.png",
       "role": "Requester",
       "scenario": "Requester workspace at 200 percent zoom proxy",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/accessibility/desktop-chromium-browser-zoom-200.png",
+      "role": "Requester",
+      "scenario": "Requester workspace at native Chromium 200 percent page scale",
       "stateSource": "natural"
     },
     {
@@ -250,7 +256,7 @@
       "stateSource": "natural"
     }
   ],
-  "generatedAt": "2026-09-19T14:10:49.847Z",
+  "generatedAt": "2026-09-19T14:40:04.365Z",
   "project": "desktop-chromium",
   "sourceDirty": false
 }

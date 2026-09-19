@@ -9,7 +9,7 @@ Status: staging evidence and automated boundary coverage reviewed on 2026-09-19.
 | Browser command | `CI=1 pnpm --filter @toktickit/e2e exec playwright test lab-03` |
 | Projects | Chromium at 1440×900, 768×1024 and 390×844; one worker; `CI=1` |
 | Data | Fresh PostgreSQL 17 database, committed migrations, seeded Lab 3 fixtures, temporary Attachment storage |
-| Result | 80 tests passed and 4 expected desktop-only skips from 84 total across the three projects; 41 unique manifest-listed captures per project, 123 PNGs total |
+| Result | 81 tests passed and 6 expected desktop-only skips from 87 total across the three projects; 42 desktop, 41 tablet and 41 mobile manifest-listed captures, 124 PNGs total |
 | Provenance | [desktop manifest](./screenshots/manifest-desktop-chromium.json), [tablet manifest](./screenshots/manifest-tablet-chromium.json), [mobile manifest](./screenshots/manifest-mobile-chromium.json); each manifest records the exact source commit and source-tree status |
 
 Machine assertions and agent inspection are separate. Browser role locators, headings, labels, status text and protected-route assertions are machine evidence. The visual notes below come from inspecting representative captures in each viewport and checking the complete manifest paths for duplicates. `normalized` state means the test restored a shared seeded Ticket through the real UI before capture; it is not presented as untouched seed data. Injected API responses are labeled `intercepted` in the manifests.
@@ -31,13 +31,13 @@ Machine assertions and agent inspection are separate. Browser role locators, hea
 | Zen Green palette, surface hierarchy and badges | Pass by visual spot check against `docs/lab-03/ui-spec.md`; no new gradient or animation observed. |
 | Read-only versus editable distinction | Pass in Staff detail and Administrator detail captures; read-only fields use quiet static surfaces, operational controls are separate. |
 | Text wrapping / clipping / overlap | Pass for inspected long emails, generated Ticket summaries, generated names and mobile detail content. Tablet User Management Edit buttons were fixed and rechecked. |
-| Semantic headings, labels and status announcements | Machine coverage passes in the 84-test run; visual captures show expected headings and feedback. |
+| Semantic headings, labels and status announcements | Machine coverage passes in the 87-test run; visual captures show expected headings and feedback. |
 | Keyboard focus, dialog focus trap, Escape and focus restoration | Pass for login password toggle, visible focus, status-dialog cycle, Escape close and focus restoration in `accessibility/` and `status-confirmation-keyboard.png`. |
 | Contrast and non-color status | Pass for sampled header, primary/secondary controls, status badges and role badges: the E2E contrast assertion requires at least 4.5:1, while status words/icons remain present. |
 | Automated WCAG scan | Pass: `e2e/lab-03/axe-accessibility.spec.ts` completes 12 scans across requester, staff and Administrator screens with no axe violations. |
-| 320px and 200% zoom | Pass for 320 CSS pixels and a 640 CSS-pixel 200%-zoom reflow equivalent across all projects. The latter is an explicit viewport proxy because Playwright has no browser zoom control; it is not a manual browser-zoom certification. |
+| 320px and 200% zoom | Pass: all projects cover 320 CSS pixels and the 640 CSS-pixel 200%-zoom reflow equivalent; desktop Chromium additionally sets native page scale to 2.0 through CDP and verifies `visualViewport.scale`, layout metrics, visible requester controls and keyboard focus. |
 | No duplicate image under multiple state labels | Pass for current manifests: each path is unique and new state names are distinct. |
 
 ## Evidence interpretation
 
-The captures show implemented UI states and the browser assertions show the tested journeys. The live E2E run now also proves the scoped authorization, concurrency, lifecycle, privacy, migration and automated accessibility gates. It does not prove final-`main` provenance, human peer approval, the student's reflection, manual browser-zoom certification or final PDF submission. Those items remain in [tests.md](../../docs/lab-03/tests.md) and [reviewer.md](../../docs/lab-03/reviewer.md) as external gates.
+The captures show implemented UI states and the browser assertions show the tested journeys. The live E2E run now also proves the scoped authorization, concurrency, lifecycle, privacy, migration, automated accessibility and native Chromium page-scale gates. It does not prove final-`main` provenance, human peer approval, the student's reflection or final PDF submission. Those items remain in [tests.md](../../docs/lab-03/tests.md) and [reviewer.md](../../docs/lab-03/reviewer.md) as external gates.
