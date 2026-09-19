@@ -31,7 +31,7 @@ Machine assertions and agent inspection are separate. Browser role locators, hea
 | Zen Green palette, surface hierarchy and badges | Pass by visual spot check against `docs/lab-03/ui-spec.md`; no new gradient or animation observed. |
 | Read-only versus editable distinction | Pass in Staff detail and Administrator detail captures; read-only fields use quiet static surfaces, operational controls are separate. |
 | Text wrapping / clipping / overlap | Pass for inspected long emails, generated Ticket summaries, generated names and mobile detail content. Tablet User Management Edit buttons were fixed and rechecked. |
-| Semantic headings, labels and status announcements | Machine coverage passes in the 24-test run; visual captures show expected headings and feedback. |
+| Semantic headings, labels and status announcements | Machine coverage passes in the 48-test run; visual captures show expected headings and feedback. |
 | Keyboard focus, dialog focus trap, Escape and focus restoration | Pass for login password toggle, visible focus, status-dialog cycle, Escape close and focus restoration in `accessibility/` and `status-confirmation-keyboard.png`. |
 | Contrast and non-color status | Pass for sampled header, primary/secondary controls, status badges and role badges: the E2E contrast assertion requires at least 4.5:1, while status words/icons remain present. |
 | 320px and 200% zoom | Pass for 320 CSS pixels and a 640 CSS-pixel 200%-zoom reflow equivalent across all projects. The latter is an explicit viewport proxy because Playwright has no browser zoom control; it is not a manual browser-zoom certification. |
