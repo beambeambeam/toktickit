@@ -5,7 +5,7 @@ import { captureLab3Evidence } from "./evidence.js";
 
 const apiUrl = process.env.E2E_API_URL ?? "http://localhost:3000";
 const password = "correct horse battery staple";
-const origin = "http://localhost:5173";
+const origin = process.env.E2E_BASE_URL ?? "http://localhost:5173";
 
 const requesterEmailByProject: Record<string, string> = {
   "desktop-chromium": "e2e-desktop@example.test",

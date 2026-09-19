@@ -7,6 +7,7 @@ import { prisma } from "../src/db/client.js";
 import { removeAttachmentFiles } from "../src/services/attachment-storage.js";
 
 const E2E_SUMMARY_PREFIXES = [
+  "E2E boundary ",
   "E2E internal note ",
   "E2E public comments flow ",
   "E2E requester flow ",

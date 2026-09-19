@@ -1,8 +1,38 @@
 {
-  "branch": "lab3-staging",
+  "branch": "docs/update-wrapup-for-lab3",
   "command": "pnpm --filter @toktickit/e2e exec playwright test e2e/lab-03",
-  "commit": "073b49206e3496f1af6820557dbe69ef4ea7ccde",
+  "commit": "0936f16ac13218d5b1f1ffcc81816d1d4726ff28",
   "files": [
+    {
+      "path": "artifacts/lab-03/screenshots/accessibility/desktop-chromium-keyboard-focus.png",
+      "role": "Anonymous",
+      "scenario": "Keyboard password toggle and visible focus",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/accessibility/desktop-chromium-width-320.png",
+      "role": "Requester",
+      "scenario": "Requester workspace at 320 CSS pixels",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/accessibility/desktop-chromium-zoom-200.png",
+      "role": "Requester",
+      "scenario": "Requester workspace at 200 percent zoom proxy",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/accessibility/desktop-chromium-browser-zoom-200.png",
+      "role": "Requester",
+      "scenario": "Requester workspace at native Chromium 200 percent page scale",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/accessibility/desktop-chromium-contrast.png",
+      "role": "IT Staff",
+      "scenario": "Zen Green contrast sample",
+      "stateSource": "natural"
+    },
     {
       "path": "artifacts/lab-03/screenshots/authentication/desktop-chromium-login-initial.png",
       "role": "Anonymous",
@@ -40,6 +70,126 @@
       "stateSource": "natural"
     },
     {
+      "path": "artifacts/lab-03/screenshots/authentication/desktop-chromium-invalid-credentials.png",
+      "role": "Anonymous",
+      "scenario": "Invalid credentials safe failure",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/desktop-chromium-inactive-account.png",
+      "role": "Anonymous",
+      "scenario": "Inactive account safe failure",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/desktop-chromium-login-busy.png",
+      "role": "Anonymous",
+      "scenario": "Login busy state",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/desktop-chromium-login-rate-limited.png",
+      "role": "Anonymous",
+      "scenario": "Login rate-limit feedback",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-queue/desktop-chromium-empty.png",
+      "role": "IT Staff",
+      "scenario": "Empty shared Ticket Queue",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-queue/desktop-chromium-no-results.png",
+      "role": "IT Staff",
+      "scenario": "Filtered queue no-results state",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-queue/desktop-chromium-loading.png",
+      "role": "IT Staff",
+      "scenario": "Queue loading state",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-queue/desktop-chromium-failure.png",
+      "role": "IT Staff",
+      "scenario": "Queue API failure with retry",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-ticket-detail/desktop-chromium-api-failure.png",
+      "role": "IT Staff",
+      "scenario": "Ticket Detail API failure with retry",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-ticket-detail/desktop-chromium-forbidden.png",
+      "role": "IT Staff",
+      "scenario": "Ticket Detail forbidden state",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/desktop-chromium-loading.png",
+      "role": "Administrator",
+      "scenario": "User Management loading state",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/desktop-chromium-empty.png",
+      "role": "Administrator",
+      "scenario": "Empty User Management directory",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/desktop-chromium-no-results.png",
+      "role": "Administrator",
+      "scenario": "Filtered User Management no-results state",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/desktop-chromium-failure.png",
+      "role": "Administrator",
+      "scenario": "User Management API failure with retry",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/desktop-chromium-validation.png",
+      "role": "Administrator",
+      "scenario": "User Management required-field validation",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/desktop-chromium-saving.png",
+      "role": "Administrator",
+      "scenario": "User Management saving state",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/desktop-chromium-duplicate-email.png",
+      "role": "Administrator",
+      "scenario": "User Management duplicate email conflict",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/desktop-chromium-self-deactivation-blocked.png",
+      "role": "Administrator",
+      "scenario": "Administrator self-deactivation protection",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/desktop-chromium-last-admin-blocked.png",
+      "role": "Administrator",
+      "scenario": "Last active Administrator protection",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/desktop-chromium-non-admin-forbidden.png",
+      "role": "Requester",
+      "scenario": "Requester denied Administrator User Management",
+      "stateSource": "natural"
+    },
+    {
       "path": "artifacts/lab-03/screenshots/requester/desktop-chromium-public-conversation.png",
       "role": "Requester",
       "scenario": "Shared public conversation",
@@ -67,6 +217,12 @@
       "path": "artifacts/lab-03/screenshots/staff-ticket-detail/desktop-chromium-operational-controls-saved.png",
       "role": "IT Staff",
       "scenario": "Staff ownership and priority saved",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/accessibility/desktop-chromium-status-confirmation-keyboard.png",
+      "role": "IT Staff",
+      "scenario": "Status confirmation focus trap",
       "stateSource": "natural"
     },
     {
@@ -100,7 +256,7 @@
       "stateSource": "natural"
     }
   ],
-  "generatedAt": "2026-09-19T08:01:46.708Z",
+  "generatedAt": "2026-09-19T15:50:37.418Z",
   "project": "desktop-chromium",
   "sourceDirty": false
 }
