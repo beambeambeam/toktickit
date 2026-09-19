@@ -24,7 +24,6 @@ type Role = "Requester" | "IT Staff" | "Administrator";
 interface ApiSession {
   context: BrowserContext;
   csrfToken: string;
-  page: Page;
   request: APIRequestContext;
   user: {
     email: string;
@@ -35,7 +34,6 @@ interface ApiSession {
 
 interface TicketReference {
   id: number;
-  ticketNumber: string;
   version: number;
 }
 
@@ -119,7 +117,6 @@ const openSession = async (
   return {
     context,
     csrfToken: getString(body, "csrfToken"),
-    page,
     request,
     user: {
       email: getString(user, "email"),
@@ -226,7 +223,6 @@ const createTicket = async (
 
   return {
     id: getNumber(ticket, "id"),
-    ticketNumber: getString(ticket, "ticketNumber"),
     version: getNumber(ticket, "version"),
   };
 };
