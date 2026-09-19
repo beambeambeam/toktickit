@@ -1,8 +1,32 @@
 {
-  "branch": "lab3-staging",
+  "branch": "docs/update-wrapup-for-lab3",
   "command": "pnpm --filter @toktickit/e2e exec playwright test e2e/lab-03",
-  "commit": "073b49206e3496f1af6820557dbe69ef4ea7ccde",
+  "commit": "afea1eb7ea71434d026c69f47f4994c91823f50a",
   "files": [
+    {
+      "path": "artifacts/lab-03/screenshots/accessibility/mobile-chromium-keyboard-focus.png",
+      "role": "Anonymous",
+      "scenario": "Keyboard password toggle and visible focus",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/accessibility/mobile-chromium-width-320.png",
+      "role": "Requester",
+      "scenario": "Requester workspace at 320 CSS pixels",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/accessibility/mobile-chromium-zoom-200.png",
+      "role": "Requester",
+      "scenario": "Requester workspace at 200 percent zoom proxy",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/accessibility/mobile-chromium-contrast.png",
+      "role": "IT Staff",
+      "scenario": "Zen Green contrast sample",
+      "stateSource": "natural"
+    },
     {
       "path": "artifacts/lab-03/screenshots/authentication/mobile-chromium-login-initial.png",
       "role": "Anonymous",
@@ -40,6 +64,126 @@
       "stateSource": "natural"
     },
     {
+      "path": "artifacts/lab-03/screenshots/authentication/mobile-chromium-invalid-credentials.png",
+      "role": "Anonymous",
+      "scenario": "Invalid credentials safe failure",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/mobile-chromium-inactive-account.png",
+      "role": "Anonymous",
+      "scenario": "Inactive account safe failure",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/mobile-chromium-login-busy.png",
+      "role": "Anonymous",
+      "scenario": "Login busy state",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/mobile-chromium-login-rate-limited.png",
+      "role": "Anonymous",
+      "scenario": "Login rate-limit feedback",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-queue/mobile-chromium-empty.png",
+      "role": "IT Staff",
+      "scenario": "Empty shared Ticket Queue",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-queue/mobile-chromium-no-results.png",
+      "role": "IT Staff",
+      "scenario": "Filtered queue no-results state",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-queue/mobile-chromium-loading.png",
+      "role": "IT Staff",
+      "scenario": "Queue loading state",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-queue/mobile-chromium-failure.png",
+      "role": "IT Staff",
+      "scenario": "Queue API failure with retry",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-ticket-detail/mobile-chromium-api-failure.png",
+      "role": "IT Staff",
+      "scenario": "Ticket Detail API failure with retry",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-ticket-detail/mobile-chromium-forbidden.png",
+      "role": "IT Staff",
+      "scenario": "Ticket Detail forbidden state",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/mobile-chromium-loading.png",
+      "role": "Administrator",
+      "scenario": "User Management loading state",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/mobile-chromium-empty.png",
+      "role": "Administrator",
+      "scenario": "Empty User Management directory",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/mobile-chromium-no-results.png",
+      "role": "Administrator",
+      "scenario": "Filtered User Management no-results state",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/mobile-chromium-failure.png",
+      "role": "Administrator",
+      "scenario": "User Management API failure with retry",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/mobile-chromium-validation.png",
+      "role": "Administrator",
+      "scenario": "User Management required-field validation",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/mobile-chromium-saving.png",
+      "role": "Administrator",
+      "scenario": "User Management saving state",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/mobile-chromium-duplicate-email.png",
+      "role": "Administrator",
+      "scenario": "User Management duplicate email conflict",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/mobile-chromium-self-deactivation-blocked.png",
+      "role": "Administrator",
+      "scenario": "Administrator self-deactivation protection",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/mobile-chromium-last-admin-blocked.png",
+      "role": "Administrator",
+      "scenario": "Last active Administrator protection",
+      "stateSource": "intercepted"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/mobile-chromium-non-admin-forbidden.png",
+      "role": "Requester",
+      "scenario": "Requester denied Administrator User Management",
+      "stateSource": "natural"
+    },
+    {
       "path": "artifacts/lab-03/screenshots/requester/mobile-chromium-public-conversation.png",
       "role": "Requester",
       "scenario": "Shared public conversation",
@@ -67,6 +211,12 @@
       "path": "artifacts/lab-03/screenshots/staff-ticket-detail/mobile-chromium-operational-controls-saved.png",
       "role": "IT Staff",
       "scenario": "Staff ownership and priority saved",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/accessibility/mobile-chromium-status-confirmation-keyboard.png",
+      "role": "IT Staff",
+      "scenario": "Status confirmation focus trap",
       "stateSource": "natural"
     },
     {
@@ -100,7 +250,7 @@
       "stateSource": "natural"
     }
   ],
-  "generatedAt": "2026-09-19T08:01:46.876Z",
+  "generatedAt": "2026-09-19T10:00:29.661Z",
   "project": "mobile-chromium",
   "sourceDirty": false
 }
