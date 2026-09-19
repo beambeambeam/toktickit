@@ -1,8 +1,106 @@
 {
+  "branch": "lab3-staging",
+  "command": "pnpm --filter @toktickit/e2e exec playwright test e2e/lab-03",
+  "commit": "073b49206e3496f1af6820557dbe69ef4ea7ccde",
   "files": [
-    "artifacts/lab-03/screenshots/authentication/tablet-chromium-initial.png",
-    "artifacts/lab-03/screenshots/authentication/tablet-chromium-filled.png"
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/tablet-chromium-login-initial.png",
+      "role": "Anonymous",
+      "scenario": "Login initial",
+      "stateSource": "seeded"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/tablet-chromium-login-filled.png",
+      "role": "Anonymous",
+      "scenario": "Login filled",
+      "stateSource": "seeded"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/tablet-chromium-mandatory-password.png",
+      "role": "Restricted",
+      "scenario": "Mandatory password replacement",
+      "stateSource": "seeded"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/tablet-chromium-authenticated-shell.png",
+      "role": "Requester",
+      "scenario": "Authenticated requester shell",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/authentication/tablet-chromium-logout-direct-denial.png",
+      "role": "Anonymous",
+      "scenario": "Logout and direct protected-route denial",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-ticket-detail/tablet-chromium-internal-note-admin-read.png",
+      "role": "Administrator",
+      "scenario": "Administrator read-only Internal Note",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/requester/tablet-chromium-public-conversation.png",
+      "role": "Requester",
+      "scenario": "Shared public conversation",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-queue/tablet-chromium-populated.png",
+      "role": "IT Staff",
+      "scenario": "Populated shared Ticket Queue after fixture normalization",
+      "stateSource": "normalized"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-ticket-detail/tablet-chromium-read-only.png",
+      "role": "IT Staff",
+      "scenario": "Read-only staff Ticket detail after fixture normalization",
+      "stateSource": "normalized"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-ticket-detail/tablet-chromium-operational-controls.png",
+      "role": "IT Staff",
+      "scenario": "Staff ownership and priority controls",
+      "stateSource": "seeded"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-ticket-detail/tablet-chromium-operational-controls-saved.png",
+      "role": "IT Staff",
+      "scenario": "Staff ownership and priority saved",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/staff-ticket-detail/tablet-chromium-workflow-resolved.png",
+      "role": "IT Staff",
+      "scenario": "Resolved staff workflow",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/tablet-chromium-list.png",
+      "role": "Administrator",
+      "scenario": "User Management list",
+      "stateSource": "seeded"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/tablet-chromium-create-success.png",
+      "role": "Administrator",
+      "scenario": "User Management create success",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/tablet-chromium-edit-success.png",
+      "role": "Administrator",
+      "scenario": "User Management edit success",
+      "stateSource": "natural"
+    },
+    {
+      "path": "artifacts/lab-03/screenshots/user-management/tablet-chromium-reset-success.png",
+      "role": "Administrator",
+      "scenario": "User Management reset success",
+      "stateSource": "natural"
+    }
   ],
-  "generatedAt": "2026-09-10T14:06:53.357Z",
-  "project": "tablet-chromium"
+  "generatedAt": "2026-09-19T08:01:46.800Z",
+  "project": "tablet-chromium",
+  "sourceDirty": false
 }
