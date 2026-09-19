@@ -37,4 +37,4 @@
 
 ## Self-review note
 
-Local self-check for PRs #66 and #67: LGTM. This is the submitter's own assessment, not a formal GitHub `APPROVED` review, and it does not replace reciprocal peer approval.
+LGTM
