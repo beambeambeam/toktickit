@@ -141,7 +141,7 @@ Every body field above is required. Null is used to clear optional text; optiona
 }
 ```
 
-For Completed and Cancelled, confirmed=true is also required; missing/false returns 400 CONFIRMATION_REQUIRED with field=confirmed. No other properties are accepted. Valid transitions are Planned to In Progress/Cancelled and In Progress to Completed/Cancelled. Completion requires a nonblank stored Result, followUpRequired=false, and an active eligible assignee. Starting stores performedBy and startedAt from the authenticated actor and backend clock. Completion/cancellation stores its actor and backend timestamp separately. Cancellation sets cancelledBy/cancelledAt. Each transition appends an immutable event and increments both versions once. Repeated terminal transitions return 409 ACTION_TERMINAL; invalid edges return 409 INVALID_TRANSITION.
+The request has no confirmation field; the client confirms Completed and Cancelled transitions before sending, as specified in ui-spec.md §4. No other properties are accepted. Valid transitions are Planned to In Progress/Cancelled and In Progress to Completed/Cancelled. Completion requires a nonblank stored Result, followUpRequired=false, and an active eligible assignee. Starting stores performedBy and startedAt from the authenticated actor and backend clock. Completion/cancellation stores its actor and backend timestamp separately. Cancellation sets cancelledBy/cancelledAt. Each transition appends an immutable event and increments both versions once. Repeated terminal transitions return 409 ACTION_TERMINAL; invalid edges return 409 INVALID_TRANSITION.
 
 ## 4. Ticket Workflow and Existing Operational Routes
 
@@ -219,7 +219,7 @@ GET /staff/actions always means actions assigned to the authenticated user, with
 | --- | --- |
 | 200 | Successful read or update, idempotent create replay, or already-indicated advisory request. |
 | 201 | New Action Taken created. |
-| 400 | Malformed JSON, path, body, version, or query; invalid text; unsupported property; missing confirmation. |
+| 400 | Malformed JSON, path, body, version, or query; invalid text; unsupported property; missing Ticket confirmation. |
 | 401 | AUTHENTICATION_REQUIRED for missing/expired session. |
 | 403 | FORBIDDEN for role restriction; ACCOUNT_INACTIVE for inactive account; PASSWORD_CHANGE_REQUIRED for restricted data; CSRF_INVALID or ORIGIN_FORBIDDEN for rejected mutation. Requester action write returns FORBIDDEN. |
 | 404 | NOT_FOUND for unknown route; RESOURCE_NOT_FOUND for missing resource or a Requester’s foreign Ticket/action/history. |
@@ -229,7 +229,7 @@ GET /staff/actions always means actions assigned to the authenticated user, with
 | Code | Status | Meaning |
 | --- | --- | --- |
 | VALIDATION_ERROR / INVALID_JSON | 400 | Invalid path, JSON, body, text, version, or query. Include safe field/reason details where useful. |
-| CONFIRMATION_REQUIRED | 400 | A confirmed Ticket/action cancellation or Ticket resolution/closure was requested without confirmed=true. |
+| CONFIRMATION_REQUIRED | 400 | Ticket cancellation or Ticket resolution/closure was requested without confirmed=true. |
 | AUTHENTICATION_REQUIRED | 401 | Missing/expired session. |
 | FORBIDDEN / ACCOUNT_INACTIVE / PASSWORD_CHANGE_REQUIRED / CSRF_INVALID / ORIGIN_FORBIDDEN | 403 | Existing role, account, restricted-flow, or mutation-security rejection. |
 | NOT_FOUND | 404 | Unknown route. |

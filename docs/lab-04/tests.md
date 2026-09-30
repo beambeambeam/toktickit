@@ -48,7 +48,7 @@ Contract criteria AC-01 through AC-09 and product criteria AC-10 through AC-30 a
 | AC-25 | #79 | API-07, API-08, PERF-02, UI-04, UI-05, E2E-06, RWD-02, VIS-02 | API parity, performance, UI, E2E, responsive, visual |
 | AC-26 | #78, #79 | API-09, UI-03, UI-04, UI-05, AUTH-01, E2E-05, E2E-06, A11Y-02 | API, UI, authorization, E2E, accessibility |
 | AC-27 | #74 | MIG-01, MIG-02, REG-01 | Migration, recovery, seed, regression |
-| AC-28 | #74, #75, #77 | REG-01, REG-02, API-09, AUTH-01, E2E-01, E2E-04 | Regression, API, authorization, E2E |
+| AC-28 | #74–#79 | REG-01, REG-02, REG-03, API-09, AUTH-01, E2E-01, E2E-04 | Regression, API, authorization, E2E |
 | AC-29 | #74, #75, #76, #78, #79 | UI-01, UI-02, UI-03, UI-04, API-01, API-03, API-04, E2E-01, E2E-02, E2E-03, A11Y-01 | UI, API failure, E2E, accessibility |
 | AC-30 | #74, #75, #76, #77, #78, #79 | STYLE-01, STYLE-02, RWD-01, RWD-02, A11Y-01, A11Y-02, VIS-01, VIS-02 | Style, responsive, accessibility, visual |
 
@@ -65,7 +65,7 @@ The contract-only checks verify that statements and ownership links are complete
 | Style/visual | STYLE-01, STYLE-02, VIS-01, VIS-02 | Screen-owning feature issue |
 | Responsive | RWD-01, RWD-02 | Screen-owning feature issue |
 | Authorization | AUTH-01 | #74–#79 by role surface |
-| Migration/regression | MIG-01, MIG-02, REG-01, REG-02 | Migration: #74; affected legacy flows: #74/#75/#77 |
+| Migration/regression | MIG-01, MIG-02, REG-01, REG-02, REG-03 | Migration: #74; affected legacy flows: #74/#75/#77; complete earlier-lab suite: #74–#79 |
 | Performance-smoke | PERF-01, PERF-02 | #78, #79 |
 | E2E | E2E-01–E2E-06 | #74–#79 by journey |
 | Accessibility | A11Y-01, A11Y-02 | Screen-owning feature issue |
@@ -92,10 +92,11 @@ All rows have Final status “Not run” at contract time.
 | API-07 | API/integration | Staff/Admin status, priority, unassigned, owned, My Actions, recent and Urgent metrics | Counts/previews equal independently queried database results | server/tests/lab-04/staff-dashboard.api.test.ts | #79 | Not run |
 | API-08 | API/parity | Dashboard card scopes and paginated Ticket/Action lists use identical predicates and time bounds | Card totals equal list totals for matching snapshot/fixture | server/tests/lab-04/requester-dashboard.api.test.ts; server/tests/lab-04/staff-dashboard.api.test.ts | #78, #79 | Not run |
 | API-09 | API/authorization regression | Administrator operational permissions; Requester-only create/Attachment writes; private-note and session boundaries | Admin receives staff capabilities; earlier protected paths remain protected | server/tests/lab-04/authorization.api.test.ts | #77 | Not run |
-| MIG-01 | Migration/recovery | Migrate populated disposable DB; compare prior User/Ticket/Attachment/comment/note/session rows and Attachment byte hashes; rehearse restore | Prior values/bytes survive; no synthetic actions; backup/restore recovers a consistent pair | server/tests/lab-04/migration-preservation.test.ts; server/tests/check-migration-preservation.ts | #74 | Not run |
+| MIG-01 | Migration/recovery | Apply the deployed migration to a populated disposable DB, rerun it, and compare User/Ticket/Attachment/comment/note/session rows and Attachment byte hashes after both runs; rehearse restore | Existing values/bytes are identical after the first and second runs; no synthetic actions; backup/restore recovers a consistent pair | server/tests/lab-04/migration-preservation.test.ts; server/tests/check-migration-preservation.ts | #74 | Not run |
 | MIG-02 | Seed/regression | Seed twice, edit seeded rows between runs, inspect lifecycle and dashboard examples | Stable-key insert-only rerun preserves edits and covers zero/nonzero examples | server/tests/lab-04/seed-preservation.test.ts | #74 | Not run |
 | REG-01 | Regression | Requester login/password flow, Ticket creation/list/detail, ownership, Attachment upload/read/remove, Public Comments, resolution indication | Existing Requester journeys still pass with dashboard and actions present | Existing client/server labs 1–2 tests; e2e/lab-02/requester-flow.spec.ts | #74 | Not run |
 | REG-02 | Regression | Staff queue/ownership/status/priority, Public Comments, Internal Notes privacy, Administrator user management | Earlier behavior passes; approved Administrator operational access works | Existing client/server labs 3 tests; e2e/lab-03/user-management.spec.ts; e2e/lab-03/internal-notes.spec.ts | #75, #77 | Not run |
+| REG-03 | Regression | Run the complete existing earlier-lab client/server test suite in each feature issue's final verification, as applicable | Each feature records and fixes regressions it causes; the combined suite is green at the final integration checkpoint | pnpm run test; existing client/server labs 1–3 test suites | #74–#79 | Not run |
 | UI-01 | UI | Action empty/list/read, create/edit modes, assignee choices, conditional validation, draft retention, replay, pending/terminal controls | Visible states match the contract; invalid/recoverable save keeps entered values | client/tests/lab-04/ActionsTaken.test.tsx | #74, #75 | Not run |
 | UI-02 | UI | Action lifecycle and Ticket workflow controls, permitted choices, confirmation, version conflict, gate feedback, refreshed status | Controls match current state; failures retain draft and saved state | client/tests/lab-04/TicketWorkflow.test.tsx | #76, #77 | Not run |
 | UI-03 | UI | Requester dashboard counts, previews, exact bounds, empty/loading/error/forbidden/retry | Shows real zero/empty and exact link parameters; never leaks other users’ data | client/tests/lab-04/RequesterDashboard.test.tsx | #78 | Not run |
@@ -124,14 +125,14 @@ All rows have Final status “Not run” at contract time.
 | Issue | Verification that must finish inside the issue |
 | --- | --- |
 | #73 Contract | DOC-01, DOC-02, DOC-03, TRACE-01. No feature implementation or runtime behavior is claimed here. |
-| #74 Create/view actions | API-01/02, MIG-01/02, REG-01, UI-01 create/read, AUTH-01 action ownership, E2E-01, RWD-01, A11Y-01, VIS-01. |
-| #75 Edit/assign actions | API-03, UI-01 edit/conflict, E2E-02, existing Ticket ownership and account-management regression, relevant RWD/a11y/visual checks. |
-| #76 Action lifecycle | RULE-01/02 action rules, API-04, UI-02 action controls, create/assign/start/complete/cancel E2E-03 on supported viewports, terminal history and confirmation keyboard/a11y/visual checks. |
-| #77 Ticket workflow | RULE-02 workflow rules, API-05/09, REG-02, UI-02 Ticket controls, E2E-04, advisory/reopen/cancellation/account races and visual/a11y checks. |
-| #78 Requester dashboard | RULE-03 requester predicates, API-06/08, REG-01 requester regression, UI-03/05, PERF-01, E2E-05, RWD-02, A11Y-02, VIS-02. |
-| #79 Staff dashboard | RULE-03 staff predicates, API-07/08, REG-02 staff/Admin integration, UI-04/05, PERF-02, E2E-06, RWD-02, A11Y-02, VIS-02. |
+| #74 Create/view actions | API-01/02, MIG-01/02, REG-01/03, UI-01 create/read, AUTH-01 action ownership, E2E-01, RWD-01, A11Y-01, VIS-01. |
+| #75 Edit/assign actions | API-03, REG-03, UI-01 edit/conflict, E2E-02, existing Ticket ownership and account-management regression, relevant RWD/a11y/visual checks. |
+| #76 Action lifecycle | RULE-01/02 action rules, API-04, REG-03, UI-02 action controls, create/assign/start/complete/cancel E2E-03 on supported viewports, terminal history and confirmation keyboard/a11y/visual checks. |
+| #77 Ticket workflow | RULE-02 workflow rules, API-05/09, REG-02/03, UI-02 Ticket controls, E2E-04, advisory/reopen/cancellation/account races and visual/a11y checks. |
+| #78 Requester dashboard | RULE-03 requester predicates, API-06/08, REG-01/03 requester regression, UI-03/05, PERF-01, E2E-05, RWD-02, A11Y-02, VIS-02. |
+| #79 Staff dashboard | RULE-03 staff predicates, API-07/08, REG-02/03 staff/Admin integration, UI-04/05, PERF-02, E2E-06, RWD-02, A11Y-02, VIS-02. |
 
-Each feature verifies integration with completed prerequisites and features already present in its checkout. If a sibling is unfinished, run independent assigned checks, record unavailable integration coverage accurately, and stop at the assigned issue. No feature issue takes over another issue’s implementation.
+Each feature verifies integration with completed prerequisites and features already present in its checkout. Every feature issue #74–#79 owns its applicable earlier-lab regression checks, including the full-suite checkpoint in REG-03; no regression is deferred to a release or hardening issue. If a sibling is unfinished, run independent assigned checks, record unavailable integration coverage accurately, and stop at the assigned issue. No feature issue takes over another issue’s implementation.
 
 ## 6. Test and Product Completion Notes
 

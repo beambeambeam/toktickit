@@ -116,6 +116,6 @@ The issue implementing a screen also owns its verification:
 - API and OpenAPI behavior matches api-spec.md; generated client is synchronized.
 - Authorized and forbidden roles, ownership, empty/loading/error/conflict states, and cache isolation are verified.
 - Forms preserve drafts, prevent duplicate in-flight writes, and show validation in context.
-- Relevant unit, API/integration, UI, regression, and E2E checks pass; the full earlier-lab test suite is run for the final integration checkpoint.
+- Relevant unit, API/integration, UI, regression, and E2E checks pass inside the owning feature issue. Issues #74–#79 own the full earlier-lab suite checkpoint recorded by REG-03 in tests.md.
 - Affected screen is checked at desktop, tablet, mobile, 320px minimum width, and 200% zoom with keyboard, axe, and visual inspection as applicable.
 - tests.md records truthful outcomes and known unavailable integration coverage. No screenshot, test, or acceptance status is marked complete before verification runs.
