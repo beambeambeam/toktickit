@@ -148,7 +148,7 @@ For Completed and Cancelled, confirmed must be true; missing or false returns 40
 
 The existing POST /tickets/:ticketId/status remains { currentStatus: Status, version: integer, confirmed?: true } and returns 200 TicketDetail. IT Staff and Administrators may call it. confirmed=true is required for Resolved, Closed, and Cancelled. The complete matrix and gates are in specification.md BR-09–BR-13.
 
-The transaction locks the Ticket parent, compares version, rechecks actor/owner eligibility, verifies the transition, and applies its gate. Entering In Progress or Resolved requires an active eligible owner. Entering Resolved additionally requires at least one Completed action, no Planned/In Progress actions, and no Completed action with unresolved required follow-up. Entering Cancelled requires no Planned/In Progress actions. Closing is allowed only from Resolved and retains resolvedAt. Reopening clears the current resolution indication and resolvedAt, records the event, and increments version. No action mutation, resolution, cancellation, or account eligibility change may race past the gate.
+The transaction locks the Ticket parent, compares version, rechecks actor/owner eligibility, verifies the transition, and applies its gate. Entering In Progress or Resolved requires an active eligible owner. Entering Resolved additionally requires at least one Completed action and no Planned/In Progress actions. Entering Cancelled requires no Planned/In Progress actions. Closing is allowed only from Resolved and retains resolvedAt. Reopening clears the current resolution indication and resolvedAt, records the event, and increments version. No action mutation, resolution, cancellation, or account eligibility change may race past the gate.
 
 Operational methods previously limited to IT Staff now allow Administrator too: POST /tickets/:ticketId/claim, PUT /tickets/:ticketId/owner, PATCH /tickets/:ticketId/it-priority, and POST /tickets/:ticketId/status. Preserve their existing request bodies and version behavior. The Requester resolution indication remains PUT /tickets/:ticketId/resolution-indication with {} and has no version input; it is idempotent for an already-indicated active Ticket and never changes currentStatus.
 
@@ -242,7 +242,7 @@ GET /staff/actions always means actions assigned to the authenticated user, with
 | ACTION_ASSIGNEE_INELIGIBLE | 409 | Selected or retained action assignee is not active and eligible. |
 | FOLLOW_UP_UNRESOLVED | 409 | Action completion is blocked while required follow-up remains. |
 | RESULT_REQUIRED | 409 | Action completion is blocked while Result is empty. |
-| RESOLUTION_GATE_FAILED | 409 | Ticket has no completed action or has an unresolved required follow-up. |
+| RESOLUTION_GATE_FAILED | 409 | Ticket has no completed Action Taken. |
 | TICKET_HAS_PENDING_ACTIONS | 409 | Ticket resolution or cancellation is blocked while Planned/In Progress actions remain. |
 | REQUEST_ID_CONFLICT | 409 | An idempotency key is reused with changed normalized business fields. |
 | INTERNAL_ERROR | 500 | Unexpected failure; safe generic message only. |
