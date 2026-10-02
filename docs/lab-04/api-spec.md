@@ -1,6 +1,6 @@
 # Lab 4 REST API Contract
 
-Status: approved contract for Issues #74–#79. Paths below are relative to /api. The existing Express error middleware, sessions, CSRF protection, role checks, no-store response policy, PostgreSQL/Prisma, OpenAPI document, and generated Hey API client remain canonical. Lab 4 adds no new package or authentication mechanism.
+Status: proposed API contract, awaiting peer review for Issues #74–#79. Paths below are relative to /api. The existing Express error middleware, sessions, CSRF protection, role checks, no-store response policy, PostgreSQL/Prisma, OpenAPI document, and generated Hey API client remain canonical. Lab 4 adds no new package or authentication mechanism.
 
 ## 1. Wire Conventions
 

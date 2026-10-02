@@ -1,6 +1,6 @@
 # Lab 4 UI Contract
 
-Status: approved UI behavior for Issues #74–#79. Reuse the existing React/TanStack Router, TanStack Query, app shell, Zen Green surfaces, form fields, buttons, badges, error feedback, and authentication context. This file defines visible behavior; API authorization remains authoritative.
+Status: proposed UI behavior, awaiting peer review for Issues #74–#79. Reuse the existing React/TanStack Router, TanStack Query, app shell, Zen Green surfaces, form fields, buttons, badges, error feedback, and authentication context. This file defines visible behavior; API authorization remains authoritative.
 
 ## 1. Navigation and Landing
 
