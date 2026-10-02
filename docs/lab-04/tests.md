@@ -1,0 +1,161 @@
+# Lab 4 Test Plan and Traceability
+
+Status: planned before feature implementation. Every final result remains “Not run” until that check actually runs. The feature issue listed below owns the check, its fixes, and its final result. Contract review belongs to Issue #73. Feature verification is not deferred to a separate hardening ticket.
+
+## 1. Test Strategy
+
+- **Rules/unit:** Exercise field validation, the Action and Ticket transition tables, resolution/cancellation gates, dashboard predicates, interval boundaries, and query-scope mapping without HTTP.
+- **API/integration:** Use Supertest against the composed Express app, disposable PostgreSQL fixtures, real sessions/CSRF, and Prisma. Verify stored state, safe errors, roles, ownership, retry, lock/race behavior, and database-backed counts.
+- **UI:** Use existing Vitest/React Testing Library patterns. Test visible form/list behavior, validation, loading, empty/error/conflict states, exact filters, focus, and cache isolation.
+- **Style/visual:** Inspect the rendered Zen Green screens and record representative screenshots under the owning feature’s evidence directory. Do not treat DOM/CSS snapshots as a substitute for visual inspection.
+- **Responsive/accessibility:** Reuse Playwright viewport journeys and axe. Check desktop, tablet, mobile, 320 CSS pixel minimum width, 200% zoom, keyboard order, dialogs, labels, contrast, wrapping, clipping, overlap, and page overflow.
+- **Migration/regression:** Use a populated disposable database and Attachment storage. Compare existing record values and Attachment byte hashes before/after migration; rehearse restore; run insert-only seed twice after editing seeded rows. Run Labs 1–3 regression in the feature slices that can affect those paths.
+- **Performance-smoke:** Use representative many-Ticket/action fixtures; record local query duration and response size, verify previews cap at five and collections paginate. This is a boundedness/query-plan smoke, not a production SLA.
+- **End-to-end:** Use the existing authenticated Playwright app and real PostgreSQL to verify role journeys across API, generated client, UI, and storage.
+
+Test methods assert observable output and persistence invariants. Do not couple checks to repository/controller call order or component internals. Shared fixtures use distinct Requesters, two staff members, an Administrator, active/inactive/demoted accounts, every Ticket status/priority/ownership combination, and zero/one/multiple actions.
+
+## 2. Acceptance-Criterion Crosswalk
+
+All 25 product acceptance criteria in [specification.md](./specification.md) are observable outcomes. DOC/TRACE rows verify contract quality and ownership; they are engineering checks, not product criteria. Each AC maps to at least one planned test. Categories are listed in §3 and detailed test paths in §4.
+
+| AC | Owning issue | Planned test IDs | Coverage |
+| --- | --- | --- | --- |
+| AC-01 | #74–#77 | RULE-01, RULE-02, API-01–API-03, API-08–API-19, API-22, API-23, UI-01, UI-02, E2E-01, E2E-02, E2E-03, RWD-01, VIS-01 | Rules, API, UI, E2E, responsive, visual |
+| AC-02 | #74–#77 | API-07, API-20, API-32, AUTH-01, REG-02, E2E-01, E2E-04 | API, authorization, regression, E2E |
+| AC-03 | #74–#79 | API-01–API-32 | API, concurrency, dashboard |
+| AC-04 | #78, #79 | RULE-03, API-29–API-31, UI-03, UI-04, UI-05, PERF-01, PERF-02, E2E-05, E2E-06, RWD-02, VIS-02 | Rules, API, UI, performance, E2E, responsive, visual |
+| AC-05 | #74 | RULE-01, API-01, API-02, API-03, UI-01, E2E-01, RWD-01, VIS-01 | Rules, API, UI, E2E, responsive, visual |
+| AC-06 | #74 | API-06, API-07, AUTH-01, UI-01, E2E-01 | API, authorization, UI, E2E |
+| AC-07 | #74, #75 | API-02, API-09, API-12, API-13, AUTH-01, REG-02, E2E-01, E2E-02 | API, authorization, regression, E2E |
+| AC-08 | #74–#76 | RULE-01, API-01, API-05, API-16, UI-01, E2E-01, A11Y-01 | Rules, API, UI, E2E, accessibility |
+| AC-09 | #75, #77 | API-11, API-22, API-28, AUTH-01, E2E-02, E2E-04 | API race, authorization, E2E |
+| AC-10 | #75 | API-08, API-10, UI-01, E2E-02 | API, UI, E2E |
+| AC-11 | #76 | RULE-02, API-12–API-19, UI-02, E2E-03, A11Y-01, VIS-01 | Rules, API, UI, E2E, accessibility, visual |
+| AC-12 | #74 | API-04, E2E-01 | API retry, E2E |
+| AC-13 | #74–#76 | API-05, API-07, API-13, API-14, AUTH-01, UI-01, E2E-03 | API, authorization, UI, E2E |
+| AC-14 | #77 | RULE-02, API-20–API-24, AUTH-01, UI-02, E2E-04 | Rules, API, authorization, UI, E2E |
+| AC-15 | #75, #77 | API-10, API-11, API-28, E2E-02, E2E-04 | API concurrency, E2E |
+| AC-16 | #77 | API-23, API-25–API-27, REG-02, UI-02, E2E-04 | API, regression, UI, E2E |
+| AC-17 | #78 | RULE-03, API-29, AUTH-01, PERF-01, UI-03, E2E-05, RWD-02, A11Y-02, VIS-02 | Rules, API, authorization, performance, UI, E2E, responsive, accessibility, visual |
+| AC-18 | #78 | API-29, API-31, UI-03, UI-05, E2E-05 | API parity, UI, E2E |
+| AC-19 | #79 | RULE-03, API-30, AUTH-01, PERF-02, UI-04, E2E-06 | Rules, API, authorization, performance, UI, E2E |
+| AC-20 | #79 | API-30, API-31, PERF-02, UI-04, UI-05, E2E-06, RWD-02, VIS-02 | API parity, performance, UI, E2E, responsive, visual |
+| AC-21 | #78, #79 | API-29, API-30, API-32, UI-03, UI-04, UI-05, AUTH-01, E2E-05, E2E-06, A11Y-02 | API, UI, authorization, E2E, accessibility |
+| AC-22 | #74 | MIG-01, MIG-02, REG-01 | Migration, recovery, seed, regression |
+| AC-23 | #74–#79 | REG-01, REG-02, REG-03, API-32, AUTH-01, E2E-01, E2E-04 | Regression, API, authorization, E2E |
+| AC-24 | #74–#79 | UI-01, UI-02, UI-03, UI-04, API-01, API-05, API-08, API-10, API-12–API-16, E2E-01, E2E-02, E2E-03, A11Y-01 | UI, API failure, E2E, accessibility |
+| AC-25 | #74, #75, #76, #77, #78, #79 | STYLE-01, STYLE-02, RWD-01, RWD-02, A11Y-01, A11Y-02, VIS-01, VIS-02 | Style, responsive, accessibility, visual |
+
+The contract-only checks verify that statements and ownership links are complete; runtime product behavior is verified by the assigned feature issues. Migration/recovery and seed checks belong to #74; action field history/concurrency checks belong to #75/#76; Ticket gate and Administrator regression belongs to #77; database parity and boundedness/performance-smoke belongs to #78/#79.
+
+## 3. Coverage by Test Type and Owner
+
+| Type | Planned tests | Owner |
+| --- | --- | --- |
+| Contract/traceability | DOC-01, DOC-02, TRACE-01 | #73 |
+| Rule/unit | RULE-01, RULE-02, RULE-03 | #74–#79 by rule |
+| API/integration | API-01–API-32 | #74–#79 by endpoint |
+| UI component/interaction | UI-01–UI-05 | #74–#79 by screen |
+| Style/visual | STYLE-01, STYLE-02, VIS-01, VIS-02 | Screen-owning feature issue |
+| Responsive | RWD-01, RWD-02 | Screen-owning feature issue |
+| Authorization | AUTH-01 | #74–#79 by role surface |
+| Migration/regression | MIG-01, MIG-02, REG-01, REG-02, REG-03 | Migration: #74; affected legacy flows: #74/#75/#77; complete earlier-lab suite: #74–#79 |
+| Performance-smoke | PERF-01, PERF-02 | #78, #79 |
+| E2E | E2E-01–E2E-06 | #74–#79 by journey |
+| Accessibility | A11Y-01, A11Y-02 | Screen-owning feature issue |
+
+## 4. Planned Test Cases
+
+All rows have Final status “Not run” at contract time.
+
+| Test ID | Type | What it verifies | Expected result | Planned file or evidence | Owner | Final |
+| --- | --- | --- | --- | --- | --- | --- |
+| DOC-01 | Contract review | Six handout-required documents; exact fields, statuses, role rules, routes, and excluded report deliverables | All six docs agree and cover #73 acceptance | docs/lab-04/*.md | #73 | Not run |
+| DOC-02 | Contract review | Numbered FR/BR/AC statements and data decisions | IDs are stable and at least two database choices have reasons | docs/lab-04/specification.md | #73 | Not run |
+| DOC-03 | Contract review | Cross-check action fields, workflows, role matrix, API shapes, dashboard predicates, migration/recovery, UI behavior, and verification assignments across all six docs | Shared rules are identical wherever referenced; all #73 deliverables are present | docs/lab-04/*.md | #73 | Not run |
+| TRACE-01 | Traceability | Every AC, test category, and migration/regression/E2E/performance/accessibility/visual check has an owning feature ticket | Every criterion links to a planned test and #74–#79 or #73 owner | docs/lab-04/tests.md | #73 | Not run |
+| RULE-01 | Unit | Trim/count Unicode code points; optional Result; conditional Follow-up Note; Attachment Notes; action completion prerequisites | Valid input normalizes; invalid input is rejected without writes | server/tests/lab-04/action-rules.test.ts | #74–#76 | Not run |
+| RULE-02 | Unit | Action transition matrix, Ticket transition matrix, owner and resolution/cancellation gates | Only specified edges pass; all gate boundaries are exact | server/tests/lab-04/workflow-rules.test.ts | #76, #77 | Not run |
+| RULE-03 | Unit | Active population, priority/status grouping, requester ownership, UTC inclusive bounds, Bangkok display conversion | Predicates include both interval endpoints and exclude out-of-scope rows | server/tests/lab-04/dashboard-rules.test.ts | #78, #79 | Not run |
+| API-01 | API/integration | Create an Action Taken with required fields, normalization, initial Planned state, and default/selected eligible assignee | Valid data creates one normalized Planned action assigned as requested or to the authenticated actor | server/tests/lab-04/actions-taken.api.test.ts | #74 | Not run |
+| API-02 | API/integration | Server sets the created action's Ticket, creator, creation time, and initial version | Stored parent, actor, and time come from the request context/server; the creation updates parent version and public updatedAt once | server/tests/lab-04/actions-taken.api.test.ts | #74 | Not run |
+| API-03 | API/authorization | Reject client-supplied creator, actor, parent, lifecycle timestamps, status, or version | Server-controlled fields cannot be spoofed and no write occurs | server/tests/lab-04/actions-taken.api.test.ts | #74 | Not run |
+| API-04 | API/idempotency | Replay a create request with the same requestId/payload and reuse it with changed normalized payload | Same payload returns the existing action without another event/version change; changed payload returns REQUEST_ID_CONFLICT | server/tests/lab-04/actions-taken.api.test.ts | #74 | Not run |
+| API-05 | API/integration | Create, edit, assign, or transition an action on a Resolved/Closed/Cancelled Ticket | Every disallowed action write returns a safe terminal error and changes no data | server/tests/lab-04/actions-taken.api.test.ts | #74–#76 | Not run |
+| API-06 | API/integration | Paginated Action Taken and history collection reads | Pages include all matching rows without duplication or omission | server/tests/lab-04/actions-taken.api.test.ts | #74 | Not run |
+| API-07 | API/authorization | Requester own/foreign Ticket action reads, staff/Admin reads, and Requester write denial | Own authorized reads succeed; foreign reads are 404 and Requester writes are 403 | server/tests/lab-04/actions-taken.api.test.ts | #74 | Not run |
+| API-08 | API/integration | Edit mutable fields on a Planned or In Progress action | Allowed fields save and append one immutable snapshot event; server-owned fields remain unchanged | server/tests/lab-04/actions-taken.api.test.ts | #75 | Not run |
+| API-09 | API/integration | Reassign a pending action to another eligible user | Assignee changes and Ticket Owner remains unchanged | server/tests/lab-04/actions-taken.api.test.ts | #75 | Not run |
+| API-10 | API/concurrency | Stale action or Ticket version on edit or transition | Stale writes return VERSION_CONFLICT with no partial mutation or history event | server/tests/lab-04/actions-taken.api.test.ts | #75 | Not run |
+| API-11 | API/concurrency | Inactive/demoted actor or assignee and account-eligibility changes racing an action write | Ineligible writes fail atomically; historical identity remains intact | server/tests/lab-04/actions-taken.api.test.ts | #75 | Not run |
+| API-12 | API/integration | Planned to In Progress start edge and start attribution | A valid start stores the authenticated performer/time and one event; invalid edges write nothing | server/tests/lab-04/actions-taken.api.test.ts | #76 | Not run |
+| API-13 | API/integration | In Progress to Completed edge and completion attribution | A valid completion stores its actor/time and one immutable completion event | server/tests/lab-04/actions-taken.api.test.ts | #76 | Not run |
+| API-14 | API/integration | Planned/In Progress to Cancelled edges and cancellation attribution | A valid cancellation stores its actor/time and one immutable cancellation event | server/tests/lab-04/actions-taken.api.test.ts | #76 | Not run |
+| API-15 | API/validation | Missing, false, and true confirmation for action completion/cancellation | Missing or false returns CONFIRMATION_REQUIRED without a write; true confirmation permits only a valid edge | server/tests/lab-04/actions-taken.api.test.ts | #76 | Not run |
+| API-16 | API/validation | Result and required Follow-up rules on completion | Empty Result or unresolved follow-up blocks completion; valid completion has a Result and cleared follow-up requirement | server/tests/lab-04/actions-taken.api.test.ts | #76 | Not run |
+| API-17 | API/integration | Immutability of Completed/Cancelled actions and repeated terminal writes | Terminal actions cannot change; repeat writes conflict and create no event | server/tests/lab-04/actions-taken.api.test.ts | #76 | Not run |
+| API-18 | API/integration | Action event history ordering | Events are returned by createdAt ascending then ID ascending, independent of pagination | server/tests/lab-04/actions-taken.api.test.ts | #76 | Not run |
+| API-19 | API/integration | Parent Ticket version and public updatedAt for action edit/lifecycle writes | Each successful mutation increments parent metadata once; rejected writes and idempotent replay do not | server/tests/lab-04/actions-taken.api.test.ts | #75, #76 | Not run |
+| API-20 | API/integration | Allowed and disallowed Ticket status transition matrix | Every valid edge succeeds under its other requirements; unlisted edges return INVALID_TRANSITION without a write | server/tests/lab-04/ticket-workflow.api.test.ts | #77 | Not run |
+| API-21 | API/validation | Missing, false, and true confirmation for Resolved, Closed, and Cancelled Tickets | Missing/false returns CONFIRMATION_REQUIRED; true permits only a valid terminal transition | server/tests/lab-04/ticket-workflow.api.test.ts | #77 | Not run |
+| API-22 | API/authorization | Active eligible Ticket Owner requirement for In Progress and Resolved | Missing/ineligible owners block the transition; permitted owners allow it when other gates pass | server/tests/lab-04/ticket-workflow.api.test.ts | #77 | Not run |
+| API-23 | API/integration | Resolution gate with no completed action, pending actions, and combined blockers | A Resolved transition returns one RESOLUTION_GATE_FAILED with every reason in the specified order | server/tests/lab-04/ticket-workflow.api.test.ts | #77 | Not run |
+| API-24 | API/integration | Cancellation gate with Planned or In Progress actions | Cancellation returns TICKET_HAS_PENDING_ACTIONS until all actions are completed or cancelled | server/tests/lab-04/ticket-workflow.api.test.ts | #77 | Not run |
+| API-25 | API/integration | Reopen clears the current indication/resolvedAt and records a status event | Reopen succeeds from Resolved and clears current resolution fields while retaining event history | server/tests/lab-04/ticket-workflow.api.test.ts | #77 | Not run |
+| API-26 | API/migration | Legacy terminal Tickets remain valid and receive no synthetic status history | Existing terminal rows remain readable; history contains only transitions recorded after migration | server/tests/lab-04/ticket-workflow.api.test.ts | #77 | Not run |
+| API-27 | API/authorization | Requester resolution indication is advisory and idempotent | Own active Ticket may be indicated without changing status; repeat is a no-op and foreign writes are denied | server/tests/lab-04/ticket-workflow.api.test.ts | #77 | Not run |
+| API-28 | API/concurrency | Action/account eligibility writes racing Ticket resolution | Parent locking and transactional eligibility checks prevent a Resolved Ticket with pending work or an ineligible owner | server/tests/lab-04/ticket-workflow.api.test.ts | #77 | Not run |
+| API-29 | API/integration | Requester dashboard aggregates, seven-day boundaries, resolution status, ownership/note isolation, and zero results | Counts/previews match only own public Tickets and exact UTC predicates; zero is numeric and previews are empty | server/tests/lab-04/requester-dashboard.api.test.ts | #78 | Not run |
+| API-30 | API/integration | Staff/Admin status, priority, unassigned, owned, My Actions, recent, and Urgent metrics | Counts and bounded previews equal independent queries with My Actions scoped to assigned actions on active Tickets | server/tests/lab-04/staff-dashboard.api.test.ts | #79 | Not run |
+| API-31 | API/parity | Dashboard card scopes and paginated Ticket/Action lists with identical predicates/time bounds | Card totals equal matching list totals for the same fixture and snapshot | server/tests/lab-04/requester-dashboard.api.test.ts; server/tests/lab-04/staff-dashboard.api.test.ts | #78, #79 | Not run |
+| API-32 | API/authorization regression | Administrator operational permissions; Requester-only create/Attachment writes; private-note and session boundaries | Admin receives staff capabilities; earlier protected paths remain protected | server/tests/lab-04/authorization.api.test.ts | #77 | Not run |
+| MIG-01 | Migration/recovery | Apply the deployed migration to a populated disposable DB, rerun it, and compare User/Ticket/Attachment/comment/note/session rows and Attachment byte hashes after both runs; rehearse restore | Existing values/bytes are identical after the first and second runs; no synthetic actions; backup/restore recovers a consistent pair | server/tests/lab-04/migration-preservation.test.ts; server/tests/check-migration-preservation.ts | #74 | Not run |
+| MIG-02 | Seed/regression | Seed twice, edit seeded rows between runs, inspect lifecycle and dashboard examples | Stable-key insert-only rerun preserves edits and covers zero/nonzero examples | server/tests/lab-04/seed-preservation.test.ts | #74 | Not run |
+| REG-01 | Regression | Requester login/password flow, Ticket creation/list/detail, ownership, Attachment upload/read/remove, Public Comments, resolution indication | Existing Requester journeys still pass with dashboard and actions present | Existing client/server labs 1–2 tests; e2e/lab-02/requester-flow.spec.ts | #74 | Not run |
+| REG-02 | Regression | Staff queue/ownership/status/priority, Public Comments, Internal Notes privacy, Administrator user management | Earlier behavior passes; approved Administrator operational access works | Existing client/server labs 3 tests; e2e/lab-03/user-management.spec.ts; e2e/lab-03/internal-notes.spec.ts | #75, #77 | Not run |
+| REG-03 | Regression | Run the complete existing earlier-lab client/server test suite in each feature issue's final verification, as applicable | Each feature records and fixes regressions it causes; the combined suite is green at the final integration checkpoint | pnpm run test; existing client/server labs 1–3 test suites | #74–#79 | Not run |
+| UI-01 | UI | Action empty/list/read, create/edit modes, assignee choices, conditional validation, draft retention, replay, pending/terminal controls | Visible states match the contract; invalid/recoverable save keeps entered values | client/tests/lab-04/ActionsTaken.test.tsx | #74, #75 | Not run |
+| UI-02 | UI | Action lifecycle and Ticket workflow controls, permitted choices, confirmation, version conflict, gate feedback, refreshed status | Controls match current state; failures retain draft and saved state | client/tests/lab-04/TicketWorkflow.test.tsx | #76, #77 | Not run |
+| UI-03 | UI | Requester dashboard counts, previews, exact bounds, empty/loading/error/forbidden/retry | Shows real zero/empty and exact link parameters; never leaks other users’ data | client/tests/lab-04/RequesterDashboard.test.tsx | #78 | Not run |
+| UI-04 | UI | Staff/Admin dashboard cards, action preview, zero/empty/error, exact links | Counts and links agree with API response and role | client/tests/lab-04/StaffDashboard.test.tsx | #79 | Not run |
+| UI-05 | UI | My Tickets/Queue scope filters, retained from/through bounds, My Actions link and pagination | List result scope matches the selected dashboard metric | client/tests/lab-04/DashboardDrillDown.test.tsx | #78, #79 | Not run |
+| STYLE-01 | Style/visual | Ticket Detail action list/forms/history and lifecycle dialogs against Zen Green conventions | No clipping, overlap, confusing private/shared content, or inconsistent controls | docs/lab-04/ui-spec.md §8 inventory; artifacts/lab-04/screenshots/actions-taken/{state}-{viewport}.png | #74–#77 | Not run |
+| STYLE-02 | Style/visual | Requester and staff dashboards, My Actions and list drill-down | Cards, labels, counts, links, empty states, and navigation are coherent | docs/lab-04/ui-spec.md §8 inventory; artifacts/lab-04/screenshots/requester-dashboard/{state}-{viewport}.png; artifacts/lab-04/screenshots/staff-dashboard/{state}-{viewport}.png | #78, #79 | Not run |
+| RWD-01 | Responsive | Action detail with zero/one/many entries, create/edit forms, lifecycle and history | Works at 1440×900, 768×1024, 390×844, 320 CSS px and 200% zoom | e2e/lab-04/accessibility-responsive.spec.ts | #74–#77 | Not run |
+| RWD-02 | Responsive | Both dashboards, My Tickets, Ticket Queue, and My Actions | Usable cards/lists; no page-wide horizontal overflow at all required sizes | e2e/lab-04/accessibility-responsive.spec.ts | #78, #79 | Not run |
+| AUTH-01 | Authorization | Full role matrix, foreign Ticket/action/history, requesterId spoof, route direct access, account/cache switch | Server denies unauthorized operations and client displays a safe role state | server/tests/lab-04/authorization.api.test.ts; e2e/lab-04/role-access.spec.ts | #74–#79 | Not run |
+| PERF-01 | Performance-smoke | Requester dashboard and recent/resolved lists with representative Tickets | Counts are snapshot-consistent, previews ≤5, list page bounded, response size/query time recorded | server/tests/lab-04/requester-dashboard.api.test.ts | #78 | Not run |
+| PERF-02 | Performance-smoke | Staff dashboard and My Actions with representative Tickets/actions | Counts are accurate, previews ≤5, page bounded, response size/query time recorded | server/tests/lab-04/staff-dashboard.api.test.ts | #79 | Not run |
+| E2E-01 | E2E | Staff creates multiple actions with different workers; owning Requester reads fields; non-owner cannot read | One shared, attributed action list; ownership and read-only rules hold | e2e/lab-04/actions-taken-flow.spec.ts | #74 | Not run |
+| E2E-02 | E2E/concurrency | Two staff edit/reassign pending action; stale draft and account eligibility changes | Fresh edit saves; stale draft is retained and shown as conflict; Ticket Owner stays unchanged | e2e/lab-04/action-assignment-collaboration.spec.ts | #75 | Not run |
+| E2E-03 | E2E | On each supported viewport, create/assign actions then start, complete, and cancel valid/invalid cases | Actions progress only on valid edges; completion/cancellation confirm; terminal history retains actor/time/order | e2e/lab-04/action-lifecycle.spec.ts | #76 | Not run |
+| E2E-04 | E2E | Full Ticket transitions, resolution gate, advisory indication, reopen, cancel and concurrency | Ticket status remains valid after direct and competing writes | e2e/lab-04/ticket-resolution.spec.ts | #77 | Not run |
+| E2E-05 | E2E | Requester dashboard landing, counts, bounds, My Tickets drill-down, Ticket detail, cache switch | Only authenticated user’s Tickets appear; preview/card links match details | e2e/lab-04/dashboards.spec.ts | #78 | Not run |
+| E2E-06 | E2E | Staff/Admin landing, all cards, Queue filters, My Actions, parent/action links | Staff/Admin metrics and links match current-user assigned work | e2e/lab-04/dashboards.spec.ts | #79 | Not run |
+| A11Y-01 | Accessibility | Keyboard-only create/edit/workflow journeys, labels, field errors, live updates, dialogs, focus return | All action and workflow tasks are operable and announced | e2e/lab-04/accessibility-responsive.spec.ts; axe checks | #74–#77 | Not run |
+| A11Y-02 | Accessibility | Dashboard/card/list navigation, heading order, labels, focus, contrast and empty states | axe has no new serious/critical finding; keyboard flow remains clear | e2e/lab-04/accessibility-responsive.spec.ts; axe checks | #78, #79 | Not run |
+| VIS-01 | Visual review | Action and Ticket Detail states across desktop/tablet/mobile | Checklist passes and reviewed screenshots show real, complete states | docs/lab-04/ui-spec.md §8 inventory; artifacts/lab-04/screenshots/actions-taken/{state}-{viewport}.png | #74–#77 | Not run |
+| VIS-02 | Visual review | Requester/staff dashboard and drill-down states across desktop/tablet/mobile | Checklist passes for counts, layouts, links, errors, empties, and overflow | docs/lab-04/ui-spec.md §8 inventory; artifacts/lab-04/screenshots/requester-dashboard/{state}-{viewport}.png; artifacts/lab-04/screenshots/staff-dashboard/{state}-{viewport}.png | #78, #79 | Not run |
+
+## 5. Per-Issue Verification Ownership
+
+| Issue | Verification that must finish inside the issue |
+| --- | --- |
+| #73 Contract | DOC-01, DOC-02, DOC-03, TRACE-01. No feature implementation or runtime behavior is claimed here. |
+| #74 Create/view actions | API-01–API-07, MIG-01/02, REG-01/03, UI-01 create/read, AUTH-01 action ownership, E2E-01, RWD-01, A11Y-01, VIS-01. |
+| #75 Edit/assign actions | API-05, API-08–API-11, API-19, REG-03, UI-01 edit/conflict, E2E-02, existing Ticket ownership and account-management regression, relevant RWD/a11y/visual checks. |
+| #76 Action lifecycle | RULE-01/02 action rules, API-05, API-12–API-19, REG-03, UI-02 action controls, create/assign/start/complete/cancel E2E-03 on supported viewports, terminal history and confirmation keyboard/a11y/visual checks. |
+| #77 Ticket workflow | RULE-02 workflow rules, API-20–API-28, API-32, REG-02/03, UI-02 Ticket controls, E2E-04, advisory/reopen/cancellation/account races and visual/a11y checks. |
+| #78 Requester dashboard | RULE-03 requester predicates, API-29, API-31, REG-01/03 requester regression, UI-03/05, PERF-01, E2E-05, RWD-02, A11Y-02, VIS-02. |
+| #79 Staff dashboard | RULE-03 staff predicates, API-30/31, REG-02/03 staff/Admin integration, UI-04/05, PERF-02, E2E-06, RWD-02, A11Y-02, VIS-02. |
+
+Each feature verifies integration with completed prerequisites and features already present in its checkout. Every feature issue #74–#79 owns its applicable earlier-lab regression checks, including the full-suite checkpoint in REG-03; no regression is deferred to a release or hardening issue. If a sibling is unfinished, run independent assigned checks, record unavailable integration coverage accurately, and stop at the assigned issue. No feature issue takes over another issue’s implementation.
+
+## 6. Test and Product Completion Notes
+
+- Record command, fixture/environment, result, and any failure in the Final cell or linked concise test evidence after running it. Never mark a check Pass by plan or source inspection alone.
+- Run focused rules/API/UI tests while implementation is active, then the complete existing client/server suite at the final integration checkpoint. Run affected Playwright journeys and full CI checks when shared configuration, dependency, or build behavior changes.
+- Keep performance-smoke measurements tied to fixture size and local environment; do not infer a production throughput guarantee.
+- Use migration recovery only on disposable database and Attachment storage. Do not reset a preserved environment.
+- Changes to an earlier-lab expectation are allowed only when this contract explicitly supersedes it, notably Administrator IT Staff capabilities and the new action resolution gate. Update the old expectation in the feature issue that changes that behavior.
