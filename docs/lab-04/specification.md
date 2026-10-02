@@ -31,7 +31,7 @@ SLA timers, escalations, on-call scheduling, external notifications, inventory o
 - **FR-03 — Edit and assign:** Staff and Administrators may replace mutable fields on a Planned or In Progress action. Parent Ticket, creator, creation time, status timestamps, performer attribution, and history are server-controlled. A successful edit records an immutable revision.
 - **FR-04 — Action lifecycle:** Staff and Administrators may move Planned to In Progress or Cancelled, and In Progress to Completed or Cancelled. Completed and Cancelled actions cannot be edited, reassigned, transitioned, or deleted.
 - **FR-05 — Attribution:** The server records the actor for creation, each edit, start, completion, and cancellation. The actor starting work is the action’s Performed by. Completion and cancellation actor/time remain separately available in the action and event history.
-- **FR-06 — Ticket lifecycle:** Staff and Administrators may make only the transitions in §7. The server requires a current Ticket version, active eligible owner where required, confirmation for Resolved/Closed/Cancelled, and the resolution or cancellation gate.
+- **FR-06 — Ticket lifecycle:** Staff and Administrators may make only the transitions in BR-09–BR-13. The server requires a current Ticket version, active eligible owner where required, confirmation for Resolved/Closed/Cancelled, and the resolution or cancellation gate.
 - **FR-07 — Resolution indication:** A Requester can indicate that an owned, nonterminal Ticket appears resolved. This records advice only. It never changes Ticket status or bypasses the staff resolution gate.
 - **FR-08 — Requester dashboard:** Return requester-scoped active, waiting, recently updated, and recently resolved counts plus bounded recent previews. The server derives identity from the session; a client cannot supply requester scope.
 - **FR-09 — Staff dashboard:** Return active unassigned and current-user-owned counts, counts for every Ticket status, active counts by IT Priority, recently updated and urgent active Ticket previews, and the current user’s assigned pending Actions Taken.
@@ -95,7 +95,11 @@ SLA timers, escalations, on-call scheduling, external notifications, inventory o
 - **BR-22 — Snapshot and empties:** Dashboard metrics and previews come from one consistent read snapshot. Return numeric zero and empty preview arrays when no rows match. Never replace empty results with failure or placeholder counts.
 - **BR-23 — Safe response:** Reject unknown input fields and unsupported query shapes. Use the existing safe error envelope; do not expose SQL, credentials, stack traces, storage keys, private notes, or protected resource existence.
 
-## 6. Data and Migration Decisions
+## 6. UI Specification Summary
+
+Requesters land on their dashboard and retain Create Ticket, My Tickets, and Ticket Detail navigation. IT Staff and Administrators land on the shared staff dashboard and retain the Ticket Queue, My Actions, and Administrator account-management routes. Ticket Detail remains the parent view: requesters can read their own Actions Taken and status history, while staff/Admin can create, edit, assign, and progress actions when allowed. Dashboard cards and previews link to lists and details using the same server predicates and time bounds. All screens include role-aware loading, empty, validation, success, forbidden, conflict, and recoverable-failure behavior; responsive, keyboard, accessibility, and visual requirements are detailed in [ui-spec.md](./ui-spec.md).
+
+## 7. Data Changes
 
 ### Action Taken persistence
 
@@ -118,13 +122,6 @@ Add append-only ActionTakenEvent rows with Action Taken, actor, action version, 
 
 Add indexes for ActionTaken by (ticketId, createdAt, id), (ticketId, status), and (assigneeId, status, ticketId). Add a unique (ticketId, createdByUserId, requestId) key and index event tables by parent, createdAt, ID. Confirm existing indexes support requester updated/status, staff owner/status/priority/update, and event history reads; add only the missing query indexes.
 
-### Justified decisions
-
-1. Assignee and performer are separate identities: assignee says who owns the work now; performer says who actually started it. Completion/cancellation actors are separate immutable events. This supports team work without changing primary Ticket ownership or losing attribution.
-2. The parent Ticket row is the serialization point for action and Ticket mutations. Action work affects public Ticket update/version data and the resolution/cancellation gate; locking one parent lets those decisions commit atomically and makes stale writes explicit.
-3. Idempotency identity is stored on the ActionTaken under a unique Ticket/creator/request key. This prevents a retry from creating duplicate work without adding an expiring cache or a second transactionally coupled store.
-4. Legacy rows receive no invented work. Restrictive foreign keys preserve historical Tickets and people, and append-only event rows preserve auditable changes.
-
 ### Migration, recovery, and seed rules
 
 - Migration adds tables, enums, fields and indexes without rebuilding or rewriting existing Users, Tickets, Attachments, Public Comments, Internal Notes, or Sessions. It does not synthesize TicketStatusEvent rows for legacy Tickets; earlier status transitions cannot be reconstructed.
@@ -132,11 +129,11 @@ Add indexes for ActionTaken by (ticketId, createdAt, id), (ticketId, status), an
 - Recovery means restoring a matched database backup and Attachment storage backup; exercise the procedure against disposable populated data. Never run destructive reset commands against preserved data.
 - Extend existing seeds using stable seed keys and insert-only semantics. Include all Ticket states/priorities, assigned and unassigned owners, Tickets with zero/one/multiple actions, multiple workers on one Ticket, action lifecycle/follow-up examples, and zero/nonzero dashboards. Reruns do not update user-edited records, inactive users, credentials, or removed Attachments. Document how date-dependent seeded records age.
 
-## 7. API and UI Contracts
+## 8. API Contract
 
-The exact REST method, path, request, response, validation, conflict, and error contract is in [api-spec.md](./api-spec.md). The role screens, modes, feedback, navigation, responsive and accessibility rules are in [ui-spec.md](./ui-spec.md). The test plan and AC-to-owner/test traceability are in [tests.md](./tests.md).
+The exact REST methods, paths, request/response shapes, authorization, validation, status and error contracts, expected versions, idempotency, and locking rules are in [api-spec.md](./api-spec.md). The test plan and AC-to-owner/test traceability are in [tests.md](./tests.md).
 
-## 8. Acceptance Criteria
+## 9. Acceptance Criteria
 
 - **AC-01:** Before feature coding, this contract defines the product requirements, API/UI behavior, tests, and owning feature slices. Report, PDF, submission, release, reviewer-log, and AI-reflection artifacts are excluded.
 - **AC-02:** FR/BR/AC statements are numbered; every AC maps to planned tests and an owning feature ticket.
@@ -171,6 +168,15 @@ The exact REST method, path, request, response, validation, conflict, and error 
 
 The product AC numbering in this contract is the traceability key used by [tests.md](./tests.md); it refines the 25 broad outcomes in parent Issue #72 into 30 separately verifiable outcomes.
 
-## 9. Definition of Done
+## 10. Definition of Done
 
 An owning feature issue is complete only when its assigned API, data, UI, tests, and verification are delivered; its planned tests have truthful final outcomes recorded in tests.md; its expected role and error paths work; it has been checked against available completed dependencies; responsive, accessibility, and visual checks for affected screens pass; and failures caused by the feature are fixed. A missing sibling feature is reported as unavailable integration coverage and is not implemented by this ticket.
+
+## 11. Assumptions and Decisions
+
+The handout leaves the exact work-attribution and persistence strategy open. The existing application remains single-tenant and uses the current PostgreSQL/Prisma, Express, role, cache, and UI foundations. Stored timestamps are UTC and displayed in Asia/Bangkok.
+
+1. Assignee and performer are separate identities: assignee says who owns the work now; performer says who actually started it. Completion/cancellation actors are separate immutable events. This supports team work without changing primary Ticket ownership or losing attribution.
+2. The parent Ticket row is the serialization point for action and Ticket mutations. Action work affects public Ticket update/version data and the resolution/cancellation gate; locking one parent lets those decisions commit atomically and makes stale writes explicit.
+3. Idempotency identity is stored on the ActionTaken under a unique Ticket/creator/request key. This prevents a retry from creating duplicate work without adding an expiring cache or a second transactionally coupled store.
+4. Legacy rows receive no invented work or status transitions. Restrictive foreign keys preserve historical Tickets and people, and append-only event rows preserve auditable changes.
