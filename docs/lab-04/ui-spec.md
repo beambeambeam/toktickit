@@ -107,7 +107,38 @@ Verify affected Requester dashboard, staff/Admin dashboard, Ticket Detail with z
 
 Use one column for dashboard cards on narrow screens and a readable multi-column grid on wide screens. Allow action tables to become stacked cards before they force page-wide horizontal scrolling. Check clipping, overlap, long strings, focus order, visible active navigation, empty/error states, dialogs, color contrast, and the separation between shared actions and private notes. No page-level horizontal overflow is allowed.
 
-Run axe/automated accessibility checks on the major new screens and inspect representative desktop/tablet/mobile screenshots. These visual, responsive, and accessibility checks are owned by the action or dashboard/workflow issue that changes each screen; they are not deferred to a separate hardening ticket. Record actual results under the matching test IDs in tests.md.
+Run axe/automated accessibility checks on the major new screens and inspect desktop/tablet/mobile screenshots for every state in the inventory below. These visual, responsive, and accessibility checks are owned by the action or dashboard/workflow issue that changes each screen; they are not deferred to a separate hardening ticket. Record actual results under the matching test IDs in tests.md.
+
+### Screenshot inventory
+
+Capture each listed state at desktop (1440 × 900), tablet (768 × 1024), and mobile (390 × 844). Replace `{viewport}` in each filename with `desktop`, `tablet`, or `mobile`. Save one real screenshot per state and viewport; do not reuse an image under multiple state names. Each folder also contains `manifest-{viewport}.json`, listing each image’s scenario, role, branch and full commit SHA, UTC capture time, exact command, and whether the state was seeded, intercepted, or reached naturally. The inventory is planned evidence; files and manifest entries are added only after capture and review.
+
+| Folder | State | Stable filename |
+| --- | --- | --- |
+| `artifacts/lab-04/screenshots/actions-taken/` | Requester detail with no actions | `requester-actions-empty-{viewport}.png` |
+| `artifacts/lab-04/screenshots/actions-taken/` | Requester detail with multiple actions and history | `requester-actions-populated-{viewport}.png` |
+| `artifacts/lab-04/screenshots/actions-taken/` | Staff/Admin action list and attribution | `staff-actions-populated-{viewport}.png` |
+| `artifacts/lab-04/screenshots/actions-taken/` | Create form with conditional follow-up validation | `action-create-validation-{viewport}.png` |
+| `artifacts/lab-04/screenshots/actions-taken/` | Edit and reassign a pending action | `action-edit-reassign-{viewport}.png` |
+| `artifacts/lab-04/screenshots/actions-taken/` | Start confirmation | `action-start-confirmation-{viewport}.png` |
+| `artifacts/lab-04/screenshots/actions-taken/` | Completion confirmation and Result | `action-complete-confirmation-{viewport}.png` |
+| `artifacts/lab-04/screenshots/actions-taken/` | Cancellation confirmation | `action-cancel-confirmation-{viewport}.png` |
+| `artifacts/lab-04/screenshots/actions-taken/` | Terminal event history | `action-terminal-history-{viewport}.png` |
+| `artifacts/lab-04/screenshots/actions-taken/` | Version conflict with recoverable draft | `action-conflict-draft-{viewport}.png` |
+| `artifacts/lab-04/screenshots/actions-taken/` | Ticket resolution feedback with unmet requirements | `ticket-resolution-gate-{viewport}.png` |
+| `artifacts/lab-04/screenshots/requester-dashboard/` | Dashboard with counts and recent previews | `requester-dashboard-populated-{viewport}.png` |
+| `artifacts/lab-04/screenshots/requester-dashboard/` | Dashboard with zero counts and empty previews | `requester-dashboard-empty-{viewport}.png` |
+| `artifacts/lab-04/screenshots/requester-dashboard/` | Dashboard loading state | `requester-dashboard-loading-{viewport}.png` |
+| `artifacts/lab-04/screenshots/requester-dashboard/` | Dashboard safe failure and retry | `requester-dashboard-error-{viewport}.png` |
+| `artifacts/lab-04/screenshots/requester-dashboard/` | Recent metric drill-down with exact date bounds | `requester-dashboard-drilldown-{viewport}.png` |
+| `artifacts/lab-04/screenshots/staff-dashboard/` | Staff/Admin dashboard with all metric groups populated | `staff-dashboard-populated-{viewport}.png` |
+| `artifacts/lab-04/screenshots/staff-dashboard/` | Staff/Admin dashboard with zero counts and empty previews | `staff-dashboard-empty-{viewport}.png` |
+| `artifacts/lab-04/screenshots/staff-dashboard/` | Dashboard loading state | `staff-dashboard-loading-{viewport}.png` |
+| `artifacts/lab-04/screenshots/staff-dashboard/` | Dashboard safe failure and retry | `staff-dashboard-error-{viewport}.png` |
+| `artifacts/lab-04/screenshots/staff-dashboard/` | My Actions list with parent Ticket links | `staff-my-actions-{viewport}.png` |
+| `artifacts/lab-04/screenshots/staff-dashboard/` | Queue drill-down with matching filters | `staff-dashboard-drilldown-{viewport}.png` |
+
+For the 320 CSS pixel and 200% zoom checks, record the viewport/zoom, scenario, and result in the same manifest; the three named screenshots above remain the required visual captures. Link each reviewed inventory item to its STYLE/VIS test result. No planned screenshot is marked complete before it exists and has been inspected.
 
 ## 9. Feature Completion Checklist
 
