@@ -71,9 +71,9 @@ All rows have Final status “Not run” at contract time.
 
 | Test ID | Type | What it verifies | Expected result | Planned file or evidence | Owner | Final |
 | --- | --- | --- | --- | --- | --- | --- |
-| DOC-01 | Contract review | Required engineering, API, UI, and test sections; exact fields, statuses, role rules, routes, and no report deliverables | All four docs agree and cover #73 acceptance | docs/lab-04/*.md | #73 | Not run |
+| DOC-01 | Contract review | Six handout-required documents; exact fields, statuses, role rules, routes, and excluded report deliverables | All six docs agree and cover #73 acceptance | docs/lab-04/*.md | #73 | Not run |
 | DOC-02 | Contract review | Numbered FR/BR/AC statements and data decisions | IDs are stable and at least two database choices have reasons | docs/lab-04/specification.md | #73 | Not run |
-| DOC-03 | Contract review | Cross-check action fields, workflows, role matrix, API shapes, dashboard predicates, migration/recovery, UI behavior, and verification assignments across all four docs | Shared rules are identical wherever referenced; all #73 deliverables are present | docs/lab-04/*.md | #73 | Not run |
+| DOC-03 | Contract review | Cross-check action fields, workflows, role matrix, API shapes, dashboard predicates, migration/recovery, UI behavior, and verification assignments across all six docs | Shared rules are identical wherever referenced; all #73 deliverables are present | docs/lab-04/*.md | #73 | Not run |
 | TRACE-01 | Traceability | Every AC, test category, and migration/regression/E2E/performance/accessibility/visual check has an owning feature ticket | Every criterion links to a planned test and #74–#79 or #73 owner | docs/lab-04/tests.md | #73 | Not run |
 | RULE-01 | Unit | Trim/count Unicode code points; optional Result; conditional Follow-up Note; Attachment Notes; action completion prerequisites | Valid input normalizes; invalid input is rejected without writes | server/tests/lab-04/action-rules.test.ts | #74–#76 | Not run |
 | RULE-02 | Unit | Action transition matrix, Ticket transition matrix, owner and resolution/cancellation gates | Only specified edges pass; all gate boundaries are exact | server/tests/lab-04/workflow-rules.test.ts | #76, #77 | Not run |

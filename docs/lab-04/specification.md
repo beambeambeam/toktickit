@@ -19,10 +19,11 @@ Staff need to assign, perform, record, and retain work on a Ticket without chang
 - Requester and staff/Administrator dashboards with exact predicates, bounded previews, role-aware navigation, and drill-down.
 - A data-preserving Prisma/PostgreSQL migration, insert-only demonstration seeds, API/OpenAPI/client changes, UI, regression, accessibility, responsive, visual, and performance-smoke verification.
 - Preservation of authentication, Ticket creation/ownership, Attachments, Public Comments, Internal Notes, and Administrator account management, subject to the explicit Administrator permissions in this contract.
+- The Lab 4 reviewer record and AI-use record required by the handout.
 
 ### Excluded
 
-SLA timers, escalations, on-call scheduling, external notifications, inventory or cost accounting, timesheets/payroll, approval chains, electronic signatures, custom BI/export tools, multi-tenancy, new file upload models, Requester action writes, deleting actions, optional Administrator account metrics, release management, report/PDF preparation, submission evidence, reviewer logs, and AI-use/reflection records.
+SLA timers, escalations, on-call scheduling, external notifications, inventory or cost accounting, timesheets/payroll, approval chains, electronic signatures, custom BI/export tools, multi-tenancy, new file upload models, Requester action writes, deleting actions, optional Administrator account metrics, release management, report/PDF preparation, and submission evidence.
 
 ## 4. Functional Requirements
 
@@ -165,7 +166,7 @@ These 25 criteria are observable product outcomes and provide the AC-to-test key
 
 ## 10. Definition of Done
 
-Contract DoD: Before feature coding starts, Issue #73 has the handout-required specification, API/UI contracts, test plan, and recorded decisions; all FR/BR/product AC statements are numbered, each product AC maps to planned tests, and every migration, regression, E2E, performance-smoke, accessibility, and visual check has an owning feature issue. Feature DoD: An owning feature issue is complete only when its assigned API, data, UI, tests, and verification are delivered; its planned tests have truthful final outcomes recorded in tests.md; its expected role and error paths work; it has been checked against available completed dependencies; responsive, accessibility, and visual checks for affected screens pass; and failures caused by the feature are fixed. A missing sibling feature is reported as unavailable integration coverage and is not implemented by this ticket.
+Contract DoD: Before feature coding starts, Issue #73 has all six handout-required documents (`specification.md`, `api-spec.md`, `ui-spec.md`, `tests.md`, `reviewer.md`, and `ai-use.md`) with reviewed contracts and recorded decisions; all FR/BR/product AC statements are numbered, each product AC maps to planned tests, and every migration, regression, E2E, performance-smoke, accessibility, and visual check has an owning feature issue. Feature DoD: An owning feature issue is complete only when its assigned API, data, UI, tests, and verification are delivered; its planned tests have truthful final outcomes recorded in tests.md; its expected role and error paths work; it has been checked against available completed dependencies; responsive, accessibility, and visual checks for affected screens pass; and failures caused by the feature are fixed. A missing sibling feature is reported as unavailable integration coverage and is not implemented by this ticket.
 
 ## 11. Assumptions and Decisions
 
