@@ -153,7 +153,7 @@ Operational methods previously limited to IT Staff now allow Administrator too: 
 
 Use the existing GET /staff/owners for assignee selection; it returns active eligible IT Staff/Admin users sorted by displayName then ID. Administrator also receives the existing IT Staff write permissions for POST /tickets/:ticketId/comments and POST /tickets/:ticketId/internal-notes. Requester-only Ticket creation and Attachment writes remain Requester-only. Internal Notes remain unavailable to Requesters, including dashboard query and response data.
 
-Status transition events append in the same transaction as the Ticket change. GET /tickets/:ticketId/status-history returns their paginated, stable-order history to authorized Ticket readers.
+Status transition events append in the same transaction as the Ticket change. GET /tickets/:ticketId/status-history returns recorded events in paginated, stable order to authorized Ticket readers. The migration does not synthesize events for legacy Tickets; transitions before the Lab 4 rollout cannot be reconstructed.
 
 ## 5. Dashboard and Drill-Down Endpoints
 

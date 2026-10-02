@@ -127,7 +127,7 @@ Add indexes for ActionTaken by (ticketId, createdAt, id), (ticketId, status), an
 
 ### Migration, recovery, and seed rules
 
-- Migration adds tables, enums, fields and indexes without rebuilding or rewriting existing Users, Tickets, Attachments, Public Comments, Internal Notes, or Sessions.
+- Migration adds tables, enums, fields and indexes without rebuilding or rewriting existing Users, Tickets, Attachments, Public Comments, Internal Notes, or Sessions. It does not synthesize TicketStatusEvent rows for legacy Tickets; earlier status transitions cannot be reconstructed.
 - Before/after migration verification compares populated row identities and values, Attachment metadata and file-byte hashes, then proves rerunning the deployed migration is safe. No legacy Actions Taken are backfilled.
 - Recovery means restoring a matched database backup and Attachment storage backup; exercise the procedure against disposable populated data. Never run destructive reset commands against preserved data.
 - Extend existing seeds using stable seed keys and insert-only semantics. Include all Ticket states/priorities, assigned and unassigned owners, Tickets with zero/one/multiple actions, multiple workers on one Ticket, action lifecycle/follow-up examples, and zero/nonzero dashboards. Reruns do not update user-edited records, inactive users, credentials, or removed Attachments. Document how date-dependent seeded records age.

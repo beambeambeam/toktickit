@@ -48,7 +48,7 @@ Keep Ticket summary, status, ownership, Attachments, Public Comments, and staff-
 - Display backend-created time in Asia/Bangkok and label the timezone. Show a clear empty state when the Ticket has no Actions Taken.
 - Sort by createdAt ascending then Action ID ascending. Paginate without reordering. A longer history shows its page controls and total count.
 - Display staff account ineligibility without erasing historical attribution. Plain-text fields preserve line breaks and are rendered as escaped text; do not render HTML or imply Attachment Notes create a file.
-- A concise action history view shows each create/edit/start/complete/cancel event in createdAt/ID order, with actor and event time. Ticket status history shows every transition in the same stable order.
+- A concise action history view shows each create/edit/start/complete/cancel event in createdAt/ID order, with actor and event time. Ticket status history shows each recorded transition in the same stable order. Every status-history panel states: “Earlier Ticket status changes were not recorded; this history begins with the Lab 4 rollout.”
 
 ### Requester view
 
