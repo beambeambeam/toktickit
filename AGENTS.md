@@ -1,4 +1,4 @@
-# Agent Guidance
+# Agent Guidance & Agent skills
 
 ## Scope
 
@@ -18,8 +18,10 @@ CI runs `pnpm run fix`, `pnpm run check-types`, `pnpm run test`, then `pnpm run 
 4. Run formatting/checks appropriate to changed files.
 5. Report checks run and any known limitation.
 
-## Agent skills
-
-### Issue tracker
+## Issue tracker
 
 Issues and specs live in GitHub Issues. Read `docs/agents/issue-tracker.md` before tracker operations.
+
+## Domain docs
+
+Use a single-context layout at the repo root: `CONTEXT.md` and `docs/adr/`. Read `docs/agents/domain.md`.
