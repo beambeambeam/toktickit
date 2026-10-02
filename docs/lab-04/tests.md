@@ -17,40 +17,35 @@ Test methods assert observable output and persistence invariants. Do not couple 
 
 ## 2. Acceptance-Criterion Crosswalk
 
-Contract criteria AC-01 through AC-09 and product criteria AC-10 through AC-30 are defined in [specification.md](./specification.md). A dash in the coverage column means no separate test category applies; every criterion has at least one planned test. Categories are listed in §3 and detailed test paths in §4.
+All 25 product acceptance criteria in [specification.md](./specification.md) are observable outcomes. DOC/TRACE rows verify contract quality and ownership; they are engineering checks, not product criteria. Each AC maps to at least one planned test. Categories are listed in §3 and detailed test paths in §4.
 
 | AC | Owning issue | Planned test IDs | Coverage |
 | --- | --- | --- | --- |
-| AC-01 | #73 | DOC-01 | Contract review |
-| AC-02 | #73 | DOC-01, TRACE-01 | Contract review, traceability |
-| AC-03 | #73, #74, #75, #76, #77 | DOC-03, RULE-01, RULE-02, API-01, API-03, API-04, UI-01, UI-02, AUTH-01, E2E-01, E2E-02, E2E-03, RWD-01, VIS-01 | Contract, rules, API, UI, authorization, E2E, responsive, visual |
-| AC-04 | #73, #74, #75, #77 | DOC-03, API-02, API-05, AUTH-01, REG-02, E2E-01, E2E-04 | Contract, API, authorization, regression, E2E |
-| AC-05 | #73, #74, #75, #76, #77, #78, #79 | DOC-03, API-01, API-03, API-04, API-05, API-06, API-07, API-08, API-09 | Contract, API, concurrency, dashboard |
-| AC-06 | #73, #78, #79 | DOC-03, RULE-03, API-06, API-07, API-08, UI-03, UI-04, UI-05, PERF-01, PERF-02, E2E-05, E2E-06, RWD-02, VIS-02 | Contract, rules, API, UI, performance, E2E, responsive, visual |
-| AC-07 | #73, #74 | DOC-02, DOC-03, MIG-01, MIG-02 | Contract, migration, recovery, seed |
-| AC-08 | #73, #74, #75, #76, #77, #78, #79 | DOC-03, UI-01, UI-02, UI-03, UI-04, UI-05, STYLE-01, STYLE-02, RWD-01, RWD-02, A11Y-01, A11Y-02, VIS-01, VIS-02 | Contract, UI, style, responsive, accessibility, visual |
-| AC-09 | #73 | TRACE-01 | Feature ownership review |
-| AC-10 | #74 | RULE-01, API-01, UI-01, E2E-01, RWD-01, VIS-01 | Rules, API, UI, E2E, responsive, visual |
-| AC-11 | #74 | API-02, AUTH-01, UI-01, E2E-01 | API, authorization, UI, E2E |
-| AC-12 | #74, #75 | API-01, API-03, AUTH-01, REG-02, E2E-01, E2E-02 | API, authorization, regression, E2E |
-| AC-13 | #74, #75 | RULE-01, API-01, API-03, UI-01, E2E-01, A11Y-01 | Rules, API, UI, E2E, accessibility |
-| AC-14 | #75, #77 | API-03, API-05, AUTH-01, E2E-02, E2E-04 | API race, authorization, E2E |
-| AC-15 | #75 | API-03, UI-01, E2E-02 | API, UI, E2E |
-| AC-16 | #76 | RULE-02, API-04, UI-02, E2E-03, A11Y-01, VIS-01 | Rules, API, UI, E2E, accessibility, visual |
-| AC-17 | #74 | API-01, E2E-01 | API retry, E2E |
-| AC-18 | #74, #76 | API-02, API-04, AUTH-01, UI-01, E2E-03 | API, authorization, UI, E2E |
-| AC-19 | #77 | RULE-02, API-05, AUTH-01, UI-02, E2E-04 | Rules, API, authorization, UI, E2E |
-| AC-20 | #75, #77 | API-03, API-05, E2E-02, E2E-04 | API concurrency, E2E |
-| AC-21 | #77 | API-05, REG-02, UI-02, E2E-04 | API, regression, UI, E2E |
-| AC-22 | #78 | RULE-03, API-06, AUTH-01, PERF-01, UI-03, E2E-05, RWD-02, A11Y-02, VIS-02 | Rules, API, authorization, performance, UI, E2E, responsive, accessibility, visual |
-| AC-23 | #78 | API-06, API-08, UI-03, UI-05, E2E-05 | API parity, UI, E2E |
-| AC-24 | #79 | RULE-03, API-07, AUTH-01, PERF-02, UI-04, E2E-06 | Rules, API, authorization, performance, UI, E2E |
-| AC-25 | #79 | API-07, API-08, PERF-02, UI-04, UI-05, E2E-06, RWD-02, VIS-02 | API parity, performance, UI, E2E, responsive, visual |
-| AC-26 | #78, #79 | API-09, UI-03, UI-04, UI-05, AUTH-01, E2E-05, E2E-06, A11Y-02 | API, UI, authorization, E2E, accessibility |
-| AC-27 | #74 | MIG-01, MIG-02, REG-01 | Migration, recovery, seed, regression |
-| AC-28 | #74–#79 | REG-01, REG-02, REG-03, API-09, AUTH-01, E2E-01, E2E-04 | Regression, API, authorization, E2E |
-| AC-29 | #74, #75, #76, #78, #79 | UI-01, UI-02, UI-03, UI-04, API-01, API-03, API-04, E2E-01, E2E-02, E2E-03, A11Y-01 | UI, API failure, E2E, accessibility |
-| AC-30 | #74, #75, #76, #77, #78, #79 | STYLE-01, STYLE-02, RWD-01, RWD-02, A11Y-01, A11Y-02, VIS-01, VIS-02 | Style, responsive, accessibility, visual |
+| AC-01 | #74, #75, #76, #77 | RULE-01, RULE-02, API-01, API-03, API-04, UI-01, UI-02, AUTH-01, E2E-01, E2E-02, E2E-03, RWD-01, VIS-01 | Rules, API, UI, authorization, E2E, responsive, visual |
+| AC-02 | #74, #75, #77 | API-02, API-05, AUTH-01, REG-02, E2E-01, E2E-04 | API, authorization, regression, E2E |
+| AC-03 | #74, #75, #76, #77, #78, #79 | API-01, API-03, API-04, API-05, API-06, API-07, API-08, API-09 | API, concurrency, dashboard |
+| AC-04 | #78, #79 | RULE-03, API-06, API-07, API-08, UI-03, UI-04, UI-05, PERF-01, PERF-02, E2E-05, E2E-06, RWD-02, VIS-02 | Rules, API, UI, performance, E2E, responsive, visual |
+| AC-05 | #74 | RULE-01, API-01, UI-01, E2E-01, RWD-01, VIS-01 | Rules, API, UI, E2E, responsive, visual |
+| AC-06 | #74 | API-02, AUTH-01, UI-01, E2E-01 | API, authorization, UI, E2E |
+| AC-07 | #74, #75 | API-01, API-03, AUTH-01, REG-02, E2E-01, E2E-02 | API, authorization, regression, E2E |
+| AC-08 | #74, #75 | RULE-01, API-01, API-03, UI-01, E2E-01, A11Y-01 | Rules, API, UI, E2E, accessibility |
+| AC-09 | #75, #77 | API-03, API-05, AUTH-01, E2E-02, E2E-04 | API race, authorization, E2E |
+| AC-10 | #75 | API-03, UI-01, E2E-02 | API, UI, E2E |
+| AC-11 | #76 | RULE-02, API-04, UI-02, E2E-03, A11Y-01, VIS-01 | Rules, API, UI, E2E, accessibility, visual |
+| AC-12 | #74 | API-01, E2E-01 | API retry, E2E |
+| AC-13 | #74, #76 | API-02, API-04, AUTH-01, UI-01, E2E-03 | API, authorization, UI, E2E |
+| AC-14 | #77 | RULE-02, API-05, AUTH-01, UI-02, E2E-04 | Rules, API, authorization, UI, E2E |
+| AC-15 | #75, #77 | API-03, API-05, E2E-02, E2E-04 | API concurrency, E2E |
+| AC-16 | #77 | API-05, REG-02, UI-02, E2E-04 | API, regression, UI, E2E |
+| AC-17 | #78 | RULE-03, API-06, AUTH-01, PERF-01, UI-03, E2E-05, RWD-02, A11Y-02, VIS-02 | Rules, API, authorization, performance, UI, E2E, responsive, accessibility, visual |
+| AC-18 | #78 | API-06, API-08, UI-03, UI-05, E2E-05 | API parity, UI, E2E |
+| AC-19 | #79 | RULE-03, API-07, AUTH-01, PERF-02, UI-04, E2E-06 | Rules, API, authorization, performance, UI, E2E |
+| AC-20 | #79 | API-07, API-08, PERF-02, UI-04, UI-05, E2E-06, RWD-02, VIS-02 | API parity, performance, UI, E2E, responsive, visual |
+| AC-21 | #78, #79 | API-09, UI-03, UI-04, UI-05, AUTH-01, E2E-05, E2E-06, A11Y-02 | API, UI, authorization, E2E, accessibility |
+| AC-22 | #74 | MIG-01, MIG-02, REG-01 | Migration, recovery, seed, regression |
+| AC-23 | #74–#79 | REG-01, REG-02, REG-03, API-09, AUTH-01, E2E-01, E2E-04 | Regression, API, authorization, E2E |
+| AC-24 | #74, #75, #76, #78, #79 | UI-01, UI-02, UI-03, UI-04, API-01, API-03, API-04, E2E-01, E2E-02, E2E-03, A11Y-01 | UI, API failure, E2E, accessibility |
+| AC-25 | #74, #75, #76, #77, #78, #79 | STYLE-01, STYLE-02, RWD-01, RWD-02, A11Y-01, A11Y-02, VIS-01, VIS-02 | Style, responsive, accessibility, visual |
 
 The contract-only checks verify that statements and ownership links are complete; runtime product behavior is verified by the assigned feature issues. Migration/recovery and seed checks belong to #74; action field history/concurrency checks belong to #75/#76; Ticket gate and Administrator regression belongs to #77; database parity and boundedness/performance-smoke belongs to #78/#79.
 

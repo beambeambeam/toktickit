@@ -135,42 +135,37 @@ The exact REST methods, paths, request/response shapes, authorization, validatio
 
 ## 9. Acceptance Criteria
 
-- **AC-01:** Before feature coding, this contract defines the product requirements, API/UI behavior, tests, and owning feature slices. Report, PDF, submission, release, reviewer-log, and AI-reflection artifacts are excluded.
-- **AC-02:** FR/BR/AC statements are numbered; every AC maps to planned tests and an owning feature ticket.
-- **AC-03:** Action fields, validation, default/selected assignment, server attribution, transition rules, terminal immutability, history ordering, follow-up rules, and the resolution gate match this contract.
-- **AC-04:** Backend and UI follow the full role matrix, including Administrator operational permissions, Requester own-Ticket action visibility, and Internal Note isolation.
-- **AC-05:** The API defines exact paths, methods, shapes, statuses, error codes, action/Ticket versions, parent locking, idempotent create retries, and account eligibility races.
-- **AC-06:** Dashboard predicates, seven-day UTC bounds, Bangkok display, consistent snapshots, five-item previews, zero behavior, and equivalent drill-down filters match this contract.
-- **AC-07:** Data migration/recovery preserves prior rows and Attachment bytes; legacy Tickets receive no synthetic actions; seed reruns are insert-only; database decisions are justified.
-- **AC-08:** UI screen modes, feedback, role landing/navigation, responsive/accessibility/visual checks, and per-feature implementation/verification Definition of Done are defined.
-- **AC-09:** Each AC and migration, regression, E2E, performance-smoke, accessibility, and visual check belongs to its feature issue and is completed within that issue.
-- **AC-10:** Valid action creation stores one action under the correct Ticket with server creation time/creator and default or selected eligible assignee.
-- **AC-11:** Requesters read all Actions Taken on only their own Tickets; Requester writes and foreign Ticket reads are denied safely.
-- **AC-12:** Other eligible staff can create and perform work without changing the primary Ticket Owner; clients cannot spoof actor identities.
-- **AC-13:** Invalid text or missing required follow-up note fails with no partial write and recoverable UI drafts remain.
-- **AC-14:** Inactive/ineligible assignees and account-change races are rejected atomically.
-- **AC-15:** Fresh-version pending edits save; stale edits conflict with no partial write.
-- **AC-16:** Given an authorized staff member and a pending action, when they start, complete, or cancel it, then only valid transitions succeed, completion/cancellation require confirmed=true, completion requires a Result, and terminal history is retained.
-- **AC-17:** Repeated creates with the same key/payload produce one Action Taken; changed payload under that key conflicts.
-- **AC-18:** Action writes on Resolved/Closed/Cancelled Tickets fail while role-authorized reads continue.
-- **AC-19:** Ticket transitions, Administrator operations, confirmations, owner requirements, resolution and cancellation gates are enforced by the API.
-- **AC-20:** Resolution cannot race action/account changes into a Resolved Ticket with pending work, missing completed work, or no eligible owner.
-- **AC-21:** Requester indication is advisory; reopen clears the current indication/resolvedAt; legacy terminal Tickets remain valid and active legacy Tickets need new work.
-- **AC-22:** Requester dashboard counts/previews use only own authoritative public Ticket data and the exact UTC predicates.
-- **AC-23:** Requester metric links use the same ownership/status/time predicates and display truthful zero/empty results.
-- **AC-24:** Staff/Admin dashboard counts use authoritative status/priority/owner/action queries; My Actions is based on assignee and active parent status.
-- **AC-25:** Staff cards/action links match exact queue/action predicates; preview and list payloads stay bounded.
-- **AC-26:** Role-aware dashboard navigation, loading, zero/empty, forbidden, failure, focus, labels, and cache isolation work.
-- **AC-27:** Populated migrations, recovery rehearsal, and repeated seeds preserve previous records, bytes, and user edits.
-- **AC-28:** Earlier authentication, ownership, Attachments, comments, notes, and account management regressions pass, with explicit Administrator permission changes.
-- **AC-29:** Forms prevent duplicate in-flight submissions, preserve drafts on recoverable failure, and expose safe errors.
-- **AC-30:** Major Lab 4 screens pass responsive, keyboard, automated accessibility, and inspected Zen Green visual checks.
+- **AC-01:** Given an authorized staff/Admin user and a nonterminal Ticket, when they create, edit, assign, start, complete, or cancel Actions Taken, then server-owned identities and dates, assignment rules, allowed transitions, immutable terminal records, ordered history, follow-up behavior, and the resolution gate are enforced.
+- **AC-02:** Given a Requester, IT Staff member, or Administrator, when they read or mutate Tickets, Actions Taken, comments, notes, or dashboards, then the API and UI apply the role matrix and preserve Internal Note isolation.
+- **AC-03:** Given an authenticated role and a versioned API request, when it calls an action, Ticket-workflow, or dashboard endpoint, then documented schemas, status/error responses, parent locking, idempotency, and eligibility races are enforced without partial writes.
+- **AC-04:** Given Tickets, actions, and updates within and outside the seven-day window, when a dashboard is retrieved, then its snapshot, UTC bounds, Bangkok display values, five-item previews, zero values, and drill-down predicates match the stored data.
+- **AC-05:** Given a valid create request, when staff submit it for a nonterminal Ticket, then one Planned action is stored under that Ticket with server creation time/creator and the default or selected eligible assignee.
+- **AC-06:** Given an authenticated Requester, when they read Actions Taken for their own Ticket or attempt a foreign read/write, then own actions are visible and unauthorized operations fail safely.
+- **AC-07:** Given two eligible staff working on the same Ticket, when one is assigned an action and another starts or completes it, then actor attribution is automatic and the primary Ticket Owner remains unchanged.
+- **AC-08:** Given invalid action text or a missing required follow-up note, when the API validates the write, then it rejects the request without partial changes and recoverable UI drafts remain.
+- **AC-09:** Given an inactive or ineligible assignee or a concurrent account eligibility change, when an action is assigned or started/completed, then the write is rejected atomically and historical identity is retained.
+- **AC-10:** Given a pending action with a current version, when staff edit it, then fresh changes save and stale edits conflict without partial writes or lost drafts.
+- **AC-11:** Given a pending action, when staff start, complete, or cancel it, then only valid edges succeed, terminal transitions require confirmation, completion requires a Result, and terminal history remains available.
+- **AC-12:** Given a create request ID and normalized payload, when the same request is retried, then it returns the original action without duplication; a changed payload under that key conflicts.
+- **AC-13:** Given a Resolved, Closed, or Cancelled Ticket, when a user attempts an action mutation, then the write fails while role-authorized reads remain available.
+- **AC-14:** Given a Ticket and its current actions, when staff request a Ticket transition, then only allowed transitions pass and owner, resolution, cancellation, and Administrator operation rules are enforced by the API.
+- **AC-15:** Given concurrent action, account-eligibility, and resolution writes, when transactions commit, then no Resolved Ticket has pending actions, lacks a completed action, or lacks an eligible owner.
+- **AC-16:** Given a Requester resolution indication or a resolved legacy Ticket, when staff reopen or continue the workflow, then the indication/current resolution timestamp clears, existing terminal Tickets remain valid, and active legacy Tickets meet the new resolution gate.
+- **AC-17:** Given a Requester with matching and nonmatching Tickets, when their dashboard is retrieved, then counts and previews include only their public data under the exact UTC predicates.
+- **AC-18:** Given a Requester dashboard card, when the Requester opens its list link, then the same ownership/status/time predicate is applied and zero/empty results are shown truthfully.
+- **AC-19:** Given mixed Ticket statuses, priorities, owners, and assigned actions, when the staff/Admin dashboard is retrieved, then authoritative counts include the current user's pending assigned actions on active Tickets.
+- **AC-20:** Given a staff dashboard card or Action preview, when staff open its link, then the destination uses matching queue/action predicates and bounded pages.
+- **AC-21:** Given each permitted role and dashboard state, when a user navigates or encounters loading, empty, forbidden, or failure states, then role navigation, cache isolation, focus, labels, and recovery remain clear.
+- **AC-22:** Given populated existing data, when migrations, recovery, or repeated seeds run, then prior rows and Attachment bytes survive, legacy Tickets receive no synthetic actions, and user edits are preserved.
+- **AC-23:** Given earlier authentication, ownership, Attachment, comment, note, and account-management journeys, when Labs 1–3 regression checks run, then existing behavior passes with only the explicit Administrator permission changes.
+- **AC-24:** Given a slow, invalid, or recoverably failed form submission, when the user retries or corrects input, then duplicate in-flight submissions are prevented, drafts are preserved, and safe errors are shown.
+- **AC-25:** Given the major Lab 4 screens at supported desktop, tablet, and mobile sizes, when keyboard, accessibility, and visual checks run, then screens remain usable and follow Zen Green without clipping or horizontal overflow.
 
-The product AC numbering in this contract is the traceability key used by [tests.md](./tests.md); it refines the 25 broad outcomes in parent Issue #72 into 30 separately verifiable outcomes.
+These 25 criteria are observable product outcomes and provide the AC-to-test keys in [tests.md](./tests.md). Contract completeness, numbering, and verification ownership are engineering DoD checks, not product acceptance criteria.
 
 ## 10. Definition of Done
 
-An owning feature issue is complete only when its assigned API, data, UI, tests, and verification are delivered; its planned tests have truthful final outcomes recorded in tests.md; its expected role and error paths work; it has been checked against available completed dependencies; responsive, accessibility, and visual checks for affected screens pass; and failures caused by the feature are fixed. A missing sibling feature is reported as unavailable integration coverage and is not implemented by this ticket.
+Contract DoD: Before feature coding starts, Issue #73 has the handout-required specification, API/UI contracts, test plan, and recorded decisions; all FR/BR/product AC statements are numbered, each product AC maps to planned tests, and every migration, regression, E2E, performance-smoke, accessibility, and visual check has an owning feature issue. Feature DoD: An owning feature issue is complete only when its assigned API, data, UI, tests, and verification are delivered; its planned tests have truthful final outcomes recorded in tests.md; its expected role and error paths work; it has been checked against available completed dependencies; responsive, accessibility, and visual checks for affected screens pass; and failures caused by the feature are fixed. A missing sibling feature is reported as unavailable integration coverage and is not implemented by this ticket.
 
 ## 11. Assumptions and Decisions
 
