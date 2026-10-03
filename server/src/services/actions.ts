@@ -27,7 +27,11 @@ const resolveCreateOutcome = (
       throw new ApiError(
         409,
         "ACTION_ASSIGNEE_INELIGIBLE",
-        "The selected Action Taken assignee is not currently eligible."
+        "The selected Action Taken assignee is not currently eligible.",
+        {
+          field: "assigneeId",
+          reason: "Choose an active IT Staff member or Administrator.",
+        }
       );
     }
     case "not-found": {

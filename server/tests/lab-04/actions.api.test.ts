@@ -421,6 +421,13 @@ describe("Lab 4 Action Taken create and list API", () => {
       })
       .expect(409);
     assert.equal(errorCode(inactiveAssignee), "ACTION_ASSIGNEE_INELIGIBLE");
+    assert.deepEqual(
+      asJsonObject(asJsonObject(inactiveAssignee.body).error).details,
+      {
+        field: "assigneeId",
+        reason: "Choose an active IT Staff member or Administrator.",
+      }
+    );
 
     const administratorCreate = await request(activeFixture.app)
       .post(`/api/tickets/${ticket.id}/actions`)
