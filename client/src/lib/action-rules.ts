@@ -67,6 +67,10 @@ export const validateActionForm = (
   const followUpNote = trimmed(values.followUpNote);
   const attachmentNotes = trimmed(values.attachmentNotes);
 
+  if (parseAssigneeId(values.assigneeId) === undefined) {
+    errors.assigneeId = "Choose an eligible assignee.";
+  }
+
   if (
     codePointLength(description) < 1 ||
     codePointLength(description) > MAX_ACTION_DESCRIPTION_LENGTH

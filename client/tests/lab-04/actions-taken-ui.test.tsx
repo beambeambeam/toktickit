@@ -337,6 +337,28 @@ describe("Actions Taken UI", () => {
     expect(screen.queryByText("Action Taken #99")).toBeNull();
   });
 
+  it("rejects an explicitly blank assignee without silently assigning the actor", async () => {
+    createTicketActionMock.mockResolvedValue({
+      action,
+      ticket: { id: 11, version: 8 },
+    });
+    renderSection();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Add Action Taken" })
+    );
+    fireEvent.change(
+      screen.getByLabelText("Action Description", { exact: false }),
+      { target: { value: "Keep my chosen assignee" } }
+    );
+    const select = screen.getByLabelText("Assignee", { exact: false });
+    fireEvent.change(select, { target: { value: "" } });
+    fireEvent.click(screen.getByRole("button", { name: "Save Action Taken" }));
+    await screen.findByText("Choose an eligible assignee.");
+    expect(document.activeElement).toBe(select);
+    expect(createTicketActionMock).not.toHaveBeenCalled();
+    expect(screen.getByDisplayValue("Keep my chosen assignee")).toBeTruthy();
+  });
+
   it("validates follow-up fields before creating and prevents duplicate submits", async () => {
     let resolveCreate: ((value: unknown) => void) | undefined;
     // oxlint-disable-next-line promise/avoid-new -- the test controls the in-flight write.
