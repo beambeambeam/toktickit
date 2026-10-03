@@ -304,7 +304,7 @@ export const getApiTicketActionsInfiniteOptions = (options: Options<GetApiTicket
 /**
  * Create a Planned Action Taken
  *
- * IT Staff and Administrators can create one Planned Action Taken on a non-Closed, non-Cancelled Ticket. The server supplies creator, timestamps, status, and attribution; requestId retries replay the original result with HTTP 200.
+ * IT Staff and Administrators can create one Planned Action Taken on a Ticket that is not Resolved, Closed or Cancelled. The server supplies creator, timestamps, status, and attribution; requestId retries replay the original result with HTTP 200.
  */
 export const createApiTicketActionMutation = (options?: Partial<Options<CreateApiTicketActionData>>): UseMutationOptions<CreateApiTicketActionResponse, CreateApiTicketActionError, Options<CreateApiTicketActionData>> => {
     const mutationOptions: UseMutationOptions<CreateApiTicketActionResponse, CreateApiTicketActionError, Options<CreateApiTicketActionData>> = {

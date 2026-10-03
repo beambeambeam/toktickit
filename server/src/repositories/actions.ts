@@ -48,7 +48,11 @@ export type CreateActionOutcome =
       ticket: TicketDetailDatabaseRecord;
     };
 
-const terminalStatuses = new Set<PrismaCurrentStatus>(["Closed", "Cancelled"]);
+const actionClosedStatuses = new Set<PrismaCurrentStatus>([
+  "Resolved",
+  "Closed",
+  "Cancelled",
+]);
 
 const isEligibleActionUser = (
   user: {
@@ -155,7 +159,7 @@ export const createAction = async (
       return { action: existing, kind: "replayed", ticket };
     }
 
-    if (terminalStatuses.has(ticket.currentStatus)) {
+    if (actionClosedStatuses.has(ticket.currentStatus)) {
       return { kind: "terminal" };
     }
 

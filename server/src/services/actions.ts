@@ -44,7 +44,7 @@ const resolveCreateOutcome = (
       throw new ApiError(
         409,
         "TICKET_TERMINAL",
-        "Closed or Cancelled Tickets cannot receive Actions Taken."
+        "Resolved, Closed or Cancelled Tickets cannot receive new Actions Taken."
       );
     }
     case "version-conflict": {

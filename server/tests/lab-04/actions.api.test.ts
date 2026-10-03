@@ -370,7 +370,7 @@ describe("Lab 4 Action Taken create and list API", () => {
     });
   });
 
-  it("enforces role and assignee authorization while allowing Resolved but not terminal Tickets", async () => {
+  it("enforces role and assignee authorization and rejects new actions on Resolved, Closed and Cancelled Tickets", async () => {
     const activeFixture = getFixture();
     const ticket = await createTicket();
 
@@ -415,30 +415,32 @@ describe("Lab 4 Action Taken create and list API", () => {
       "Planned"
     );
 
-    const closedTicket = await createTicket("Closed");
-    const closed = await request(activeFixture.app)
-      .post(`/api/tickets/${closedTicket.id}/actions`)
-      .set(authHeaders(staff))
-      .send({
-        description: "Closed Tickets reject new work.",
-        followUpRequired: false,
-        requestId: "f5726990-c560-45d5-ae76-2f75659bb540",
-        version: 1,
+    await Promise.all(
+      (["Resolved", "Closed", "Cancelled"] as const).map(async (status) => {
+        const terminalTicket = await createTicket(status);
+        const rejected = await request(activeFixture.app)
+          .post(`/api/tickets/${terminalTicket.id}/actions`)
+          .set(authHeaders(staff))
+          .send({
+            description: `${status} Tickets reject new work.`,
+            followUpRequired: false,
+            requestId: "f5726990-c560-45d5-ae76-2f75659bb540",
+            version: terminalTicket.version,
+          })
+          .expect(409);
+        assert.equal(errorCode(rejected), "TICKET_TERMINAL");
+        const stored = await activeFixture.prisma.ticket.findUniqueOrThrow({
+          where: { id: terminalTicket.id },
+        });
+        assert.equal(stored.version, terminalTicket.version);
+        assert.equal(
+          await activeFixture.prisma.actionTaken.count({
+            where: { ticketId: terminalTicket.id },
+          }),
+          0
+        );
       })
-      .expect(409);
-    assert.equal(errorCode(closed), "TICKET_TERMINAL");
-
-    const resolvedTicket = await createTicket("Resolved");
-    await request(activeFixture.app)
-      .post(`/api/tickets/${resolvedTicket.id}/actions`)
-      .set(authHeaders(staff))
-      .send({
-        description: "Resolved remains writable on the server contract.",
-        followUpRequired: false,
-        requestId: "a6726990-c560-45d5-ae76-2f75659bb540",
-        version: 1,
-      })
-      .expect(201);
+    );
   });
 
   it("rechecks an assignee after a concurrent deactivation commits", async () => {
@@ -633,15 +635,25 @@ describe("Lab 4 Action Taken create and list API", () => {
       1
     );
 
-    await activeFixture.prisma.ticket.update({
-      data: { currentStatus: "Closed" },
-      where: { id: ticket.id },
-    });
-    await request(activeFixture.app)
-      .post(`/api/tickets/${ticket.id}/actions`)
-      .set(authHeaders(staff))
-      .send(body)
-      .expect(200);
+    // oxlint-disable no-await-in-loop -- Each replay must observe the preceding status change on the same Ticket.
+    for (const currentStatus of ["Resolved", "Closed", "Cancelled"] as const) {
+      const beforeReplay = await activeFixture.prisma.ticket.update({
+        data: { currentStatus },
+        where: { id: ticket.id },
+      });
+      await request(activeFixture.app)
+        .post(`/api/tickets/${ticket.id}/actions`)
+        .set(authHeaders(staff))
+        .send(body)
+        .expect(200);
+      assert.deepEqual(
+        await activeFixture.prisma.ticket.findUnique({
+          where: { id: ticket.id },
+        }),
+        beforeReplay
+      );
+    }
+    // oxlint-enable no-await-in-loop
   });
 
   it("replays after assignee ineligibility and keeps request IDs scoped by Ticket and actor", async () => {
