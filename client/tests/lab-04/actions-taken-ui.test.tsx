@@ -294,7 +294,7 @@ describe("Actions Taken UI", () => {
     expect(createTicketActionMock).not.toHaveBeenCalled();
   });
 
-  it("shows the saved action when it is outside the current bounded page", async () => {
+  it("keeps a saved confirmation without adding off-page actions to paginated cards", async () => {
     getTicketActionsMock.mockResolvedValue({
       ...emptyPage,
       items: [action],
@@ -319,9 +319,22 @@ describe("Actions Taken UI", () => {
     await screen.findByText("Action Taken saved successfully.", {
       exact: false,
     });
-    expect(await screen.findByText("Action Taken #99")).toBeTruthy();
-    expect(screen.getByText("Saved beyond the first page")).toBeTruthy();
+    expect(
+      screen.getByText("Saved Planned action #99.", { exact: false })
+    ).toBeTruthy();
+    expect(screen.queryByText("Saved beyond the first page")).toBeNull();
     expect(screen.getByText("Page 1 of 2", { exact: false })).toBeTruthy();
+    getTicketActionsMock.mockResolvedValueOnce({
+      ...emptyPage,
+      items: [{ ...action, description: "Second page action", id: 42 }],
+      page: 2,
+      totalItems: 21,
+      totalPages: 2,
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Next" }));
+    await screen.findByText("Second page action");
+    expect(screen.queryByText("Saved beyond the first page")).toBeNull();
+    expect(screen.queryByText("Action Taken #99")).toBeNull();
   });
 
   it("validates follow-up fields before creating and prevents duplicate submits", async () => {

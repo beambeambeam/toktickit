@@ -142,7 +142,6 @@ export interface ActionsTakenListProps {
   onPageChange: (page: number) => void;
   onRetry: () => void;
   page: number;
-  savedAction: TicketAction | null;
 }
 
 export const ActionsTakenList = ({
@@ -153,19 +152,8 @@ export const ActionsTakenList = ({
   onPageChange,
   onRetry,
   page,
-  savedAction,
 }: ActionsTakenListProps) => (
   <>
-    {savedAction !== null &&
-    actionPage?.items.some((item) => item.id === savedAction.id) !== true ? (
-      <ol className="action-list">
-        <li className="action-list-item">
-          <h3>Saved Action Taken</h3>
-          <ActionDetails action={savedAction} />
-        </li>
-      </ol>
-    ) : null}
-
     {actionsPending ? (
       <p aria-live="polite" className="loading-line" role="status">
         Loading Actions Taken…

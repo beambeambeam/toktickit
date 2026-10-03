@@ -142,7 +142,6 @@ export const ActionsTakenSection = ({
         onPageChange={setPage}
         onRetry={() => void actionsQuery.refetch()}
         page={page}
-        savedAction={createState.savedAction}
       />
 
       {createState.createFailure?.kind === "version-conflict" ? (
