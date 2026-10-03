@@ -160,6 +160,34 @@ Each feature verifies integration with completed prerequisites and features alre
 - Use migration recovery only on disposable database and Attachment storage. Do not reset a preserved environment.
 - Changes to an earlier-lab expectation are allowed only when this contract explicitly supersedes it, notably Administrator IT Staff capabilities and the new action resolution gate. Update the old expectation in the feature issue that changes that behavior.
 
+## Reproduce MIG-01 and MIG-02
+
+The evidence for MIG-01 rollback, deploy rerun, populated snapshots, Session preservation, Attachment-byte backup/restore and timestamp invariance is `server/tests/lab-04/migration-recovery.ts`. MIG-02 seed-edit preservation is exercised by the same script. It creates two uniquely named disposable databases, creates temporary Attachment storage, and removes both on exit. It requires a PostgreSQL role allowed to create databases.
+
+Run from the repository root after `pnpm install`. Docker supplies PostgreSQL 17 and matching `pg_dump`/`pg_restore`; no host installation of those tools is required:
+
+```sh
+pnpm db:generate
+docker run --name toktickit-lab4-recovery \
+  -e POSTGRES_USER=toktickit -e POSTGRES_PASSWORD=toktickit \
+  -p 127.0.0.1:55475:5432 -d postgres:17-alpine
+until docker exec toktickit-lab4-recovery pg_isready -U toktickit; do sleep 1; done
+TOKTICKIT_TEST_DATABASE_URL=postgresql://toktickit:toktickit@localhost:55475/postgres \
+  MIGRATION_POSTGRES_CONTAINER=toktickit-lab4-recovery \
+  pnpm --filter @toktickit/server exec tsx tests/lab-04/migration-recovery.ts
+DATABASE_URL=postgresql://toktickit:toktickit@localhost:55475/postgres \
+  pnpm --filter @toktickit/server exec tsx tests/check-migration-preservation.ts
+docker rm -f toktickit-lab4-recovery
+```
+
+Choose an unused container name and port. Set `MIGRATION_POSTGRES_CONTAINER` to that same container. With host PostgreSQL instead, omit that variable and put compatible `pg_dump` and `pg_restore` on PATH.
+
+`server/tests/check-migration-preservation.ts` is a separate earlier-lab regression: it applies historical migrations and verifies insert-only seeds. The expected seeded Ticket count increased from 9 to 12 because #74 adds three dedicated zero/one/multiple-action fixture Tickets. The populated recovery script additionally verifies preserved legacy rows and bytes; the count change is not the evidence for that requirement.
+
+PR #82 follow-up reran both scripts on 2026-10-03 against disposable PostgreSQL 17 container `toktickit-pr82-review`, port 55474: both passed. The recovery output confirmed populated rows, bytes, transaction rollback, backup restore, zero legacy actions and insert-only seed reruns. The historical check confirmed legacy preservation and normalized-email collision rejection.
+
+These external recovery scripts are explicit checks, outside Vitest and `pnpm test`. They require database creation and PostgreSQL backup tools; keep running both commands at the feature migration checkpoint rather than silently claiming CI coverage. A CI job can use the commands above with a dedicated service/container. The normal client/server suites remain the separate REG-03 checkpoint.
+
 ## 7. Issue #74 execution evidence — 2026-10-03
 
 Environment: Node/pnpm workspace, disposable PostgreSQL 17 container `toktickit-issue74-check` on port 55474, separate temporary Attachment storage, production API on port 3004 (fresh `toktickit_review` database for final captures), and production client preview on port 5174. Existing port 5432 was occupied and its credentials differed; no existing database or `.env` was changed. For database checks, both `DATABASE_URL` and `TOKTICKIT_TEST_DATABASE_URL` point at the disposable database because earlier-lab suites use the former.
