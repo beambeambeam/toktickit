@@ -1,5 +1,6 @@
 import express, { Router } from "express";
 
+import { createAction, getActions } from "../controllers/actions.js";
 import { changePassword, getMe, login, logout } from "../controllers/auth.js";
 import { getHealth } from "../controllers/health.js";
 import {
@@ -98,6 +99,24 @@ apiRouter.get(
   requireRole("ITStaff", "Administrator"),
   touchSession,
   getStaffOwners
+);
+apiRouter.get(
+  "/tickets/:ticketId/actions",
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester", "ITStaff", "Administrator"),
+  touchSession,
+  getActions
+);
+apiRouter.post(
+  "/tickets/:ticketId/actions",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff", "Administrator"),
+  requireCsrf,
+  touchSession,
+  createAction
 );
 apiRouter.post(
   "/tickets/:ticketId/status",
