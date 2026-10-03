@@ -13,17 +13,20 @@ type ActionBusinessFields = Pick<
 
 export type ActionPayload = ActionBusinessFields & { assigneeId: number };
 
+// Insertion order defines the canonical JSON used by the API payload hash.
+// oxlint-disable sort-keys -- The API contract fixes this JSON field order.
 export const getActionPayload = (
   input: ActionBusinessFields,
   assigneeId: number
 ): ActionPayload => ({
-  assigneeId,
-  attachmentNotes: input.attachmentNotes,
   description: input.description,
-  followUpNote: input.followUpNote,
-  followUpRequired: input.followUpRequired,
   result: input.result,
+  assigneeId,
+  followUpRequired: input.followUpRequired,
+  followUpNote: input.followUpNote,
+  attachmentNotes: input.attachmentNotes,
 });
+// oxlint-enable sort-keys
 
 export const hashActionPayload = (payload: ActionPayload): string =>
   createHash("sha256")
