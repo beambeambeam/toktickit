@@ -1,0 +1,332 @@
+{
+  "branch": "lab4-staging",
+  "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+  "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+  "files": [
+    {
+      "branch": "lab4-staging",
+      "capturedAt": "2026-10-03T08:10:47.020Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "path": "artifacts/lab-04/screenshots/actions-taken/actions-taken-loading-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Actions Taken loading state",
+      "stateSource": "intercepted",
+      "viewport": {
+        "height": 1024,
+        "name": "tablet",
+        "width": 768
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 768×1024; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "lab4-staging",
+      "capturedAt": "2026-10-03T08:10:48.933Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "path": "artifacts/lab-04/screenshots/actions-taken/actions-taken-error-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Actions Taken safe 503 failure with retry",
+      "stateSource": "intercepted",
+      "viewport": {
+        "height": 1024,
+        "name": "tablet",
+        "width": 768
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 768×1024; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "lab4-staging",
+      "capturedAt": "2026-10-03T08:10:50.396Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "path": "artifacts/lab-04/screenshots/actions-taken/actions-taken-forbidden-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Actions Taken forbidden response with retry",
+      "stateSource": "intercepted",
+      "viewport": {
+        "height": 1024,
+        "name": "tablet",
+        "width": 768
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 768×1024; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "lab4-staging",
+      "capturedAt": "2026-10-03T08:10:51.864Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "path": "artifacts/lab-04/screenshots/actions-taken/actions-taken-not-found-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Actions Taken not-found response with retry",
+      "stateSource": "intercepted",
+      "viewport": {
+        "height": 1024,
+        "name": "tablet",
+        "width": 768
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 768×1024; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "lab4-staging",
+      "capturedAt": "2026-10-03T08:10:53.144Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "path": "artifacts/lab-04/screenshots/actions-taken/requester-actions-empty-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "Requester",
+      "scenario": "Requester Ticket Detail with no Actions Taken",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 1024,
+        "name": "tablet",
+        "width": 768
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 768×1024; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "lab4-staging",
+      "capturedAt": "2026-10-03T08:10:54.282Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "path": "artifacts/lab-04/screenshots/actions-taken/action-create-validation-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Create form with conditional Follow-up Note validation and keyboard focus",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 1024,
+        "name": "tablet",
+        "width": 768
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 768×1024; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "lab4-staging",
+      "capturedAt": "2026-10-03T08:10:54.798Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "path": "artifacts/lab-04/screenshots/actions-taken/action-create-form-minimum-width-320-css-pixels-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Create form at 320 CSS pixels with conditional validation",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "tablet",
+        "width": 320
+      },
+      "zoom": {
+        "mode": "minimum-width-320-css-pixels",
+        "result": "320 CSS-pixel minimum-width check passed with no page overflow; observed viewport 320×844; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "lab4-staging",
+      "capturedAt": "2026-10-03T08:10:55.348Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "path": "artifacts/lab-04/screenshots/actions-taken/action-create-form-css-reflow-200-percent-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Create form at the 200% CSS reflow proxy",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 450,
+        "name": "tablet",
+        "width": 720
+      },
+      "zoom": {
+        "mode": "css-reflow-200-percent",
+        "result": "720 CSS-pixel reflow proxy passed with no page overflow; observed viewport 720×450; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "lab4-staging",
+      "capturedAt": "2026-10-03T08:10:57.350Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "path": "artifacts/lab-04/screenshots/actions-taken/staff-actions-populated-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "Administrator",
+      "scenario": "Staff/Admin action list with multiple actions and attribution",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 1024,
+        "name": "tablet",
+        "width": 768
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 768×1024; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "lab4-staging",
+      "capturedAt": "2026-10-03T08:10:58.285Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "path": "artifacts/lab-04/screenshots/actions-taken/requester-actions-populated-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "Requester",
+      "scenario": "Requester Ticket Detail with multiple Actions Taken and attribution",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 1024,
+        "name": "tablet",
+        "width": 768
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 768×1024; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "lab4-staging",
+      "capturedAt": "2026-10-03T08:10:58.826Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "path": "artifacts/lab-04/screenshots/actions-taken/requester-actions-populated-minimum-width-320-css-pixels-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "Requester",
+      "scenario": "Requester populated Actions Taken at 320 CSS pixels",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "tablet",
+        "width": 320
+      },
+      "zoom": {
+        "mode": "minimum-width-320-css-pixels",
+        "result": "320 CSS-pixel minimum-width check passed with no page overflow; observed viewport 320×844; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "lab4-staging",
+      "capturedAt": "2026-10-03T08:10:59.399Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "path": "artifacts/lab-04/screenshots/actions-taken/requester-actions-populated-css-reflow-200-percent-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "Requester",
+      "scenario": "Requester populated Actions Taken at the 200% CSS reflow proxy",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 450,
+        "name": "tablet",
+        "width": 720
+      },
+      "zoom": {
+        "mode": "css-reflow-200-percent",
+        "result": "720 CSS-pixel reflow proxy passed with no page overflow; observed viewport 720×450; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "lab4-staging",
+      "capturedAt": "2026-10-03T08:11:01.115Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "path": "artifacts/lab-04/screenshots/actions-taken/action-create-uncertain-draft-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Uncertain action create retains a recoverable draft",
+      "stateSource": "intercepted",
+      "viewport": {
+        "height": 1024,
+        "name": "tablet",
+        "width": 768
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 768×1024; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "lab4-staging",
+      "capturedAt": "2026-10-03T08:11:02.669Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "path": "artifacts/lab-04/screenshots/actions-taken/action-conflict-draft-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Version conflict preserves the recoverable action draft",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 1024,
+        "name": "tablet",
+        "width": 768
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 768×1024; visualViewport.scale=1"
+      }
+    }
+  ],
+  "generatedAt": "2026-10-03T08:10:46.149Z",
+  "project": "tablet-chromium",
+  "sourceDirty": false
+}
