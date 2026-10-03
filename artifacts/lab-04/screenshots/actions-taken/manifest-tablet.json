@@ -1,13 +1,13 @@
 {
-  "branch": "lab4-staging",
+  "branch": "feature/74-create-view-actions-taken",
   "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
-  "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+  "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
   "files": [
     {
-      "branch": "lab4-staging",
-      "capturedAt": "2026-10-03T08:10:47.020Z",
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:08.123Z",
       "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
-      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
       "path": "artifacts/lab-04/screenshots/actions-taken/actions-taken-loading-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -27,10 +27,10 @@
       }
     },
     {
-      "branch": "lab4-staging",
-      "capturedAt": "2026-10-03T08:10:48.933Z",
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:10.522Z",
       "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
-      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
       "path": "artifacts/lab-04/screenshots/actions-taken/actions-taken-error-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -50,10 +50,10 @@
       }
     },
     {
-      "branch": "lab4-staging",
-      "capturedAt": "2026-10-03T08:10:50.396Z",
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:12.034Z",
       "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
-      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
       "path": "artifacts/lab-04/screenshots/actions-taken/actions-taken-forbidden-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -73,10 +73,10 @@
       }
     },
     {
-      "branch": "lab4-staging",
-      "capturedAt": "2026-10-03T08:10:51.864Z",
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:13.511Z",
       "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
-      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
       "path": "artifacts/lab-04/screenshots/actions-taken/actions-taken-not-found-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -96,10 +96,10 @@
       }
     },
     {
-      "branch": "lab4-staging",
-      "capturedAt": "2026-10-03T08:10:53.144Z",
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:15.575Z",
       "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
-      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
       "path": "artifacts/lab-04/screenshots/actions-taken/requester-actions-empty-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -119,10 +119,10 @@
       }
     },
     {
-      "branch": "lab4-staging",
-      "capturedAt": "2026-10-03T08:10:54.282Z",
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:18.642Z",
       "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
-      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
       "path": "artifacts/lab-04/screenshots/actions-taken/action-create-validation-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -142,10 +142,10 @@
       }
     },
     {
-      "branch": "lab4-staging",
-      "capturedAt": "2026-10-03T08:10:54.798Z",
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:19.972Z",
       "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
-      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
       "path": "artifacts/lab-04/screenshots/actions-taken/action-create-form-minimum-width-320-css-pixels-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -165,10 +165,10 @@
       }
     },
     {
-      "branch": "lab4-staging",
-      "capturedAt": "2026-10-03T08:10:55.348Z",
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:21.403Z",
       "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
-      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
       "path": "artifacts/lab-04/screenshots/actions-taken/action-create-form-css-reflow-200-percent-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -188,10 +188,10 @@
       }
     },
     {
-      "branch": "lab4-staging",
-      "capturedAt": "2026-10-03T08:10:57.350Z",
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:26.410Z",
       "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
-      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
       "path": "artifacts/lab-04/screenshots/actions-taken/staff-actions-populated-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -211,10 +211,10 @@
       }
     },
     {
-      "branch": "lab4-staging",
-      "capturedAt": "2026-10-03T08:10:58.285Z",
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:31.626Z",
       "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
-      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
       "path": "artifacts/lab-04/screenshots/actions-taken/requester-actions-populated-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -234,10 +234,10 @@
       }
     },
     {
-      "branch": "lab4-staging",
-      "capturedAt": "2026-10-03T08:10:58.826Z",
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:33.445Z",
       "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
-      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
       "path": "artifacts/lab-04/screenshots/actions-taken/requester-actions-populated-minimum-width-320-css-pixels-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -257,10 +257,10 @@
       }
     },
     {
-      "branch": "lab4-staging",
-      "capturedAt": "2026-10-03T08:10:59.399Z",
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:35.179Z",
       "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
-      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
       "path": "artifacts/lab-04/screenshots/actions-taken/requester-actions-populated-css-reflow-200-percent-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -280,10 +280,10 @@
       }
     },
     {
-      "branch": "lab4-staging",
-      "capturedAt": "2026-10-03T08:11:01.115Z",
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:39.431Z",
       "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
-      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
       "path": "artifacts/lab-04/screenshots/actions-taken/action-create-uncertain-draft-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -303,10 +303,10 @@
       }
     },
     {
-      "branch": "lab4-staging",
-      "capturedAt": "2026-10-03T08:11:02.669Z",
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:42.906Z",
       "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
-      "commit": "0ca28d4cc1bfd289557ed317cc12321967353ea8",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
       "path": "artifacts/lab-04/screenshots/actions-taken/action-conflict-draft-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -326,7 +326,7 @@
       }
     }
   ],
-  "generatedAt": "2026-10-03T08:10:46.149Z",
+  "generatedAt": "2026-10-03T14:50:06.757Z",
   "project": "tablet-chromium",
   "sourceDirty": false
 }

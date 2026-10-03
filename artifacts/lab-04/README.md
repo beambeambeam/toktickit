@@ -2,9 +2,11 @@
 
 The owned Playwright journey writes fresh evidence to `screenshots/actions-taken/` with one real PNG per state and viewport. The capture helper also rewrites `manifest-desktop.json`, `manifest-tablet.json`, and `manifest-mobile.json` at the start of each project run, so a fresh run does not inherit stale entries.
 
-Final production-build run: **12/12 journeys passed** on 2026-10-03. Captures record clean source commit `0ca28d4cc1bfd289557ed317cc12321967353ea8` on `lab4-staging`. The root agent inspected all 15 canonical PNGs and representative narrow, reflow, native-scale, error and uncertain-write captures. Metadata validation verified all 44 PNGs exist, each has exactly one manifest entry, and every canonical state is present at each viewport.
+PR #82 review-follow-up production run: **12/12 journeys passed** on 2026-10-03. All 44 PNGs were recaptured from clean, pushed source commit [`6dd2571551464a89c546236c63cb8b43a3e6233d`](https://github.com/beambeambeam/toktickit/commit/6dd2571551464a89c546236c63cb8b43a3e6233d) on `feature/74-create-view-actions-taken`. This source includes the reviewed UI, focus and API fixes. All 15 canonical PNGs and representative narrow, reflow, native-scale, error and uncertain-write captures were visually inspected. Each PNG has exactly one entry, and every canonical state is present at each viewport.
 
-Manifests: [desktop](screenshots/actions-taken/manifest-desktop.json), [tablet](screenshots/actions-taken/manifest-tablet.json), [mobile](screenshots/actions-taken/manifest-mobile.json). Each entry links to the [STYLE-01](../../docs/lab-04/tests.md#style-01) and [VIS-01](../../docs/lab-04/tests.md#vis-01) results. Later evidence-only commits retain this actual capture source SHA. The verified work was subsequently regrouped into focused commits on `feature/74-create-view-actions-taken`; capture metadata retains its original branch and SHA rather than claiming a new capture. Implementation and browser-test files are identical to the reviewed snapshot `3ddb6a1`, which remains in the preserved original local history.
+Manifests: [desktop](screenshots/actions-taken/manifest-desktop.json), [tablet](screenshots/actions-taken/manifest-tablet.json), [mobile](screenshots/actions-taken/manifest-mobile.json). Each entry links to [STYLE-01](../../docs/lab-04/tests.md#style-01) and [VIS-01](../../docs/lab-04/tests.md#vis-01), with actual UTC capture time, command, role and provenance. All three report `sourceDirty: false`. Subsequent evidence/record commits retain this reachable source SHA; a capture commit cannot include its own generated images.
+
+The earlier `0ca28d4` SHA was a pre-regroup local commit, unavailable in a fresh clone. The current captures replace that evidence and no longer rely on local history. The final checkpoint passed 134 client tests, 140 server tests and 18 affected earlier-lab browser journeys. Runtime environment and commands are in [the test record](../../docs/lab-04/tests.md#pr-82-review-follow-up-checkpoint--2026-10-03).
 
 ```sh
 pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts
@@ -45,11 +47,11 @@ The 320px entries record the fixed 320 CSS-pixel viewport. The reflow entries re
 | Check | Observed result |
 | --- | --- |
 | Zen Green layout and controls | Ticket cards, form controls, status badges and feedback match existing detail screens. |
-| Wrapping and spacing | Long descriptions, literal HTML, multiline results and attribution remain inside their cards; no clipping or overlap in reviewed views. |
+| Wrapping and spacing | Long descriptions, literal HTML, multiline results and attribution remain inside their cards; no clipping or overlap in reviewed views. Empty and one-line action output no longer inherits the 6rem form-field minimum height. |
 | Shared/private content | Requester action reads contain attribution and public fields, without write controls or Internal Notes. Staff private notes remain in a distinct section. |
 | Validation and recovery | Conditional follow-up error is visible with field focus; conflict and uncertain-write captures retain the entered draft and expose recovery controls. |
 | Responsive layout | Desktop and tablet fields fit their columns; mobile and 320px fields stack with usable controls. Automated overflow checks pass. |
-| Accessibility | Keyboard create and invalid-field focus pass; tested states have zero axe violations. |
+| Accessibility | Opening focuses Description; Cancel and successful Save return focus to Add. Invalid-field focus passes; tested states have zero axe violations. |
 | 200% checks | 720 CSS-pixel reflow and desktop Chromium page scale 2 pass; these are documented separately and do not claim browser-toolbar zoom. |
 
 ## Unavailable sibling states

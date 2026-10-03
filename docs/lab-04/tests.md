@@ -114,7 +114,7 @@ All rows have Final status “Not run” at contract time.
 | MIG-02 | Seed/regression | Seed twice, edit seeded rows between runs, inspect lifecycle and dashboard examples | Stable-key insert-only rerun preserves edits and covers zero/nonzero examples | server/tests/lab-04/migration-recovery.ts | #74 | Pass: three seed runs preserve edits and zero/one/multiple Planned actions; lifecycle/dashboard examples not run |
 | REG-01 | Regression | Requester login/password flow, Ticket creation/list/detail, ownership, Attachment upload/read/remove, Public Comments, resolution indication | Existing Requester journeys still pass with dashboard and actions present | Existing client/server labs 1–2 tests; e2e/lab-02/requester-flow.spec.ts | #74 | Pass: earlier-lab API/UI suites plus requester browser journey at all three sizes; dashboards not run |
 | REG-02 | Regression | Staff queue/ownership/status/priority, Public Comments, Internal Notes privacy, Administrator user management | Earlier behavior passes; approved Administrator operational access works | Existing client/server labs 3 tests; e2e/lab-03/user-management.spec.ts; e2e/lab-03/internal-notes.spec.ts | #75, #77 | Not run |
-| REG-03 | Regression | Run the complete existing earlier-lab client/server test suite in each feature issue's final verification, as applicable | Each feature records and fixes regressions it causes; the combined suite is green at the final integration checkpoint | pnpm run test; existing client/server labs 1–3 test suites | #74–#79 | Pass: 132 client and 137 server tests, including earlier labs; see execution evidence below |
+| REG-03 | Regression | Run the complete existing earlier-lab client/server test suite in each feature issue's final verification, as applicable | Each feature records and fixes regressions it causes; the combined suite is green at the final integration checkpoint | pnpm run test; existing client/server labs 1–3 test suites | #74–#79 | Pass after PR #82 follow-up: 134 client and 140 server tests; see current checkpoint below |
 | UI-01 | UI | Action empty/list/read, create/edit modes, assignee choices, conditional validation, draft retention, replay, pending/terminal controls | Visible states match the contract; invalid/recoverable save keeps entered values | client/tests/lab-04/actions-taken-ui.test.tsx | #74, #75 | Pass: #74 create/read, validation, failures, pagination, replay and identity reset; edit not run |
 | UI-02 | UI | Action lifecycle and Ticket workflow controls, permitted choices, confirmation, version conflict, gate feedback, refreshed status | Controls match current state; failures retain draft and saved state | client/tests/lab-04/TicketWorkflow.test.tsx | #76, #77 | Not run |
 | UI-03 | UI | Requester dashboard counts, previews, exact bounds, empty/loading/error/forbidden/retry | Shows real zero/empty and exact link parameters; never leaks other users’ data | client/tests/lab-04/RequesterDashboard.test.tsx | #78 | Not run |
@@ -188,7 +188,9 @@ PR #82 follow-up reran both scripts on 2026-10-03 against disposable PostgreSQL 
 
 These external recovery scripts are explicit checks, outside Vitest and `pnpm test`. They require database creation and PostgreSQL backup tools; keep running both commands at the feature migration checkpoint rather than silently claiming CI coverage. A CI job can use the commands above with a dedicated service/container. The normal client/server suites remain the separate REG-03 checkpoint.
 
-## 7. Issue #74 execution evidence — 2026-10-03
+## 7. Initial Issue #74 execution evidence — 2026-10-03
+
+Historical implementation checkpoint before PR #82 follow-up. Current results and reachable capture provenance are in the PR #82 checkpoint below.
 
 Environment: Node/pnpm workspace, disposable PostgreSQL 17 container `toktickit-issue74-check` on port 55474, separate temporary Attachment storage, production API on port 3004 (fresh `toktickit_review` database for final captures), and production client preview on port 5174. Existing port 5432 was occupied and its credentials differed; no existing database or `.env` was changed. For database checks, both `DATABASE_URL` and `TOKTICKIT_TEST_DATABASE_URL` point at the disposable database because earlier-lab suites use the former.
 
@@ -211,7 +213,7 @@ Pass for #74 after review corrections: all 15 canonical desktop/tablet/mobile im
 
 ### VIS-01
 
-Pass for #74: the final production-build run passed all 12 journeys and captured 44 PNGs from clean source commit `0ca28d4cc1bfd289557ed317cc12321967353ea8`. All 15 canonical states are present, inspected, and mapped once in the [desktop](../../artifacts/lab-04/screenshots/actions-taken/manifest-desktop.json), [tablet](../../artifacts/lab-04/screenshots/actions-taken/manifest-tablet.json), and [mobile](../../artifacts/lab-04/screenshots/actions-taken/manifest-mobile.json) manifests. Each entry records actual role, branch, SHA, UTC time, command, state provenance, viewport/zoom and review links. The 18 affected earlier-lab browser regressions also passed on the corrected build. The populated read inventory covers #74 action fields; history/lifecycle/gate states remain unavailable siblings.
+Pass after PR #82 follow-up: 12 production browser journeys recaptured all 44 PNGs from clean, pushed source commit [`6dd2571551464a89c546236c63cb8b43a3e6233d`](https://github.com/beambeambeam/toktickit/commit/6dd2571551464a89c546236c63cb8b43a3e6233d) on `feature/74-create-view-actions-taken`. The previous SHA was a pre-regroup local-only commit; the new manifests replace that provenance. All 15 canonical states are present, inspected, and mapped once in the [desktop](../../artifacts/lab-04/screenshots/actions-taken/manifest-desktop.json), [tablet](../../artifacts/lab-04/screenshots/actions-taken/manifest-tablet.json), and [mobile](../../artifacts/lab-04/screenshots/actions-taken/manifest-mobile.json) manifests. Each entry records actual role, branch, SHA, UTC time, command, state provenance, viewport/zoom and review links. The 18 affected earlier-lab browser regressions also passed on the corrected build. The populated read inventory covers #74 action fields; history/lifecycle/gate states remain unavailable siblings.
 
 ### Review corrections
 
@@ -243,7 +245,7 @@ Review totals: Standards 0 unresolved (6 fixed); Spec 0 unresolved (2 fixed).
 
 ## Commit regrouping — 2026-10-03
 
-The verified implementation was regrouped from the preserved local history into `feature/74-create-view-actions-taken`, based on `ab279fa`. Source and browser-test files remain identical to the reviewed snapshot `3ddb6a1`; screenshot manifests retain the branch and SHA of their actual capture. Existing runtime results above apply to that unchanged code.
+The verified implementation was regrouped from the preserved local history into `feature/74-create-view-actions-taken`, based on `ab279fa`. At the regrouping checkpoint, source and browser-test files were identical to the then-reviewed snapshot `3ddb6a1`. PR #82 follow-up subsequently changed that source; the current verification and freshly captured evidence below supersede that checkpoint.
 
 | Focused commit | Checks rerun before commit |
 | --- | --- |
@@ -253,3 +255,33 @@ The verified implementation was regrouped from the preserved local history into 
 | Browser journeys and verification evidence | E2E typecheck, discovery of all 12 feature journeys, 44-PNG/3-manifest provenance validation, repository format/lint |
 
 Each focused staged diff was inspected and compared with the reviewed snapshot. Repository hooks and commitlint remained enabled. No published history was rewritten.
+
+## PR #82 review follow-up checkpoint — 2026-10-03
+
+Environment: disposable PostgreSQL 17 container `toktickit-pr82-review` on port 55474. Both database variables pointed to this container for the full test run. Browser checks used the separate migrated/seeded `toktickit_review` database, temporary Attachment storage, production API port 3004, and client production preview port 5174. No existing database or environment file was changed.
+
+| Command/check | Current result |
+| --- | --- |
+| `pnpm run check`, `pnpm run check-types`, `VITE_API_URL=http://localhost:3004 pnpm run build` | Pass: format/lint, three TypeScript projects and both builds. |
+| `DATABASE_URL=postgresql://toktickit:toktickit@localhost:55474/toktickit TOKTICKIT_TEST_DATABASE_URL=postgresql://toktickit:toktickit@localhost:55474/toktickit pnpm run test` | Pass in one final run: 134 client tests, OpenAPI parity and 140 server tests. |
+| Focused Lab 4 checks | 27 client checks and 20 server checks are included in the full suite. Added regressions for blank Assignee, open/cancel/save focus, E2E user reference preservation, safe unexpected API errors and canonical SHA-256. Existing API tests now reject new actions on all three closed statuses and verify saved-request replay. |
+| Both migration scripts under Reproduce MIG-01 and MIG-02 | Pass after review fixes: populated preservation, rollback, DB/byte restore, timestamp invariance, insert-only seed reruns, historical rows and email collision rejection. |
+| `pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts` | Pass: all 12 journeys across desktop/tablet/mobile; fresh capture with browser focus assertions. |
+| `pnpm --filter @toktickit/e2e exec playwright test lab-02/requester-flow.spec.ts lab-03/public-comments.spec.ts lab-03/internal-notes.spec.ts lab-03/ticket-ownership.spec.ts lab-03/ticket-workflow.spec.ts lab-03/staff-queue.spec.ts` | Pass: 18 affected earlier-lab journeys; earlier-lab artifacts restored after verification. |
+| Visual/provenance inspection | Pass: all 15 canonical images and representative supplementary images inspected. Verified 44 unique PNG paths, three manifests, all canonical states, role/provenance metadata and clean reachable source SHA. Compact read output, focus, no overflow and zero axe violations in tested browser states. |
+
+Browser command environment:
+
+```sh
+DATABASE_URL=postgresql://toktickit:toktickit@localhost:55474/toktickit_review \
+  ATTACHMENT_STORAGE_DIR=/path/to/disposable/storage \
+  VITE_API_URL=http://localhost:3004 E2E_API_URL=http://localhost:3004 \
+  E2E_BASE_URL=http://localhost:5174 E2E_CLIENT_PORT=5174 PORT=3004 \
+  pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts
+```
+
+Use the same disposable database/storage for the running production API, with `CORS_ORIGIN=http://localhost:5174` and `API_ORIGIN=http://localhost:3004`; build the client with that VITE API URL and serve it on port 5174. The recovery section above supplies disposable PostgreSQL setup. The browser capture helper records its command and current Git metadata; start from committed source.
+
+One intermediate 10-case API run encountered a fixture login 404; all 10 cases passed on immediate rerun and the final full 140-test server run passed without retries. The PostgreSQL client emits an existing concurrent-query deprecation warning. No test expectations were relaxed.
+
+Current capture source: [`6dd2571551464a89c546236c63cb8b43a3e6233d`](https://github.com/beambeambeam/toktickit/commit/6dd2571551464a89c546236c63cb8b43a3e6233d). The evidence-only commit follows this source commit. Human review responses and commit mapping are recorded in [reviewer.md](reviewer.md); automated green checks do not imply peer approval.
