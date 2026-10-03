@@ -37,26 +37,7 @@ import {
   updateTicketItPriorityForStaff,
   updateTicketOwnerForStaff,
 } from "../services/tickets.js";
-
-const parseId = (value: unknown, field: string): number => {
-  if (typeof value !== "string" || !/^[1-9]\d*$/u.test(value)) {
-    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
-      field,
-      reason: `${field} must be a positive integer.`,
-    });
-  }
-
-  const id = Number(value);
-
-  if (!Number.isSafeInteger(id) || id > 2_147_483_647) {
-    throw new ApiError(400, "VALIDATION_ERROR", "Request validation failed.", {
-      field,
-      reason: `${field} must be a positive integer.`,
-    });
-  }
-
-  return id;
-};
+import { parsePositiveId } from "../utils/parse-id.js";
 
 interface UploadedFile {
   buffer: Buffer;
@@ -145,7 +126,7 @@ export const getStaffOwners: RequestHandler = async (_request, response) => {
 export const updateTicketStatus: RequestHandler = async (request, response) => {
   const ticket = await updateTicketStatusForStaff(
     getAuthenticatedUserId(response),
-    parseId(request.params.ticketId, "ticketId"),
+    parsePositiveId(request.params.ticketId, "ticketId"),
     validateStatusMutation(request.body)
   );
 
@@ -155,7 +136,7 @@ export const updateTicketStatus: RequestHandler = async (request, response) => {
 export const claimTicket: RequestHandler = async (request, response) => {
   const ticket = await claimTicketForStaff(
     getAuthenticatedUserId(response),
-    parseId(request.params.ticketId, "ticketId"),
+    parsePositiveId(request.params.ticketId, "ticketId"),
     validateClaimInput(request.body)
   );
 
@@ -169,7 +150,7 @@ export const indicateTicketResolution: RequestHandler = async (
   validateEmptyRequest(request.body);
   const indication = await indicateTicketResolutionForRequester(
     getAuthenticatedUserId(response),
-    parseId(request.params.ticketId, "ticketId")
+    parsePositiveId(request.params.ticketId, "ticketId")
   );
 
   response.json(indication);
@@ -178,7 +159,7 @@ export const indicateTicketResolution: RequestHandler = async (
 export const updateTicketOwner: RequestHandler = async (request, response) => {
   const ticket = await updateTicketOwnerForStaff(
     getAuthenticatedUserId(response),
-    parseId(request.params.ticketId, "ticketId"),
+    parsePositiveId(request.params.ticketId, "ticketId"),
     validateOwnerMutation(request.body)
   );
 
@@ -191,7 +172,7 @@ export const updateTicketItPriority: RequestHandler = async (
 ) => {
   const ticket = await updateTicketItPriorityForStaff(
     getAuthenticatedUserId(response),
-    parseId(request.params.ticketId, "ticketId"),
+    parsePositiveId(request.params.ticketId, "ticketId"),
     validateItPriorityMutation(request.body)
   );
 
@@ -203,7 +184,7 @@ export const getTicket: RequestHandler = async (request, response) => {
   const ticket = await getTicketForReader(
     user.id,
     user.role,
-    parseId(request.params.ticketId, "ticketId")
+    parsePositiveId(request.params.ticketId, "ticketId")
   );
 
   response.json(ticket);
@@ -214,7 +195,7 @@ export const getAttachments: RequestHandler = async (request, response) => {
   const attachments = await getAttachmentsForReader(
     user.id,
     user.role,
-    parseId(request.params.ticketId, "ticketId")
+    parsePositiveId(request.params.ticketId, "ticketId")
   );
 
   response.json({ attachments });
@@ -224,7 +205,7 @@ export const getInternalNotes: RequestHandler = async (request, response) => {
   const user = getAuthenticatedUser(response);
   const internalNotes = await listInternalNotesForReader(
     user.role,
-    parseId(request.params.ticketId, "ticketId")
+    parsePositiveId(request.params.ticketId, "ticketId")
   );
 
   response.json({ internalNotes });
@@ -235,7 +216,7 @@ export const createInternalNote: RequestHandler = async (request, response) => {
   const internalNote = await createInternalNoteForUser(
     user.id,
     user.role,
-    parseId(request.params.ticketId, "ticketId"),
+    parsePositiveId(request.params.ticketId, "ticketId"),
     getBodyObject(request.body)
   );
 
@@ -247,7 +228,7 @@ export const getPublicComments: RequestHandler = async (request, response) => {
   const comments = await listPublicCommentsForReader(
     user.id,
     user.role,
-    parseId(request.params.ticketId, "ticketId")
+    parsePositiveId(request.params.ticketId, "ticketId")
   );
 
   response.json({ comments });
@@ -261,7 +242,7 @@ export const createPublicComment: RequestHandler = async (
   const comment = await createPublicCommentForUser(
     user.id,
     user.role,
-    parseId(request.params.ticketId, "ticketId"),
+    parsePositiveId(request.params.ticketId, "ticketId"),
     getBodyObject(request.body)
   );
 
@@ -280,7 +261,7 @@ export const addAttachments: RequestHandler = async (request, response) => {
 
   const attachments = await addAttachmentsForRequester(
     getAuthenticatedUserId(response),
-    parseId(request.params.ticketId, "ticketId"),
+    parsePositiveId(request.params.ticketId, "ticketId"),
     attachmentCandidates
   );
 
@@ -292,8 +273,8 @@ export const downloadAttachment: RequestHandler = async (request, response) => {
   const attachment = await downloadAttachmentForReader(
     user.id,
     user.role,
-    parseId(request.params.ticketId, "ticketId"),
-    parseId(request.params.attachmentId, "attachmentId")
+    parsePositiveId(request.params.ticketId, "ticketId"),
+    parsePositiveId(request.params.attachmentId, "attachmentId")
   );
   const encodedFilename = encodeURIComponent(attachment.originalFilename);
 
@@ -312,8 +293,8 @@ export const removeAttachment: RequestHandler = async (request, response) => {
   const body = getBodyObject(request.body);
   const attachment = await removeAttachmentForRequester(
     getAuthenticatedUserId(response),
-    parseId(request.params.ticketId, "ticketId"),
-    parseId(request.params.attachmentId, "attachmentId"),
+    parsePositiveId(request.params.ticketId, "ticketId"),
+    parsePositiveId(request.params.attachmentId, "attachmentId"),
     validateRemovalReason(body.reason)
   );
 

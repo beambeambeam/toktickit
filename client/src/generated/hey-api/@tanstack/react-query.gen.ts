@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { claimApiTicket, createApiTicket, createApiTicketAttachments, createApiTicketComment, createApiTicketInternalNote, createApiUser, getApiAuthMe, getApiCategories, getApiHealth, getApiRelatedSystems, getApiStaffOwners, getApiStaffTickets, getApiTicket, getApiTicketAttachmentContent, getApiTicketAttachments, getApiTicketComments, getApiTicketInternalNotes, getApiTickets, getApiUser, getApiUsers, indicateApiTicketResolution, type Options, postApiAuthChangePassword, postApiAuthLogin, postApiAuthLogout, removeApiTicketAttachment, resetApiUserInitialPassword, updateApiTicketItPriority, updateApiTicketOwner, updateApiTicketStatus, updateApiUser } from '../sdk.gen';
-import type { ClaimApiTicketData, ClaimApiTicketError, ClaimApiTicketResponse, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsError, CreateApiTicketAttachmentsResponse, CreateApiTicketCommentData, CreateApiTicketCommentError, CreateApiTicketCommentResponse, CreateApiTicketData, CreateApiTicketError, CreateApiTicketInternalNoteData, CreateApiTicketInternalNoteError, CreateApiTicketInternalNoteResponse, CreateApiTicketResponse, CreateApiUserData, CreateApiUserError, CreateApiUserResponse, GetApiAuthMeData, GetApiAuthMeError, GetApiAuthMeResponse, GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse, GetApiRelatedSystemsData, GetApiRelatedSystemsError, GetApiRelatedSystemsResponse, GetApiStaffOwnersData, GetApiStaffOwnersError, GetApiStaffOwnersResponse, GetApiStaffTicketsData, GetApiStaffTicketsError, GetApiStaffTicketsResponse, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentsData, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, GetApiTicketCommentsData, GetApiTicketCommentsError, GetApiTicketCommentsResponse, GetApiTicketData, GetApiTicketError, GetApiTicketInternalNotesData, GetApiTicketInternalNotesError, GetApiTicketInternalNotesResponse, GetApiTicketResponse, GetApiTicketsData, GetApiTicketsError, GetApiTicketsResponse, GetApiUserData, GetApiUserError, GetApiUserResponse, GetApiUsersData, GetApiUsersError, GetApiUsersResponse, IndicateApiTicketResolutionData, IndicateApiTicketResolutionError, IndicateApiTicketResolutionResponse, PostApiAuthChangePasswordData, PostApiAuthChangePasswordError, PostApiAuthChangePasswordResponse, PostApiAuthLoginData, PostApiAuthLoginError, PostApiAuthLoginResponse, PostApiAuthLogoutData, PostApiAuthLogoutError, PostApiAuthLogoutResponse, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentError, RemoveApiTicketAttachmentResponse, ResetApiUserInitialPasswordData, ResetApiUserInitialPasswordError, ResetApiUserInitialPasswordResponse, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityError, UpdateApiTicketItPriorityResponse, UpdateApiTicketOwnerData, UpdateApiTicketOwnerError, UpdateApiTicketOwnerResponse, UpdateApiTicketStatusData, UpdateApiTicketStatusError, UpdateApiTicketStatusResponse, UpdateApiUserData, UpdateApiUserError, UpdateApiUserResponse } from '../types.gen';
+import { claimApiTicket, createApiTicket, createApiTicketAction, createApiTicketAttachments, createApiTicketComment, createApiTicketInternalNote, createApiUser, getApiAuthMe, getApiCategories, getApiHealth, getApiRelatedSystems, getApiStaffOwners, getApiStaffTickets, getApiTicket, getApiTicketActions, getApiTicketAttachmentContent, getApiTicketAttachments, getApiTicketComments, getApiTicketInternalNotes, getApiTickets, getApiUser, getApiUsers, indicateApiTicketResolution, type Options, postApiAuthChangePassword, postApiAuthLogin, postApiAuthLogout, removeApiTicketAttachment, resetApiUserInitialPassword, updateApiTicketItPriority, updateApiTicketOwner, updateApiTicketStatus, updateApiUser } from '../sdk.gen';
+import type { ClaimApiTicketData, ClaimApiTicketError, ClaimApiTicketResponse, CreateApiTicketActionData, CreateApiTicketActionError, CreateApiTicketActionResponse, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsError, CreateApiTicketAttachmentsResponse, CreateApiTicketCommentData, CreateApiTicketCommentError, CreateApiTicketCommentResponse, CreateApiTicketData, CreateApiTicketError, CreateApiTicketInternalNoteData, CreateApiTicketInternalNoteError, CreateApiTicketInternalNoteResponse, CreateApiTicketResponse, CreateApiUserData, CreateApiUserError, CreateApiUserResponse, GetApiAuthMeData, GetApiAuthMeError, GetApiAuthMeResponse, GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse, GetApiRelatedSystemsData, GetApiRelatedSystemsError, GetApiRelatedSystemsResponse, GetApiStaffOwnersData, GetApiStaffOwnersError, GetApiStaffOwnersResponse, GetApiStaffTicketsData, GetApiStaffTicketsError, GetApiStaffTicketsResponse, GetApiTicketActionsData, GetApiTicketActionsError, GetApiTicketActionsResponse, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentsData, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, GetApiTicketCommentsData, GetApiTicketCommentsError, GetApiTicketCommentsResponse, GetApiTicketData, GetApiTicketError, GetApiTicketInternalNotesData, GetApiTicketInternalNotesError, GetApiTicketInternalNotesResponse, GetApiTicketResponse, GetApiTicketsData, GetApiTicketsError, GetApiTicketsResponse, GetApiUserData, GetApiUserError, GetApiUserResponse, GetApiUsersData, GetApiUsersError, GetApiUsersResponse, IndicateApiTicketResolutionData, IndicateApiTicketResolutionError, IndicateApiTicketResolutionResponse, PostApiAuthChangePasswordData, PostApiAuthChangePasswordError, PostApiAuthChangePasswordResponse, PostApiAuthLoginData, PostApiAuthLoginError, PostApiAuthLoginResponse, PostApiAuthLogoutData, PostApiAuthLogoutError, PostApiAuthLogoutResponse, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentError, RemoveApiTicketAttachmentResponse, ResetApiUserInitialPasswordData, ResetApiUserInitialPasswordError, ResetApiUserInitialPasswordResponse, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityError, UpdateApiTicketItPriorityResponse, UpdateApiTicketOwnerData, UpdateApiTicketOwnerError, UpdateApiTicketOwnerResponse, UpdateApiTicketStatusData, UpdateApiTicketStatusError, UpdateApiTicketStatusResponse, UpdateApiUserData, UpdateApiUserError, UpdateApiUserResponse } from '../types.gen';
 
 /**
  * Sign in
@@ -248,6 +248,77 @@ export const getApiStaffOwnersOptions = (options?: Options<GetApiStaffOwnersData
     },
     queryKey: getApiStaffOwnersQueryKey(options)
 });
+
+export const getApiTicketActionsQueryKey = (options: Options<GetApiTicketActionsData>) => createQueryKey('getApiTicketActions', options);
+
+/**
+ * List Actions Taken for a Ticket
+ *
+ * Requesters can read Actions Taken only for their own Tickets. IT Staff and Administrators can read every Ticket's stable chronological action page.
+ */
+export const getApiTicketActionsOptions = (options: Options<GetApiTicketActionsData>) => queryOptions<GetApiTicketActionsResponse, GetApiTicketActionsError, GetApiTicketActionsResponse, ReturnType<typeof getApiTicketActionsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiTicketActions({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiTicketActionsQueryKey(options)
+});
+
+export const getApiTicketActionsInfiniteQueryKey = (options: Options<GetApiTicketActionsData>): QueryKey<Options<GetApiTicketActionsData>> => createQueryKey('getApiTicketActions', options, true);
+
+/**
+ * List Actions Taken for a Ticket
+ *
+ * Requesters can read Actions Taken only for their own Tickets. IT Staff and Administrators can read every Ticket's stable chronological action page.
+ */
+export const getApiTicketActionsInfiniteOptions = (options: Options<GetApiTicketActionsData>) => {
+    const opts = infiniteQueryOptions<GetApiTicketActionsResponse, GetApiTicketActionsError, InfiniteData<GetApiTicketActionsResponse>, QueryKey<Options<GetApiTicketActionsData>>, number | Pick<QueryKey<Options<GetApiTicketActionsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetApiTicketActionsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getApiTicketActions({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getApiTicketActionsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Create a Planned Action Taken
+ *
+ * IT Staff and Administrators can create one Planned Action Taken on a Ticket that is not Resolved, Closed or Cancelled. The server supplies creator, timestamps, status, and attribution; requestId retries replay the original result with HTTP 200.
+ */
+export const createApiTicketActionMutation = (options?: Partial<Options<CreateApiTicketActionData>>): UseMutationOptions<CreateApiTicketActionResponse, CreateApiTicketActionError, Options<CreateApiTicketActionData>> => {
+    const mutationOptions: UseMutationOptions<CreateApiTicketActionResponse, CreateApiTicketActionError, Options<CreateApiTicketActionData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createApiTicketAction({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
 
 /**
  * Progress a Ticket

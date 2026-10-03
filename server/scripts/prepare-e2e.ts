@@ -95,6 +95,12 @@ try {
       OR: generatedAccountEmailPrefixes.map((prefix) => ({
         email: { startsWith: prefix },
       })),
+      actionEvents: { none: {} },
+      assignedActions: { none: {} },
+      cancelledActions: { none: {} },
+      completedActions: { none: {} },
+      createdActions: { none: {} },
+      performedActions: { none: {} },
       tickets: { none: {} },
     },
   });

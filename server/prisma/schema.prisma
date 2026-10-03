@@ -31,6 +31,21 @@ enum UserRole {
   Administrator
 }
 
+enum ActionStatus {
+  Planned
+  InProgress @map("In Progress")
+  Completed
+  Cancelled
+}
+
+enum ActionEventType {
+  ActionCreated
+  ActionEdited
+  ActionStarted
+  ActionCompleted
+  ActionCancelled
+}
+
 model Category {
   id            Int      @id @default(autoincrement())
   name          String   @unique
@@ -75,6 +90,12 @@ model User {
   internalNotes       InternalNote[] @relation("InternalNoteAuthor")
   publicComments      PublicComment[] @relation("PublicCommentAuthor")
   sessions            Session[]
+  createdActions      ActionTaken[]   @relation("ActionCreatedBy")
+  assignedActions     ActionTaken[]   @relation("ActionAssignee")
+  performedActions    ActionTaken[]   @relation("ActionPerformedBy")
+  completedActions    ActionTaken[]   @relation("ActionCompletedBy")
+  cancelledActions    ActionTaken[]   @relation("ActionCancelledBy")
+  actionEvents        ActionEvent[]   @relation("ActionEventActor")
 
   @@index([isActive, displayName])
 }
@@ -111,6 +132,7 @@ model Ticket {
   attachments        Attachment[]
   internalNotes      InternalNote[]
   publicComments     PublicComment[]
+  actionsTaken       ActionTaken[]
 
   @@index([requesterId, updatedAt])
   @@index([requesterId, currentStatus])
@@ -122,6 +144,60 @@ model Ticket {
   @@index([currentStatus])
   @@index([itPriority])
   @@index([categoryId, relatedSystemId])
+}
+
+model ActionTaken {
+  id                  Int          @id @default(autoincrement())
+  ticketId            Int
+  createdByUserId     Int
+  assigneeId          Int
+  performedByUserId   Int?
+  completedByUserId   Int?
+  cancelledByUserId   Int?
+  description         String
+  result              String?
+  followUpRequired    Boolean      @default(false)
+  followUpNote        String?
+  attachmentNotes     String?
+  status              ActionStatus @default(Planned)
+  version             Int          @default(1)
+  requestId           String       @db.Uuid
+  payloadHash         String       @db.Char(64)
+  seedKey             String?      @unique
+  createdAt           DateTime     @default(now()) @db.Timestamptz(3)
+  updatedAt           DateTime     @updatedAt @db.Timestamptz(3)
+  startedAt           DateTime? @db.Timestamptz(3)
+  completedAt         DateTime? @db.Timestamptz(3)
+  cancelledAt         DateTime? @db.Timestamptz(3)
+  ticket              Ticket       @relation(fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  createdBy           User         @relation("ActionCreatedBy", fields: [createdByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  assignee            User         @relation("ActionAssignee", fields: [assigneeId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  performedBy         User?        @relation("ActionPerformedBy", fields: [performedByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  completedBy         User?        @relation("ActionCompletedBy", fields: [completedByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  cancelledBy         User?        @relation("ActionCancelledBy", fields: [cancelledByUserId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  events              ActionEvent[]
+
+  @@unique([ticketId, createdByUserId, requestId])
+  @@index([ticketId, createdAt, id])
+  @@index([ticketId, status])
+  @@index([assigneeId, status, ticketId])
+}
+
+model ActionEvent {
+  id            Int             @id @default(autoincrement())
+  actionId      Int
+  actorId       Int
+  eventType     ActionEventType
+  actionVersion Int
+  fromStatus    ActionStatus?
+  toStatus      ActionStatus?
+  createdAt     DateTime        @default(now()) @db.Timestamptz(3)
+  snapshot      Json?
+  action        ActionTaken     @relation(fields: [actionId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  actor         User            @relation("ActionEventActor", fields: [actorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([actionId, actionVersion])
+  @@index([actionId, createdAt, id])
 }
 
 model InternalNote {
