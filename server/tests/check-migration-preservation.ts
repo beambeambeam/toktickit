@@ -33,6 +33,7 @@ const postIdentityMigrations = [
   "20260915120000_staff_ticket_queue/migration.sql",
   "20260916170000_public_comments/migration.sql",
   "20260916180000_internal_notes/migration.sql",
+  "20261003120000_action_taken_foundation/migration.sql",
 ] as const;
 
 const quoteIdentifier = (value: string): string => {
@@ -446,7 +447,7 @@ const assertSeedIsIdempotent = async (
   assert.deepEqual(firstCounts, {
     categories: 5,
     relatedSystems: 8,
-    tickets: 9,
+    tickets: 12,
     users: 12,
   });
 
