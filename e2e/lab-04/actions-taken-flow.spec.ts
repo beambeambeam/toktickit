@@ -456,6 +456,11 @@ test("different staff create actions; owning Requester reads every plain-text fi
     name: "Follow-up Note",
   });
   await expect(descriptionField).toBeVisible();
+  await expect(descriptionField).toBeFocused();
+  await section.getByRole("button", { exact: true, name: "Cancel" }).click();
+  await expect(addButton).toBeFocused();
+  await page.keyboard.press("Enter");
+  await expect(descriptionField).toBeFocused();
   await section
     .getByRole("button", { exact: true, name: "Save Action Taken" })
     .click();
@@ -541,6 +546,7 @@ test("different staff create actions; owning Requester reads every plain-text fi
     section.getByRole("textbox", { exact: true, name: "Action Description" })
   ).toHaveCount(0);
   await expect(section.getByText(description, { exact: true })).toBeVisible();
+  await expect(addButton).toBeFocused();
   await expect(section.locator("script")).toHaveCount(0);
   await checkLayout(page);
 

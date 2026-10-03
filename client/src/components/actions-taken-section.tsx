@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { ticketActionsQueryOptions } from "@/api/action-query-options";
 import {
@@ -40,6 +40,8 @@ export const ActionsTakenSection = ({
   ticketVersion,
 }: ActionsTakenSectionProps) => {
   const [page, setPage] = useState(1);
+  const addButtonRef = useRef<HTMLButtonElement>(null);
+  const wasCreateOpen = useRef(false);
   const createState = useActionsTakenCreate({
     currentStatus,
     defaultAssigneeId,
@@ -62,6 +64,17 @@ export const ActionsTakenSection = ({
   }, [defaultAssigneeId, principalId, principalRole, ticketId]);
   // oxlint-enable react/react-compiler
 
+  useEffect(() => {
+    if (createState.isCreateOpen) {
+      createState.formRef.current
+        ?.querySelector<HTMLTextAreaElement>('[name="description"]')
+        ?.focus();
+    } else if (wasCreateOpen.current) {
+      addButtonRef.current?.focus();
+    }
+    wasCreateOpen.current = createState.isCreateOpen;
+  }, [createState.formRef, createState.isCreateOpen]);
+
   const actionPage = actionsQuery.data;
 
   return (
@@ -82,6 +95,7 @@ export const ActionsTakenSection = ({
           )}
           {createState.canCreate ? (
             <button
+              ref={addButtonRef}
               className="button button-primary"
               disabled={createState.isSubmitting || createState.isCreateOpen}
               onClick={createState.handleOpenCreateForm}

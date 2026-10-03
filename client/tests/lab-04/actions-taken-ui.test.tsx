@@ -432,6 +432,38 @@ describe("Actions Taken UI", () => {
     });
   });
 
+  it("focuses Description on open and returns focus to Add after Cancel and Save", async () => {
+    createTicketActionMock.mockResolvedValue({
+      action,
+      ticket: { id: 11, version: 8 },
+    });
+    renderSection();
+    const add = await screen.findByRole("button", { name: "Add Action Taken" });
+    add.focus();
+    fireEvent.click(add);
+    await waitFor(() => {
+      expect(document.activeElement).toBe(
+        screen.getByLabelText("Action Description", { exact: false })
+      );
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    await waitFor(() => {
+      expect(document.activeElement).toBe(add);
+    });
+    fireEvent.click(add);
+    fireEvent.change(
+      screen.getByLabelText("Action Description", { exact: false }),
+      { target: { value: "Return focus after saving" } }
+    );
+    fireEvent.click(screen.getByRole("button", { name: "Save Action Taken" }));
+    await screen.findByText("Action Taken saved successfully.", {
+      exact: false,
+    });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(add);
+    });
+  });
+
   it("focuses Action Description when Save is pressed with a blank form", async () => {
     renderSection();
     fireEvent.click(
