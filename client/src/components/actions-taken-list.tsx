@@ -48,8 +48,8 @@ const ActionDetails = ({ action }: { action: TicketAction }) => (
   <article className="action-card">
     <div className="action-card-heading">
       <div>
-        <p className="eyebrow">Action Taken #{action.id}</p>
-        <h3>{formatBangkokDate(action.createdAt)}</h3>
+        <h3>Action Taken #{action.id}</h3>
+        <p className="action-meta">{formatBangkokDate(action.createdAt)}</p>
       </div>
       <StatusBadge kind="status" value={action.status} />
     </div>

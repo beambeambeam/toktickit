@@ -177,6 +177,9 @@ describe("Actions Taken UI", () => {
     await screen.findByText("Replace <the> cable", { exact: false });
     expect(screen.getByRole("heading", { name: "Actions Taken" })).toBeTruthy();
     expect(
+      screen.getByRole("heading", { level: 3, name: "Action Taken #41" })
+    ).toBeTruthy();
+    expect(
       screen.getAllByText("Iris IT Staff", { exact: false }).length
     ).toBeGreaterThan(0);
     expect(screen.getByText("<not-html>")).toBeTruthy();
