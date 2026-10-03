@@ -16,6 +16,7 @@ import {
   removeTicketAttachment,
   uploadTicketAttachments,
 } from "@/api/requester";
+import { ActionsTakenSection } from "@/components/actions-taken-section";
 import {
   AppShell,
   AuthRequired,
@@ -339,6 +340,17 @@ export const RequesterTicketDetailPage = ({
               </div>
             </div>
           </section>
+
+          <ActionsTakenSection
+            currentStatus={ticket.currentStatus}
+            defaultAssigneeId={user.id}
+            onRefreshTicket={async () => await ticketQuery.refetch()}
+            owners={[]}
+            principalId={principalId}
+            principalRole={user.role}
+            ticketId={numericTicketId}
+            ticketVersion={ticket.version}
+          />
 
           <PublicCommentsSection
             canPost

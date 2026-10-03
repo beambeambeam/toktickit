@@ -19,6 +19,7 @@ import {
   updateStaffTicketStatus,
 } from "@/api/staff";
 import { staffOwnersQueryOptions } from "@/api/staff-query-options";
+import { ActionsTakenSection } from "@/components/actions-taken-section";
 import {
   AccessDenied,
   AppShell,
@@ -58,6 +59,11 @@ const getDetailErrorMessage = (error: unknown): string => {
 
   return "This Ticket could not be loaded. Try again.";
 };
+
+const getOwnerQueryError = (error: unknown): Error =>
+  error instanceof Error
+    ? error
+    : new Error("Unable to load eligible assignees.");
 
 const getStatusConfirmationMessage = (status: CurrentStatus): string => {
   if (status === "Resolved") {
@@ -103,7 +109,9 @@ const StaffTicketDetailContent = ({
   });
   const ownersQuery = useQuery({
     ...staffOwnersQueryOptions(),
-    enabled: user?.role === "IT Staff" && !user.mustChangePassword,
+    enabled:
+      (user?.role === "IT Staff" || user?.role === "Administrator") &&
+      !user.mustChangePassword,
   });
   const [operationError, setOperationError] = useState<string | null>(null);
   const [operationSuccess, setOperationSuccess] = useState<string | null>(null);
@@ -472,6 +480,22 @@ const StaffTicketDetailContent = ({
               </div>
             </div>
           </section>
+
+          <ActionsTakenSection
+            currentStatus={ticket.currentStatus}
+            defaultAssigneeId={user.id}
+            onRefreshTicket={async () => await ticketQuery.refetch()}
+            onRetryAssignees={async () => await ownersQuery.refetch()}
+            owners={ownersQuery.data ?? []}
+            ownersError={
+              ownersQuery.isError ? getOwnerQueryError(ownersQuery.error) : null
+            }
+            ownersLoading={ownersQuery.isPending}
+            principalId={user.id}
+            principalRole={user.role}
+            ticketId={numericTicketId}
+            ticketVersion={ticket.version}
+          />
 
           {user.role === "IT Staff" ? (
             <>
