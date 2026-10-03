@@ -147,6 +147,60 @@ export type AttachmentListResponse = {
     attachments: Array<AttachmentMetadata>;
 };
 
+export type ActionStatus = 'Planned' | 'In Progress' | 'Completed' | 'Cancelled';
+
+export type ActionUserRef = {
+    id: number;
+    displayName: string;
+    role: UserRole;
+};
+
+export type CreateActionRequest = {
+    requestId: string;
+    version: number;
+    description: string;
+    result?: string | null;
+    assigneeId?: number | null;
+    followUpRequired: boolean;
+    followUpNote?: string | null;
+    attachmentNotes?: string | null;
+};
+
+export type ActionTaken = {
+    id: number;
+    ticketId: number;
+    description: string;
+    result: string | null;
+    assignee: Owner;
+    createdBy: ActionUserRef;
+    performedBy: ActionUserRef | null;
+    followUpRequired: boolean;
+    followUpNote: string | null;
+    attachmentNotes: string | null;
+    status: ActionStatus;
+    version: number;
+    createdAt: string;
+    updatedAt: string;
+    startedAt: string | null;
+    completedAt: string | null;
+    completedBy: ActionUserRef | null;
+    cancelledAt: string | null;
+    cancelledBy: ActionUserRef | null;
+};
+
+export type ActionMutationResult = {
+    action: ActionTaken;
+    ticket: TicketDetail;
+};
+
+export type ActionListResponse = {
+    items: Array<ActionTaken>;
+    page: number;
+    pageSize: 10 | 20 | 50;
+    totalItems: number;
+    totalPages: number;
+};
+
 export type TicketSummary = {
     id: number;
     ticketNumber: string;
@@ -329,6 +383,8 @@ export type Page = number;
 export type PageSize = 10 | 25 | 50;
 
 export type QueuePageSize = 10 | 20 | 50;
+
+export type ActionPageSize = 10 | 20 | 50;
 
 export type PostApiAuthLoginData = {
     body: LoginRequest;
@@ -608,6 +664,109 @@ export type GetApiStaffOwnersResponses = {
 };
 
 export type GetApiStaffOwnersResponse = GetApiStaffOwnersResponses[keyof GetApiStaffOwnersResponses];
+
+export type GetApiTicketActionsData = {
+    body?: never;
+    path: {
+        ticketId: number;
+    };
+    query?: {
+        page?: number;
+        pageSize?: 10 | 20 | 50;
+    };
+    url: '/api/tickets/{ticketId}/actions';
+};
+
+export type GetApiTicketActionsErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiTicketActionsError = GetApiTicketActionsErrors[keyof GetApiTicketActionsErrors];
+
+export type GetApiTicketActionsResponses = {
+    /**
+     * The stable Action Taken page, ordered by creation time then ID.
+     */
+    200: ActionListResponse;
+};
+
+export type GetApiTicketActionsResponse = GetApiTicketActionsResponses[keyof GetApiTicketActionsResponses];
+
+export type CreateApiTicketActionData = {
+    body: CreateActionRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/actions';
+};
+
+export type CreateApiTicketActionErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type CreateApiTicketActionError = CreateApiTicketActionErrors[keyof CreateApiTicketActionErrors];
+
+export type CreateApiTicketActionResponses = {
+    /**
+     * An idempotent replay of an existing Action Taken.
+     */
+    200: ActionMutationResult;
+    /**
+     * The newly created Planned Action Taken and current parent Ticket.
+     */
+    201: ActionMutationResult;
+};
+
+export type CreateApiTicketActionResponse = CreateApiTicketActionResponses[keyof CreateApiTicketActionResponses];
 
 export type UpdateApiTicketStatusData = {
     body: StatusMutationRequest;
