@@ -103,11 +103,8 @@ export const listActionsForReader = async (
       totalItems: result.totalItems,
       totalPages: Math.ceil(result.totalItems / query.pageSize),
     };
-  } catch {
-    throw new ApiError(
-      500,
-      "ACTION_LIST_FAILURE",
-      "Unable to load Actions Taken."
-    );
+  } catch (error: unknown) {
+    console.error("Unable to load Actions Taken.", error);
+    throw new ApiError(500, "INTERNAL_ERROR", "Unable to load Actions Taken.");
   }
 };

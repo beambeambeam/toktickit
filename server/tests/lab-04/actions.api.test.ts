@@ -308,6 +308,29 @@ describe("Lab 4 Action Taken create and list API", () => {
     });
   });
 
+  it("returns a safe INTERNAL_ERROR when the action store fails", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket();
+    await activeFixture.prisma.$executeRawUnsafe(
+      'ALTER TABLE "ActionTaken" RENAME TO "UnavailableActionTaken"'
+    );
+    try {
+      const response = await request(activeFixture.app)
+        .get(`/api/tickets/${ticket.id}/actions`)
+        .set("Cookie", requester.cookie)
+        .expect(500);
+      assert.equal(errorCode(response), "INTERNAL_ERROR");
+      assert.equal(
+        asJsonObject(asJsonObject(response.body).error).message,
+        "Unable to load Actions Taken."
+      );
+    } finally {
+      await activeFixture.prisma.$executeRawUnsafe(
+        'ALTER TABLE "UnavailableActionTaken" RENAME TO "ActionTaken"'
+      );
+    }
+  });
+
   it("lists own and shared actions in a stable paginated page", async () => {
     const activeFixture = getFixture();
     const ticket = await createTicket();

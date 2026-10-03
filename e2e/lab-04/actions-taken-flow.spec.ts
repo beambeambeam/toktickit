@@ -345,7 +345,7 @@ test("action list shows loading and safe failures, then recovers to its empty st
       await route.continue();
       return;
     }
-    let errorCode = "ACTION_LIST_FAILURE";
+    let errorCode = "INTERNAL_ERROR";
     if (responseStatus === 403) {
       errorCode = "FORBIDDEN";
     } else if (responseStatus === 404) {
