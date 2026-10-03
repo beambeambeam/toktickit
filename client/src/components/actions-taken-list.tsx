@@ -41,7 +41,7 @@ const getActionsErrorMessage = (error: unknown): string => {
 };
 
 const renderOptionalText = (value: string | null) => (
-  <span className="action-value multiline-output">{value ?? "—"}</span>
+  <span className="action-value action-read-text">{value ?? "—"}</span>
 );
 
 const ActionDetails = ({ action }: { action: TicketAction }) => (

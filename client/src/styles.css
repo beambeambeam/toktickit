@@ -556,6 +556,11 @@ button:disabled,
   overflow-wrap: anywhere;
 }
 
+.action-read-text {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
 .action-meta {
   display: block;
   margin-top: 0.2rem;
