@@ -331,6 +331,6 @@ Review totals: Standards 1 fixed, 0 unresolved; Spec 0 findings, with the #76 li
 
 ### Issue #75 final capture checkpoint
 
-Final browser capture: 6/6 cases passed from clean local source `f1f7e9cd271903a5f5b3936e16436c72785ff18c`. All three manifests report `sourceDirty: false`; 28 unique real PNGs match their entries, with all six canonical edit/conflict states present. All six canonical images and representative supplementary images were visually inspected again. See [the #75 evidence checklist](../../artifacts/lab-04/README.md#visual-checklist--pass-for-75). The source and evidence commits are local and have not been pushed.
+Final browser capture: 6/6 cases passed from clean source [`f1f7e9cd271903a5f5b3936e16436c72785ff18c`](https://github.com/beambeambeam/toktickit/commit/f1f7e9cd271903a5f5b3936e16436c72785ff18c). All three manifests report `sourceDirty: false`; 28 unique real PNGs match their entries, with all six canonical edit/conflict states present. All six canonical images and representative supplementary images were visually inspected again. See [the #75 evidence checklist](../../artifacts/lab-04/README.md#visual-checklist--pass-for-75). The evidence commit follows the recorded source commit.
 
 One capture attempt stopped in global setup because the disposable database container was no longer present (`ECONNREFUSED`), before any test ran. Recreating that owned container and applying all existing migrations restored the environment; the complete final capture passed without retries. No code or expectations changed for this recovery.

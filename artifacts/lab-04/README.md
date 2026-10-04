@@ -60,7 +60,7 @@ This evidence set does not invent or duplicate screenshots for edit/reassign, st
 
 ## Issue #75 visual evidence
 
-The earlier #74 record above remains historical. Edit/assignment and revision history now have their own evidence under `screenshots/actions-edit/`. The final run on 2026-10-04 passed **6/6 cases** across desktop (1440 × 900), tablet (768 × 1024), and mobile (390 × 844), capturing **28 PNGs** from clean local source commit `f1f7e9cd271903a5f5b3936e16436c72785ff18c` on `feature/75-edit-and-assign-pending-action-taken-safely`. This source commit and the following evidence commit have not been pushed.
+The earlier #74 record above remains historical. Edit/assignment and revision history now have their own evidence under `screenshots/actions-edit/`. The final run on 2026-10-04 passed **6/6 cases** across desktop (1440 × 900), tablet (768 × 1024), and mobile (390 × 844), capturing **28 PNGs** from clean source commit [`f1f7e9cd271903a5f5b3936e16436c72785ff18c`](https://github.com/beambeambeam/toktickit/commit/f1f7e9cd271903a5f5b3936e16436c72785ff18c) on `feature/75-edit-and-assign-pending-action-taken-safely`. The evidence commit follows this source commit; its manifests retain the original capture SHA.
 
 Manifests: [desktop](screenshots/actions-edit/manifest-desktop.json), [tablet](screenshots/actions-edit/manifest-tablet.json), [mobile](screenshots/actions-edit/manifest-mobile.json). All report `sourceDirty: false`, the full source SHA, command, actual UTC capture times, scenario, role, viewport/zoom, state provenance, and STYLE-01/VIS-01 references. Each PNG has exactly one manifest entry. Final capture replaced the developmental dirty-source evidence.
 
