@@ -1,0 +1,190 @@
+{
+  "branch": "feature/75-edit-and-assign-pending-action-taken-safely",
+  "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-edit-flow.spec.ts",
+  "commit": "f1f7e9cd271903a5f5b3936e16436c72785ff18c",
+  "files": [
+    {
+      "capturedAt": "2026-10-04T09:29:40.427Z",
+      "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-reassign-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Second staff member reviews the shared edit form before reassignment",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 390×844"
+      }
+    },
+    {
+      "capturedAt": "2026-10-04T09:29:50.393Z",
+      "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-historical-assignee-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Edit form retains an ineligible historical assignee while listing eligible choices",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 390×844"
+      }
+    },
+    {
+      "capturedAt": "2026-10-04T09:29:54.464Z",
+      "path": "artifacts/lab-04/screenshots/actions-edit/action-conflict-draft-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "A real second worker edit leaves the stale draft intact and blocks Save",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 390×844"
+      }
+    },
+    {
+      "capturedAt": "2026-10-04T09:29:56.197Z",
+      "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-minimum-width-320-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Saved long Action Description at 320 CSS pixels",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 320
+      },
+      "zoom": {
+        "mode": "minimum-width-320-css-pixels",
+        "result": "320 CSS-pixel viewport passed without page-wide horizontal overflow"
+      }
+    },
+    {
+      "capturedAt": "2026-10-04T09:29:57.336Z",
+      "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-css-reflow-200-percent-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Saved long Action Description at the 200% CSS reflow proxy",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 450,
+        "name": "mobile",
+        "width": 720
+      },
+      "zoom": {
+        "mode": "css-reflow-200-percent",
+        "result": "720 CSS-pixel viewport passed without page-wide horizontal overflow"
+      }
+    },
+    {
+      "capturedAt": "2026-10-04T09:30:04.796Z",
+      "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-requester-history-page-two-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "Requester",
+      "scenario": "Requester reads the paginated second history page with actor, time, and snapshot",
+      "stateSource": "seeded",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 390×844"
+      }
+    },
+    {
+      "capturedAt": "2026-10-04T09:30:20.601Z",
+      "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-assignee-loading-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Edit form shows assignee loading and blocks a save while choices load",
+      "stateSource": "intercepted",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 390×844"
+      }
+    },
+    {
+      "capturedAt": "2026-10-04T09:30:23.099Z",
+      "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-assignee-error-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "A safe assignee lookup failure retains the edit draft and offers retry",
+      "stateSource": "intercepted",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 390×844"
+      }
+    },
+    {
+      "capturedAt": "2026-10-04T09:30:24.854Z",
+      "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-assignee-empty-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Empty eligible choices retain only the historical current assignee",
+      "stateSource": "intercepted",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 390×844"
+      }
+    }
+  ],
+  "generatedAt": "2026-10-04T09:29:07.987Z",
+  "project": "mobile-chromium",
+  "sourceDirty": false
+}

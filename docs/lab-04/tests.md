@@ -328,3 +328,9 @@ Fixed base: `4da687a`. Independent Standards and Spec agents reviewed the staged
 **Spec:** no missing/incorrect behavior or scope creep found in the #75 edit/assignment/history slice. The review verified strict replacement, dual-version atomicity, immutable identity/hash, no-op/event behavior, safe ordered history, eligibility handling, and explicit conflict review. Starting/completing eligibility gates remain explicitly unavailable under #76; 0 findings in the implemented #75 slice.
 
 Review totals: Standards 1 fixed, 0 unresolved; Spec 0 findings, with the #76 lifecycle limitation recorded above.
+
+### Issue #75 final capture checkpoint
+
+Final browser capture: 6/6 cases passed from clean local source `f1f7e9cd271903a5f5b3936e16436c72785ff18c`. All three manifests report `sourceDirty: false`; 28 unique real PNGs match their entries, with all six canonical edit/conflict states present. All six canonical images and representative supplementary images were visually inspected again. See [the #75 evidence checklist](../../artifacts/lab-04/README.md#visual-checklist--pass-for-75). The source and evidence commits are local and have not been pushed.
+
+One capture attempt stopped in global setup because the disposable database container was no longer present (`ECONNREFUSED`), before any test ran. Recreating that owned container and applying all existing migrations restored the environment; the complete final capture passed without retries. No code or expectations changed for this recovery.
