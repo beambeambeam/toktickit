@@ -1,28 +1,9 @@
 import type { TicketAction, TicketActionsPage } from "@/api/actions";
 import { ApiRequestError } from "@/api/errors";
+import { ActionControls } from "@/components/actions-taken-controls";
+import type { ActionInteractionContext } from "@/components/actions-taken-edit";
 import { StatusBadge } from "@/components/status-badge";
-
-const formatBangkokDate = (value: string | null): string => {
-  if (value === null) {
-    return "—";
-  }
-
-  const date = new Date(value);
-  if (Number.isNaN(date.valueOf())) {
-    return "Unknown time";
-  }
-
-  return `${new Intl.DateTimeFormat("en-GB", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Bangkok",
-  }).format(date)} (Asia/Bangkok)`;
-};
-
-const formatUser = (
-  user: { displayName: string; role: string } | null,
-  empty = "—"
-): string => (user === null ? empty : `${user.displayName} · ${user.role}`);
+import { formatBangkokDate, formatUser } from "@/lib/action-format";
 
 const getActionsErrorMessage = (error: unknown): string => {
   if (error instanceof ApiRequestError && error.status === 403) {
@@ -44,7 +25,13 @@ const renderOptionalText = (value: string | null) => (
   <span className="action-value action-read-text">{value ?? "—"}</span>
 );
 
-const ActionDetails = ({ action }: { action: TicketAction }) => (
+const ActionDetails = ({
+  action,
+  context,
+}: {
+  action: TicketAction;
+  context: ActionInteractionContext;
+}) => (
   <article className="action-card">
     <div className="action-card-heading">
       <div>
@@ -131,10 +118,16 @@ const ActionDetails = ({ action }: { action: TicketAction }) => (
         </dd>
       </div>
     </dl>
+    <ActionControls
+      action={action}
+      context={context}
+      key={`${context.principalId}:${context.principalRole}:${context.ticketId}:${action.id}`}
+    />
   </article>
 );
 
 export interface ActionsTakenListProps {
+  context: ActionInteractionContext;
   actionPage: TicketActionsPage | undefined;
   actionsError: unknown;
   actionsFetching: boolean;
@@ -145,6 +138,7 @@ export interface ActionsTakenListProps {
 }
 
 export const ActionsTakenList = ({
+  context,
   actionPage,
   actionsError,
   actionsFetching,
@@ -179,7 +173,7 @@ export const ActionsTakenList = ({
       <ol className="action-list">
         {actionPage.items.map((actionItem) => (
           <li className="action-list-item" key={actionItem.id}>
-            <ActionDetails action={actionItem} />
+            <ActionDetails action={actionItem} context={context} />
           </li>
         ))}
       </ol>

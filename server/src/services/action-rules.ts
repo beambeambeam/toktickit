@@ -3,6 +3,7 @@ import type {
   ActionListPageSize,
   ActionListQuery,
   CreateActionInput,
+  EditActionInput,
 } from "../types/actions.js";
 
 export const MAX_ACTION_DESCRIPTION_CODE_POINTS = 5000;
@@ -15,6 +16,16 @@ const actionListPageSizes = [10, 20, 50] as const;
 const createActionFields = [
   "requestId",
   "version",
+  "description",
+  "result",
+  "assigneeId",
+  "followUpRequired",
+  "followUpNote",
+  "attachmentNotes",
+] as const;
+const editActionFields = [
+  "actionVersion",
+  "ticketVersion",
   "description",
   "result",
   "assigneeId",
@@ -95,14 +106,18 @@ const normalizeOptionalText = (
   return normalized;
 };
 
-const validateCreateActionShape = (body: unknown): Record<string, unknown> => {
+const validateActionShape = (
+  body: unknown,
+  allowedFields: readonly string[],
+  requiredFields: readonly string[]
+): Record<string, unknown> => {
   if (!isRecord(body)) {
     throw validationError("body", "Request body must be an object.");
   }
 
-  const allowedFields = new Set<string>(createActionFields);
+  const allowedFieldSet = new Set(allowedFields);
   const unsupportedField = Object.keys(body).find(
-    (field) => !allowedFields.has(field)
+    (field) => !allowedFieldSet.has(field)
   );
 
   if (unsupportedField !== undefined) {
@@ -112,12 +127,7 @@ const validateCreateActionShape = (body: unknown): Record<string, unknown> => {
     );
   }
 
-  for (const requiredField of [
-    "requestId",
-    "version",
-    "description",
-    "followUpRequired",
-  ]) {
+  for (const requiredField of requiredFields) {
     if (!Object.hasOwn(body, requiredField)) {
       throw validationError(requiredField, `${requiredField} is required.`);
     }
@@ -139,9 +149,9 @@ const validateRequestId = (value: unknown): string => {
   return value.toLowerCase();
 };
 
-const validateVersion = (value: unknown): number => {
+const validateVersion = (value: unknown, field = "version"): number => {
   if (!isPositiveInteger(value)) {
-    throw validationError("version", "Version must be a positive integer.");
+    throw validationError(field, `${field} must be a positive integer.`);
   }
 
   return value;
@@ -162,8 +172,16 @@ const validateAssigneeId = (value: unknown): number | null => {
   return value;
 };
 
-export const validateCreateActionInput = (body: unknown): CreateActionInput => {
-  const record = validateCreateActionShape(body);
+const validateEditableFields = (
+  record: Record<string, unknown>
+): Pick<
+  CreateActionInput,
+  | "description"
+  | "result"
+  | "followUpRequired"
+  | "followUpNote"
+  | "attachmentNotes"
+> => {
   const { followUpRequired } = record;
 
   if (typeof followUpRequired !== "boolean") {
@@ -194,7 +212,6 @@ export const validateCreateActionInput = (body: unknown): CreateActionInput => {
   }
 
   return {
-    assigneeId: validateAssigneeId(record.assigneeId),
     attachmentNotes: normalizeOptionalText(
       record.attachmentNotes,
       "attachmentNotes",
@@ -207,13 +224,46 @@ export const validateCreateActionInput = (body: unknown): CreateActionInput => {
     ),
     followUpNote,
     followUpRequired,
-    requestId: validateRequestId(record.requestId),
     result: normalizeOptionalText(
       record.result,
       "result",
       MAX_ACTION_RESULT_CODE_POINTS
     ),
+  };
+};
+
+export const validateCreateActionInput = (body: unknown): CreateActionInput => {
+  const record = validateActionShape(body, createActionFields, [
+    "requestId",
+    "version",
+    "description",
+    "followUpRequired",
+  ]);
+
+  return {
+    ...validateEditableFields(record),
+    assigneeId: validateAssigneeId(record.assigneeId),
+    requestId: validateRequestId(record.requestId),
     version: validateVersion(record.version),
+  };
+};
+
+const validateRequiredId = (value: unknown, field: string): number => {
+  if (!isPositiveInteger(value)) {
+    throw validationError(field, `${field} must be a positive integer.`);
+  }
+
+  return value;
+};
+
+export const validateEditActionInput = (body: unknown): EditActionInput => {
+  const record = validateActionShape(body, editActionFields, editActionFields);
+
+  return {
+    ...validateEditableFields(record),
+    actionVersion: validateVersion(record.actionVersion, "actionVersion"),
+    assigneeId: validateRequiredId(record.assigneeId, "assigneeId"),
+    ticketVersion: validateVersion(record.ticketVersion, "ticketVersion"),
   };
 };
 

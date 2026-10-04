@@ -21,3 +21,14 @@ export interface CreateActionInput {
   result: string | null;
   version: number;
 }
+
+export interface EditActionInput {
+  actionVersion: number;
+  assigneeId: number;
+  attachmentNotes: string | null;
+  description: string;
+  followUpNote: string | null;
+  followUpRequired: boolean;
+  result: string | null;
+  ticketVersion: number;
+}

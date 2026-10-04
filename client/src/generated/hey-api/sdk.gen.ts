@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { ClaimApiTicketData, ClaimApiTicketErrors, ClaimApiTicketResponses, CreateApiTicketActionData, CreateApiTicketActionErrors, CreateApiTicketActionResponses, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsErrors, CreateApiTicketAttachmentsResponses, CreateApiTicketCommentData, CreateApiTicketCommentErrors, CreateApiTicketCommentResponses, CreateApiTicketData, CreateApiTicketErrors, CreateApiTicketInternalNoteData, CreateApiTicketInternalNoteErrors, CreateApiTicketInternalNoteResponses, CreateApiTicketResponses, CreateApiUserData, CreateApiUserErrors, CreateApiUserResponses, GetApiAuthMeData, GetApiAuthMeErrors, GetApiAuthMeResponses, GetApiCategoriesData, GetApiCategoriesErrors, GetApiCategoriesResponses, GetApiHealthData, GetApiHealthErrors, GetApiHealthResponses, GetApiRelatedSystemsData, GetApiRelatedSystemsErrors, GetApiRelatedSystemsResponses, GetApiStaffOwnersData, GetApiStaffOwnersErrors, GetApiStaffOwnersResponses, GetApiStaffTicketsData, GetApiStaffTicketsErrors, GetApiStaffTicketsResponses, GetApiTicketActionsData, GetApiTicketActionsErrors, GetApiTicketActionsResponses, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentErrors, GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentsData, GetApiTicketAttachmentsErrors, GetApiTicketAttachmentsResponses, GetApiTicketCommentsData, GetApiTicketCommentsErrors, GetApiTicketCommentsResponses, GetApiTicketData, GetApiTicketErrors, GetApiTicketInternalNotesData, GetApiTicketInternalNotesErrors, GetApiTicketInternalNotesResponses, GetApiTicketResponses, GetApiTicketsData, GetApiTicketsErrors, GetApiTicketsResponses, GetApiUserData, GetApiUserErrors, GetApiUserResponses, GetApiUsersData, GetApiUsersErrors, GetApiUsersResponses, IndicateApiTicketResolutionData, IndicateApiTicketResolutionErrors, IndicateApiTicketResolutionResponses, PostApiAuthChangePasswordData, PostApiAuthChangePasswordErrors, PostApiAuthChangePasswordResponses, PostApiAuthLoginData, PostApiAuthLoginErrors, PostApiAuthLoginResponses, PostApiAuthLogoutData, PostApiAuthLogoutErrors, PostApiAuthLogoutResponses, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentErrors, RemoveApiTicketAttachmentResponses, ResetApiUserInitialPasswordData, ResetApiUserInitialPasswordErrors, ResetApiUserInitialPasswordResponses, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityErrors, UpdateApiTicketItPriorityResponses, UpdateApiTicketOwnerData, UpdateApiTicketOwnerErrors, UpdateApiTicketOwnerResponses, UpdateApiTicketStatusData, UpdateApiTicketStatusErrors, UpdateApiTicketStatusResponses, UpdateApiUserData, UpdateApiUserErrors, UpdateApiUserResponses } from './types.gen';
+import type { ClaimApiTicketData, ClaimApiTicketErrors, ClaimApiTicketResponses, CreateApiTicketActionData, CreateApiTicketActionErrors, CreateApiTicketActionResponses, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsErrors, CreateApiTicketAttachmentsResponses, CreateApiTicketCommentData, CreateApiTicketCommentErrors, CreateApiTicketCommentResponses, CreateApiTicketData, CreateApiTicketErrors, CreateApiTicketInternalNoteData, CreateApiTicketInternalNoteErrors, CreateApiTicketInternalNoteResponses, CreateApiTicketResponses, CreateApiUserData, CreateApiUserErrors, CreateApiUserResponses, GetApiAuthMeData, GetApiAuthMeErrors, GetApiAuthMeResponses, GetApiCategoriesData, GetApiCategoriesErrors, GetApiCategoriesResponses, GetApiHealthData, GetApiHealthErrors, GetApiHealthResponses, GetApiRelatedSystemsData, GetApiRelatedSystemsErrors, GetApiRelatedSystemsResponses, GetApiStaffOwnersData, GetApiStaffOwnersErrors, GetApiStaffOwnersResponses, GetApiStaffTicketsData, GetApiStaffTicketsErrors, GetApiStaffTicketsResponses, GetApiTicketActionHistoryData, GetApiTicketActionHistoryErrors, GetApiTicketActionHistoryResponses, GetApiTicketActionsData, GetApiTicketActionsErrors, GetApiTicketActionsResponses, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentErrors, GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentsData, GetApiTicketAttachmentsErrors, GetApiTicketAttachmentsResponses, GetApiTicketCommentsData, GetApiTicketCommentsErrors, GetApiTicketCommentsResponses, GetApiTicketData, GetApiTicketErrors, GetApiTicketInternalNotesData, GetApiTicketInternalNotesErrors, GetApiTicketInternalNotesResponses, GetApiTicketResponses, GetApiTicketsData, GetApiTicketsErrors, GetApiTicketsResponses, GetApiUserData, GetApiUserErrors, GetApiUserResponses, GetApiUsersData, GetApiUsersErrors, GetApiUsersResponses, IndicateApiTicketResolutionData, IndicateApiTicketResolutionErrors, IndicateApiTicketResolutionResponses, PostApiAuthChangePasswordData, PostApiAuthChangePasswordErrors, PostApiAuthChangePasswordResponses, PostApiAuthLoginData, PostApiAuthLoginErrors, PostApiAuthLoginResponses, PostApiAuthLogoutData, PostApiAuthLogoutErrors, PostApiAuthLogoutResponses, PutApiTicketActionData, PutApiTicketActionErrors, PutApiTicketActionResponses, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentErrors, RemoveApiTicketAttachmentResponses, ResetApiUserInitialPasswordData, ResetApiUserInitialPasswordErrors, ResetApiUserInitialPasswordResponses, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityErrors, UpdateApiTicketItPriorityResponses, UpdateApiTicketOwnerData, UpdateApiTicketOwnerErrors, UpdateApiTicketOwnerResponses, UpdateApiTicketStatusData, UpdateApiTicketStatusErrors, UpdateApiTicketStatusResponses, UpdateApiUserData, UpdateApiUserErrors, UpdateApiUserResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -169,6 +169,40 @@ export const createApiTicketAction = <ThrowOnError extends boolean = false>(opti
         'Content-Type': 'application/json',
         ...options.headers
     }
+});
+
+/**
+ * Edit a pending Action Taken
+ *
+ * IT Staff and Administrators may replace mutable fields on a Planned or In Progress action on a nonterminal Ticket. Both versions are required. Unchanged replacements return the current result without creating history or advancing versions; changed replacements append an immutable snapshot.
+ */
+export const putApiTicketAction = <ThrowOnError extends boolean = false>(options: Options<PutApiTicketActionData, ThrowOnError>): RequestResult<PutApiTicketActionResponses, PutApiTicketActionErrors, ThrowOnError> => (options.client ?? client).put<PutApiTicketActionResponses, PutApiTicketActionErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/tickets/{ticketId}/actions/{actionId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Read Action Taken history
+ *
+ * Requesters may read history only for their own Tickets. IT Staff and Administrators may read history for any Ticket. Events use stable createdAt then ID order and bounded pagination.
+ */
+export const getApiTicketActionHistory = <ThrowOnError extends boolean = false>(options: Options<GetApiTicketActionHistoryData, ThrowOnError>): RequestResult<GetApiTicketActionHistoryResponses, GetApiTicketActionHistoryErrors, ThrowOnError> => (options.client ?? client).get<GetApiTicketActionHistoryResponses, GetApiTicketActionHistoryErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/tickets/{ticketId}/actions/{actionId}/history',
+    ...options
 });
 
 /**

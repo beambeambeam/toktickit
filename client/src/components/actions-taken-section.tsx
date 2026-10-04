@@ -2,10 +2,8 @@ import { useQuery } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
 import { ticketActionsQueryOptions } from "@/api/action-query-options";
-import {
-  ActionCreateForm,
-  useActionsTakenCreate,
-} from "@/components/actions-taken-create";
+import { ActionForm } from "@/components/action-form";
+import { useActionsTakenCreate } from "@/components/actions-taken-create";
 import { ActionsTakenList } from "@/components/actions-taken-list";
 import type { Owner, UserRole } from "@/generated/hey-api/types.gen";
 import type { CurrentStatus } from "@/lib/ticket-statuses";
@@ -118,7 +116,7 @@ export const ActionsTakenSection = ({
               Ticket version {ticketVersion}
             </span>
           </div>
-          <ActionCreateForm
+          <ActionForm
             error={createState.createFailure?.message ?? null}
             fieldErrors={createState.fieldErrors}
             formRef={createState.formRef}
@@ -149,6 +147,18 @@ export const ActionsTakenSection = ({
       </div>
 
       <ActionsTakenList
+        context={{
+          currentStatus,
+          onRetryAssignees,
+          owners,
+          ownersError,
+          ownersLoading,
+          params: { page, pageSize: PAGE_SIZE },
+          principalId,
+          principalRole,
+          ticketId,
+          ticketVersion,
+        }}
         actionPage={actionPage}
         actionsError={actionsQuery.isError ? actionsQuery.error : null}
         actionsFetching={actionsQuery.isFetching}

@@ -457,10 +457,24 @@ button:disabled,
   margin-bottom: 1rem;
 }
 
-.action-create-panel h3 {
+.action-create-panel h3,
+.action-create-panel h4,
+.action-history h4 {
   margin: 0;
   color: var(--text);
   font-size: 1.1rem;
+}
+
+.action-history {
+  margin-top: 1rem;
+}
+
+.action-history > section {
+  margin-top: 1rem;
+}
+
+.action-review .action-details {
+  width: 100%;
 }
 
 .action-create-form {

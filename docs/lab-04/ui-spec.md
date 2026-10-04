@@ -119,7 +119,8 @@ Capture each listed state at desktop (1440 × 900), tablet (768 × 1024), and mo
 | `artifacts/lab-04/screenshots/actions-taken/` | Requester detail with multiple actions and history | `requester-actions-populated-{viewport}.png` |
 | `artifacts/lab-04/screenshots/actions-taken/` | Staff/Admin action list and attribution | `staff-actions-populated-{viewport}.png` |
 | `artifacts/lab-04/screenshots/actions-taken/` | Create form with conditional follow-up validation | `action-create-validation-{viewport}.png` |
-| `artifacts/lab-04/screenshots/actions-taken/` | Edit and reassign a pending action | `action-edit-reassign-{viewport}.png` |
+| `artifacts/lab-04/screenshots/actions-edit/` | Edit and reassign a pending action | `action-edit-reassign-{viewport}.png` |
+| `artifacts/lab-04/screenshots/actions-edit/` | Pending edit version conflict with recoverable draft | `action-conflict-draft-{viewport}.png` |
 | `artifacts/lab-04/screenshots/actions-taken/` | Start confirmation | `action-start-confirmation-{viewport}.png` |
 | `artifacts/lab-04/screenshots/actions-taken/` | Completion confirmation and Result | `action-complete-confirmation-{viewport}.png` |
 | `artifacts/lab-04/screenshots/actions-taken/` | Cancellation confirmation | `action-cancel-confirmation-{viewport}.png` |
