@@ -272,12 +272,17 @@ describe("pending Action Taken editing", () => {
         name: "Save Action Taken",
       }).disabled
     ).toBe(true);
-    fireEvent.click(
-      screen.getByRole<HTMLButtonElement>("button", {
-        name: "Refresh and review",
-      })
-    );
-    await screen.findByRole("heading", { name: "Latest saved values" });
+    const refresh = screen.getByRole<HTMLButtonElement>("button", {
+      name: "Refresh and review",
+    });
+    refresh.focus();
+    fireEvent.click(refresh);
+    const review = await screen.findByRole("heading", {
+      name: "Latest saved values",
+    });
+    await waitFor(() => {
+      expect(document.activeElement).toBe(review);
+    });
     expect(
       screen.getAllByText("Other worker's saved work").length
     ).toBeGreaterThan(0);

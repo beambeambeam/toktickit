@@ -87,6 +87,7 @@ export const ActionEditPanel = ({
   const [reviewed, setReviewed] = useState(false);
   const [busy, setBusy] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
+  const reviewHeadingRef = useRef<HTMLHeadingElement>(null);
   const busyRef = useRef(false);
   const activeRef = useRef(true);
   const abortRef = useRef<AbortController | null>(null);
@@ -103,6 +104,12 @@ export const ActionEditPanel = ({
       abortRef.current?.abort();
     };
   }, [mode]);
+
+  useEffect(() => {
+    if (reviewed && !busy && failure === null) {
+      reviewHeadingRef.current?.focus();
+    }
+  }, [busy, failure, reviewed]);
 
   const editable = canEditAction(baseline.action.status, context.currentStatus);
   const setField = <K extends keyof ActionFormValues>(
@@ -275,7 +282,9 @@ export const ActionEditPanel = ({
       )}
       {reviewed ? (
         <div className="feedback feedback-warning action-review" role="status">
-          <h4>Latest saved values</h4>
+          <h4 ref={reviewHeadingRef} tabIndex={-1}>
+            Latest saved values
+          </h4>
           <p>
             Your draft is unchanged. Review these saved values before choosing
             Save Action Taken.
