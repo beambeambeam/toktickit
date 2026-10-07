@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
 import { getTicketActionHistory } from "@/api/actions";
+import type { TicketAction } from "@/api/actions";
 import { ApiRequestError } from "@/api/errors";
 import type { ActionInteractionContext } from "@/components/actions-taken-edit";
 import { formatBangkokDate, formatUser } from "@/lib/action-format";
@@ -18,9 +19,11 @@ const historyErrorMessage = (error: unknown): string => {
 
 export const ActionHistory = ({
   actionId,
+  currentAssignee,
   context,
 }: {
   actionId: number;
+  currentAssignee: TicketAction["assignee"];
   context: ActionInteractionContext;
 }) => {
   const [open, setOpen] = useState(false);
@@ -49,6 +52,13 @@ export const ActionHistory = ({
         (error.status === 403 || error.status === 404)
       ) && count < 1,
   });
+  const assigneeLabel = (assigneeId: number): string => {
+    const knownAssignee =
+      currentAssignee.id === assigneeId
+        ? currentAssignee
+        : context.owners.find((owner) => owner.id === assigneeId);
+    return `${knownAssignee?.displayName ?? "Former assignee"} (User #${assigneeId})`;
+  };
   const historyId = `action-history-${actionId}`;
   return (
     <div className="action-history">
@@ -117,8 +127,8 @@ export const ActionHistory = ({
                         </dd>
                       </div>
                       <div>
-                        <dt>Assignee ID</dt>
-                        <dd>{event.snapshot.assigneeId}</dd>
+                        <dt>Assignee</dt>
+                        <dd>{assigneeLabel(event.snapshot.assigneeId)}</dd>
                       </div>
                       <div>
                         <dt>Follow-Up Required</dt>

@@ -65,7 +65,11 @@ export const ActionControls = ({
       <div aria-live="polite" className="operation-status" role="status">
         {success ? "Action Taken saved successfully." : null}
       </div>
-      <ActionHistory actionId={action.id} context={context} />
+      <ActionHistory
+        actionId={action.id}
+        currentAssignee={action.assignee}
+        context={context}
+      />
     </>
   );
 };

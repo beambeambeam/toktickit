@@ -573,6 +573,70 @@ describe("pending Action Taken editing", () => {
     ).toBeNull();
   });
 
+  it.each(["Requester", "IT Staff"] as const)(
+    "shows known assignee names and explicit former identities in %s history",
+    async (principalRole) => {
+      saved = {
+        ...action,
+        assignee: {
+          ...staff,
+          isActive: false,
+          isEligible: false,
+          role: "Requester",
+        },
+      };
+      renderSection({
+        owners: principalRole === "Requester" ? [] : [admin],
+        principalRole,
+      });
+      historyResponse = () =>
+        Response.json({
+          items: [10, 20, 30].map((assigneeId, index) => ({
+            actionId: 41,
+            actionVersion: index + 1,
+            actor: staff,
+            createdAt: action.createdAt,
+            eventType: "ActionEdited",
+            fromStatus: "Planned",
+            id: index + 1,
+            snapshot: {
+              assigneeId,
+              attachmentNotes: null,
+              description: "Saved revision.",
+              followUpNote: null,
+              followUpRequired: false,
+              result: null,
+              status: "Planned",
+            },
+            toStatus: "Planned",
+          })),
+          page: 1,
+          pageSize: 20,
+          totalItems: 3,
+          totalPages: 1,
+        });
+      fireEvent.click(
+        await screen.findByRole("button", {
+          name: "View history for Action Taken #41",
+        })
+      );
+      const history = screen.getByRole("region", {
+        name: "Action Taken #41 history",
+      });
+      await within(history).findByText("Iris Staff (User #10)");
+      expect(
+        within(history).getByText("Former assignee (User #30)")
+      ).toBeTruthy();
+      expect(
+        within(history).getByText(
+          principalRole === "Requester"
+            ? "Former assignee (User #20)"
+            : "Ari Admin (User #20)"
+        )
+      ).toBeTruthy();
+    }
+  );
+
   it("discards local edits and ignores a late mutation after the principal changes", async () => {
     const { queryClient, rerenderSection } = renderSection();
     let finish: ((response: Response) => void) | undefined;

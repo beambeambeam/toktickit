@@ -1023,8 +1023,10 @@ test("two staff browser contexts review a real action conflict and preserve Tick
     await expect(assignmentEvent).toContainText(
       "Replace and test the damaged network cable."
     );
-    await expect(assignmentEvent).toContainText("Assignee ID");
-    await expect(assignmentEvent).toContainText(String(staffTwoId));
+    await expect(assignmentEvent).toContainText("Assignee");
+    await expect(assignmentEvent).toContainText(
+      `Former assignee (User #${staffTwoId})`
+    );
     await expect(assignmentEvent).toContainText(
       /\d{1,2} \w{3} \d{4}, \d{1,2}:\d{2} \(Asia\/Bangkok\)/u
     );

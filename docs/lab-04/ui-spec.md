@@ -50,6 +50,8 @@ Keep Ticket summary, status, ownership, Attachments, Public Comments, and staff-
 - Display staff account ineligibility without erasing historical attribution. Plain-text fields preserve line breaks and are rendered as escaped text; do not render HTML or imply Attachment Notes create a file.
 - A concise action history view shows each create/edit/start/complete/cancel event in createdAt/ID order, with actor and event time. Ticket status history shows each recorded transition in the same stable order. Every status-history panel states: “Earlier Ticket status changes were not recorded; this history begins with the Lab 4 rollout.”
 
+History snapshots store assignee IDs. Show the current name when the action or eligible-assignee list contains that ID. Otherwise show “Former assignee (User #ID)”. Keep the ID visible. These labels do not claim to preserve past names or roles.
+
 ### Requester view
 
 Requesters may read all action and history fields on their own Ticket. The section is read-only and has no create, edit, assign, transition, or delete controls. Ticket, action, status, comments, and attachment visibility continue to follow ownership rules. Internal Notes and any fields derived from them are never shown.
