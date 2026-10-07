@@ -60,7 +60,9 @@ This evidence set does not invent or duplicate screenshots for edit/reassign, st
 
 ## Issue #75 visual evidence
 
-The earlier #74 record above remains historical. Edit/assignment and revision history now have their own evidence under `screenshots/actions-edit/`. The final run on 2026-10-04 passed **6/6 cases** across desktop (1440 × 900), tablet (768 × 1024), and mobile (390 × 844), capturing **28 PNGs** from clean source commit [`f1f7e9cd271903a5f5b3936e16436c72785ff18c`](https://github.com/beambeambeam/toktickit/commit/f1f7e9cd271903a5f5b3936e16436c72785ff18c) on `feature/75-edit-and-assign-pending-action-taken-safely`. The evidence commit follows this source commit; its manifests retain the original capture SHA.
+The earlier #74 record remains historical. Edit/assignment and revision history evidence is under `screenshots/actions-edit/`. The PR #83 follow-up run on 2026-10-07 passed all **6 cases**. Viewports were desktop (1440 × 900), tablet (768 × 1024) and mobile (390 × 844).
+
+The run captured **28 PNGs** from clean source [`a5abb9b8c6d924085ef0e22c35c700b1818f26da`](https://github.com/beambeambeam/toktickit/commit/a5abb9b8c6d924085ef0e22c35c700b1818f26da). The source branch was `feature/75-edit-and-assign-pending-action-taken-safely`. The evidence commit follows this source commit. Its manifests retain the original capture SHA.
 
 Manifests: [desktop](screenshots/actions-edit/manifest-desktop.json), [tablet](screenshots/actions-edit/manifest-tablet.json), [mobile](screenshots/actions-edit/manifest-mobile.json). All report `sourceDirty: false`, the full source SHA, command, actual UTC capture times, scenario, role, viewport/zoom, state provenance, and STYLE-01/VIS-01 references. Each PNG has exactly one manifest entry. Final capture replaced the developmental dirty-source evidence.
 
@@ -82,9 +84,9 @@ All six canonical edit/conflict images and representative history, historical-as
 | --- | --- |
 | Zen Green controls/layout | Cards, buttons, field labels and feedback match existing Ticket Detail. Wide form columns fit; mobile controls stack. |
 | Wrapping/spacing | Long saved descriptions and revisions wrap inside cards. Reviewed views show no clipping, overlap or page-wide horizontal overflow. |
-| Shared/private boundary | Requester history exposes actor/time and public snapshots, with no edit controls or Internal Notes. |
+| Shared/private boundary | Requester history shows actor/time and public snapshots. Assignees show permitted current names or a former-assignee label with the ID. No edit controls or Internal Notes appear. |
 | Draft recovery | Conflict and lookup failure retain entered text. Save stays blocked until explicit review or successful lookup retry. Historical assignee copy explains reassignment eligibility. |
-| Accessibility | Keyboard entry, field errors, Save/Cancel focus return and live feedback pass; tested states have zero axe violations. |
+| Accessibility | Keyboard entry, field errors, Save/Cancel focus and live feedback pass. UI regressions check focus after refresh and server errors. Tested browser states have zero axe violations. |
 | Responsive/zoom | Three standard viewports, 320px, CSS reflow and native page scale pass their automated checks. |
 
 Start/complete/cancel confirmations, terminal transition history and new Ticket workflow gates remain #76/#77. This evidence does not claim those unavailable endpoints. Commands, regression totals and separate code-review results are in [the #75 verification record](../../docs/lab-04/tests.md#issue-75-verification--2026-10-04).

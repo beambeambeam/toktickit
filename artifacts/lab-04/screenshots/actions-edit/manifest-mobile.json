@@ -1,10 +1,10 @@
 {
   "branch": "feature/75-edit-and-assign-pending-action-taken-safely",
   "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-edit-flow.spec.ts",
-  "commit": "f1f7e9cd271903a5f5b3936e16436c72785ff18c",
+  "commit": "a5abb9b8c6d924085ef0e22c35c700b1818f26da",
   "files": [
     {
-      "capturedAt": "2026-10-04T09:29:40.427Z",
+      "capturedAt": "2026-10-07T09:50:35.784Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-reassign-mobile.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -24,7 +24,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-04T09:29:50.393Z",
+      "capturedAt": "2026-10-07T09:50:37.951Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-historical-assignee-mobile.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -44,7 +44,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-04T09:29:54.464Z",
+      "capturedAt": "2026-10-07T09:50:40.117Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-conflict-draft-mobile.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -64,7 +64,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-04T09:29:56.197Z",
+      "capturedAt": "2026-10-07T09:50:41.012Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-minimum-width-320-mobile.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -84,7 +84,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-04T09:29:57.336Z",
+      "capturedAt": "2026-10-07T09:50:41.485Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-css-reflow-200-percent-mobile.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -104,7 +104,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-04T09:30:04.796Z",
+      "capturedAt": "2026-10-07T09:50:44.909Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-requester-history-page-two-mobile.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -124,7 +124,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-04T09:30:20.601Z",
+      "capturedAt": "2026-10-07T09:50:48.949Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-assignee-loading-mobile.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -144,7 +144,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-04T09:30:23.099Z",
+      "capturedAt": "2026-10-07T09:50:50.835Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-assignee-error-mobile.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -164,7 +164,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-04T09:30:24.854Z",
+      "capturedAt": "2026-10-07T09:50:51.435Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-assignee-empty-mobile.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -184,7 +184,7 @@
       }
     }
   ],
-  "generatedAt": "2026-10-04T09:29:07.987Z",
+  "generatedAt": "2026-10-07T09:50:29.854Z",
   "project": "mobile-chromium",
   "sourceDirty": false
 }

@@ -1,10 +1,10 @@
 {
   "branch": "feature/75-edit-and-assign-pending-action-taken-safely",
   "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-edit-flow.spec.ts",
-  "commit": "f1f7e9cd271903a5f5b3936e16436c72785ff18c",
+  "commit": "a5abb9b8c6d924085ef0e22c35c700b1818f26da",
   "files": [
     {
-      "capturedAt": "2026-10-04T09:27:35.664Z",
+      "capturedAt": "2026-10-07T09:49:52.801Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-reassign-desktop.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -24,7 +24,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-04T09:27:38.530Z",
+      "capturedAt": "2026-10-07T09:49:55.173Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-historical-assignee-desktop.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -44,7 +44,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-04T09:27:40.252Z",
+      "capturedAt": "2026-10-07T09:49:56.784Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-conflict-draft-desktop.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -64,7 +64,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-04T09:27:41.268Z",
+      "capturedAt": "2026-10-07T09:49:58.885Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-minimum-width-320-desktop.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -84,7 +84,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-04T09:27:41.938Z",
+      "capturedAt": "2026-10-07T09:49:59.329Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-css-reflow-200-percent-desktop.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -104,7 +104,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-04T09:27:42.136Z",
+      "capturedAt": "2026-10-07T09:49:59.475Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-native-page-scale-200-percent-desktop.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -124,7 +124,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-04T09:27:46.038Z",
+      "capturedAt": "2026-10-07T09:50:02.232Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-requester-history-page-two-desktop.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -144,7 +144,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-04T09:27:53.561Z",
+      "capturedAt": "2026-10-07T09:50:07.331Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-assignee-loading-desktop.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -164,7 +164,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-04T09:27:55.701Z",
+      "capturedAt": "2026-10-07T09:50:09.269Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-assignee-error-desktop.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -184,7 +184,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-04T09:27:56.710Z",
+      "capturedAt": "2026-10-07T09:50:09.899Z",
       "path": "artifacts/lab-04/screenshots/actions-edit/action-edit-assignee-empty-desktop.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-01",
@@ -204,7 +204,7 @@
       }
     }
   ],
-  "generatedAt": "2026-10-04T09:27:28.101Z",
+  "generatedAt": "2026-10-07T09:49:46.511Z",
   "project": "desktop-chromium",
   "sourceDirty": false
 }
