@@ -88,6 +88,7 @@ export const ActionEditPanel = ({
   const [busy, setBusy] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
   const reviewHeadingRef = useRef<HTMLHeadingElement>(null);
+  const serverInvalidFieldRef = useRef<string | null>(null);
   const busyRef = useRef(false);
   const activeRef = useRef(true);
   const abortRef = useRef<AbortController | null>(null);
@@ -110,6 +111,17 @@ export const ActionEditPanel = ({
       reviewHeadingRef.current?.focus();
     }
   }, [busy, failure, reviewed]);
+
+  useEffect(() => {
+    if (!busy && serverInvalidFieldRef.current !== null) {
+      formRef.current
+        ?.querySelector<HTMLElement>(
+          `[name="${serverInvalidFieldRef.current}"]`
+        )
+        ?.focus();
+      serverInvalidFieldRef.current = null;
+    }
+  }, [busy, fieldErrors]);
 
   const editable = canEditAction(baseline.action.status, context.currentStatus);
   const setField = <K extends keyof ActionFormValues>(
@@ -190,6 +202,7 @@ export const ActionEditPanel = ({
       }
       const apiErrors = getActionFieldErrors(error);
       setFieldErrors(apiErrors);
+      serverInvalidFieldRef.current = Object.keys(apiErrors)[0] ?? null;
       setFailure(editErrorMessage(error));
       setConflict(
         error instanceof ApiRequestError && error.code === "VERSION_CONFLICT"

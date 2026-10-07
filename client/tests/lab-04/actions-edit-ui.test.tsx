@@ -396,6 +396,48 @@ describe("pending Action Taken editing", () => {
     }
   );
 
+  it("focuses an assignee field error from an eligibility race and retains the draft", async () => {
+    renderSection();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Edit Action Taken #41" })
+    );
+    fireEvent.change(screen.getByLabelText(/Action Description/u), {
+      target: { value: "My draft after reassignment" },
+    });
+    fireEvent.change(screen.getByLabelText(/Assignee/u), {
+      target: { value: "20" },
+    });
+    writeResponse = () =>
+      Response.json(
+        {
+          error: {
+            code: "ACTION_ASSIGNEE_INELIGIBLE",
+            details: {
+              field: "assigneeId",
+              reason: "Choose an eligible assignee.",
+            },
+            message: "The selected assignee is ineligible.",
+          },
+        },
+        { status: 409 }
+      );
+    const save = screen.getByRole<HTMLButtonElement>("button", {
+      name: "Save Action Taken",
+    });
+    save.focus();
+    fireEvent.click(save);
+    await screen.findByText("Choose an eligible assignee.");
+    const assignee = screen.getByLabelText<HTMLSelectElement>(/Assignee/u);
+    await waitFor(() => {
+      expect(document.activeElement).toBe(assignee);
+    });
+    expect(assignee.value).toBe("20");
+    expect(
+      screen.getByLabelText<HTMLTextAreaElement>(/Action Description/u).value
+    ).toBe("My draft after reassignment");
+    expect(writes).toHaveLength(1);
+  });
+
   it("validates before writing, focuses errors, and cancels without saving", async () => {
     renderSection();
     const edit = await screen.findByRole("button", {
