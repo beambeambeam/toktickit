@@ -68,8 +68,9 @@ const authHeaders = (session: AuthenticatedFixtureSession) => ({
   "X-CSRF-Token": session.csrfToken,
 });
 
-const waitForActionUserLock = async (
-  activeFixture: UsersAdminFixture
+const waitForActionRowLock = async (
+  activeFixture: UsersAdminFixture,
+  table: "User" | "Ticket"
 ): Promise<void> => {
   for (let attempt = 0; attempt < 100; attempt += 1) {
     // oxlint-disable-next-line no-await-in-loop -- Poll the database lock state.
@@ -81,17 +82,18 @@ const waitForActionUserLock = async (
       WHERE datname = current_database()
         AND wait_event_type = 'Lock'
         AND query LIKE '%FOR UPDATE%'
+        AND query LIKE ${`%FROM "${table}"%`}
     `);
 
     if (Number(rows[0]?.waiters ?? 0) > 0) {
       return;
     }
 
-    // oxlint-disable-next-line no-await-in-loop -- Give the API transaction time to request its User lock.
+    // oxlint-disable-next-line no-await-in-loop -- Wait until the API transaction requests the row lock.
     await delay(10);
   }
 
-  throw new Error("The Action Taken edit did not wait for the User lock.");
+  throw new Error(`The Action Taken edit did not wait for the ${table} lock.`);
 };
 
 describe("Lab 4 pending Action Taken edit and history API", () => {
@@ -666,6 +668,101 @@ describe("Lab 4 pending Action Taken edit and history API", () => {
     assert.equal(ticketAfterStaleWrites.version, 3);
   });
 
+  it("waits for a parent Ticket lock and rejects an edit after concurrent resolution", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket();
+    const created = await createAction(ticket.id, ticket.version);
+    const actionId = getJsonNumber(asJsonObject(created.body).action, "id");
+    const actionBefore =
+      await activeFixture.prisma.actionTaken.findUniqueOrThrow({
+        where: { id: actionId },
+      });
+    const eventsBefore = await activeFixture.prisma.actionEvent.findMany({
+      orderBy: { id: "asc" },
+      where: { actionId },
+    });
+    let releaseTicket!: () => void;
+    let markTicketLocked!: () => void;
+    // oxlint-disable-next-line promise/avoid-new -- Hold the Ticket lock until the edit requests that lock.
+    const ticketRelease = new Promise<void>((resolve) => {
+      releaseTicket = resolve;
+    });
+    // oxlint-disable-next-line promise/avoid-new -- Signal that the test owns the Ticket row lock.
+    const ticketLocked = new Promise<void>((resolve) => {
+      markTicketLocked = resolve;
+    });
+    const resolution = activeFixture.prisma.$transaction(async (database) => {
+      await database.$queryRaw(
+        Prisma.sql`SELECT "id" FROM "Ticket" WHERE "id" = ${ticket.id} FOR UPDATE`
+      );
+      markTicketLocked();
+      await ticketRelease;
+      const resolvedAt = new Date("2026-10-07T04:00:00.000Z");
+      return await database.ticket.update({
+        data: {
+          currentStatus: "Resolved",
+          resolvedAt,
+          statusChangedAt: resolvedAt,
+          updatedAt: resolvedAt,
+          version: { increment: 1 },
+        },
+        where: { id: ticket.id },
+      });
+    });
+    await ticketLocked;
+    const editRequest = request(activeFixture.app)
+      .put(`/api/tickets/${ticket.id}/actions/${actionId}`)
+      .set(authHeaders(staff))
+      .send(editBody(1, 2))
+      .then((response) => response);
+    let ticketLockError: unknown;
+    try {
+      await waitForActionRowLock(activeFixture, "Ticket");
+    } catch (error: unknown) {
+      ticketLockError = error;
+    } finally {
+      releaseTicket();
+    }
+    const [response, resolvedTicket] = await Promise.all([
+      editRequest,
+      resolution,
+    ]);
+    if (ticketLockError instanceof Error) {
+      throw ticketLockError;
+    }
+    assert.equal(response.status, 409);
+    assert.equal(errorCode(response), "VERSION_CONFLICT");
+    assert.equal(
+      asJsonObject(asJsonObject(response.body).error.details).field,
+      "ticketVersion"
+    );
+    const freshVersionEdit = await request(activeFixture.app)
+      .put(`/api/tickets/${ticket.id}/actions/${actionId}`)
+      .set(authHeaders(staff))
+      .send(editBody(1, resolvedTicket.version))
+      .expect(409);
+    assert.equal(errorCode(freshVersionEdit), "TICKET_TERMINAL");
+    assert.deepEqual(
+      await activeFixture.prisma.actionTaken.findUniqueOrThrow({
+        where: { id: actionId },
+      }),
+      actionBefore
+    );
+    assert.deepEqual(
+      await activeFixture.prisma.actionEvent.findMany({
+        orderBy: { id: "asc" },
+        where: { actionId },
+      }),
+      eventsBefore
+    );
+    assert.deepEqual(
+      await activeFixture.prisma.ticket.findUniqueOrThrow({
+        where: { id: ticket.id },
+      }),
+      resolvedTicket
+    );
+  });
+
   it("retains historical ineligible assignees but rejects selecting inactive or demoted users", async () => {
     const activeFixture = getFixture();
     const ticket = await createTicket();
@@ -809,7 +906,7 @@ describe("Lab 4 pending Action Taken edit and history API", () => {
       .then((response) => response);
     let assigneeLockError: unknown;
     try {
-      await waitForActionUserLock(activeFixture);
+      await waitForActionRowLock(activeFixture, "User");
     } catch (error: unknown) {
       assigneeLockError = error;
     } finally {
@@ -870,7 +967,7 @@ describe("Lab 4 pending Action Taken edit and history API", () => {
       .then((response) => response);
     let actorLockError: unknown;
     try {
-      await waitForActionUserLock(activeFixture);
+      await waitForActionRowLock(activeFixture, "User");
     } catch (error: unknown) {
       actorLockError = error;
     } finally {
