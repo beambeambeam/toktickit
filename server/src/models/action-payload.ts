@@ -1,6 +1,6 @@
 import { createHash } from "node:crypto";
 
-import type { CreateActionInput } from "../types/actions.js";
+import type { ActionStatus, CreateActionInput } from "../types/actions.js";
 
 type ActionBusinessFields = Pick<
   CreateActionInput,
@@ -33,7 +33,10 @@ export const hashActionPayload = (payload: ActionPayload): string =>
     .update(JSON.stringify(getActionPayload(payload, payload.assigneeId)))
     .digest("hex");
 
-export const createActionSnapshot = (payload: ActionPayload) => ({
+export const createActionSnapshot = (
+  payload: ActionPayload,
+  status: ActionStatus = "Planned"
+) => ({
   ...payload,
-  status: "Planned" as const,
+  status,
 });

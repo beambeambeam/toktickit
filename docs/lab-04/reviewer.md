@@ -43,3 +43,26 @@ All 14 inline findings have responses. Thirteen changed findings have separate c
 | @Kiatisakk | [Reachable screenshot provenance](https://github.com/beambeambeam/toktickit/pull/82#discussion_r4172671903) | [`dd0e56a`](https://github.com/beambeambeam/toktickit/commit/dd0e56a) | [Reply](https://github.com/beambeambeam/toktickit/pull/82#discussion_r4173624889); open. |
 
 Verification after these changes: 134 client tests, 140 server tests, OpenAPI parity, all TypeScript projects, format/lint and both production builds passed. The feature browser run passed 12 journeys and recaptured 44 PNGs from pushed source `6dd2571`; all 15 canonical states and representative supplementary captures were inspected. Eighteen affected earlier-lab browser journeys and both migration recovery/preservation scripts passed. See [the current test checkpoint](tests.md#pr-82-review-follow-up-checkpoint--2026-10-03) and [visual inventory](../../artifacts/lab-04/README.md).
+
+## PR #83 — Issue #75 pending edits and assignment
+
+[PR #83](https://github.com/beambeambeam/toktickit/pull/83) targets `lab4-staging`. On 2026-10-06 UTC, @Kiatisakk requested changes at `571690e`. The review contained four inline threads and general requests for the Issue link and AI-use record.
+
+Each inline finding now has its own pushed commit and matching reply. All four threads remain open for reviewer verification and resolution. This checkpoint does not claim human approval.
+
+| Finding | Commit | Reply / state |
+| --- | --- | --- |
+| Focus after refresh | [`d837355`](https://github.com/beambeambeam/toktickit/commit/d837355a32f18722e2d33a88e0b19eff2b624959) | [Reply](https://github.com/beambeambeam/toktickit/pull/83#discussion_r4205345987). Open. |
+| Server field-error focus | [`cf2fa29`](https://github.com/beambeambeam/toktickit/commit/cf2fa2946e627f816c96f1d977c5defee342f331) | [Reply](https://github.com/beambeambeam/toktickit/pull/83#discussion_r4205364199). Open. |
+| Readable historical assignee identity | [`b39a8a5`](https://github.com/beambeambeam/toktickit/commit/b39a8a50091e237a026817d52d3472e55b287068) | [Reply](https://github.com/beambeambeam/toktickit/pull/83#discussion_r4205388749). Open. |
+| Parent Ticket lock evidence | [`7ca8895`](https://github.com/beambeambeam/toktickit/commit/7ca8895a5953e7b3edcc00763f51960de0123fb4) | [Reply](https://github.com/beambeambeam/toktickit/pull/83#discussion_r4205421175). Open. |
+
+The GitHub `addCloseIssueReferences` mutation linked Issue #75. A subsequent `closingIssuesReferences` query returned 75. The `lab-04` label remains present.
+
+The AI-use record now contains actual Issue #75 prompts, model names, delegated work and review corrections. Commit: [`a5abb9b`](https://github.com/beambeambeam/toktickit/commit/a5abb9b8c6d924085ef0e22c35c700b1818f26da). The record does not invent a student reflection.
+
+The shipped history endpoint matches `api-spec.md`: authorized reads, stable createdAt/ID order, bounded pages and public snapshot fields. Snapshots retain assignee IDs. The UI uses permitted current names where available and identifies unknown IDs as former assignees. It does not claim to store past names or roles.
+
+The parent-lock regression observes a waiting Ticket `SELECT ... FOR UPDATE`. Concurrent resolution makes the captured Ticket version stale. That edit returns `VERSION_CONFLICT`. An edit with the fresh version returns `TICKET_TERMINAL`. Both preserve the action, events and resolved Ticket metadata. Removing the explicit Ticket lock makes this test fail.
+
+GitHub tracks the review request and approval state. The reviewer must verify the replies and resolve the threads.

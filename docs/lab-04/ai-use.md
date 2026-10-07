@@ -39,3 +39,28 @@ These six excerpts are actual user instructions from this task:
 | 2026-10-03 | `$pr-review-followup` | Reproduce actionable feedback, commit each changed finding separately, push and reply in each matching thread; leave threads open for reviewer verification. |
 
 Observed review corrections include the Resolved create restriction, explicit UI assignee validation, focus restoration, pagination, compact read fields, API errors, canonical hashing and fresh capture provenance. Runtime checks and the human review response mapping are linked in [tests.md](tests.md) and [reviewer.md](reviewer.md). The existing reflection above is the earlier Issue #73 record; this addendum records observed #74 work. The student's #74 reflection has not been supplied.
+
+## Issue #75 implementation and PR #83 follow-up — 2026-10-07
+
+Codex in T3 Code supported Issue #75 implementation and PR #83 review fixes. The main model was GPT-6.1-Sol with high reasoning. Delegated backend, browser, Standards review and Spec review tasks used GPT-6 Luna with max reasoning and Fast mode.
+
+The agent read Issue #75, the Lab 4 handout, repository instructions and existing source. The implementation added pending edits, reassignment and authorized revision history. Authenticated API tests used disposable PostgreSQL. React Testing Library tested the HTTP boundary. Playwright tested two staff contexts and Requester reads.
+
+These selected excerpts are actual user instructions. They do not count all user or tool messages.
+
+| Date | Prompt excerpt | Observed use |
+| --- | --- | --- |
+| 2026-10-04 | `$implement #75 also checkout more context in /reports/lab4` | Read the issue and `reports/lab04/lab-sheet/markdown.md`. Implement the #75 feature scope. |
+| 2026-10-04 | `Use these existing seams (Recommended)` | Confirm authenticated Supertest, edit/assignment UI and two-worker Playwright tests before further tests. |
+| 2026-10-04 | `Use 4da687a (Recommended)` | Confirm the fixed base for independent Standards and Spec reviews. |
+| 2026-10-04 | `push and create PR follow repo pattern/history please` | Push the feature branch. Create PR #83 against `lab4-staging` with the repository template and label. |
+| 2026-10-05 | `rebase origin/main please` | Check the fetched main branch. Preserve merge history because main was already an ancestor. |
+| 2026-10-07 | `$pr-review-followup` | Reproduce review findings. Commit each changed finding separately. Push each commit and reply in its matching thread. |
+
+The independent Standards review found duplicate create/edit validation. The agent shared that validation and checked the correction. The Spec review found no defect within the #75 scope. It recorded the unavailable start/complete eligibility gates under #76.
+
+The human review found two focus defects and a gap in Ticket-lock test evidence. New regressions reproduced both focus defects. A database test now observes the parent Ticket lock. Removing that lock makes the new test fail. History labels now use permitted current names and retain IDs for unknown former assignees. The API snapshot contract did not change.
+
+The agent used the pr-review-followup skill for separate commits and thread replies. It used the ASD-STE100 skill for new review text. Replies leave the threads open for reviewer verification. Test results and response links are recorded in [tests.md](tests.md) and [reviewer.md](reviewer.md).
+
+This section records observed agent work. The student did not provide an Issue #75 reflection. Automated checks do not imply human approval.

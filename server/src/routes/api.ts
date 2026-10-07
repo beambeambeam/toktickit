@@ -1,6 +1,11 @@
 import express, { Router } from "express";
 
-import { createAction, getActions } from "../controllers/actions.js";
+import {
+  createAction,
+  editAction,
+  getActionHistory,
+  getActions,
+} from "../controllers/actions.js";
 import { changePassword, getMe, login, logout } from "../controllers/auth.js";
 import { getHealth } from "../controllers/health.js";
 import {
@@ -108,6 +113,14 @@ apiRouter.get(
   touchSession,
   getActions
 );
+apiRouter.get(
+  "/tickets/:ticketId/actions/:actionId/history",
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester", "ITStaff", "Administrator"),
+  touchSession,
+  getActionHistory
+);
 apiRouter.post(
   "/tickets/:ticketId/actions",
   requireAllowedOrigin,
@@ -117,6 +130,16 @@ apiRouter.post(
   requireCsrf,
   touchSession,
   createAction
+);
+apiRouter.put(
+  "/tickets/:ticketId/actions/:actionId",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff", "Administrator"),
+  requireCsrf,
+  touchSession,
+  editAction
 );
 apiRouter.post(
   "/tickets/:ticketId/status",

@@ -267,6 +267,71 @@ paths:
           $ref: "#/components/responses/ApiErrorResponse"
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/actions/{actionId}:
+    put:
+      operationId: putApiTicketAction
+      summary: Edit a pending Action Taken
+      description: IT Staff and Administrators may replace mutable fields on a Planned or In Progress action on a nonterminal Ticket. Both versions are required. Unchanged replacements return the current result without creating history or advancing versions; changed replacements append an immutable snapshot.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+        - $ref: "#/components/parameters/ActionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditActionRequest"
+      responses:
+        "200":
+          description: The current Action Taken and parent Ticket after the edit or semantic no-op.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionMutationResult"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/actions/{actionId}/history:
+    get:
+      operationId: getApiTicketActionHistory
+      summary: Read Action Taken history
+      description: Requesters may read history only for their own Tickets. IT Staff and Administrators may read history for any Ticket. Events use stable createdAt then ID order and bounded pagination.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+        - $ref: "#/components/parameters/ActionId"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/ActionPageSize"
+      responses:
+        "200":
+          description: The stable paginated ActionEvent history.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionHistoryListResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
   /api/tickets/{ticketId}/status:
     post:
       operationId: updateApiTicketStatus
@@ -969,6 +1034,13 @@ components:
       schema:
         type: integer
         minimum: 1
+    ActionId:
+      name: actionId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
     Search:
       name: search
       in: query
@@ -1482,6 +1554,153 @@ components:
             - type: string
               maxLength: 2000
             - type: "null"
+    EditActionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          actionVersion,
+          ticketVersion,
+          description,
+          result,
+          assigneeId,
+          followUpRequired,
+          followUpNote,
+          attachmentNotes,
+        ]
+      properties:
+        actionVersion:
+          type: integer
+          minimum: 1
+        ticketVersion:
+          type: integer
+          minimum: 1
+        description:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        result:
+          oneOf:
+            - type: string
+              maxLength: 5000
+            - type: "null"
+        assigneeId:
+          type: integer
+          minimum: 1
+        followUpRequired:
+          type: boolean
+        followUpNote:
+          oneOf:
+            - type: string
+              maxLength: 5000
+            - type: "null"
+        attachmentNotes:
+          oneOf:
+            - type: string
+              maxLength: 2000
+            - type: "null"
+    ActionEventSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          description,
+          result,
+          assigneeId,
+          followUpRequired,
+          followUpNote,
+          attachmentNotes,
+          status,
+        ]
+      properties:
+        description:
+          type: string
+        result:
+          type: [string, "null"]
+        assigneeId:
+          type: integer
+          minimum: 1
+        followUpRequired:
+          type: boolean
+        followUpNote:
+          type: [string, "null"]
+        attachmentNotes:
+          type: [string, "null"]
+        status:
+          $ref: "#/components/schemas/ActionStatus"
+    ActionEvent:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          actionId,
+          actor,
+          eventType,
+          actionVersion,
+          fromStatus,
+          toStatus,
+          createdAt,
+          snapshot,
+        ]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        actionId:
+          type: integer
+          minimum: 1
+        actor:
+          $ref: "#/components/schemas/ActionUserRef"
+        eventType:
+          type: string
+          enum:
+            [
+              ActionCreated,
+              ActionEdited,
+              ActionStarted,
+              ActionCompleted,
+              ActionCancelled,
+            ]
+        actionVersion:
+          type: integer
+          minimum: 1
+        fromStatus:
+          oneOf:
+            - $ref: "#/components/schemas/ActionStatus"
+            - type: "null"
+        toStatus:
+          oneOf:
+            - $ref: "#/components/schemas/ActionStatus"
+            - type: "null"
+        createdAt:
+          type: string
+          format: date-time
+        snapshot:
+          oneOf:
+            - $ref: "#/components/schemas/ActionEventSnapshot"
+            - type: "null"
+    ActionHistoryListResponse:
+      type: object
+      additionalProperties: false
+      required: [items, page, pageSize, totalItems, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActionEvent"
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          enum: [10, 20, 50]
+        totalItems:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
     ActionTaken:
       type: object
       additionalProperties: false

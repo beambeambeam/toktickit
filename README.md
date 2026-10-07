@@ -144,14 +144,18 @@ Failure screenshots, traces, videos, and the HTML report are generated under `e2
 
 Apply the committed additive migration with `pnpm --filter @toktickit/server exec prisma migrate deploy`, then run `pnpm db:generate` and `pnpm db:seed`. Existing Tickets receive no synthetic actions. Dedicated Lab 4 fixtures demonstrate zero, one, and multiple Planned actions; seed reruns preserve edited records.
 
-On Ticket Detail, IT Staff and Administrators can add a Planned Action Taken with a description, optional result, eligible assignee, follow-up fields, and Attachment Notes. Assignment defaults to the signed-in user and does not change Ticket Owner. Requesters read the full action list on their own Tickets. Dates show Asia/Bangkok. Creation controls are hidden on Resolved, Closed, and Cancelled Tickets. The API also rejects new actions on those statuses with `409 TICKET_TERMINAL`; an identical saved request still replays without a second write. Pending edits and action lifecycle controls belong to later feature tickets.
+On Ticket Detail, IT Staff and Administrators can add a Planned Action Taken with a description, optional result, eligible assignee, follow-up fields, and Attachment Notes. Assignment defaults to the signed-in user and does not change Ticket Owner. Requesters read the full action list on their own Tickets. Dates show Asia/Bangkok. Creation controls are hidden on Resolved, Closed, and Cancelled Tickets. The API also rejects new actions on those statuses with `409 TICKET_TERMINAL`; an identical saved request still replays without a second write. Staff and Administrators can edit or assign Planned and In Progress actions with explicit Save/Cancel. Completed and Cancelled actions remain read-only; lifecycle transitions belong to #76.
 
 Keep the create form open after a connection failure and retry its original request. The client retains the request ID and payload, so a saved action with a lost response can be recovered without duplication. After a version conflict, refresh and review the latest Ticket before submitting the retained draft again.
+
+Edits submit both the Action and Ticket versions captured when the form opens. A conflict preserves the draft and disables Save until **Refresh and review** loads the latest saved values; review them before explicitly saving again. Refresh never submits the draft. Assignment is independent of Performed by and Ticket Owner. An inactive or demoted current assignee remains visible and may be retained while correcting pending fields; selecting a different assignee requires active staff/Admin eligibility. Starting/completing work with an ineligible assignee is reserved for the lifecycle slice (#76).
+
+Use **View history** on each action for paginated actor/time revisions and saved field snapshots. Requesters can read this history only on their own Tickets. Successful pending changes advance both versions and append one revision; a normalized no-op leaves versions and history unchanged. No additional migration or seed reset is required for edit/history support.
 
 Run focused browser checks against a disposable database and Attachment directory:
 
 ```sh
-pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts
+pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts lab-04/actions-edit-flow.spec.ts
 ```
 
 API integration tests require an explicit `TOKTICKIT_TEST_DATABASE_URL`; fixtures create and remove isolated databases using that server. The migration/recovery check also requires PostgreSQL `pg_dump` and `pg_restore` on PATH, or `MIGRATION_POSTGRES_CONTAINER` naming the Docker container for that test server:

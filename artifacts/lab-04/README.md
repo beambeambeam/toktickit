@@ -57,3 +57,36 @@ The 320px entries record the fixed 320 CSS-pixel viewport. The reflow entries re
 ## Unavailable sibling states
 
 This evidence set does not invent or duplicate screenshots for edit/reassign, start confirmation, completion confirmation, cancellation confirmation, terminal event history, or Ticket resolution-gate feedback. Those states belong to the unfinished #75–#77 journeys. The populated Requester image shows shared action fields and attribution only; it does not claim action history coverage because the history API is not present in #74.
+
+## Issue #75 visual evidence
+
+The earlier #74 record remains historical. Edit/assignment and revision history evidence is under `screenshots/actions-edit/`. The PR #83 follow-up run on 2026-10-07 passed all **6 cases**. Viewports were desktop (1440 × 900), tablet (768 × 1024) and mobile (390 × 844).
+
+The run captured **28 PNGs** from clean source [`a5abb9b8c6d924085ef0e22c35c700b1818f26da`](https://github.com/beambeambeam/toktickit/commit/a5abb9b8c6d924085ef0e22c35c700b1818f26da). The source branch was `feature/75-edit-and-assign-pending-action-taken-safely`. The evidence commit follows this source commit. Its manifests retain the original capture SHA.
+
+Manifests: [desktop](screenshots/actions-edit/manifest-desktop.json), [tablet](screenshots/actions-edit/manifest-tablet.json), [mobile](screenshots/actions-edit/manifest-mobile.json). All report `sourceDirty: false`, the full source SHA, command, actual UTC capture times, scenario, role, viewport/zoom, state provenance, and STYLE-01/VIS-01 references. Each PNG has exactly one manifest entry. Final capture replaced the developmental dirty-source evidence.
+
+| State | Filename | Provenance |
+| --- | --- | --- |
+| Pending edit/reassignment | `action-edit-reassign-{viewport}.png` | Natural second-worker assignment form. |
+| Recoverable edit conflict | `action-conflict-draft-{viewport}.png` | Natural concurrent saved change; draft retained and Save blocked pending explicit refresh/review. |
+| Historical ineligible assignee | `action-edit-historical-assignee-{viewport}.png` | Real Administrator account deactivation; original identity retained for pending correction. |
+| Assignee loading/failure/empty | `action-edit-assignee-{loading,error,empty}-{viewport}.png` | Controlled lookup responses, declared in each manifest; real edit draft retained. |
+| Requester paginated history | `action-edit-requester-history-page-two-{viewport}.png` | Natural own-Ticket read after 21 real revisions; second page shows actor/time and immutable snapshot fields. |
+| Minimum width and reflow | `action-edit-minimum-width-320-{viewport}.png`, `action-edit-css-reflow-200-percent-{viewport}.png` | Saved long description at 320 CSS pixels and the 720 CSS-pixel reflow proxy. |
+| Native Chromium scale | `action-edit-native-page-scale-200-percent-desktop.png` | Chromium page scale 2; separate from the CSS reflow check, with no browser-toolbar zoom claim. |
+
+### Visual checklist — Pass for #75
+
+All six canonical edit/conflict images and representative history, historical-assignee, failure, 320px, CSS reflow and native-scale images were inspected after final capture.
+
+| Check | Observed result |
+| --- | --- |
+| Zen Green controls/layout | Cards, buttons, field labels and feedback match existing Ticket Detail. Wide form columns fit; mobile controls stack. |
+| Wrapping/spacing | Long saved descriptions and revisions wrap inside cards. Reviewed views show no clipping, overlap or page-wide horizontal overflow. |
+| Shared/private boundary | Requester history shows actor/time and public snapshots. Assignees show permitted current names or a former-assignee label with the ID. No edit controls or Internal Notes appear. |
+| Draft recovery | Conflict and lookup failure retain entered text. Save stays blocked until explicit review or successful lookup retry. Historical assignee copy explains reassignment eligibility. |
+| Accessibility | Keyboard entry, field errors, Save/Cancel focus and live feedback pass. UI regressions check focus after refresh and server errors. Tested browser states have zero axe violations. |
+| Responsive/zoom | Three standard viewports, 320px, CSS reflow and native page scale pass their automated checks. |
+
+Start/complete/cancel confirmations, terminal transition history and new Ticket workflow gates remain #76/#77. This evidence does not claim those unavailable endpoints. Commands, regression totals and separate code-review results are in [the #75 verification record](../../docs/lab-04/tests.md#issue-75-verification--2026-10-04).
