@@ -22,7 +22,11 @@ const activePrismaStatuses = activeTicketStatuses.map(
 );
 const recentlyResolvedStatuses: PrismaCurrentStatus[] = ["Resolved", "Closed"];
 
-export const findRequesterDashboard = async (requesterId: number) =>
+// Tests pass `snapshotAt` to pin the window; production reads the database clock.
+export const findRequesterDashboard = async (
+  requesterId: number,
+  snapshotAt?: Date
+) =>
   await prisma.$transaction(
     async (database) => {
       const [snapshot] = await database.$queryRaw<{ generatedAt: Date }[]>(
@@ -32,7 +36,8 @@ export const findRequesterDashboard = async (requesterId: number) =>
         throw new Error("The dashboard snapshot time is unavailable.");
       }
 
-      const { from, through } = getSevenDayWindow(snapshot.generatedAt);
+      const generatedAt = snapshotAt ?? snapshot.generatedAt;
+      const { from, through } = getSevenDayWindow(generatedAt);
       const requester = { requesterId };
       const recentlyUpdatedWhere = {
         ...requester,
@@ -80,7 +85,7 @@ export const findRequesterDashboard = async (requesterId: number) =>
           recentlyUpdated,
           waitingForRequester,
         },
-        generatedAt: snapshot.generatedAt,
+        generatedAt,
         previews: {
           recentlyResolved: recentlyResolvedPreviews,
           recentlyUpdated: recentlyUpdatedPreviews,

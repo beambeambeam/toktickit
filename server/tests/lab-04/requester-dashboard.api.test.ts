@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
 
+import { findRequesterDashboard } from "../../src/repositories/requester-dashboard.js";
 import {
   createUsersAdminFixture,
   TEST_ORIGIN,
@@ -355,6 +356,70 @@ describe("Lab 4 Requester dashboard API", () => {
       resolvedItems.map((ticket) => ticket.id),
       [recentClosed.id, recentResolved.id]
     );
+  });
+
+  it("includes rows exactly at both window endpoints and excludes rows 1 ms outside", async () => {
+    const activeFixture = getFixture();
+    const through = new Date("2026-10-11T04:00:00.000Z");
+    const from = new Date(through.getTime() - sevenDaysMs);
+    const offsets = [
+      ["before from", from.getTime() - 1, false],
+      ["at from", from.getTime(), true],
+      ["inside", from.getTime() + 1, true],
+      ["at through", through.getTime(), true],
+      ["after through", through.getTime() + 1, false],
+    ] as const;
+    const updatedIds = new Map<string, number>();
+    const resolvedIds = new Map<string, number>();
+    for (const [label, time] of offsets) {
+      const instant = new Date(time);
+      // oxlint-disable-next-line no-await-in-loop -- Stable creation order keeps IDs predictable.
+      const updated = await createTicket({
+        summary: `Updated ${label}`,
+        updatedAt: instant,
+      });
+      updatedIds.set(label, updated.id);
+      // oxlint-disable-next-line no-await-in-loop -- Stable creation order keeps IDs predictable.
+      const resolved = await createTicket({
+        currentStatus: "Resolved",
+        resolvedAt: instant,
+        summary: `Resolved ${label}`,
+        updatedAt: new Date(from.getTime() - 60_000),
+      });
+      resolvedIds.set(label, resolved.id);
+    }
+    const expectedLabels = offsets
+      .filter((offset) => offset[2])
+      .map((offset) => offset[0]);
+
+    const dashboard = await findRequesterDashboard(requesterId, through);
+    assert.equal(dashboard.window.from.toISOString(), from.toISOString());
+    assert.equal(dashboard.window.through.toISOString(), through.toISOString());
+    assert.equal(dashboard.counts.recentlyUpdated, expectedLabels.length);
+    assert.equal(dashboard.counts.recentlyResolved, expectedLabels.length);
+
+    for (const [scope, ids] of [
+      ["recently-updated", updatedIds],
+      ["recently-resolved", resolvedIds],
+    ] as const) {
+      // oxlint-disable-next-line no-await-in-loop -- Each scope is checked on its own.
+      const response = await request(activeFixture.app)
+        .get("/api/tickets")
+        .query({
+          from: from.toISOString(),
+          pageSize: 50,
+          scope,
+          through: through.toISOString(),
+        })
+        .set(authHeaders(requester))
+        .expect(200);
+      const items = asJsonArray(asJsonObject(response.body).items);
+      assert.deepEqual(
+        new Set(items.map((ticket) => ticket.id)),
+        new Set(expectedLabels.map((label) => ids.get(label))),
+        `${scope} keeps both endpoints and drops 1 ms outside`
+      );
+    }
   });
 
   it("returns truthful empty metrics and previews for a requester with no Tickets", async () => {
