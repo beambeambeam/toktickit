@@ -298,8 +298,8 @@ describe("Requester dashboard UI", () => {
       )
     ).toBeTruthy();
     expect(
-      screen.getByRole("button", { name: "Retry dashboard" })
-    ).toBeTruthy();
+      screen.queryByRole("button", { name: "Retry dashboard" })
+    ).toBeNull();
     unmount();
 
     getRequesterDashboardMock
@@ -319,6 +319,9 @@ describe("Requester dashboard UI", () => {
     await screen.findByText("Campus Wi-Fi login issue");
     await waitFor(() => {
       expect(getRequesterDashboardMock).toHaveBeenCalledTimes(3);
+    });
+    await waitFor(() => {
+      expect(document.activeElement?.textContent).toMatch(/^Updated /u);
     });
   });
 

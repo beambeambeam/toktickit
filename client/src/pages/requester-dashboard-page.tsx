@@ -1,6 +1,7 @@
 import { RefreshIcon } from "@hugeicons/core-free-icons";
 import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
+import { useEffect, useRef } from "react";
 
 import { requesterDashboardQueryOptions } from "@/api/dashboard-query-options";
 import { ApiRequestError } from "@/api/errors";
@@ -140,6 +141,14 @@ export const RequesterDashboardPage = () => {
     enabled: user !== null && user.role === "Requester",
   });
   const dashboard = dashboardQuery.isError ? undefined : dashboardQuery.data;
+  const windowNoteRef = useRef<HTMLParagraphElement>(null);
+  const focusAfterRetry = useRef(false);
+  useEffect(() => {
+    if (dashboard !== undefined && focusAfterRetry.current) {
+      focusAfterRetry.current = false;
+      windowNoteRef.current?.focus();
+    }
+  }, [dashboard]);
   const forbidden =
     dashboardQuery.error instanceof ApiRequestError &&
     dashboardQuery.error.status === 403;
@@ -182,20 +191,27 @@ export const RequesterDashboardPage = () => {
               ? "You do not have permission to view this dashboard."
               : "Could not load your dashboard. Check your connection and try again."}
           </p>
-          <button
-            className="button button-secondary"
-            disabled={dashboardQuery.isFetching}
-            onClick={() => void dashboardQuery.refetch()}
-            type="button"
-          >
-            Retry dashboard
-          </button>
+          {forbidden ? null : (
+            <button
+              aria-disabled={dashboardQuery.isFetching}
+              className="button button-secondary"
+              onClick={() => {
+                if (!dashboardQuery.isFetching) {
+                  focusAfterRetry.current = true;
+                  void dashboardQuery.refetch();
+                }
+              }}
+              type="button"
+            >
+              Retry dashboard
+            </button>
+          )}
         </section>
       ) : null}
 
       {dashboard === undefined ? null : (
         <>
-          <p className="dashboard-window">
+          <p className="dashboard-window" ref={windowNoteRef} tabIndex={-1}>
             Updated {formatBangkokDate(dashboard.generatedAt)} (Asia/Bangkok).
             Recent updates and resolutions cover{" "}
             {formatBangkokDate(dashboard.window.from)} through{" "}
