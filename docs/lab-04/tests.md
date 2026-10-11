@@ -373,3 +373,19 @@ Scope: Action Taken start, completion and cancellation integrate with #74 creati
 | Visual and provenance inspection | Pass: 19 lifecycle PNGs across three manifests; all manifests record clean source commit `a71b4588ca9a5763975005115912ba76f0d4803a`. Start, completion, cancellation and terminal history were inspected at all three viewports. The 320 CSS-pixel, 200% CSS reflow and desktop native page-scale captures were also inspected. |
 
 The E2E environment uses API port 3076, client port 5276 and the isolated `toktickit_t76` database. The manifests record the Playwright command, source SHA, role, viewport and review checks. No GitHub issue or remote branch was changed.
+
+## PR #84 follow-up checkpoint — 2026-10-12
+
+Environment: PostgreSQL container `toktickit-t76-pg` on port 5476 with database `toktickit_t76`. The shared PostgreSQL server was down. API port 3076, client port 5276. Server tests used `TOKTICKIT_TEST_DATABASE_URL` and `CORS_ORIGIN=http://localhost:5173`.
+
+| Check | Result |
+| --- | --- |
+| `pnpm run fix`, `pnpm run check-types` | Pass. |
+| `pnpm run test` | Pass. 163 client tests, OpenAPI parity and 163 server tests. |
+| `pnpm --filter @toktickit/e2e exec playwright test lab-04/action-lifecycle.spec.ts` | Pass. 3/3 desktop/tablet/mobile journeys. The flow now asserts the success status is visible and focused after a terminal change. |
+| `VITE_API_URL=http://localhost:3076 pnpm run build` | Pass. Production server and client builds. |
+| Mutation: status and focus after terminal change | Pass. The updated UI test fails without the fix. |
+| Mutation: assignee snapshot, inactive actor, completion recheck | Pass. Each new server test fails when the matching recheck in `server/src/repositories/actions.ts` is removed. The source was restored. |
+| Screenshot evidence | 19 PNGs and 3 manifests regenerated at source `9c8ceb7`. Terminal-history captures changed because the status persists. |
+
+The first assignee-snapshot mutation hit the wrong code location (`editAction`) and the test stayed green. That check was invalid and was repeated at the correct location (`lifecycle`), where the test failed. The [review record](reviewer.md#pr-84--issue-76-action-taken-lifecycle) maps each finding to its commit and reply. Threads remain open for reviewer verification.

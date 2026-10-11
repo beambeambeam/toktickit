@@ -80,3 +80,19 @@ This is an actual instruction excerpt from the user. It does not count all user 
 The API tests cover actor and assignee eligibility, both Action and Ticket versions, terminal confirmation, Result and Follow-up gates, immutable terminal writes, Requester access, parent metadata and ordered history. UI tests cover focus, duplicate-write prevention, errors, refresh, terminal controls and Requester history. Playwright captures the real lifecycle at desktop, tablet and mobile sizes, plus 320 CSS pixels and 200% checks. The capture manifests link to the clean lifecycle source commit.
 
 The implementation keeps each transition and its history event, Action version, Ticket version and public timestamp in one transaction. Browser evidence shows the final event history remains readable after completion or cancellation. The user asked the agent not to push, open a PR or edit issues, and no external GitHub state was changed.
+
+## PR #84 review follow-up — 2026-10-12
+
+Claude Code supported the PR #84 review fixes. The model was Claude Sonnet 5.5. Work stayed in the `feature/76-action-lifecycle` worktree with its isolated database and ports.
+
+The agent read the nine unresolved review threads, the `pr-review-followup` skill, the worktree setup, repository guidance and the Lab 4 documents.
+
+This is an actual instruction summary from the launching request. It does not count all tool messages.
+
+| Date | Prompt summary | Observed use |
+| --- | --- | --- |
+| 2026-10-12 | Follow up on the nine PR #84 review threads. Make one commit per defect. Push, reply in each thread and leave threads open. For test findings, prove the new test fails without the fix. Update the review, AI-use and test records. Request re-review from @Kiatisakk. | Fixed the focus, query key, accessibility and draft-lock findings. Added three server tests. Ran mutation checks. Regenerated screenshot evidence. |
+
+The shared PostgreSQL server was down, so the agent ran its own container for the isolated database. The first mutation check changed the wrong code location and stayed green. The agent detected the invalid check and repeated it at the correct location. Results are in [tests.md](tests.md) and [reviewer.md](reviewer.md).
+
+This section records observed agent work. The student did not provide a reflection. Automated checks do not imply human approval.
