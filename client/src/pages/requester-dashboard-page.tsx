@@ -209,6 +209,12 @@ export const RequesterDashboardPage = () => {
         </section>
       ) : null}
 
+      <p aria-live="polite" className="visually-hidden" role="status">
+        {dashboard === undefined
+          ? ""
+          : `Dashboard updated ${formatBangkokDate(dashboard.generatedAt)}`}
+      </p>
+
       {dashboard === undefined ? null : (
         <>
           <p className="dashboard-window" ref={windowNoteRef} tabIndex={-1}>

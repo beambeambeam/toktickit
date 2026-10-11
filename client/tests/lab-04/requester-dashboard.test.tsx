@@ -281,7 +281,21 @@ describe("Requester dashboard UI", () => {
 
     expect(document.activeElement).toBe(refresh);
     expect(getRequesterDashboardMock).toHaveBeenCalledTimes(2);
-    resolveRefresh?.(populatedDashboard);
+    resolveRefresh?.({
+      ...populatedDashboard,
+      generatedAt: "2026-10-11T05:00:00.000Z",
+    });
+    await waitFor(() => {
+      expect(
+        screen
+          .getAllByRole("status")
+          .some(
+            (node) =>
+              node.textContent ===
+              "Dashboard updated 11 Oct 2026, 12:00 (Asia/Bangkok)"
+          )
+      ).toBe(true);
+    });
     await waitFor(() => {
       expect(refresh.getAttribute("aria-disabled")).toBe("false");
     });
