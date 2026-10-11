@@ -77,6 +77,33 @@ const waitForActionUserLock = async (
   throw new Error("The Action Taken request did not wait for the User lock.");
 };
 
+const waitForActionTicketLock = async (
+  activeFixture: UsersAdminFixture
+): Promise<void> => {
+  for (let attempt = 0; attempt < 100; attempt += 1) {
+    // oxlint-disable-next-line no-await-in-loop -- Poll the database lock state.
+    const rows = await activeFixture.prisma.$queryRaw<
+      { waiters: bigint }[]
+    >(Prisma.sql`
+      SELECT count(*)::bigint AS "waiters"
+      FROM pg_stat_activity
+      WHERE datname = current_database()
+        AND wait_event_type = 'Lock'
+        AND query LIKE '%Ticket%'
+        AND query LIKE '%FOR UPDATE%'
+    `);
+
+    if (Number(rows[0]?.waiters ?? 0) > 0) {
+      return;
+    }
+
+    // oxlint-disable-next-line no-await-in-loop -- Poll the database lock state.
+    await delay(10);
+  }
+
+  throw new Error("The Action Taken request did not wait for the Ticket lock.");
+};
+
 const authHeaders = (session: AuthenticatedFixtureSession) => ({
   Cookie: session.cookie,
   Origin: TEST_ORIGIN,
@@ -306,6 +333,886 @@ describe("Lab 4 Action Taken create and list API", () => {
       },
       toStatus: "Planned",
     });
+  });
+
+  it("starts a Planned action with authenticated performer and one lifecycle event", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket();
+    const created = await request(activeFixture.app)
+      .post(`/api/tickets/${ticket.id}/actions`)
+      .set(authHeaders(staff))
+      .send({
+        description: "Start the cable replacement.",
+        followUpRequired: false,
+        requestId: "c5726990-c560-45d5-ae76-2f75659bb540",
+        version: ticket.version,
+      })
+      .expect(201);
+    const actionId = getJsonNumber(asJsonObject(created.body).action, "id");
+
+    const requesterWrite = await request(activeFixture.app)
+      .post(`/api/tickets/${ticket.id}/actions/${actionId}/transition`)
+      .set(authHeaders(requester))
+      .send({ actionVersion: 1, ticketVersion: 2, toStatus: "In Progress" })
+      .expect(403);
+    assert.equal(errorCode(requesterWrite), "FORBIDDEN");
+    assert.equal(
+      await activeFixture.prisma.actionEvent.count({ where: { actionId } }),
+      1
+    );
+
+    const started = await request(activeFixture.app)
+      .post(`/api/tickets/${ticket.id}/actions/${actionId}/transition`)
+      .set(authHeaders(admin))
+      .send({
+        actionVersion: 1,
+        ticketVersion: 2,
+        toStatus: "In Progress",
+      })
+      .expect(200);
+
+    const action = asJsonObject(asJsonObject(started.body).action);
+    const responseTicket = asJsonObject(asJsonObject(started.body).ticket);
+    assert.equal(action.status, "In Progress");
+    assert.equal(action.version, 2);
+    assert.deepEqual(action.performedBy, {
+      displayName: "Actions Administrator",
+      id: adminId,
+      role: "Administrator",
+    });
+    assert.equal(typeof action.startedAt, "string");
+    assert.equal(responseTicket.version, 3);
+    assert.notEqual(responseTicket.updatedAt, ticket.updatedAt.toISOString());
+
+    const events = await activeFixture.prisma.actionEvent.findMany({
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      where: { actionId },
+    });
+    assert.equal(events.length, 2);
+    assert.equal(events[1]?.eventType, "ActionStarted");
+    assert.equal(events[1]?.actorId, adminId);
+    assert.equal(events[1]?.actionVersion, 2);
+    assert.equal(events[1]?.fromStatus, "Planned");
+    assert.equal(events[1]?.toStatus, "InProgress");
+    assert.equal(events[1]?.snapshot, null);
+
+    const requesterHistory = await request(activeFixture.app)
+      .get(`/api/tickets/${ticket.id}/actions/${actionId}/history`)
+      .set("Cookie", requester.cookie)
+      .expect(200);
+    assert.equal(asJsonObject(requesterHistory.body).totalItems, 2);
+  });
+
+  it("completes an In Progress action with a Result and authenticated terminal attribution", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket();
+    const created = await request(activeFixture.app)
+      .post(`/api/tickets/${ticket.id}/actions`)
+      .set(authHeaders(staff))
+      .send({
+        description: "Replace the damaged cable.",
+        followUpRequired: false,
+        requestId: "d5726990-c560-45d5-ae76-2f75659bb540",
+        result: "Replaced and tested both ports.",
+        version: ticket.version,
+      })
+      .expect(201);
+    const actionId = getJsonNumber(asJsonObject(created.body).action, "id");
+
+    await request(activeFixture.app)
+      .post(`/api/tickets/${ticket.id}/actions/${actionId}/transition`)
+      .set(authHeaders(staff))
+      .send({ actionVersion: 1, ticketVersion: 2, toStatus: "In Progress" })
+      .expect(200);
+
+    const completed = await request(activeFixture.app)
+      .post(`/api/tickets/${ticket.id}/actions/${actionId}/transition`)
+      .set(authHeaders(admin))
+      .send({
+        actionVersion: 2,
+        confirmed: true,
+        ticketVersion: 3,
+        toStatus: "Completed",
+      })
+      .expect(200);
+
+    const action = asJsonObject(asJsonObject(completed.body).action);
+    assert.equal(action.status, "Completed");
+    assert.equal(action.result, "Replaced and tested both ports.");
+    assert.equal(action.version, 3);
+    assert.deepEqual(action.performedBy, {
+      displayName: "Actions Staff",
+      id: staffId,
+      role: "IT Staff",
+    });
+    assert.deepEqual(action.completedBy, {
+      displayName: "Actions Administrator",
+      id: adminId,
+      role: "Administrator",
+    });
+    assert.equal(typeof action.completedAt, "string");
+    assert.equal(
+      getJsonNumber(asJsonObject(completed.body).ticket, "version"),
+      4
+    );
+
+    const events = await activeFixture.prisma.actionEvent.findMany({
+      orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+      where: { actionId },
+    });
+    assert.equal(events.length, 3);
+    assert.equal(events[2]?.eventType, "ActionCompleted");
+    assert.equal(events[2]?.actorId, adminId);
+    assert.equal(events[2]?.actionVersion, 3);
+    assert.equal(events[2]?.fromStatus, "InProgress");
+    assert.equal(events[2]?.toStatus, "Completed");
+    assert.equal(events[2]?.snapshot, null);
+
+    const requesterHistory = await request(activeFixture.app)
+      .get(`/api/tickets/${ticket.id}/actions/${actionId}/history`)
+      .set("Cookie", requester.cookie)
+      .expect(200);
+    const historyItems = asJsonArray(asJsonObject(requesterHistory.body).items);
+    assert.deepEqual(
+      historyItems.map((item) => item.eventType),
+      ["ActionCreated", "ActionStarted", "ActionCompleted"]
+    );
+    assert.equal(historyItems.at(-1)?.eventType, "ActionCompleted");
+    assert.equal(getJsonNumber(historyItems.at(-1)?.actor, "id"), adminId);
+  });
+
+  it("cancels Planned and In Progress actions with immutable actor and time records", async () => {
+    const activeFixture = getFixture();
+    const plannedTicket = await createTicket();
+    const plannedCreated = await request(activeFixture.app)
+      .post(`/api/tickets/${plannedTicket.id}/actions`)
+      .set(authHeaders(staff))
+      .send({
+        description: "Cancel work before it starts.",
+        followUpRequired: false,
+        requestId: "e5726990-c560-45d5-ae76-2f75659bb540",
+        version: plannedTicket.version,
+      })
+      .expect(201);
+    const plannedActionId = getJsonNumber(
+      asJsonObject(plannedCreated.body).action,
+      "id"
+    );
+
+    const cancelledPlanned = await request(activeFixture.app)
+      .post(
+        `/api/tickets/${plannedTicket.id}/actions/${plannedActionId}/transition`
+      )
+      .set(authHeaders(admin))
+      .send({
+        actionVersion: 1,
+        confirmed: true,
+        ticketVersion: 2,
+        toStatus: "Cancelled",
+      })
+      .expect(200);
+    const plannedAction = asJsonObject(
+      asJsonObject(cancelledPlanned.body).action
+    );
+    assert.equal(plannedAction.status, "Cancelled");
+    assert.equal(plannedAction.performedBy, null);
+    assert.deepEqual(plannedAction.cancelledBy, {
+      displayName: "Actions Administrator",
+      id: adminId,
+      role: "Administrator",
+    });
+    assert.equal(typeof plannedAction.cancelledAt, "string");
+
+    const runningTicket = await createTicket();
+    const runningCreated = await request(activeFixture.app)
+      .post(`/api/tickets/${runningTicket.id}/actions`)
+      .set(authHeaders(staff))
+      .send({
+        description: "Start then cancel work.",
+        followUpRequired: false,
+        requestId: "f5726990-c560-45d5-ae76-2f75659bb540",
+        version: runningTicket.version,
+      })
+      .expect(201);
+    const runningActionId = getJsonNumber(
+      asJsonObject(runningCreated.body).action,
+      "id"
+    );
+    await request(activeFixture.app)
+      .post(
+        `/api/tickets/${runningTicket.id}/actions/${runningActionId}/transition`
+      )
+      .set(authHeaders(staff))
+      .send({ actionVersion: 1, ticketVersion: 2, toStatus: "In Progress" })
+      .expect(200);
+
+    const cancelledRunning = await request(activeFixture.app)
+      .post(
+        `/api/tickets/${runningTicket.id}/actions/${runningActionId}/transition`
+      )
+      .set(authHeaders(admin))
+      .send({
+        actionVersion: 2,
+        confirmed: true,
+        ticketVersion: 3,
+        toStatus: "Cancelled",
+      })
+      .expect(200);
+    const runningAction = asJsonObject(
+      asJsonObject(cancelledRunning.body).action
+    );
+    assert.equal(runningAction.status, "Cancelled");
+    assert.deepEqual(runningAction.performedBy, {
+      displayName: "Actions Staff",
+      id: staffId,
+      role: "IT Staff",
+    });
+    assert.equal(getJsonNumber(runningAction.cancelledBy, "id"), adminId);
+    assert.equal(typeof runningAction.cancelledAt, "string");
+
+    // oxlint-disable no-await-in-loop -- Verify each cancelled action's final event.
+    for (const [actionId, fromStatus] of [
+      [plannedActionId, "Planned"],
+      [runningActionId, "InProgress"],
+    ] as const) {
+      const events = await activeFixture.prisma.actionEvent.findMany({
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        where: { actionId },
+      });
+      const terminalEvent = events.at(-1);
+      assert.equal(terminalEvent?.eventType, "ActionCancelled");
+      assert.equal(terminalEvent?.actorId, adminId);
+      assert.equal(terminalEvent?.fromStatus, fromStatus);
+      assert.equal(terminalEvent?.toStatus, "Cancelled");
+      assert.equal(terminalEvent?.snapshot, null);
+    }
+    // oxlint-enable no-await-in-loop
+  });
+
+  it("rejects invalid edges and terminal transitions without changing the Action Taken", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket();
+    const created = await request(activeFixture.app)
+      .post(`/api/tickets/${ticket.id}/actions`)
+      .set(authHeaders(staff))
+      .send({
+        description: "Keep the action Planned after rejected transitions.",
+        followUpRequired: false,
+        requestId: "a6726990-c560-45d5-ae76-2f75659bb540",
+        version: ticket.version,
+      })
+      .expect(201);
+    const actionId = getJsonNumber(asJsonObject(created.body).action, "id");
+    const transitionPath = `/api/tickets/${ticket.id}/actions/${actionId}/transition`;
+
+    const missingConfirmation = await request(activeFixture.app)
+      .post(transitionPath)
+      .set(authHeaders(staff))
+      .send({ actionVersion: 1, ticketVersion: 2, toStatus: "Cancelled" })
+      .expect(400);
+    assert.equal(errorCode(missingConfirmation), "CONFIRMATION_REQUIRED");
+
+    const falseConfirmation = await request(activeFixture.app)
+      .post(transitionPath)
+      .set(authHeaders(staff))
+      .send({
+        actionVersion: 1,
+        confirmed: false,
+        ticketVersion: 2,
+        toStatus: "Cancelled",
+      })
+      .expect(400);
+    assert.equal(errorCode(falseConfirmation), "CONFIRMATION_REQUIRED");
+
+    const confirmationOnStart = await request(activeFixture.app)
+      .post(transitionPath)
+      .set(authHeaders(staff))
+      .send({
+        actionVersion: 1,
+        confirmed: true,
+        ticketVersion: 2,
+        toStatus: "In Progress",
+      })
+      .expect(400);
+    assert.equal(errorCode(confirmationOnStart), "VALIDATION_ERROR");
+
+    const invalidEdge = await request(activeFixture.app)
+      .post(transitionPath)
+      .set(authHeaders(staff))
+      .send({
+        actionVersion: 1,
+        confirmed: true,
+        ticketVersion: 2,
+        toStatus: "Completed",
+      })
+      .expect(409);
+    assert.equal(errorCode(invalidEdge), "INVALID_TRANSITION");
+
+    const selfTransition = await request(activeFixture.app)
+      .post(transitionPath)
+      .set(authHeaders(staff))
+      .send({ actionVersion: 1, ticketVersion: 2, toStatus: "Planned" })
+      .expect(409);
+    assert.equal(errorCode(selfTransition), "INVALID_TRANSITION");
+
+    const storedAction =
+      await activeFixture.prisma.actionTaken.findUniqueOrThrow({
+        where: { id: actionId },
+      });
+    const storedTicket = await activeFixture.prisma.ticket.findUniqueOrThrow({
+      where: { id: ticket.id },
+    });
+    assert.equal(storedAction.status, "Planned");
+    assert.equal(storedAction.version, 1);
+    assert.equal(storedTicket.version, 2);
+    assert.equal(
+      await activeFixture.prisma.actionEvent.count({ where: { actionId } }),
+      1
+    );
+  });
+
+  it("rejects repeated transitions from Completed and Cancelled actions", async () => {
+    const activeFixture = getFixture();
+    const completedTicket = await createTicket();
+    const completedCreated = await request(activeFixture.app)
+      .post(`/api/tickets/${completedTicket.id}/actions`)
+      .set(authHeaders(staff))
+      .send({
+        description: "Complete once and retain the terminal record.",
+        followUpRequired: false,
+        requestId: "a7726990-c560-45d5-ae76-2f75659bb540",
+        result: "Replaced the cable and tested both ports.",
+        version: completedTicket.version,
+      })
+      .expect(201);
+    const completedActionId = getJsonNumber(
+      asJsonObject(completedCreated.body).action,
+      "id"
+    );
+    const completedPath = `/api/tickets/${completedTicket.id}/actions/${completedActionId}/transition`;
+
+    await request(activeFixture.app)
+      .post(completedPath)
+      .set(authHeaders(staff))
+      .send({ actionVersion: 1, ticketVersion: 2, toStatus: "In Progress" })
+      .expect(200);
+    await request(activeFixture.app)
+      .post(completedPath)
+      .set(authHeaders(admin))
+      .send({
+        actionVersion: 2,
+        confirmed: true,
+        ticketVersion: 3,
+        toStatus: "Completed",
+      })
+      .expect(200);
+
+    const completedRetry = await request(activeFixture.app)
+      .post(completedPath)
+      .set(authHeaders(admin))
+      .send({
+        actionVersion: 3,
+        confirmed: true,
+        ticketVersion: 4,
+        toStatus: "Cancelled",
+      })
+      .expect(409);
+    assert.equal(errorCode(completedRetry), "ACTION_TERMINAL");
+    const completedStored =
+      await activeFixture.prisma.actionTaken.findUniqueOrThrow({
+        where: { id: completedActionId },
+      });
+    assert.equal(completedStored.status, "Completed");
+    assert.equal(completedStored.version, 3);
+    assert.equal(
+      await activeFixture.prisma.actionEvent.count({
+        where: { actionId: completedActionId },
+      }),
+      3
+    );
+    const completedTicketStored =
+      await activeFixture.prisma.ticket.findUniqueOrThrow({
+        where: { id: completedTicket.id },
+      });
+    assert.equal(completedTicketStored.version, 4);
+
+    const cancelledTicket = await createTicket();
+    const cancelledCreated = await request(activeFixture.app)
+      .post(`/api/tickets/${cancelledTicket.id}/actions`)
+      .set(authHeaders(staff))
+      .send({
+        description: "Cancel once and retain the terminal record.",
+        followUpRequired: false,
+        requestId: "b7726990-c560-45d5-ae76-2f75659bb540",
+        version: cancelledTicket.version,
+      })
+      .expect(201);
+    const cancelledActionId = getJsonNumber(
+      asJsonObject(cancelledCreated.body).action,
+      "id"
+    );
+    const cancelledPath = `/api/tickets/${cancelledTicket.id}/actions/${cancelledActionId}/transition`;
+    await request(activeFixture.app)
+      .post(cancelledPath)
+      .set(authHeaders(admin))
+      .send({
+        actionVersion: 1,
+        confirmed: true,
+        ticketVersion: 2,
+        toStatus: "Cancelled",
+      })
+      .expect(200);
+
+    const cancelledRetry = await request(activeFixture.app)
+      .post(cancelledPath)
+      .set(authHeaders(staff))
+      .send({ actionVersion: 2, ticketVersion: 3, toStatus: "In Progress" })
+      .expect(409);
+    assert.equal(errorCode(cancelledRetry), "ACTION_TERMINAL");
+    const cancelledStored =
+      await activeFixture.prisma.actionTaken.findUniqueOrThrow({
+        where: { id: cancelledActionId },
+      });
+    assert.equal(cancelledStored.status, "Cancelled");
+    assert.equal(cancelledStored.version, 2);
+    assert.equal(
+      await activeFixture.prisma.actionEvent.count({
+        where: { actionId: cancelledActionId },
+      }),
+      2
+    );
+    const cancelledTicketStored =
+      await activeFixture.prisma.ticket.findUniqueOrThrow({
+        where: { id: cancelledTicket.id },
+      });
+    assert.equal(cancelledTicketStored.version, 3);
+  });
+
+  it("blocks completion until Result exists and required follow-up is cleared", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket();
+    const created = await request(activeFixture.app)
+      .post(`/api/tickets/${ticket.id}/actions`)
+      .set(authHeaders(staff))
+      .send({
+        description: "Complete follow-up before closing this work item.",
+        followUpNote: "Confirm the repair with the requester.",
+        followUpRequired: true,
+        requestId: "b6726990-c560-45d5-ae76-2f75659bb540",
+        version: ticket.version,
+      })
+      .expect(201);
+    const actionId = getJsonNumber(asJsonObject(created.body).action, "id");
+    const transitionPath = `/api/tickets/${ticket.id}/actions/${actionId}/transition`;
+
+    await request(activeFixture.app)
+      .post(transitionPath)
+      .set(authHeaders(staff))
+      .send({ actionVersion: 1, ticketVersion: 2, toStatus: "In Progress" })
+      .expect(200);
+
+    const missingResult = await request(activeFixture.app)
+      .post(transitionPath)
+      .set(authHeaders(admin))
+      .send({
+        actionVersion: 2,
+        confirmed: true,
+        ticketVersion: 3,
+        toStatus: "Completed",
+      })
+      .expect(409);
+    assert.equal(errorCode(missingResult), "RESULT_REQUIRED");
+
+    const unchangedAfterMissingResult =
+      await activeFixture.prisma.actionTaken.findUniqueOrThrow({
+        where: { id: actionId },
+      });
+    assert.equal(unchangedAfterMissingResult.status, "InProgress");
+    assert.equal(unchangedAfterMissingResult.version, 2);
+    assert.equal(
+      await activeFixture.prisma.actionEvent.count({ where: { actionId } }),
+      2
+    );
+
+    await request(activeFixture.app)
+      .put(`/api/tickets/${ticket.id}/actions/${actionId}`)
+      .set(authHeaders(staff))
+      .send({
+        actionVersion: 2,
+        assigneeId: staffId,
+        attachmentNotes: null,
+        description: "Complete follow-up before closing this work item.",
+        followUpNote: "Confirm the repair with the requester.",
+        followUpRequired: true,
+        result: "Replaced the cable and verified both ports.",
+        ticketVersion: 3,
+      })
+      .expect(200);
+
+    const unresolvedFollowUp = await request(activeFixture.app)
+      .post(transitionPath)
+      .set(authHeaders(admin))
+      .send({
+        actionVersion: 3,
+        confirmed: true,
+        ticketVersion: 4,
+        toStatus: "Completed",
+      })
+      .expect(409);
+    assert.equal(errorCode(unresolvedFollowUp), "FOLLOW_UP_UNRESOLVED");
+
+    const unchangedAfterFollowUp =
+      await activeFixture.prisma.actionTaken.findUniqueOrThrow({
+        where: { id: actionId },
+      });
+    assert.equal(unchangedAfterFollowUp.status, "InProgress");
+    assert.equal(unchangedAfterFollowUp.version, 3);
+    assert.equal(unchangedAfterFollowUp.followUpRequired, true);
+    assert.equal(
+      await activeFixture.prisma.actionEvent.count({ where: { actionId } }),
+      3
+    );
+
+    await request(activeFixture.app)
+      .put(`/api/tickets/${ticket.id}/actions/${actionId}`)
+      .set(authHeaders(staff))
+      .send({
+        actionVersion: 3,
+        assigneeId: staffId,
+        attachmentNotes: null,
+        description: "Complete follow-up before closing this work item.",
+        followUpNote: null,
+        followUpRequired: false,
+        result: "Replaced the cable and verified both ports.",
+        ticketVersion: 4,
+      })
+      .expect(200);
+
+    const completed = await request(activeFixture.app)
+      .post(transitionPath)
+      .set(authHeaders(admin))
+      .send({
+        actionVersion: 4,
+        confirmed: true,
+        ticketVersion: 5,
+        toStatus: "Completed",
+      })
+      .expect(200);
+    assert.equal(
+      asJsonObject(asJsonObject(completed.body).action).status,
+      "Completed"
+    );
+    assert.equal(
+      await activeFixture.prisma.actionEvent.count({ where: { actionId } }),
+      5
+    );
+  });
+
+  it("serializes lifecycle writes on the parent Ticket and avoids duplicate terminal events", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket();
+    const created = await request(activeFixture.app)
+      .post(`/api/tickets/${ticket.id}/actions`)
+      .set(authHeaders(staff))
+      .send({
+        description: "Serialize this lifecycle under its parent Ticket.",
+        followUpRequired: false,
+        requestId: "c6726990-c560-45d5-ae76-2f75659bb540",
+        version: ticket.version,
+      })
+      .expect(201);
+    const actionId = getJsonNumber(asJsonObject(created.body).action, "id");
+    const transitionPath = `/api/tickets/${ticket.id}/actions/${actionId}/transition`;
+
+    const staleActionVersion = await request(activeFixture.app)
+      .post(transitionPath)
+      .set(authHeaders(staff))
+      .send({ actionVersion: 2, ticketVersion: 2, toStatus: "In Progress" })
+      .expect(409);
+    assert.equal(errorCode(staleActionVersion), "VERSION_CONFLICT");
+
+    const staleTicketVersion = await request(activeFixture.app)
+      .post(transitionPath)
+      .set(authHeaders(staff))
+      .send({ actionVersion: 1, ticketVersion: 1, toStatus: "In Progress" })
+      .expect(409);
+    assert.equal(errorCode(staleTicketVersion), "VERSION_CONFLICT");
+
+    const historyAfterStale = await request(activeFixture.app)
+      .get(`/api/tickets/${ticket.id}/actions/${actionId}/history`)
+      .set("Cookie", staff.cookie)
+      .expect(200);
+    assert.equal(asJsonObject(historyAfterStale.body).totalItems, 1);
+
+    let releaseTicket!: () => void;
+    let markTicketLocked!: () => void;
+    // oxlint-disable-next-line promise/avoid-new -- Hold the parent Ticket row until the transition waits.
+    const ticketRelease = new Promise<void>((resolve) => {
+      releaseTicket = resolve;
+    });
+    // oxlint-disable-next-line promise/avoid-new -- Signal when the test owns the parent Ticket row lock.
+    const ticketLocked = new Promise<void>((resolve) => {
+      markTicketLocked = resolve;
+    });
+    const parentLock = activeFixture.prisma.$transaction(async (database) => {
+      await database.$queryRaw(
+        Prisma.sql`SELECT "id" FROM "Ticket" WHERE "id" = ${ticket.id} FOR UPDATE`
+      );
+      markTicketLocked();
+      await ticketRelease;
+    });
+
+    await ticketLocked;
+    const startRequest = request(activeFixture.app)
+      .post(transitionPath)
+      .set(authHeaders(staff))
+      .send({ actionVersion: 1, ticketVersion: 2, toStatus: "In Progress" })
+      .then((response) => response);
+    let ticketLockError: unknown;
+    try {
+      await waitForActionTicketLock(activeFixture);
+    } catch (error: unknown) {
+      ticketLockError = error;
+    } finally {
+      releaseTicket();
+    }
+
+    const started = await startRequest;
+    await parentLock;
+    if (ticketLockError instanceof Error) {
+      throw ticketLockError;
+    }
+    assert.equal(started.status, 200);
+    assert.equal(
+      getJsonNumber(asJsonObject(started.body).ticket, "version"),
+      3
+    );
+
+    const cancellationBody = {
+      actionVersion: 2,
+      confirmed: true,
+      ticketVersion: 3,
+      toStatus: "Cancelled",
+    };
+    const cancellations = await Promise.all(
+      [0, 1].map(
+        async () =>
+          await request(activeFixture.app)
+            .post(transitionPath)
+            .set(authHeaders(admin))
+            .send(cancellationBody)
+            .then((response) => response)
+      )
+    );
+    assert.equal(
+      cancellations.filter((response) => response.status === 200).length,
+      1
+    );
+    assert.equal(
+      cancellations.filter((response) => response.status === 409).length,
+      1
+    );
+    const rejectedCancellation = cancellations.find(
+      (response) => response.status === 409
+    );
+    assert.ok(rejectedCancellation);
+    assert.equal(errorCode(rejectedCancellation), "VERSION_CONFLICT");
+
+    const winningCancellation = cancellations.find(
+      (response) => response.status === 200
+    );
+    assert.ok(winningCancellation);
+    assert.equal(
+      asJsonObject(asJsonObject(winningCancellation.body).action).status,
+      "Cancelled"
+    );
+    assert.equal(
+      getJsonNumber(asJsonObject(winningCancellation.body).ticket, "version"),
+      4
+    );
+
+    const history = await request(activeFixture.app)
+      .get(`/api/tickets/${ticket.id}/actions/${actionId}/history`)
+      .set("Cookie", staff.cookie)
+      .expect(200);
+    const events = asJsonArray(asJsonObject(history.body).items);
+    assert.equal(asJsonObject(history.body).totalItems, 3);
+    assert.deepEqual(
+      events.map((event) => event.eventType),
+      ["ActionCreated", "ActionStarted", "ActionCancelled"]
+    );
+  });
+
+  it("rejects lifecycle writes on every terminal Ticket status", async () => {
+    const activeFixture = getFixture();
+    const statuses = ["Resolved", "Closed", "Cancelled"] as const;
+
+    await Promise.all(
+      statuses.map(async (status, index) => {
+        const ticket = await createTicket();
+        const created = await request(activeFixture.app)
+          .post(`/api/tickets/${ticket.id}/actions`)
+          .set(authHeaders(staff))
+          .send({
+            description: `Terminal parent ${status}.`,
+            followUpRequired: false,
+            requestId: `d6726990-c560-45d5-ae76-2f75659bb55${index}`,
+            version: ticket.version,
+          })
+          .expect(201);
+        const actionId = getJsonNumber(asJsonObject(created.body).action, "id");
+        await activeFixture.prisma.ticket.update({
+          data: { currentStatus: status },
+          where: { id: ticket.id },
+        });
+
+        const rejected = await request(activeFixture.app)
+          .post(`/api/tickets/${ticket.id}/actions/${actionId}/transition`)
+          .set(authHeaders(admin))
+          .send({
+            actionVersion: 1,
+            confirmed: true,
+            ticketVersion: 2,
+            toStatus: "Cancelled",
+          })
+          .expect(409);
+        assert.equal(errorCode(rejected), "TICKET_TERMINAL");
+
+        const history = await request(activeFixture.app)
+          .get(`/api/tickets/${ticket.id}/actions/${actionId}/history`)
+          .set("Cookie", staff.cookie)
+          .expect(200);
+        assert.equal(asJsonObject(history.body).totalItems, 1);
+      })
+    );
+  });
+
+  it("rechecks actor and assignee eligibility when role changes race a start", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket();
+    const created = await request(activeFixture.app)
+      .post(`/api/tickets/${ticket.id}/actions`)
+      .set(authHeaders(staff))
+      .send({
+        assigneeId,
+        description: "Only eligible users can start this action.",
+        followUpRequired: false,
+        requestId: "e6726990-c560-45d5-ae76-2f75659bb540",
+        version: ticket.version,
+      })
+      .expect(201);
+    const actionId = getJsonNumber(asJsonObject(created.body).action, "id");
+    const transitionPath = `/api/tickets/${ticket.id}/actions/${actionId}/transition`;
+
+    let releaseActor!: () => void;
+    let markActorLocked!: () => void;
+    // oxlint-disable-next-line promise/avoid-new -- Hold the acting User row until the transition waits.
+    const actorRelease = new Promise<void>((resolve) => {
+      releaseActor = resolve;
+    });
+    // oxlint-disable-next-line promise/avoid-new -- Signal that the actor role change is in flight.
+    const actorLocked = new Promise<void>((resolve) => {
+      markActorLocked = resolve;
+    });
+    const actorDemotion = activeFixture.prisma.$transaction(
+      async (database) => {
+        await database.$queryRaw(
+          Prisma.sql`SELECT "id" FROM "User" WHERE "id" = ${staffId} FOR UPDATE`
+        );
+        await database.user.update({
+          data: { role: "Requester" },
+          where: { id: staffId },
+        });
+        markActorLocked();
+        await actorRelease;
+      }
+    );
+
+    await actorLocked;
+    const actorRequest = request(activeFixture.app)
+      .post(transitionPath)
+      .set(authHeaders(staff))
+      .send({ actionVersion: 1, ticketVersion: 2, toStatus: "In Progress" })
+      .then((response) => response);
+    let actorLockError: unknown;
+    try {
+      await waitForActionUserLock(activeFixture);
+    } catch (error: unknown) {
+      actorLockError = error;
+    } finally {
+      releaseActor();
+    }
+    const actorResponse = await actorRequest;
+    await actorDemotion;
+    if (actorLockError instanceof Error) {
+      throw actorLockError;
+    }
+    assert.equal(actorResponse.status, 403);
+    assert.equal(errorCode(actorResponse), "FORBIDDEN");
+
+    await activeFixture.prisma.user.update({
+      data: { role: "ITStaff" },
+      where: { id: staffId },
+    });
+
+    let releaseAssignee!: () => void;
+    let markAssigneeLocked!: () => void;
+    // oxlint-disable-next-line promise/avoid-new -- Hold the assignee row until the transition waits.
+    const assigneeRelease = new Promise<void>((resolve) => {
+      releaseAssignee = resolve;
+    });
+    // oxlint-disable-next-line promise/avoid-new -- Signal that the assignee role change is in flight.
+    const assigneeLocked = new Promise<void>((resolve) => {
+      markAssigneeLocked = resolve;
+    });
+    const assigneeDemotion = activeFixture.prisma.$transaction(
+      async (database) => {
+        await database.$queryRaw(
+          Prisma.sql`SELECT "id" FROM "User" WHERE "id" = ${assigneeId} FOR UPDATE`
+        );
+        await database.user.update({
+          data: { role: "Requester" },
+          where: { id: assigneeId },
+        });
+        markAssigneeLocked();
+        await assigneeRelease;
+      }
+    );
+
+    await assigneeLocked;
+    const assigneeRequest = request(activeFixture.app)
+      .post(transitionPath)
+      .set(authHeaders(admin))
+      .send({ actionVersion: 1, ticketVersion: 2, toStatus: "In Progress" })
+      .then((response) => response);
+    let assigneeLockError: unknown;
+    try {
+      await waitForActionUserLock(activeFixture);
+    } catch (error: unknown) {
+      assigneeLockError = error;
+    } finally {
+      releaseAssignee();
+    }
+    const assigneeResponse = await assigneeRequest;
+    await assigneeDemotion;
+    if (assigneeLockError instanceof Error) {
+      throw assigneeLockError;
+    }
+    assert.equal(assigneeResponse.status, 409);
+    assert.equal(errorCode(assigneeResponse), "ACTION_ASSIGNEE_INELIGIBLE");
+
+    const history = await request(activeFixture.app)
+      .get(`/api/tickets/${ticket.id}/actions/${actionId}/history`)
+      .set("Cookie", admin.cookie)
+      .expect(200);
+    assert.equal(asJsonObject(history.body).totalItems, 1);
+    const actions = await request(activeFixture.app)
+      .get(`/api/tickets/${ticket.id}/actions`)
+      .set("Cookie", admin.cookie)
+      .expect(200);
+    const [action] = asJsonArray(asJsonObject(actions.body).items);
+    assert.equal(action?.status, "Planned");
+    assert.equal(action?.version, 1);
   });
 
   it("returns a safe INTERNAL_ERROR when the action store fails", async () => {

@@ -6,17 +6,16 @@ import { ApiError } from "../../src/errors/api-error.js";
 import {
   parseActionListQuery,
   validateCreateActionInput,
+  validateActionTransitionInput,
 } from "../../src/services/action-rules.js";
 
 const requestId = "a5726990-c560-45d5-ae76-2f75659bb540";
 
-const assertValidationError = async (
-  operation: () => unknown
-): Promise<void> => {
+const assertValidationError = (operation: () => unknown): void => {
   let caught: unknown;
 
   try {
-    await operation();
+    operation();
   } catch (error: unknown) {
     caught = error;
   }
@@ -73,7 +72,7 @@ describe("Action Taken request rules", () => {
     );
   });
 
-  it("counts Unicode code points instead of UTF-16 code units", async () => {
+  it("counts Unicode code points instead of UTF-16 code units", () => {
     const accepted = validateCreateActionInput({
       description: `😀`.repeat(5000),
       followUpRequired: false,
@@ -83,7 +82,7 @@ describe("Action Taken request rules", () => {
 
     assert.equal(accepted.description, `😀`.repeat(5000));
 
-    await assertValidationError(() =>
+    assertValidationError(() =>
       validateCreateActionInput({
         description: `😀`.repeat(5001),
         followUpRequired: false,
@@ -93,8 +92,8 @@ describe("Action Taken request rules", () => {
     );
   });
 
-  it("requires a nonblank follow-up note when follow-up is required", async () => {
-    await assertValidationError(() =>
+  it("requires a nonblank follow-up note when follow-up is required", () => {
+    assertValidationError(() =>
       validateCreateActionInput({
         description: "Do the work.",
         followUpRequired: true,
@@ -103,7 +102,7 @@ describe("Action Taken request rules", () => {
       })
     );
 
-    await assertValidationError(() =>
+    assertValidationError(() =>
       validateCreateActionInput({
         description: "Do the work.",
         followUpNote: "A note is not allowed here.",
@@ -114,22 +113,22 @@ describe("Action Taken request rules", () => {
     );
   });
 
-  it("rejects spoofed or unsupported create fields and malformed identities", async () => {
-    await assertValidationError(() =>
+  it("rejects spoofed or unsupported create fields and malformed identities", () => {
+    assertValidationError(() =>
       validateCreateActionInput({
         ...validCreateBody(),
         actorId: 99,
       })
     );
 
-    await assertValidationError(() =>
+    assertValidationError(() =>
       validateCreateActionInput({
         ...validCreateBody(),
         requestId: "not-a-uuid",
       })
     );
 
-    await assertValidationError(() =>
+    assertValidationError(() =>
       validateCreateActionInput({
         ...validCreateBody(),
         version: 0,
@@ -143,7 +142,7 @@ describe("Action Taken list query rules", () => {
     assert.deepEqual(parseActionListQuery({}), { page: 1, pageSize: 20 });
   });
 
-  it("accepts only the documented page sizes", async () => {
+  it("accepts only the documented page sizes", () => {
     for (const pageSize of [10, 20, 50]) {
       assert.deepEqual(
         parseActionListQuery({ page: "2", pageSize: String(pageSize) }),
@@ -154,16 +153,93 @@ describe("Action Taken list query rules", () => {
       );
     }
 
-    await assertValidationError(() => parseActionListQuery({ pageSize: "25" }));
+    assertValidationError(() => parseActionListQuery({ pageSize: "25" }));
   });
 
-  it("rejects unknown, duplicate, and malformed query values", async () => {
-    await assertValidationError(() =>
-      parseActionListQuery({ status: "Planned" })
+  it("rejects unknown, duplicate, and malformed query values", () => {
+    assertValidationError(() => parseActionListQuery({ status: "Planned" }));
+    assertValidationError(() => parseActionListQuery({ page: ["1", "2"] }));
+    assertValidationError(() => parseActionListQuery({ page: "0" }));
+  });
+});
+
+describe("Action Taken transition request rules", () => {
+  it("accepts a start edge without terminal confirmation", () => {
+    assert.deepEqual(
+      validateActionTransitionInput({
+        actionVersion: 2,
+        ticketVersion: 4,
+        toStatus: "In Progress",
+      }),
+      {
+        actionVersion: 2,
+        ticketVersion: 4,
+        toStatus: "In Progress",
+      }
     );
-    await assertValidationError(() =>
-      parseActionListQuery({ page: ["1", "2"] })
+  });
+
+  it("accepts confirmed terminal edges", () => {
+    assert.deepEqual(
+      validateActionTransitionInput({
+        actionVersion: 2,
+        confirmed: true,
+        ticketVersion: 4,
+        toStatus: "Completed",
+      }),
+      {
+        actionVersion: 2,
+        confirmed: true,
+        ticketVersion: 4,
+        toStatus: "Completed",
+      }
     );
-    await assertValidationError(() => parseActionListQuery({ page: "0" }));
+  });
+
+  it("requires confirmation and rejects unsupported or malformed fields", () => {
+    for (const confirmed of [undefined, false]) {
+      let caught: unknown;
+      try {
+        validateActionTransitionInput({
+          actionVersion: 2,
+          ...(confirmed === undefined ? {} : { confirmed }),
+          ticketVersion: 4,
+          toStatus: "Cancelled",
+        });
+      } catch (error: unknown) {
+        caught = error;
+      }
+
+      assert.ok(caught instanceof ApiError);
+      assert.equal(caught.code, "CONFIRMATION_REQUIRED");
+    }
+
+    for (const body of [
+      { actionVersion: 2, ticketVersion: 4, toStatus: "Closed" },
+      {
+        actionVersion: 2,
+        confirmed: true,
+        ticketVersion: 4,
+        toStatus: "In Progress",
+      },
+      {
+        actionVersion: 0,
+        ticketVersion: 4,
+        toStatus: "In Progress",
+      },
+      {
+        actionVersion: 2,
+        ticketVersion: 0,
+        toStatus: "In Progress",
+      },
+      {
+        actionVersion: 2,
+        actorId: 12,
+        ticketVersion: 4,
+        toStatus: "In Progress",
+      },
+    ]) {
+      assertValidationError(() => validateActionTransitionInput(body));
+    }
   });
 });

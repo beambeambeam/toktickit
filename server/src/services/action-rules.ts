@@ -2,6 +2,7 @@ import { ApiError } from "../errors/api-error.js";
 import type {
   ActionListPageSize,
   ActionListQuery,
+  ActionTransitionInput,
   CreateActionInput,
   EditActionInput,
 } from "../types/actions.js";
@@ -32,6 +33,12 @@ const editActionFields = [
   "followUpRequired",
   "followUpNote",
   "attachmentNotes",
+] as const;
+const actionTransitionFields = [
+  "actionVersion",
+  "ticketVersion",
+  "toStatus",
+  "confirmed",
 ] as const;
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -264,6 +271,51 @@ export const validateEditActionInput = (body: unknown): EditActionInput => {
     actionVersion: validateVersion(record.actionVersion, "actionVersion"),
     assigneeId: validateRequiredId(record.assigneeId, "assigneeId"),
     ticketVersion: validateVersion(record.ticketVersion, "ticketVersion"),
+  };
+};
+
+export const validateActionTransitionInput = (
+  body: unknown
+): ActionTransitionInput => {
+  const record = validateActionShape(body, actionTransitionFields, [
+    "actionVersion",
+    "ticketVersion",
+    "toStatus",
+  ]);
+  const { toStatus } = record;
+
+  if (
+    toStatus !== "Planned" &&
+    toStatus !== "In Progress" &&
+    toStatus !== "Completed" &&
+    toStatus !== "Cancelled"
+  ) {
+    throw validationError("toStatus", "toStatus is not a valid action status.");
+  }
+
+  const requiresConfirmation =
+    toStatus === "Completed" || toStatus === "Cancelled";
+  if (requiresConfirmation && record.confirmed !== true) {
+    throw new ApiError(
+      400,
+      "CONFIRMATION_REQUIRED",
+      "Confirm this terminal Action Taken transition before continuing.",
+      { field: "confirmed", reason: "Set confirmed to true." }
+    );
+  }
+
+  if (!requiresConfirmation && Object.hasOwn(record, "confirmed")) {
+    throw validationError(
+      "confirmed",
+      "confirmed is only supported for terminal Action Taken transitions."
+    );
+  }
+
+  return {
+    actionVersion: validateVersion(record.actionVersion, "actionVersion"),
+    ...(requiresConfirmation ? { confirmed: true as const } : {}),
+    ticketVersion: validateVersion(record.ticketVersion, "ticketVersion"),
+    toStatus,
   };
 };
 

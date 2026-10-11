@@ -32,3 +32,10 @@ export interface EditActionInput {
   result: string | null;
   ticketVersion: number;
 }
+
+export interface ActionTransitionInput {
+  actionVersion: number;
+  confirmed?: true;
+  ticketVersion: number;
+  toStatus: ActionStatus;
+}
