@@ -12,26 +12,36 @@ export type CurrentStatus =
   | "Reopened"
   | "Cancelled";
 
+export type TicketListScope =
+  | "active"
+  | "waiting-for-requester"
+  | "recently-updated"
+  | "recently-resolved";
+
 export type TicketSortField =
   | "ticketNumber"
   | "ticketDate"
   | "summary"
   | "requestedPriority"
   | "currentStatus"
-  | "updatedAt";
+  | "updatedAt"
+  | "resolvedAt";
 
 export type TicketSortDirection = "asc" | "desc";
 
 export interface TicketListQuery {
   categoryId?: number;
   currentStatus?: CurrentStatus;
+  from?: Date;
   page: number;
   pageSize: 10 | 25 | 50;
   relatedSystemId?: number;
   requestedPriority?: RequestedPriority;
+  scope?: TicketListScope;
   search?: string;
   sortBy: TicketSortField;
   sortDirection: TicketSortDirection;
+  through?: Date;
 }
 
 export type StaffTicketSortField =

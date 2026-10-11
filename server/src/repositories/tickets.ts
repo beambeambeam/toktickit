@@ -4,6 +4,7 @@ import type {
   CurrentStatus as PrismaCurrentStatus,
   UserRole as PrismaUserRole,
 } from "../generated/prisma/enums.js";
+import { activeTicketStatuses } from "../types/ticket-workflow.js";
 import type {
   StaffTicketOwnerFilter,
   StaffTicketListQuery,
@@ -135,43 +136,73 @@ const currentStatusByWire: Record<
 const buildTicketWhere = (
   requesterId: number,
   query: TicketListQuery
-): Prisma.TicketWhereInput => ({
-  ...(query.categoryId === undefined ? {} : { categoryId: query.categoryId }),
-  ...(query.currentStatus === undefined
-    ? {}
-    : { currentStatus: currentStatusByWire[query.currentStatus] }),
-  ...(query.relatedSystemId === undefined
-    ? {}
-    : { relatedSystemId: query.relatedSystemId }),
-  ...(query.requestedPriority === undefined
-    ? {}
-    : { requestedPriority: query.requestedPriority }),
-  ...(query.search === undefined
-    ? {}
-    : {
-        OR: [
-          {
-            ticketNumber: {
-              contains: escapeLikePattern(query.search),
-              mode: "insensitive",
+): Prisma.TicketWhereInput => {
+  const and: Prisma.TicketWhereInput[] = [];
+
+  if (query.scope === "active") {
+    and.push({
+      currentStatus: {
+        in: activeTicketStatuses.map((status) => currentStatusByWire[status]),
+      },
+    });
+  } else if (query.scope === "waiting-for-requester") {
+    and.push({ currentStatus: "WaitingForRequester" });
+  } else if (
+    query.scope === "recently-updated" &&
+    query.from !== undefined &&
+    query.through !== undefined
+  ) {
+    and.push({ updatedAt: { gte: query.from, lte: query.through } });
+  } else if (
+    query.scope === "recently-resolved" &&
+    query.from !== undefined &&
+    query.through !== undefined
+  ) {
+    and.push({
+      currentStatus: { in: ["Resolved", "Closed"] },
+      resolvedAt: { gte: query.from, lte: query.through },
+    });
+  }
+
+  return {
+    ...(query.categoryId === undefined ? {} : { categoryId: query.categoryId }),
+    ...(query.currentStatus === undefined
+      ? {}
+      : { currentStatus: currentStatusByWire[query.currentStatus] }),
+    ...(query.relatedSystemId === undefined
+      ? {}
+      : { relatedSystemId: query.relatedSystemId }),
+    ...(query.requestedPriority === undefined
+      ? {}
+      : { requestedPriority: query.requestedPriority }),
+    ...(query.search === undefined
+      ? {}
+      : {
+          OR: [
+            {
+              ticketNumber: {
+                contains: escapeLikePattern(query.search),
+                mode: "insensitive",
+              },
             },
-          },
-          {
-            summary: {
-              contains: escapeLikePattern(query.search),
-              mode: "insensitive",
+            {
+              summary: {
+                contains: escapeLikePattern(query.search),
+                mode: "insensitive",
+              },
             },
-          },
-          {
-            description: {
-              contains: escapeLikePattern(query.search),
-              mode: "insensitive",
+            {
+              description: {
+                contains: escapeLikePattern(query.search),
+                mode: "insensitive",
+              },
             },
-          },
-        ],
-      }),
-  requesterId,
-});
+          ],
+        }),
+    ...(and.length === 0 ? {} : { AND: and }),
+    requesterId,
+  };
+};
 
 const resolveOwnerId = (
   owner: StaffTicketOwnerFilter,
@@ -284,18 +315,21 @@ export const findTicketSummaries = async (
     { id: direction },
   ];
 
-  const [totalItems, items] = await prisma.$transaction([
-    prisma.ticket.count({ where }),
-    prisma.ticket.findMany({
-      include: ticketSummaryInclude,
-      orderBy,
-      skip: (query.page - 1) * query.pageSize,
-      take: query.pageSize,
-      where,
-    }),
-  ]);
+  return await prisma.$transaction(
+    async (database) => {
+      const totalItems = await database.ticket.count({ where });
+      const items = await database.ticket.findMany({
+        include: ticketSummaryInclude,
+        orderBy,
+        skip: (query.page - 1) * query.pageSize,
+        take: query.pageSize,
+        where,
+      });
 
-  return { items, totalItems };
+      return { items, totalItems };
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead }
+  );
 };
 
 type TicketDatabase = Prisma.TransactionClient;

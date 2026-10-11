@@ -20,6 +20,7 @@ import type {
   CurrentStatus,
   RelatedSystem,
   ResolutionIndication,
+  TicketScope,
   TicketDetail,
   TicketListResponse,
   TicketSummary,
@@ -37,13 +38,17 @@ export interface TicketListParams {
   relatedSystemId?: number;
   requestedPriority?: "Low" | "Medium" | "High" | "Urgent";
   search?: string;
+  scope?: TicketScope;
+  from?: string;
+  through?: string;
   sortBy?:
     | "ticketNumber"
     | "ticketDate"
     | "summary"
     | "requestedPriority"
     | "currentStatus"
-    | "updatedAt";
+    | "updatedAt"
+    | "resolvedAt";
   sortDirection?: "asc" | "desc";
 }
 

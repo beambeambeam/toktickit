@@ -28,6 +28,14 @@ export const prismaStatusToCurrent: Record<PrismaCurrentStatus, CurrentStatus> =
     WaitingForRequester: "Waiting for Requester",
   };
 
+export const activeTicketStatuses: readonly CurrentStatus[] = [
+  "New",
+  "Open",
+  "In Progress",
+  "Waiting for Requester",
+  "Reopened",
+];
+
 export const allowedNextStatuses: Record<
   CurrentStatus,
   readonly CurrentStatus[]
