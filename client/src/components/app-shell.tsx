@@ -88,9 +88,9 @@ export const RequesterAccessDenied = () => (
 
 export const homeRouteForRole = (
   role: AuthUser["role"]
-): "/" | "/tickets" | "/staff/tickets" | "/users" => {
+): "/" | "/dashboard" | "/tickets" | "/staff/tickets" | "/users" => {
   if (role === "Requester") {
-    return "/tickets";
+    return "/dashboard";
   }
 
   if (role === "Administrator") {
@@ -189,6 +189,13 @@ export const AppShell = ({
             {user.role === "Requester" ? (
               <>
                 <Link
+                  activeProps={{ className: "nav-link active" }}
+                  className="nav-link"
+                  to="/dashboard"
+                >
+                  Dashboard
+                </Link>
+                <Link
                   activeOptions={{ exact: false }}
                   activeProps={{ className: "nav-link active" }}
                   className="nav-link"
@@ -262,6 +269,7 @@ export const AppShell = ({
               ) : null}
               {user.role === "Requester" ? (
                 <>
+                  <Link to="/dashboard">Dashboard</Link>
                   <Link to="/tickets">My Tickets</Link>
                   <Link to="/create">Create Ticket</Link>
                 </>
