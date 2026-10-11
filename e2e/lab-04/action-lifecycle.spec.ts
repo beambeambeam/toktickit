@@ -443,6 +443,11 @@ test("staff create, assign, start, complete, and cancel Actions Taken", async ({
   await expect(assignedCard.locator(".status-badge")).toContainText(
     "Completed"
   );
+  const assignedCardStatus = assignedCard.getByRole("status").filter({
+    hasText: "Action Taken completed.",
+  });
+  await expect(assignedCardStatus).toBeVisible();
+  await expect(assignedCardStatus).toBeFocused();
   // oxlint-disable no-await-in-loop -- Check each absent control separately.
   for (const actionName of [
     `Start Action Taken #${completionActionId}`,
@@ -492,6 +497,11 @@ test("staff create, assign, start, complete, and cancel Actions Taken", async ({
   await expect(cancellationCard.locator(".status-badge")).toContainText(
     "Cancelled"
   );
+  const cancellationCardStatus = cancellationCard.getByRole("status").filter({
+    hasText: "Action Taken cancelled.",
+  });
+  await expect(cancellationCardStatus).toBeVisible();
+  await expect(cancellationCardStatus).toBeFocused();
   // oxlint-disable no-await-in-loop -- Check each absent control separately.
   for (const actionName of [
     `Start Action Taken #${cancellationActionId}`,

@@ -806,9 +806,15 @@ describe("Action Taken lifecycle controls", () => {
       },
     ]);
     expect(screen.queryByRole("alertdialog")).toBeNull();
-    expect(
-      screen.queryByRole("button", { name: "Cancel Action Taken #41" })
-    ).toBeNull();
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("button", { name: "Cancel Action Taken #41" })
+      ).toBeNull();
+    });
+    const status = screen.getByText("Action Taken cancelled.");
+    expect(status.getAttribute("role")).toBe("status");
+    expect(document.activeElement).toBe(status);
   });
 
   it("blocks completion when Result is blank or follow-up remains required", async () => {
@@ -889,6 +895,15 @@ describe("Action Taken lifecycle controls", () => {
         csrf: "edit-csrf",
       },
     ]);
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("button", { name: "Complete Action Taken #41" })
+      ).toBeNull();
+    });
+    const status = screen.getByText("Action Taken completed.");
+    expect(status.getAttribute("role")).toBe("status");
+    expect(document.activeElement).toBe(status);
   });
 
   it("traps dialog focus, closes on Escape, and restores focus to Cancel", async () => {
