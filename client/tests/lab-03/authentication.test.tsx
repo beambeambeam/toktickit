@@ -167,6 +167,35 @@ describe("authenticated identity screens", () => {
     });
   });
 
+  it("lands a Requester on Dashboard after sign-in and when already signed in", async () => {
+    render(<LoginPage />);
+    loginMock.mockResolvedValueOnce({
+      csrfToken: "csrf-token",
+      user: authUser,
+    });
+    fireEvent.change(screen.getByLabelText(/Email/u), {
+      target: { value: "ada@example.test" },
+    });
+    fireEvent.change(screen.getByLabelText(/Password/u), {
+      target: { value: "a valid passphrase" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledWith({ to: "/dashboard" });
+    });
+    cleanup();
+    navigateMock.mockReset();
+
+    authState.user = authUser;
+    render(<LoginPage />);
+
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledWith({ to: "/dashboard" });
+    });
+    expect(navigateMock).not.toHaveBeenCalledWith({ to: "/tickets" });
+  });
+
   it("enforces Unicode password length and sends only a confirmed replacement", async () => {
     authUser.mustChangePassword = true;
     authState.user = authUser;

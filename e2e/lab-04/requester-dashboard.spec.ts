@@ -215,12 +215,16 @@ const ticketRefFrom = (value: unknown): TicketRef => {
   return { id: ticket.id, version: ticket.version };
 };
 
-const signIn = async (page: Page, email: string) => {
+const signIn = async (
+  page: Page,
+  email: string,
+  landing = /^(?!.*\/login$)/u
+) => {
   await page.goto("/login");
   await page.getByLabel("Email").fill(email);
   await page.getByRole("textbox", { name: "Password" }).fill(password);
   await page.getByRole("button", { name: "Sign in" }).click();
-  await expect(page).not.toHaveURL(/\/login$/u);
+  await expect(page).toHaveURL(landing);
 };
 
 const logOut = async (page: Page) => {
@@ -321,7 +325,7 @@ test("Requester dashboard scopes exact metrics, drill-downs, and previews", asyn
   const resolvedSummary = `E2E requester dashboard resolved ${fixtureSuffix}`;
   const foreignSummary = `E2E requester dashboard foreign ${fixtureSuffix}`;
 
-  await signIn(page, dashboardEmail);
+  await signIn(page, dashboardEmail, /\/dashboard$/u);
   await createTicket(page, activeSummary);
   const resolvedTicket = await createTicket(page, resolvedSummary);
 
