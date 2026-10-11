@@ -254,6 +254,12 @@ describe("Lab 4 Requester dashboard API", () => {
       summary: "Foreign resolved Ticket must stay private",
       updatedAt: new Date(Date.now() - sevenDaysMs - 60_000),
     });
+    await createTicket({
+      currentStatus: "WaitingForRequester",
+      requesterId: foreignRequesterId,
+      summary: "Foreign waiting Ticket must stay private",
+      updatedAt: new Date(Date.now() - 20_000),
+    });
     await activeFixture.prisma.internalNote.create({
       data: {
         authorId: requesterId,
@@ -315,6 +321,7 @@ describe("Lab 4 Requester dashboard API", () => {
     assert.ok(!JSON.stringify(dashboard).includes("PRIVATE_NOTE_SENTINEL"));
     assert.ok(!JSON.stringify(dashboard).includes("Foreign recent Ticket"));
     assert.ok(!JSON.stringify(dashboard).includes("Foreign resolved Ticket"));
+    assert.ok(!JSON.stringify(dashboard).includes("Foreign waiting Ticket"));
     assert.ok(!JSON.stringify(dashboard).includes("internalNotes"));
 
     const activeList = await request(activeFixture.app)
