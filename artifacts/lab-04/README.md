@@ -90,3 +90,22 @@ All six canonical edit/conflict images and representative history, historical-as
 | Responsive/zoom | Three standard viewports, 320px, CSS reflow and native page scale pass their automated checks. |
 
 Start/complete/cancel confirmations, terminal transition history and new Ticket workflow gates remain #76/#77. This evidence does not claim those unavailable endpoints. Commands, regression totals and separate code-review results are in [the #75 verification record](../../docs/lab-04/tests.md#issue-75-verification--2026-10-04).
+
+## Issue #78 visual evidence
+
+The Requester dashboard journey captures the populated dashboard, zero/empty state, loading state, forbidden response, recoverable API failure, and recent-list drill-down at desktop (1440×900), tablet (768×1024), and mobile (390×844). Each screenshot is stored once in `screenshots/requester-dashboard/`; its viewport manifest records the scenario, Requester role, natural or intercepted source, UTC capture time, command, source branch and commit, and STYLE-02/VIS-02 review links.
+
+The desktop manifest also records the 320 CSS-pixel check, a 720 CSS-pixel reflow proxy for 200% zoom, and native Chromium page scale 2. These are separate viewport checks. The browser journey checks page overflow at each size, keyboard focus, axe on the dashboard and My Tickets list, exact dashboard-to-list bounds, and Ticket Detail navigation.
+
+### Visual checklist — Pass for #78
+
+| Check | Observed result |
+| --- | --- |
+| Zen Green layout | The four metric cards and two recent-preview cards align on desktop; the grid reduces to two columns on tablet and one column on mobile. |
+| Wrapping and spacing | Ticket summaries, identifiers, bounds, and Bangkok timestamps wrap inside their cards. No clipping, overlap, or page-wide horizontal overflow appears at the reviewed sizes. |
+| Ownership boundary | Dashboard previews and the drill-down show the signed-in Requester’s Tickets. The foreign Requester screenshot shows only that account’s own data. No Internal Note text appears. |
+| Empty and failure states | Zero counts remain visible. Empty previews, loading, forbidden, and network-failure feedback have clear text and available recovery links or buttons. |
+| Accessibility | Dashboard and My Tickets axe checks report zero violations. Keyboard focus is visible on the dashboard. Labels and status/priority text remain visible with color. |
+| Responsive and zoom | Desktop, tablet, mobile, 320px, 720px reflow proxy, and native page scale 2 checks pass. |
+
+The full Ticket lifecycle and staff dashboard evidence remains under #76/#79. These Requester captures do not claim those sibling screens.
