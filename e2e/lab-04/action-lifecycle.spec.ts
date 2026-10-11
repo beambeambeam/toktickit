@@ -15,7 +15,8 @@ const screenshotsRoot = path.resolve(
   "artifacts",
   "lab-04",
   "screenshots",
-  "actions-taken"
+  "actions-taken",
+  "lifecycle"
 );
 const evidenceCommand =
   "pnpm --filter @toktickit/e2e exec playwright test lab-04/action-lifecycle.spec.ts";
