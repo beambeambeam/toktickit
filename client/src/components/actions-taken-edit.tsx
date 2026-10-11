@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { SubmitEvent } from "react";
 
 import { refreshActionMutationQueries } from "@/api/action-mutation-cache";
+import { ticketActionsQueryOptions } from "@/api/action-query-options";
 import { editTicketAction, getTicketActions } from "@/api/actions";
 import type { TicketAction, TicketActionsListParams } from "@/api/actions";
 import { ApiRequestError } from "@/api/errors";
@@ -242,14 +243,12 @@ export const ActionEditPanel = ({
         ticket
       );
       queryClient.setQueryData(
-        [
-          "ticket-actions",
+        ticketActionsQueryOptions(
+          context.ticketId,
           context.principalId,
           context.principalRole,
-          context.ticketId,
-          context.params.page,
-          context.params.pageSize,
-        ],
+          context.params
+        ).queryKey,
         page
       );
       setBaseline((current) => ({

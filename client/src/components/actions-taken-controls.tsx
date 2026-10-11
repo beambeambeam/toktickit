@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
 
 import { refreshActionMutationQueries } from "@/api/action-mutation-cache";
+import { ticketActionsQueryOptions } from "@/api/action-query-options";
 import { getTicketActions, transitionTicketAction } from "@/api/actions";
 import type { ActionMutationResult, TicketAction } from "@/api/actions";
 import { ApiRequestError } from "@/api/errors";
@@ -277,14 +278,12 @@ const ActionLifecycleControls = ({
         );
       }
       queryClient.setQueryData(
-        [
-          "ticket-actions",
+        ticketActionsQueryOptions(
+          context.ticketId,
           context.principalId,
           context.principalRole,
-          context.ticketId,
-          context.params.page,
-          context.params.pageSize,
-        ],
+          context.params
+        ).queryKey,
         page
       );
       const result: ActionMutationResult = { action: latest, ticket };
