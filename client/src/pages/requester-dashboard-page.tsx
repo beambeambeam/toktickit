@@ -151,10 +151,14 @@ export const RequesterDashboardPage = () => {
           Your active Tickets, items waiting for you, and recent progress.
         </p>
         <button
+          aria-disabled={dashboardQuery.isFetching}
           aria-label="Refresh dashboard"
           className="button button-secondary"
-          disabled={dashboardQuery.isFetching}
-          onClick={() => void dashboardQuery.refetch()}
+          onClick={() => {
+            if (!dashboardQuery.isFetching) {
+              void dashboardQuery.refetch();
+            }
+          }}
           type="button"
         >
           <Icon icon={RefreshIcon} />

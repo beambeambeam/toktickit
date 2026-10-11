@@ -258,6 +258,35 @@ describe("Requester dashboard UI", () => {
     ).toBeTruthy();
   });
 
+  it("keeps focus on Refresh and ignores clicks while refreshing", async () => {
+    getRequesterDashboardMock.mockResolvedValueOnce(populatedDashboard);
+    renderDashboard();
+    await screen.findByText("Campus Wi-Fi login issue");
+    let resolveRefresh:
+      | ((value: RequesterDashboardResponse) => void)
+      | undefined;
+    // oxlint-disable-next-line promise/avoid-new -- The test controls the refresh response.
+    const pending = new Promise<RequesterDashboardResponse>((resolve) => {
+      resolveRefresh = resolve;
+    });
+    getRequesterDashboardMock.mockReturnValueOnce(pending);
+
+    const refresh = screen.getByRole("button", { name: "Refresh dashboard" });
+    refresh.focus();
+    fireEvent.click(refresh);
+    await waitFor(() => {
+      expect(refresh.getAttribute("aria-disabled")).toBe("true");
+    });
+    fireEvent.click(refresh);
+
+    expect(document.activeElement).toBe(refresh);
+    expect(getRequesterDashboardMock).toHaveBeenCalledTimes(2);
+    resolveRefresh?.(populatedDashboard);
+    await waitFor(() => {
+      expect(refresh.getAttribute("aria-disabled")).toBe("false");
+    });
+  });
+
   it("separates forbidden access and retryable network failures", async () => {
     getRequesterDashboardMock.mockRejectedValueOnce(
       new ApiRequestError(403, "forbidden", "FORBIDDEN")
