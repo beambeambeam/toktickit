@@ -1215,6 +1215,78 @@ describe("Lab 4 Action Taken create and list API", () => {
     assert.equal(action?.version, 1);
   });
 
+  it("rejects a transition with VERSION_CONFLICT when the assignee changes after the snapshot read", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket();
+    const created = await request(activeFixture.app)
+      .post(`/api/tickets/${ticket.id}/actions`)
+      .set(authHeaders(staff))
+      .send({
+        assigneeId,
+        description: "Reassignment must not skip the new assignee lock.",
+        followUpRequired: false,
+        requestId: "f7726990-c560-45d5-ae76-2f75659bb540",
+        version: ticket.version,
+      })
+      .expect(201);
+    const actionId = getJsonNumber(asJsonObject(created.body).action, "id");
+
+    let releaseTicket!: () => void;
+    let markTicketLocked!: () => void;
+    // oxlint-disable-next-line promise/avoid-new -- Hold the parent Ticket row until the transition waits.
+    const ticketRelease = new Promise<void>((resolve) => {
+      releaseTicket = resolve;
+    });
+    // oxlint-disable-next-line promise/avoid-new -- Signal when the test owns the parent Ticket row lock.
+    const ticketLocked = new Promise<void>((resolve) => {
+      markTicketLocked = resolve;
+    });
+    const reassignment = activeFixture.prisma.$transaction(async (database) => {
+      await database.$queryRaw(
+        Prisma.sql`SELECT "id" FROM "Ticket" WHERE "id" = ${ticket.id} FOR UPDATE`
+      );
+      markTicketLocked();
+      await ticketRelease;
+      // The snapshot read already happened; change the assignee before the lock.
+      await database.actionTaken.update({
+        data: { assigneeId: adminId },
+        where: { id: actionId },
+      });
+    });
+
+    await ticketLocked;
+    const startRequest = request(activeFixture.app)
+      .post(`/api/tickets/${ticket.id}/actions/${actionId}/transition`)
+      .set(authHeaders(staff))
+      .send({ actionVersion: 1, ticketVersion: 2, toStatus: "In Progress" })
+      .then((response) => response);
+    let ticketLockError: unknown;
+    try {
+      await waitForActionTicketLock(activeFixture);
+    } catch (error: unknown) {
+      ticketLockError = error;
+    } finally {
+      releaseTicket();
+    }
+
+    const response = await startRequest;
+    await reassignment;
+    if (ticketLockError instanceof Error) {
+      throw ticketLockError;
+    }
+    assert.equal(response.status, 409);
+    assert.equal(errorCode(response), "VERSION_CONFLICT");
+    const stored = await activeFixture.prisma.actionTaken.findUniqueOrThrow({
+      where: { id: actionId },
+    });
+    assert.equal(stored.status, "Planned");
+    assert.equal(stored.assigneeId, adminId);
+    assert.equal(
+      await activeFixture.prisma.actionEvent.count({ where: { actionId } }),
+      1
+    );
+  });
+
   it("returns a safe INTERNAL_ERROR when the action store fails", async () => {
     const activeFixture = getFixture();
     const ticket = await createTicket();
