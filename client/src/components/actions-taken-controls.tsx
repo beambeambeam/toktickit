@@ -313,10 +313,6 @@ const ActionLifecycleControls = ({
     }
   };
 
-  if (!canProgress) {
-    return null;
-  }
-
   const blockedCompletionReason = completionBlockedReason(
     hasResult,
     action.followUpRequired,
@@ -350,72 +346,76 @@ const ActionLifecycleControls = ({
 
   return (
     <>
-      <div className="form-actions action-lifecycle-actions">
-        {action.status === "Planned" ? (
-          <>
-            <button
-              className="button button-primary"
-              disabled={busy || !assigneeEligible}
-              onClick={(event) => {
-                triggerRef.current = event.currentTarget;
-                void applyTransition("In Progress");
-              }}
-              type="button"
-            >
-              Start Action Taken #{action.id}
-            </button>
-            <button
-              className="button button-danger"
-              disabled={busy}
-              onClick={(event) => {
-                triggerRef.current = event.currentTarget;
-                setFailure(null);
-                setSuccess(null);
-                setConfirmation("Cancelled");
-              }}
-              type="button"
-            >
-              Cancel Action Taken #{action.id}
-            </button>
-          </>
-        ) : (
-          <>
-            <button
-              className="button button-primary"
-              disabled={completeDisabled}
-              onClick={(event) => {
-                triggerRef.current = event.currentTarget;
-                setFailure(null);
-                setSuccess(null);
-                setConfirmation("Completed");
-              }}
-              type="button"
-            >
-              Complete Action Taken #{action.id}
-            </button>
-            <button
-              className="button button-danger"
-              disabled={busy}
-              onClick={(event) => {
-                triggerRef.current = event.currentTarget;
-                setFailure(null);
-                setSuccess(null);
-                setConfirmation("Cancelled");
-              }}
-              type="button"
-            >
-              Cancel Action Taken #{action.id}
-            </button>
-          </>
-        )}
-      </div>
-      {action.status === "Planned" && !assigneeEligible ? (
+      {canProgress ? (
+        <div className="form-actions action-lifecycle-actions">
+          {action.status === "Planned" ? (
+            <>
+              <button
+                className="button button-primary"
+                disabled={busy || !assigneeEligible}
+                onClick={(event) => {
+                  triggerRef.current = event.currentTarget;
+                  void applyTransition("In Progress");
+                }}
+                type="button"
+              >
+                Start Action Taken #{action.id}
+              </button>
+              <button
+                className="button button-danger"
+                disabled={busy}
+                onClick={(event) => {
+                  triggerRef.current = event.currentTarget;
+                  setFailure(null);
+                  setSuccess(null);
+                  setConfirmation("Cancelled");
+                }}
+                type="button"
+              >
+                Cancel Action Taken #{action.id}
+              </button>
+            </>
+          ) : (
+            <>
+              <button
+                className="button button-primary"
+                disabled={completeDisabled}
+                onClick={(event) => {
+                  triggerRef.current = event.currentTarget;
+                  setFailure(null);
+                  setSuccess(null);
+                  setConfirmation("Completed");
+                }}
+                type="button"
+              >
+                Complete Action Taken #{action.id}
+              </button>
+              <button
+                className="button button-danger"
+                disabled={busy}
+                onClick={(event) => {
+                  triggerRef.current = event.currentTarget;
+                  setFailure(null);
+                  setSuccess(null);
+                  setConfirmation("Cancelled");
+                }}
+                type="button"
+              >
+                Cancel Action Taken #{action.id}
+              </button>
+            </>
+          )}
+        </div>
+      ) : null}
+      {canProgress && action.status === "Planned" && !assigneeEligible ? (
         <p className="feedback feedback-warning">
           Assign this Action Taken to an active IT Staff member or Administrator
           before starting it.
         </p>
       ) : null}
-      {action.status === "In Progress" && blockedCompletionReason !== null ? (
+      {canProgress &&
+      action.status === "In Progress" &&
+      blockedCompletionReason !== null ? (
         <p className="feedback feedback-warning">{blockedCompletionReason}</p>
       ) : null}
       <div
