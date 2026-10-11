@@ -13,6 +13,8 @@ export const requesterDashboardQueryOptions = (
   queryOptions({
     queryFn: async ({ signal }) => await getRequesterDashboard(signal),
     queryKey: ["requester-dashboard", principalId, principalRole],
+    // Ticket writes elsewhere change the counts, so refetch on every visit.
+    refetchOnMount: "always",
     retry: (failureCount, error) =>
       !(
         error instanceof ApiRequestError &&

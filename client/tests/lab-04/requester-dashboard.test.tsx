@@ -301,6 +301,25 @@ describe("Requester dashboard UI", () => {
     });
   });
 
+  it("refetches cached Dashboard data when the Requester returns to it", async () => {
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { gcTime: 600_000, staleTime: 60_000 } },
+    });
+    const view = () => (
+      <QueryClientProvider client={queryClient}>
+        <RequesterDashboardPage />
+      </QueryClientProvider>
+    );
+    const first = render(view());
+    await screen.findByText("Campus Wi-Fi login issue");
+    first.unmount();
+
+    render(view());
+    await waitFor(() => {
+      expect(getRequesterDashboardMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
   it("separates forbidden access and retryable network failures", async () => {
     getRequesterDashboardMock.mockRejectedValueOnce(
       new ApiRequestError(403, "forbidden", "FORBIDDEN")
