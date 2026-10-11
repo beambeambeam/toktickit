@@ -93,7 +93,7 @@ Start/complete/cancel confirmations, terminal transition history and new Ticket 
 
 ## Issue #76 visual evidence
 
-The lifecycle browser run passed **3/3 cases** on 2026-10-11 at desktop (1440 × 900), tablet (768 × 1024) and mobile (390 × 844). It captured **19 PNGs** from clean source commit `f7dcbe001517034aebf622587fc9904db692c6b6` on `feature/76-action-lifecycle`. The evidence commit follows this source commit.
+The lifecycle browser run passed **3/3 cases** on 2026-10-11 at desktop (1440 × 900), tablet (768 × 1024) and mobile (390 × 844). It captured **19 PNGs** from clean source commit `a71b4588ca9a5763975005115912ba76f0d4803a` on `feature/76-action-lifecycle`. The evidence commit follows this source commit.
 
 Manifests: [desktop](screenshots/actions-taken/lifecycle/manifest-desktop.json), [tablet](screenshots/actions-taken/lifecycle/manifest-tablet.json), [mobile](screenshots/actions-taken/lifecycle/manifest-mobile.json). All three report `sourceDirty: false`. Each entry records the source SHA, command, UTC capture time, state, role, viewport/zoom, natural-state provenance and STYLE-01/VIS-01 links.
 
