@@ -1358,6 +1358,70 @@ describe("Lab 4 Action Taken create and list API", () => {
     );
   });
 
+  it("rechecks the assignee on completion but still allows cancellation", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket();
+    const created = await request(activeFixture.app)
+      .post(`/api/tickets/${ticket.id}/actions`)
+      .set(authHeaders(staff))
+      .send({
+        assigneeId,
+        description: "Completion needs an eligible assignee.",
+        followUpRequired: false,
+        requestId: "b9726990-c560-45d5-ae76-2f75659bb540",
+        result: "Work is finished.",
+        version: ticket.version,
+      })
+      .expect(201);
+    const actionId = getJsonNumber(asJsonObject(created.body).action, "id");
+    const transitionPath = `/api/tickets/${ticket.id}/actions/${actionId}/transition`;
+    await request(activeFixture.app)
+      .post(transitionPath)
+      .set(authHeaders(staff))
+      .send({ actionVersion: 1, ticketVersion: 2, toStatus: "In Progress" })
+      .expect(200);
+    await activeFixture.prisma.user.update({
+      data: { role: "Requester" },
+      where: { id: assigneeId },
+    });
+
+    const completion = await request(activeFixture.app)
+      .post(transitionPath)
+      .set(authHeaders(staff))
+      .send({
+        actionVersion: 2,
+        confirmed: true,
+        ticketVersion: 3,
+        toStatus: "Completed",
+      })
+      .expect(409);
+    assert.equal(errorCode(completion), "ACTION_ASSIGNEE_INELIGIBLE");
+    const unchanged = await activeFixture.prisma.actionTaken.findUniqueOrThrow({
+      where: { id: actionId },
+    });
+    assert.equal(unchanged.status, "InProgress");
+    assert.equal(unchanged.version, 2);
+    assert.equal(
+      await activeFixture.prisma.actionEvent.count({ where: { actionId } }),
+      2
+    );
+
+    const cancellation = await request(activeFixture.app)
+      .post(transitionPath)
+      .set(authHeaders(staff))
+      .send({
+        actionVersion: 2,
+        confirmed: true,
+        ticketVersion: 3,
+        toStatus: "Cancelled",
+      })
+      .expect(200);
+    assert.equal(
+      asJsonObject(asJsonObject(cancellation.body).action).status,
+      "Cancelled"
+    );
+  });
+
   it("returns a safe INTERNAL_ERROR when the action store fails", async () => {
     const activeFixture = getFixture();
     const ticket = await createTicket();
