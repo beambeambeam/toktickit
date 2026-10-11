@@ -95,6 +95,8 @@ Start/complete/cancel confirmations, terminal transition history and new Ticket 
 
 The Requester dashboard journey captures the populated dashboard, zero/empty state, loading state, forbidden response, recoverable API failure, and recent-list drill-down at desktop (1440×900), tablet (768×1024), and mobile (390×844). Each screenshot is stored once in `screenshots/requester-dashboard/`; its viewport manifest records the scenario, Requester role, natural or intercepted source, UTC capture time, command, source branch and commit, and STYLE-02/VIS-02 review links.
 
+The final capture contains 21 PNGs from clean source [`b73908c31c068b37a71592dba9e40870c57d18ac`](https://github.com/beambeambeam/toktickit/commit/b73908c31c068b37a71592dba9e40870c57d18ac). All three viewport manifests report `sourceDirty: false`; each PNG has one provenance entry. The evidence commit follows this source commit.
+
 The desktop manifest also records the 320 CSS-pixel check, a 720 CSS-pixel reflow proxy for 200% zoom, and native Chromium page scale 2. These are separate viewport checks. The browser journey checks page overflow at each size, keyboard focus, axe on the dashboard and My Tickets list, exact dashboard-to-list bounds, and Ticket Detail navigation.
 
 ### Visual checklist — Pass for #78
