@@ -90,9 +90,14 @@ const pageOf = (saved: ActionTaken) => ({
   totalPages: 1,
 });
 const writes: { body: Record<string, unknown>; csrf: string | null }[] = [];
+const lifecycleWrites: {
+  body: Record<string, unknown>;
+  csrf: string | null;
+}[] = [];
 let saved = action;
 let ticketSaved = ticket;
 let writeResponse: (request: Request) => Response | Promise<Response>;
+let lifecycleResponse: () => Response | Promise<Response>;
 let historyResponse: () => Response;
 
 const renderSection = (
@@ -136,8 +141,11 @@ beforeEach(() => {
   saved = action;
   ticketSaved = ticket;
   writes.length = 0;
+  lifecycleWrites.length = 0;
   setCsrfToken("edit-csrf");
   writeResponse = () => Response.json({ action: saved, ticket: ticketSaved });
+  lifecycleResponse = () =>
+    Response.json({ action: saved, ticket: ticketSaved });
   historyResponse = () =>
     Response.json({
       items: [],
@@ -152,6 +160,17 @@ beforeEach(() => {
       const request =
         input instanceof Request ? input : new Request(input, init);
       const url = new URL(request.url);
+      if (request.method === "POST" && url.pathname.endsWith("/transition")) {
+        const body: unknown = await request.clone().json();
+        if (typeof body !== "object" || body === null || Array.isArray(body)) {
+          throw new TypeError("Expected transition request body.");
+        }
+        lifecycleWrites.push({
+          body: Object.fromEntries(Object.entries(body)),
+          csrf: request.headers.get("X-CSRF-Token"),
+        });
+        return await lifecycleResponse();
+      }
       if (request.method === "PUT") {
         const body: unknown = await request.clone().json();
         if (typeof body !== "object" || body === null || Array.isArray(body)) {
@@ -708,5 +727,337 @@ describe("pending Action Taken editing", () => {
       }).disabled
     ).toBe(true);
     expect(writes).toHaveLength(1);
+  });
+});
+
+describe("Action Taken lifecycle controls", () => {
+  it("starts an action with both current versions and CSRF, then refreshes its state", async () => {
+    lifecycleResponse = () => {
+      saved = {
+        ...action,
+        performedBy: staff,
+        startedAt: "2026-10-11T13:00:00.000Z",
+        status: "In Progress",
+        version: 2,
+      };
+      ticketSaved = { ...ticket, version: 9 };
+      return Response.json({ action: saved, ticket: ticketSaved });
+    };
+
+    renderSection();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Start Action Taken #41" })
+    );
+
+    await screen.findByText("Action Taken started.");
+    expect(lifecycleWrites).toEqual([
+      {
+        body: {
+          actionVersion: 1,
+          ticketVersion: 8,
+          toStatus: "In Progress",
+        },
+        csrf: "edit-csrf",
+      },
+    ]);
+    expect(
+      screen.queryByRole("button", { name: "Start Action Taken #41" })
+    ).toBeNull();
+    expect(screen.getByText("In Progress")).toBeTruthy();
+  });
+
+  it("confirms cancellation and explains that the action becomes terminal", async () => {
+    lifecycleResponse = () => {
+      saved = {
+        ...action,
+        cancelledAt: "2026-10-11T13:00:00.000Z",
+        cancelledBy: admin,
+        status: "Cancelled",
+        version: 2,
+      };
+      ticketSaved = { ...ticket, version: 9 };
+      return Response.json({ action: saved, ticket: ticketSaved });
+    };
+
+    renderSection();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Cancel Action Taken #41" })
+    );
+    const dialog = screen.getByRole("alertdialog", {
+      name: "Confirm cancellation of Action Taken #41?",
+    });
+    expect(
+      within(dialog).getByText(/you cannot edit or change this Action Taken/u)
+    ).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Confirm cancellation" })
+    );
+
+    await screen.findByText("Action Taken cancelled.");
+    expect(lifecycleWrites).toEqual([
+      {
+        body: {
+          actionVersion: 1,
+          confirmed: true,
+          ticketVersion: 8,
+          toStatus: "Cancelled",
+        },
+        csrf: "edit-csrf",
+      },
+    ]);
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(
+      screen.queryByRole("button", { name: "Cancel Action Taken #41" })
+    ).toBeNull();
+  });
+
+  it("blocks completion when Result is blank or follow-up remains required", async () => {
+    saved = { ...action, status: "In Progress", version: 2 };
+    renderSection();
+    const completeWithoutResult = await screen.findByRole("button", {
+      name: "Complete Action Taken #41",
+    });
+    expect(completeWithoutResult).toHaveProperty("disabled", true);
+    expect(screen.getByText(/Add a Result before completion/u)).toBeTruthy();
+
+    cleanup();
+    saved = {
+      ...action,
+      followUpNote: "Confirm the repair with the requester.",
+      followUpRequired: true,
+      result: "The cable was replaced.",
+      status: "In Progress",
+      version: 2,
+    };
+    renderSection();
+    const completeWithFollowUp = await screen.findByRole("button", {
+      name: "Complete Action Taken #41",
+    });
+    expect(completeWithFollowUp).toHaveProperty("disabled", true);
+    expect(
+      screen.getByText(/Clear or correct the follow-up details/u)
+    ).toBeTruthy();
+    expect(lifecycleWrites).toHaveLength(0);
+  });
+
+  it("completes an action only after confirmation and sends confirmed=true", async () => {
+    saved = {
+      ...action,
+      performedBy: staff,
+      result: "Replaced the cable and tested both ports.",
+      startedAt: "2026-10-11T12:00:00.000Z",
+      status: "In Progress",
+      version: 2,
+    };
+    lifecycleResponse = () => {
+      saved = {
+        ...saved,
+        completedAt: "2026-10-11T13:00:00.000Z",
+        completedBy: admin,
+        status: "Completed",
+        version: 3,
+      };
+      ticketSaved = { ...ticket, version: 9 };
+      return Response.json({ action: saved, ticket: ticketSaved });
+    };
+
+    renderSection();
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "Complete Action Taken #41",
+      })
+    );
+    const dialog = screen.getByRole("alertdialog", {
+      name: "Confirm completion of Action Taken #41?",
+    });
+    expect(
+      within(dialog).getByText(/The Result and event history will remain/u)
+    ).toBeTruthy();
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Confirm completion" })
+    );
+
+    await screen.findByText("Action Taken completed.");
+    expect(lifecycleWrites).toEqual([
+      {
+        body: {
+          actionVersion: 2,
+          confirmed: true,
+          ticketVersion: 8,
+          toStatus: "Completed",
+        },
+        csrf: "edit-csrf",
+      },
+    ]);
+  });
+
+  it("traps dialog focus, closes on Escape, and restores focus to Cancel", async () => {
+    renderSection();
+    const cancel = await screen.findByRole("button", {
+      name: "Cancel Action Taken #41",
+    });
+    fireEvent.click(cancel);
+    const keep = screen.getByRole("button", { name: "Keep Action Taken" });
+    expect(document.activeElement).toBe(keep);
+
+    fireEvent.keyDown(document, { key: "Escape" });
+    expect(screen.queryByRole("alertdialog")).toBeNull();
+    expect(document.activeElement).toBe(cancel);
+    expect(lifecycleWrites).toHaveLength(0);
+  });
+
+  it("refreshes after a version conflict and shows the latest saved status", async () => {
+    lifecycleResponse = () =>
+      Response.json(
+        {
+          error: {
+            code: "VERSION_CONFLICT",
+            message: "The supplied version is stale.",
+          },
+        },
+        { status: 409 }
+      );
+    renderSection();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Start Action Taken #41" })
+    );
+    await screen.findByText(
+      /The Action Taken or Ticket changed. Refresh the page/u
+    );
+
+    saved = {
+      ...action,
+      performedBy: staff,
+      startedAt: "2026-10-11T13:00:00.000Z",
+      status: "In Progress",
+      version: 2,
+    };
+    ticketSaved = { ...ticket, version: 9 };
+    fireEvent.click(screen.getByRole("button", { name: "Refresh and review" }));
+
+    await screen.findByText(
+      "Latest Action Taken values are ready. Review them before you retry."
+    );
+    expect(
+      screen.queryByRole("button", { name: "Start Action Taken #41" })
+    ).toBeNull();
+    expect(screen.getByText("In Progress")).toBeTruthy();
+    expect(lifecycleWrites).toHaveLength(1);
+  });
+
+  it("prevents a second terminal write while cancellation is in flight", async () => {
+    let finish: ((response: Response) => void) | undefined;
+    lifecycleResponse = async () =>
+      // oxlint-disable-next-line promise/avoid-new -- Hold the request to check duplicate-write protection.
+      await new Promise<Response>((resolve) => {
+        finish = resolve;
+      });
+    renderSection();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Cancel Action Taken #41" })
+    );
+    const dialog = screen.getByRole("alertdialog");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Confirm cancellation" })
+    );
+    await waitFor(() => {
+      expect(lifecycleWrites).toHaveLength(1);
+    });
+    expect(
+      within(dialog).getByRole("button", { name: "Saving…" })
+    ).toHaveProperty("disabled", true);
+    expect(
+      within(dialog).getByRole("button", { name: "Keep Action Taken" })
+    ).toHaveProperty("disabled", true);
+
+    await act(async () => {
+      finish?.(
+        Response.json({
+          action: {
+            ...action,
+            cancelledAt: "2026-10-11T13:00:00.000Z",
+            cancelledBy: admin,
+            status: "Cancelled",
+            version: 2,
+          },
+          ticket: { ...ticket, version: 9 },
+        })
+      );
+      await Promise.resolve();
+    });
+    await screen.findByText("Action Taken cancelled.");
+    expect(lifecycleWrites).toHaveLength(1);
+  });
+
+  it("removes staff edit and lifecycle controls from terminal actions", () => {
+    for (const status of ["Completed", "Cancelled"] as const) {
+      saved = { ...action, status, version: 3 };
+      renderSection();
+      for (const actionName of [
+        "Start Action Taken #41",
+        "Complete Action Taken #41",
+        "Cancel Action Taken #41",
+        "Edit Action Taken #41",
+        "Assign Action Taken #41",
+      ]) {
+        expect(screen.queryByRole("button", { name: actionName })).toBeNull();
+      }
+      cleanup();
+    }
+  });
+
+  it("shows terminal history to Requesters without staff controls", async () => {
+    saved = {
+      ...action,
+      completedAt: "2026-10-11T13:00:00.000Z",
+      completedBy: admin,
+      performedBy: staff,
+      result: "Replaced the cable and tested both ports.",
+      startedAt: "2026-10-11T12:00:00.000Z",
+      status: "Completed",
+      version: 3,
+    };
+    historyResponse = () =>
+      Response.json({
+        items: [
+          {
+            actionId: action.id,
+            actionVersion: 3,
+            actor: admin,
+            createdAt: "2026-10-11T13:00:00.000Z",
+            eventType: "ActionCompleted",
+            fromStatus: "In Progress",
+            id: 3,
+            snapshot: null,
+            toStatus: "Completed",
+          },
+        ],
+        page: 1,
+        pageSize: 20,
+        totalItems: 3,
+        totalPages: 1,
+      });
+    renderSection({ principalId: 12, principalRole: "Requester" });
+    for (const actionName of [
+      "Start Action Taken #41",
+      "Complete Action Taken #41",
+      "Cancel Action Taken #41",
+      "Edit Action Taken #41",
+      "Assign Action Taken #41",
+    ]) {
+      expect(screen.queryByRole("button", { name: actionName })).toBeNull();
+    }
+    fireEvent.click(
+      await screen.findByRole("button", {
+        name: "View history for Action Taken #41",
+      })
+    );
+    await screen.findByText("ActionCompleted");
+    expect(screen.getByText("In Progress → Completed")).toBeTruthy();
+    expect(screen.getAllByText(/Ari Admin · Administrator/u)).toHaveLength(2);
+    expect(
+      screen.getAllByText("11 Oct 2026, 20:00 (Asia/Bangkok)")
+    ).toHaveLength(1);
+    expect(lifecycleWrites).toHaveLength(0);
   });
 });
