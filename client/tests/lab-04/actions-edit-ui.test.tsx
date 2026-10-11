@@ -824,7 +824,10 @@ describe("Action Taken lifecycle controls", () => {
       name: "Complete Action Taken #41",
     });
     expect(completeWithoutResult).toHaveProperty("disabled", true);
-    expect(screen.getByText(/Add a Result before completion/u)).toBeTruthy();
+    const resultReason = screen.getByText(/Add a Result before completion/u);
+    expect(completeWithoutResult.getAttribute("aria-describedby")).toBe(
+      resultReason.id
+    );
 
     cleanup();
     saved = {
@@ -840,9 +843,13 @@ describe("Action Taken lifecycle controls", () => {
       name: "Complete Action Taken #41",
     });
     expect(completeWithFollowUp).toHaveProperty("disabled", true);
-    expect(
-      screen.getByText(/Clear or correct the follow-up details/u)
-    ).toBeTruthy();
+    const followUpReason = screen.getByText(
+      /Clear or correct the follow-up details/u
+    );
+    expect(followUpReason.id).not.toBe("");
+    expect(completeWithFollowUp.getAttribute("aria-describedby")).toBe(
+      followUpReason.id
+    );
     expect(lifecycleWrites).toHaveLength(0);
   });
 

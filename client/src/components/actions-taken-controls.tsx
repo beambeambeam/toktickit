@@ -317,6 +317,8 @@ const ActionLifecycleControls = ({
     action.followUpRequired,
     assigneeEligible
   );
+  const completionReasonId = `action-${action.id}-completion-blocked`;
+  const startReasonId = `action-${action.id}-start-blocked`;
   const dialogTitle = `Confirm ${confirmation === "Completed" ? "completion" : "cancellation"} of Action Taken #${action.id}?`;
   const dialogDescription =
     confirmation === "Completed"
@@ -351,6 +353,7 @@ const ActionLifecycleControls = ({
             <>
               <button
                 className="button button-primary"
+                aria-describedby={assigneeEligible ? undefined : startReasonId}
                 disabled={busy || !assigneeEligible}
                 onClick={(event) => {
                   triggerRef.current = event.currentTarget;
@@ -378,6 +381,11 @@ const ActionLifecycleControls = ({
             <>
               <button
                 className="button button-primary"
+                aria-describedby={
+                  blockedCompletionReason === null
+                    ? undefined
+                    : completionReasonId
+                }
                 disabled={completeDisabled}
                 onClick={(event) => {
                   triggerRef.current = event.currentTarget;
@@ -407,7 +415,7 @@ const ActionLifecycleControls = ({
         </div>
       ) : null}
       {canProgress && action.status === "Planned" && !assigneeEligible ? (
-        <p className="feedback feedback-warning">
+        <p className="feedback feedback-warning" id={startReasonId}>
           Assign this Action Taken to an active IT Staff member or Administrator
           before starting it.
         </p>
@@ -415,7 +423,9 @@ const ActionLifecycleControls = ({
       {canProgress &&
       action.status === "In Progress" &&
       blockedCompletionReason !== null ? (
-        <p className="feedback feedback-warning">{blockedCompletionReason}</p>
+        <p className="feedback feedback-warning" id={completionReasonId}>
+          {blockedCompletionReason}
+        </p>
       ) : null}
       <div
         aria-live="polite"
