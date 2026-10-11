@@ -817,6 +817,34 @@ describe("Action Taken lifecycle controls", () => {
     expect(document.activeElement).toBe(status);
   });
 
+  it("blocks lifecycle buttons while an Edit draft is open and restores them after close", async () => {
+    renderSection();
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Edit Action Taken #41" })
+    );
+    expect(
+      screen.getByRole<HTMLButtonElement>("button", {
+        name: "Start Action Taken #41",
+      }).disabled
+    ).toBe(true);
+    expect(
+      screen.getByRole<HTMLButtonElement>("button", {
+        name: "Cancel Action Taken #41",
+      }).disabled
+    ).toBe(true);
+    expect(
+      screen.getByText(/Save or discard the open Edit or Assign/u)
+    ).toBeTruthy();
+
+    fireEvent.click(screen.getByRole("button", { name: "Cancel" }));
+    expect(
+      screen.getByRole<HTMLButtonElement>("button", {
+        name: "Cancel Action Taken #41",
+      }).disabled
+    ).toBe(false);
+    expect(lifecycleWrites).toHaveLength(0);
+  });
+
   it("blocks completion when Result is blank or follow-up remains required", async () => {
     saved = { ...action, status: "In Progress", version: 2 };
     renderSection();

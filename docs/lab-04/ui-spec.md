@@ -70,7 +70,7 @@ On 409 version conflict, preserve the draft, identify that the saved record chan
 
 ### Action lifecycle controls
 
-Show only permitted action transitions. Planned offers Start and Cancel; In Progress offers Complete and Cancel. Complete and Cancel require a keyboard-accessible confirmation dialog that explains the action becomes terminal and immutable. Completion requires a nonblank Result and Follow-Up Required=false. If follow-up remains, explain that it must be completed or corrected before the action can be completed. Confirmation or validation failure leaves the action and Ticket unchanged.
+Show only permitted action transitions. Planned offers Start and Cancel; In Progress offers Complete and Cancel. Complete and Cancel require a keyboard-accessible confirmation dialog that explains the action becomes terminal and immutable. Completion requires a nonblank Result and Follow-Up Required=false. If follow-up remains, explain that it must be completed or corrected before the action can be completed. Confirmation or validation failure leaves the action and Ticket unchanged. While an Edit or Assign draft is open on an action, disable its Start, Complete, and Cancel controls and explain why, so a saved draft cannot meet a terminal action.
 
 ## 5. Ticket Workflow
 

@@ -85,9 +85,11 @@ const completionBlockedReason = (
 const ActionLifecycleControls = ({
   action,
   context,
+  draftOpen,
 }: {
   action: TicketAction;
   context: ActionInteractionContext;
+  draftOpen: boolean;
 }) => {
   const queryClient = useQueryClient();
   const [confirmation, setConfirmation] = useState<TerminalActionStatus | null>(
@@ -118,8 +120,9 @@ const ActionLifecycleControls = ({
   const assigneeEligible =
     action.assignee.isActive && action.assignee.isEligible;
   const hasResult = action.result !== null && action.result.trim().length > 0;
+  const locked = busy || draftOpen;
   const completeDisabled =
-    busy || !assigneeEligible || !hasResult || action.followUpRequired;
+    locked || !assigneeEligible || !hasResult || action.followUpRequired;
 
   useEffect(() => {
     activeRef.current = true;
@@ -354,7 +357,7 @@ const ActionLifecycleControls = ({
               <button
                 className="button button-primary"
                 aria-describedby={assigneeEligible ? undefined : startReasonId}
-                disabled={busy || !assigneeEligible}
+                disabled={locked || !assigneeEligible}
                 onClick={(event) => {
                   triggerRef.current = event.currentTarget;
                   void applyTransition("In Progress");
@@ -365,7 +368,7 @@ const ActionLifecycleControls = ({
               </button>
               <button
                 className="button button-danger"
-                disabled={busy}
+                disabled={locked}
                 onClick={(event) => {
                   triggerRef.current = event.currentTarget;
                   setFailure(null);
@@ -399,7 +402,7 @@ const ActionLifecycleControls = ({
               </button>
               <button
                 className="button button-danger"
-                disabled={busy}
+                disabled={locked}
                 onClick={(event) => {
                   triggerRef.current = event.currentTarget;
                   setFailure(null);
@@ -413,6 +416,12 @@ const ActionLifecycleControls = ({
             </>
           )}
         </div>
+      ) : null}
+      {canProgress && draftOpen ? (
+        <p className="feedback feedback-warning">
+          Save or discard the open Edit or Assign draft before you start,
+          complete, or cancel this Action Taken.
+        </p>
       ) : null}
       {canProgress && action.status === "Planned" && !assigneeEligible ? (
         <p className="feedback feedback-warning" id={startReasonId}>
@@ -537,7 +546,11 @@ export const ActionControls = ({
           }}
         />
       )}
-      <ActionLifecycleControls action={action} context={context} />
+      <ActionLifecycleControls
+        action={action}
+        context={context}
+        draftOpen={mode !== null}
+      />
       <div aria-live="polite" className="operation-status" role="status">
         {success ? "Action Taken saved successfully." : null}
       </div>
