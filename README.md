@@ -122,6 +122,7 @@ For Lab 3 evidence, use a fresh disposable PostgreSQL database and temporary Att
 | First-login Requester | `e2e-first-login-desktop@example.test`, `e2e-first-login-tablet@example.test`, `e2e-first-login-mobile@example.test` |
 | IT Staff | `e2e-staff@example.test`, `e2e-staff-second@example.test` |
 | Administrator | `e2e-admin@example.test` |
+| Requester dashboard isolation | `e2e-dashboard-desktop@example.test`, `e2e-dashboard-tablet@example.test`, `e2e-dashboard-mobile@example.test`; foreign: `e2e-dashboard-foreign-desktop@example.test`, `e2e-dashboard-foreign-tablet@example.test`, `e2e-dashboard-foreign-mobile@example.test` |
 
 Run the committed Lab 3 browser journeys with the direct filter used by the evidence manifests:
 
@@ -166,3 +167,19 @@ TOKTICKIT_TEST_DATABASE_URL='postgresql://USER:PASSWORD@localhost:PORT/postgres'
 ```
 
 The check creates disposable databases, populates all earlier resources, verifies failed-migration rollback, successful migration, insert-only seed reruns, database backup restoration, and Attachment byte recovery. Before migrating any preserved environment, stop writes and back up both PostgreSQL and `ATTACHMENT_STORAGE_DIR`. Restore both together for recovery; do not drop the new tables after accepting live actions.
+
+## Lab 4 Requester Dashboard
+
+After sign-in, Requesters land on `/dashboard`. The four cards show active Tickets, Tickets waiting for a Requester response, and Tickets updated or resolved in the latest seven-day UTC window. Dates display in Asia/Bangkok. Open a card or a recent preview to view the matching My Tickets list or Ticket Detail. Recent links keep the dashboard’s UTC time bounds. The dashboard always uses the signed-in Requester’s data.
+
+Run the Requester dashboard browser journey against an isolated database and dedicated ports:
+
+```sh
+E2E_CLIENT_PORT=5278 E2E_API_URL=http://localhost:3078 \
+  E2E_BASE_URL=http://localhost:5278 PORT=3078 \
+  CORS_ORIGIN=http://localhost:5278 API_ORIGIN=http://localhost:3078 \
+  VITE_API_URL=http://localhost:3078 \
+  pnpm --filter @toktickit/e2e exec playwright test lab-04/requester-dashboard.spec.ts
+```
+
+The fixture Requesters use the local-only password `correct horse battery staple`. E2E setup clears prior Tickets with the `E2E requester dashboard` prefix before the run. The journey then creates its own fixtures. Do not point it at a shared development database.

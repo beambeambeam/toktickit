@@ -64,3 +64,19 @@ The human review found two focus defects and a gap in Ticket-lock test evidence.
 The agent used the pr-review-followup skill for separate commits and thread replies. It used the ASD-STE100 skill for new review text. Replies leave the threads open for reviewer verification. Test results and response links are recorded in [tests.md](tests.md) and [reviewer.md](reviewer.md).
 
 This section records observed agent work. The student did not provide an Issue #75 reflection. Automated checks do not imply human approval.
+
+## Issue #78 implementation — 2026-10-11
+
+Codex in T3 Code supported the Requester dashboard API, My Tickets drill-down, UI, browser coverage, and verification record. The model was GPT-6 Luna with max reasoning. The work stayed on `feature/78-requester-dashboard` and did not implement sibling issues.
+
+These excerpts are actual instructions from the Issue #78 task:
+
+| Date | Prompt excerpt | Observed use |
+| --- | --- | --- |
+| 2026-10-11 | `Act as the implementation sub-agent for this task.` | Work as the implementer for the assigned issue. |
+| 2026-10-11 | `Implement #78 completely and verify it.` | Complete the Requester dashboard API, generated client, UI, query filters, tests, and feature records. |
+| 2026-10-11 | `Do not implement other tickets.` | Keep action lifecycle and staff dashboard work outside this change. |
+| 2026-10-11 | `Work ONLY in this git worktree: /Users/beam/.cache/toktickit-72/wt/78` | Keep commands and edits in the assigned worktree. |
+| 2026-10-11 | `Run the existing earlier-lab regression tests and this feature’s unit/rule, API/integration, UI and browser E2E tests as applicable` | Use the repository’s rule, API, UI, full client/server, and Requester browser test seams. |
+
+The implementation used test-first rule, API, UI, and browser checks. The API derives the Requester from the session. The tests check ownership, private-note isolation, exact UTC bounds, zero results, list parity, role restrictions, preview limits, and performance measurements. The browser journey checks the generated links, Ticket detail, account switch, focus, axe, viewport overflow, and zoom. Verification outcomes are recorded in [tests.md](tests.md). The student has not supplied an Issue #78 reflection.
