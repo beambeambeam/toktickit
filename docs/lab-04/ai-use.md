@@ -64,3 +64,19 @@ The human review found two focus defects and a gap in Ticket-lock test evidence.
 The agent used the pr-review-followup skill for separate commits and thread replies. It used the ASD-STE100 skill for new review text. Replies leave the threads open for reviewer verification. Test results and response links are recorded in [tests.md](tests.md) and [reviewer.md](reviewer.md).
 
 This section records observed agent work. The student did not provide an Issue #75 reflection. Automated checks do not imply human approval.
+
+## Issue #76 Action Taken lifecycle — 2026-10-11
+
+Codex in T3 Code supported Issue #76 implementation, verification and evidence capture. The model was GPT-6 Luna with max reasoning. No delegated agents were used. Work stayed in the assigned `feature/76-action-lifecycle` worktree. No GitHub issue, PR or remote branch was changed.
+
+The agent read Issue #76, parent Issue #72, the worktree setup, repository guidance, Lab 4 documents, PR #82/#83 diffs and the TDD skill. The change adds a versioned transition API, role-aware lifecycle controls, and browser verification. Existing lifecycle columns and event tables were used; no migration was needed. API tests used the isolated `toktickit_t76` database.
+
+This is an actual instruction excerpt from the user. It does not count all user or tool messages.
+
+| Date | Prompt excerpt | Observed use |
+| --- | --- | --- |
+| 2026-10-11 | `Implement #76 completely and verify it. Do not implement other tickets.` | Keep the work within Action Taken lifecycle behavior and verify the named API, UI and E2E seams. |
+
+The API tests cover actor and assignee eligibility, both Action and Ticket versions, terminal confirmation, Result and Follow-up gates, immutable terminal writes, Requester access, parent metadata and ordered history. UI tests cover focus, duplicate-write prevention, errors, refresh, terminal controls and Requester history. Playwright captures the real lifecycle at desktop, tablet and mobile sizes, plus 320 CSS pixels and 200% checks. The capture manifests link to the clean lifecycle source commit.
+
+The implementation keeps each transition and its history event, Action version, Ticket version and public timestamp in one transaction. Browser evidence shows the final event history remains readable after completion or cancellation. The user asked the agent not to push, open a PR or edit issues, and no external GitHub state was changed.

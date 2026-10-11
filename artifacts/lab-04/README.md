@@ -90,3 +90,32 @@ All six canonical edit/conflict images and representative history, historical-as
 | Responsive/zoom | Three standard viewports, 320px, CSS reflow and native page scale pass their automated checks. |
 
 Start/complete/cancel confirmations, terminal transition history and new Ticket workflow gates remain #76/#77. This evidence does not claim those unavailable endpoints. Commands, regression totals and separate code-review results are in [the #75 verification record](../../docs/lab-04/tests.md#issue-75-verification--2026-10-04).
+
+## Issue #76 visual evidence
+
+The lifecycle browser run passed **3/3 cases** on 2026-10-11 at desktop (1440 × 900), tablet (768 × 1024) and mobile (390 × 844). It captured **19 PNGs** from clean source commit `f7dcbe001517034aebf622587fc9904db692c6b6` on `feature/76-action-lifecycle`. The evidence commit follows this source commit.
+
+Manifests: [desktop](screenshots/actions-taken/lifecycle/manifest-desktop.json), [tablet](screenshots/actions-taken/lifecycle/manifest-tablet.json), [mobile](screenshots/actions-taken/lifecycle/manifest-mobile.json). All three report `sourceDirty: false`. Each entry records the source SHA, command, UTC capture time, state, role, viewport/zoom, natural-state provenance and STYLE-01/VIS-01 links.
+
+| State | Filename | Provenance |
+| --- | --- | --- |
+| Planned action with Start and Cancel | `action-start-ready-{viewport}.png` | Natural staff view after real create and assignment. |
+| Completion confirmation | `action-complete-confirmation-{viewport}.png` | Natural staff view with a saved Result. |
+| Cancellation confirmation | `action-cancel-confirmation-{viewport}.png` | Natural staff view before a Planned action is cancelled. |
+| Terminal event history | `action-terminal-history-{viewport}.png` | Natural Requester read after completion and cancellation. |
+| 320 CSS pixels and 200% CSS reflow | `action-lifecycle-minimum-width-320-css-pixels-{viewport}.png`, `action-lifecycle-css-reflow-200-percent-{viewport}.png` | Completion dialog at 320 CSS pixels and the 720 CSS-pixel reflow proxy. |
+| Native Chromium page scale | `action-lifecycle-native-page-scale-200-percent-desktop.png` | Desktop Chromium page scale 2. This check is separate from CSS reflow. |
+
+### Visual checklist — Pass for #76
+
+All four lifecycle states were inspected at all three standard viewports. The narrow-width, reflow and native-scale captures were also inspected.
+
+| Check | Observed result |
+| --- | --- |
+| Zen Green controls/layout | Start, Complete and Cancel controls match existing Ticket Detail cards. Confirmation dialogs show the requested action and keep both choices visible. |
+| Wrapping and spacing | Action text, Result, actor and time fit their cards. Reviewed views show no clipping, overlap or page-wide horizontal overflow. |
+| Shared/private boundary | Requester reads retain terminal events with actor and time. Requester screens have no lifecycle or edit controls and no Internal Notes. |
+| Keyboard/accessibility | Dialog focus, Escape, confirmation focus and Requester history pass. The three E2E projects report zero axe violations. |
+| Responsive/zoom | Desktop, tablet, mobile, 320 CSS pixels, 200% CSS reflow and desktop native page scale 2 pass automated overflow checks. |
+
+The run command and complete check results are in the [#76 verification record](../../docs/lab-04/tests.md#issue-76-verification--2026-10-11).
