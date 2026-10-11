@@ -1,10 +1,10 @@
 {
   "branch": "feature/78-requester-dashboard",
   "command": "E2E_CLIENT_PORT=5278 E2E_API_URL=http://localhost:3078 E2E_BASE_URL=http://localhost:5278 PORT=3078 CORS_ORIGIN=http://localhost:5278 API_ORIGIN=http://localhost:3078 VITE_API_URL=http://localhost:3078 pnpm --filter @toktickit/e2e exec playwright test lab-04/requester-dashboard.spec.ts",
-  "commit": "b73908c31c068b37a71592dba9e40870c57d18ac",
+  "commit": "7de0c707931999fb0b583957d932b6ac63f6cbc0",
   "files": [
     {
-      "capturedAt": "2026-10-11T14:05:48.977Z",
+      "capturedAt": "2026-10-11T20:26:52.565Z",
       "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-populated-desktop.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-02",
@@ -24,7 +24,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-11T14:05:49.340Z",
+      "capturedAt": "2026-10-11T20:26:52.911Z",
       "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-minimum-width-320.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-02",
@@ -44,7 +44,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-11T14:05:49.395Z",
+      "capturedAt": "2026-10-11T20:26:52.965Z",
       "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-css-reflow-200-percent.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-02",
@@ -64,7 +64,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-11T14:05:49.914Z",
+      "capturedAt": "2026-10-11T20:26:53.469Z",
       "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-drilldown-desktop.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-02",
@@ -84,7 +84,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-11T14:05:52.854Z",
+      "capturedAt": "2026-10-11T20:26:57.360Z",
       "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-empty-desktop.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-02",
@@ -104,7 +104,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-11T14:05:53.672Z",
+      "capturedAt": "2026-10-11T20:26:58.398Z",
       "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-loading-desktop.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-02",
@@ -124,7 +124,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-11T14:05:54.465Z",
+      "capturedAt": "2026-10-11T20:26:59.443Z",
       "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-forbidden-desktop.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-02",
@@ -144,7 +144,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-11T14:05:56.308Z",
+      "capturedAt": "2026-10-11T20:27:01.470Z",
       "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-error-desktop.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-02",
@@ -164,7 +164,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-11T14:05:56.444Z",
+      "capturedAt": "2026-10-11T20:27:01.597Z",
       "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-native-page-scale-200-percent.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-02",
@@ -184,7 +184,7 @@
       }
     }
   ],
-  "generatedAt": "2026-10-11T14:05:56.493Z",
+  "generatedAt": "2026-10-11T20:27:01.645Z",
   "project": "desktop-chromium",
-  "sourceDirty": false
+  "sourceDirty": true
 }

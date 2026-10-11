@@ -80,3 +80,15 @@ These excerpts are actual instructions from the Issue #78 task:
 | 2026-10-11 | `Run the existing earlier-lab regression tests and this feature’s unit/rule, API/integration, UI and browser E2E tests as applicable` | Use the repository’s rule, API, UI, full client/server, and Requester browser test seams. |
 
 The implementation used test-first rule, API, UI, and browser checks. The API derives the Requester from the session. The tests check ownership, private-note isolation, exact UTC bounds, zero results, list parity, role restrictions, preview limits, and performance measurements. The browser journey checks the generated links, Ticket detail, account switch, focus, axe, viewport overflow, and zoom. Verification outcomes are recorded in [tests.md](tests.md). The student has not supplied an Issue #78 reflection.
+
+## PR #85 review follow-up — 2026-10-12
+
+Claude Code supported the PR #85 review follow-up. The model was Claude Sonnet 5.5. The work stayed on `feature/78-requester-dashboard` in the assigned worktree. It did not touch PR #84 or any issue.
+
+| Date | Prompt summary | Observed use |
+| --- | --- | --- |
+| 2026-10-12 | Handle the review follow-up for PR #85 with the pr-review-followup skill. | Reproduce each of the 16 threads, make one commit per defect, push, and reply in the thread. |
+| 2026-10-12 | Never resolve a thread. Use one commit for a shared defect. Run a mutation check for each test-gap finding. | Leave threads open. Share one commit across the four test-record threads. Confirm new tests fail without the fix. |
+| 2026-10-12 | Update the reviewer, AI-use, and test records. Run every check before the last push. | Record the commits and the actual test results. Request re-review from @Kiatisakk only. |
+
+Automated checks do not imply human approval. The student has not supplied a reflection for this follow-up.

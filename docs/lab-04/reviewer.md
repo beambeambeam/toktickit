@@ -66,3 +66,28 @@ The shipped history endpoint matches `api-spec.md`: authorized reads, stable cre
 The parent-lock regression observes a waiting Ticket `SELECT ... FOR UPDATE`. Concurrent resolution makes the captured Ticket version stale. That edit returns `VERSION_CONFLICT`. An edit with the fresh version returns `TICKET_TERMINAL`. Both preserve the action, events and resolved Ticket metadata. Removing the explicit Ticket lock makes this test fail.
 
 GitHub tracks the review request and approval state. The reviewer must verify the replies and resolve the threads.
+
+## PR #85 — Issue #78 Requester dashboard
+
+[PR #85](https://github.com/beambeambeam/toktickit/pull/85) targets `lab4-staging`. @Kiatisakk requested changes and Greptile left inline findings. The review has 16 inline threads.
+
+Each shared defect has one commit. Every thread has a matching reply with that commit. All threads remain open for reviewer verification and resolution. This checkpoint does not claim human approval.
+
+| Finding | Commit | Reply / state |
+| --- | --- | --- |
+| Requester sign-in landed on My Tickets, not Dashboard | [`de9f0e0`](https://github.com/beambeambeam/toktickit/commit/de9f0e063a55844bafa8cde4c497254cb6943230) | [Reply](https://github.com/beambeambeam/toktickit/pull/85#discussion_r4243012250), [Reply](https://github.com/beambeambeam/toktickit/pull/85#discussion_r4243012365). Open. |
+| Malformed `from`/`through` URL dates crashed My Tickets | [`58973b5`](https://github.com/beambeambeam/toktickit/commit/58973b599c81e8958df2daa4bd979fe51ace5f45) | [Reply](https://github.com/beambeambeam/toktickit/pull/85#discussion_r4243018027), [Reply](https://github.com/beambeambeam/toktickit/pull/85#discussion_r4243018123). Open. |
+| My Tickets and Dashboard used different date formats; three formatter copies | [`2e9f321`](https://github.com/beambeambeam/toktickit/commit/2e9f321c9367a8f690d30f8f69b7c0a75d4fae21) | [Reply](https://github.com/beambeambeam/toktickit/pull/85#discussion_r4243022085), [Reply](https://github.com/beambeambeam/toktickit/pull/85#discussion_r4243022202). Open. |
+| Refresh lost keyboard focus while fetching | [`510b654`](https://github.com/beambeambeam/toktickit/commit/510b6540738a6cbd0be8d0232c45bea75066b3b3) | [Reply](https://github.com/beambeambeam/toktickit/pull/85#discussion_r4243024100). Open. |
+| Retry lost focus; Retry shown for forbidden errors | [`4729a4e`](https://github.com/beambeambeam/toktickit/commit/4729a4e1b9e2654fabfb9d11c67abc23783a9a0c) | [Reply](https://github.com/beambeambeam/toktickit/pull/85#discussion_r4243025835). Open. |
+| Refresh result not announced | [`e4fa610`](https://github.com/beambeambeam/toktickit/commit/e4fa6108aba94deccf8e5eeba98d5f90bf373ddd) | [Reply](https://github.com/beambeambeam/toktickit/pull/85#discussion_r4243027395). Open. |
+| Dashboard cache not refreshed after Ticket writes | [`2aaf09c`](https://github.com/beambeambeam/toktickit/commit/2aaf09c86823c0861f428c0eca9c6bc91fef1cd3) | [Reply](https://github.com/beambeambeam/toktickit/pull/85#discussion_r4243032235). Open. |
+| No test rows on or 1 ms outside the window endpoints | [`53bd80e`](https://github.com/beambeambeam/toktickit/commit/53bd80ebd2082f66995a5b06c73c7c32a6e5b8a5) | [Reply](https://github.com/beambeambeam/toktickit/pull/85#discussion_r4243038042). Open. |
+| Foreign Waiting Ticket not tested for ownership | [`1951e44`](https://github.com/beambeambeam/toktickit/commit/1951e4473be1e7388ab6387c5a91acb4b758c38f) | [Reply](https://github.com/beambeambeam/toktickit/pull/85#discussion_r4243039449). Open. |
+| Rule test covered unused helpers; helpers unused; two overclaiming test records | [`7de0c70`](https://github.com/beambeambeam/toktickit/commit/7de0c707931999fb0b583957d932b6ac63f6cbc0) | [Reply](https://github.com/beambeambeam/toktickit/pull/85#discussion_r4243040945), [Reply](https://github.com/beambeambeam/toktickit/pull/85#discussion_r4243041027), [Reply](https://github.com/beambeambeam/toktickit/pull/85#discussion_r4243041126), [Reply](https://github.com/beambeambeam/toktickit/pull/85#discussion_r4243041231). Open. |
+
+The first reply in the cache-refresh thread named the wrong commit. A second reply in the same thread gives `2aaf09c`.
+
+Each test-gap fix has a mutation check. The new test failed when the fix was removed: the sign-in landing, the bad URL date, the Bangkok date format, Refresh focus, Retry focus, the refresh announcement, refetch on mount, `gte`/`lte` to `gt`/`lt` changes, the foreign Waiting count, and the active status set. The Dashboard repository now takes an optional snapshot time so the endpoint test can pin the window.
+
+The reviewer must verify the replies and resolve the threads. A re-review request goes to @Kiatisakk only.

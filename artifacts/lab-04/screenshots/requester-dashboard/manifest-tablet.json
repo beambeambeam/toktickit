@@ -1,10 +1,10 @@
 {
   "branch": "feature/78-requester-dashboard",
   "command": "E2E_CLIENT_PORT=5278 E2E_API_URL=http://localhost:3078 E2E_BASE_URL=http://localhost:5278 PORT=3078 CORS_ORIGIN=http://localhost:5278 API_ORIGIN=http://localhost:3078 VITE_API_URL=http://localhost:3078 pnpm --filter @toktickit/e2e exec playwright test lab-04/requester-dashboard.spec.ts",
-  "commit": "b73908c31c068b37a71592dba9e40870c57d18ac",
+  "commit": "7de0c707931999fb0b583957d932b6ac63f6cbc0",
   "files": [
     {
-      "capturedAt": "2026-10-11T14:06:00.892Z",
+      "capturedAt": "2026-10-11T20:27:19.696Z",
       "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-populated-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-02",
@@ -24,7 +24,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-11T14:06:01.696Z",
+      "capturedAt": "2026-10-11T20:27:20.516Z",
       "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-drilldown-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-02",
@@ -44,7 +44,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-11T14:06:04.572Z",
+      "capturedAt": "2026-10-11T20:27:24.445Z",
       "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-empty-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-02",
@@ -64,7 +64,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-11T14:06:05.468Z",
+      "capturedAt": "2026-10-11T20:27:25.472Z",
       "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-loading-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-02",
@@ -84,7 +84,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-11T14:06:06.535Z",
+      "capturedAt": "2026-10-11T20:27:26.522Z",
       "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-forbidden-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-02",
@@ -104,7 +104,7 @@
       }
     },
     {
-      "capturedAt": "2026-10-11T14:06:08.507Z",
+      "capturedAt": "2026-10-11T20:27:28.574Z",
       "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-error-tablet.png",
       "review": {
         "style": "docs/lab-04/tests.md#style-02",
@@ -124,7 +124,7 @@
       }
     }
   ],
-  "generatedAt": "2026-10-11T14:06:08.661Z",
+  "generatedAt": "2026-10-11T20:27:28.731Z",
   "project": "tablet-chromium",
-  "sourceDirty": false
+  "sourceDirty": true
 }
