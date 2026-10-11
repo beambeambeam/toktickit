@@ -1,6 +1,7 @@
 import { createFileRoute, useSearch } from "@tanstack/react-router";
 
 import type { TicketScope } from "@/generated/hey-api/types.gen";
+import { parseTimeWindow } from "@/lib/ticket-search";
 import { MyTicketsPage } from "@/pages/my-tickets-page";
 import type { MyTicketsInitialFilters } from "@/pages/my-tickets-page";
 
@@ -24,20 +25,12 @@ export const Route = createFileRoute("/tickets/")({
   validateSearch: (
     search: Record<string, unknown>
   ): MyTicketsInitialFilters => {
-    const from =
-      typeof search.from === "string" && search.from.length > 0
-        ? search.from
-        : undefined;
     const scope = isTicketScope(search.scope) ? search.scope : undefined;
-    const through =
-      typeof search.through === "string" && search.through.length > 0
-        ? search.through
-        : undefined;
+    const window = parseTimeWindow(search.from, search.through);
 
     return {
-      ...(from === undefined ? {} : { from }),
       ...(scope === undefined ? {} : { scope }),
-      ...(through === undefined ? {} : { through }),
+      ...window,
     };
   },
 });
