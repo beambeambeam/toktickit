@@ -9,13 +9,7 @@ import { Icon } from "@/components/icon";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
 import type { RequesterTicketPreview } from "@/generated/hey-api/types.gen";
-
-const formatBangkokDate = (value: string): string =>
-  new Intl.DateTimeFormat("en-GB", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Bangkok",
-  }).format(new Date(value));
+import { formatBangkokDate } from "@/lib/action-format";
 
 const TicketPreviewRow = ({
   ticket,
@@ -42,7 +36,7 @@ const TicketPreviewRow = ({
       </div>
     </div>
     <p className="dashboard-preview-date">
-      {dateLabel} {formatBangkokDate(dateValue)} (Asia/Bangkok)
+      {dateLabel} {formatBangkokDate(dateValue)}
     </p>
   </li>
 );
@@ -201,7 +195,7 @@ export const RequesterDashboardPage = () => {
             Updated {formatBangkokDate(dashboard.generatedAt)} (Asia/Bangkok).
             Recent updates and resolutions cover{" "}
             {formatBangkokDate(dashboard.window.from)} through{" "}
-            {formatBangkokDate(dashboard.window.through)} (Asia/Bangkok).
+            {formatBangkokDate(dashboard.window.through)}.
           </p>
           <section
             aria-label="Ticket metrics"

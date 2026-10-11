@@ -154,4 +154,32 @@ describe("Dashboard drill-down UI", () => {
       expect(getTicketsMock.mock.lastCall?.[0]?.through).toBeUndefined();
     });
   });
+
+  it("shows Ticket dates in Asia/Bangkok with the zone named", async () => {
+    getTicketsMock.mockResolvedValue({
+      ...listResponse,
+      items: [
+        {
+          category: { id: 1, name: "Hardware" },
+          currentStatus: "Open",
+          id: 7,
+          relatedSystem: { id: 1, name: "Laptop" },
+          requestedPriority: "Medium",
+          summary: "Broken screen",
+          ticketDate: "2026-09-01T18:30:00.000Z",
+          ticketNumber: "TKT-000007",
+          updatedAt: "2026-09-01T18:30:00.000Z",
+        },
+      ],
+      totalItems: 1,
+      totalPages: 1,
+    });
+    renderMyTickets({});
+
+    await waitFor(() => {
+      expect(
+        screen.getAllByText("2 Sept 2026, 01:30 (Asia/Bangkok)").length
+      ).toBeGreaterThan(0);
+    });
+  });
 });

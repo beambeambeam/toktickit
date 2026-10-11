@@ -26,6 +26,7 @@ import { Icon } from "@/components/icon";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
 import type { TicketScope } from "@/generated/hey-api/types.gen";
+import { formatBangkokDate } from "@/lib/action-format";
 import { isRequestedPriority } from "@/lib/ticket-priorities";
 import { currentStatuses, isCurrentStatus } from "@/lib/ticket-statuses";
 
@@ -35,19 +36,6 @@ const initialParams: TicketListParams = {
   sortBy: "updatedAt",
   sortDirection: "desc",
 };
-
-const formatDate = (value: string) =>
-  new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-
-const formatBangkokDate = (value: string) =>
-  new Intl.DateTimeFormat("en-GB", {
-    dateStyle: "medium",
-    timeStyle: "short",
-    timeZone: "Asia/Bangkok",
-  }).format(new Date(value));
 
 type TicketSortField = NonNullable<TicketListParams["sortBy"]>;
 type TicketSortDirection = NonNullable<TicketListParams["sortDirection"]>;
@@ -271,7 +259,7 @@ const MyTicketsContent = ({
           <p className="dashboard-scope-note">
             Showing {scopeLabel(params.scope)}
             {params.from !== undefined && params.through !== undefined
-              ? ` from ${formatBangkokDate(params.from)} through ${formatBangkokDate(params.through)} (Asia/Bangkok)`
+              ? ` from ${formatBangkokDate(params.from)} through ${formatBangkokDate(params.through)}`
               : ""}
             .
           </p>
@@ -593,7 +581,7 @@ const MyTicketsContent = ({
                           {ticket.ticketNumber}
                         </Link>
                       </td>
-                      <td>{formatDate(ticket.ticketDate)}</td>
+                      <td>{formatBangkokDate(ticket.ticketDate)}</td>
                       <td className="summary-cell">{ticket.summary}</td>
                       <td>{ticket.category.name}</td>
                       <td>
@@ -608,7 +596,7 @@ const MyTicketsContent = ({
                           value={ticket.currentStatus}
                         />
                       </td>
-                      <td>{formatDate(ticket.updatedAt)}</td>
+                      <td>{formatBangkokDate(ticket.updatedAt)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -631,7 +619,7 @@ const MyTicketsContent = ({
                   <dl>
                     <div>
                       <dt>Ticket Date</dt>
-                      <dd>{formatDate(ticket.ticketDate)}</dd>
+                      <dd>{formatBangkokDate(ticket.ticketDate)}</dd>
                     </div>
                     <div>
                       <dt>Category</dt>
@@ -652,7 +640,7 @@ const MyTicketsContent = ({
                     </div>
                     <div>
                       <dt>Last Updated</dt>
-                      <dd>{formatDate(ticket.updatedAt)}</dd>
+                      <dd>{formatBangkokDate(ticket.updatedAt)}</dd>
                     </div>
                   </dl>
                   <Link
