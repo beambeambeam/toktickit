@@ -1287,6 +1287,77 @@ describe("Lab 4 Action Taken create and list API", () => {
     );
   });
 
+  it("rejects a transition with ACCOUNT_INACTIVE when the actor is deactivated while waiting", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket();
+    const created = await request(activeFixture.app)
+      .post(`/api/tickets/${ticket.id}/actions`)
+      .set(authHeaders(staff))
+      .send({
+        assigneeId,
+        description: "A deactivated actor must not start this action.",
+        followUpRequired: false,
+        requestId: "a8726990-c560-45d5-ae76-2f75659bb540",
+        version: ticket.version,
+      })
+      .expect(201);
+    const actionId = getJsonNumber(asJsonObject(created.body).action, "id");
+
+    let releaseActor!: () => void;
+    let markActorLocked!: () => void;
+    // oxlint-disable-next-line promise/avoid-new -- Hold the acting User row until the transition waits.
+    const actorRelease = new Promise<void>((resolve) => {
+      releaseActor = resolve;
+    });
+    // oxlint-disable-next-line promise/avoid-new -- Signal that the actor deactivation is in flight.
+    const actorLocked = new Promise<void>((resolve) => {
+      markActorLocked = resolve;
+    });
+    const deactivation = activeFixture.prisma.$transaction(async (database) => {
+      await database.$queryRaw(
+        Prisma.sql`SELECT "id" FROM "User" WHERE "id" = ${staffId} FOR UPDATE`
+      );
+      await database.user.update({
+        data: { isActive: false },
+        where: { id: staffId },
+      });
+      markActorLocked();
+      await actorRelease;
+    });
+
+    await actorLocked;
+    const startRequest = request(activeFixture.app)
+      .post(`/api/tickets/${ticket.id}/actions/${actionId}/transition`)
+      .set(authHeaders(staff))
+      .send({ actionVersion: 1, ticketVersion: 2, toStatus: "In Progress" })
+      .then((response) => response);
+    let actorLockError: unknown;
+    try {
+      await waitForActionUserLock(activeFixture);
+    } catch (error: unknown) {
+      actorLockError = error;
+    } finally {
+      releaseActor();
+    }
+
+    const response = await startRequest;
+    await deactivation;
+    if (actorLockError instanceof Error) {
+      throw actorLockError;
+    }
+    assert.equal(response.status, 403);
+    assert.equal(errorCode(response), "ACCOUNT_INACTIVE");
+    const stored = await activeFixture.prisma.actionTaken.findUniqueOrThrow({
+      where: { id: actionId },
+    });
+    assert.equal(stored.status, "Planned");
+    assert.equal(stored.version, 1);
+    assert.equal(
+      await activeFixture.prisma.actionEvent.count({ where: { actionId } }),
+      1
+    );
+  });
+
   it("returns a safe INTERNAL_ERROR when the action store fails", async () => {
     const activeFixture = getFixture();
     const ticket = await createTicket();
