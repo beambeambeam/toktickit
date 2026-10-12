@@ -11,6 +11,7 @@ import {
 } from "../models/action-payload.js";
 import type {
   ActionListQuery,
+  ActionTransitionInput,
   CreateActionInput,
   EditActionInput,
 } from "../types/actions.js";
@@ -74,6 +75,23 @@ export type EditActionOutcome =
   | {
       action: ActionDatabaseRecord;
       kind: "edited" | "unchanged";
+      ticket: TicketDetailDatabaseRecord;
+    };
+
+export type TransitionActionOutcome =
+  | { kind: "actor-ineligible" }
+  | { kind: "actor-inactive" }
+  | { kind: "action-terminal" }
+  | { kind: "assignee-ineligible" }
+  | { kind: "follow-up-unresolved" }
+  | { kind: "invalid-transition" }
+  | { kind: "not-found" }
+  | { kind: "result-required" }
+  | { kind: "ticket-terminal" }
+  | { field: "actionVersion" | "ticketVersion"; kind: "version-conflict" }
+  | {
+      action: ActionDatabaseRecord;
+      kind: "transitioned";
       ticket: TicketDetailDatabaseRecord;
     };
 
@@ -394,6 +412,168 @@ export const editAction = async (
 
     return { action: updatedAction, kind: "edited", ticket: updatedTicket };
   });
+
+export const transitionAction = async (
+  actorId: number,
+  ticketId: number,
+  actionId: number,
+  input: ActionTransitionInput
+): Promise<TransitionActionOutcome> => {
+  const actionSnapshot = await prisma.actionTaken.findFirst({
+    select: { assigneeId: true },
+    where: { id: actionId, ticketId },
+  });
+
+  if (actionSnapshot === null) {
+    return { kind: "not-found" };
+  }
+
+  // oxlint-disable-next-line complexity -- The transaction enforces the complete lifecycle contract atomically.
+  return await prisma.$transaction(async (database) => {
+    // Lock the actor and snapshot assignee before Ticket and Action rows. This
+    // matches account lifecycle writes and prevents eligibility races.
+    await lockUsers(database, [actorId, actionSnapshot.assigneeId]);
+
+    const actor = await database.user.findUnique({
+      select: { id: true, isActive: true, role: true },
+      where: { id: actorId },
+    });
+
+    if (actor === null || !actor.isActive) {
+      return { kind: "actor-inactive" };
+    }
+
+    if (!isEligibleActionUser(actor)) {
+      return { kind: "actor-ineligible" };
+    }
+
+    await lockTicket(database, ticketId);
+    const ticket = await findLockedTicket(database, ticketId);
+
+    if (ticket === null) {
+      return { kind: "not-found" };
+    }
+
+    await lockAction(database, ticketId, actionId);
+    const action = await database.actionTaken.findUnique({
+      include: actionInclude,
+      where: { id: actionId },
+    });
+
+    if (action === null || action.ticketId !== ticketId) {
+      return { kind: "not-found" };
+    }
+
+    if (action.version !== input.actionVersion) {
+      return { field: "actionVersion", kind: "version-conflict" };
+    }
+
+    if (ticket.version !== input.ticketVersion) {
+      return { field: "ticketVersion", kind: "version-conflict" };
+    }
+
+    if (action.assigneeId !== actionSnapshot.assigneeId) {
+      return { field: "actionVersion", kind: "version-conflict" };
+    }
+
+    if (actionClosedStatuses.has(ticket.currentStatus)) {
+      return { kind: "ticket-terminal" };
+    }
+
+    if (action.status === "Completed" || action.status === "Cancelled") {
+      return { kind: "action-terminal" };
+    }
+
+    const startsAction =
+      action.status === "Planned" && input.toStatus === "In Progress";
+    const completesAction =
+      action.status === "InProgress" && input.toStatus === "Completed";
+    const cancelsAction =
+      (action.status === "Planned" || action.status === "InProgress") &&
+      input.toStatus === "Cancelled";
+
+    if (!startsAction && !completesAction && !cancelsAction) {
+      return { kind: "invalid-transition" };
+    }
+
+    if (startsAction || completesAction) {
+      const assignee = await database.user.findUnique({
+        select: { isActive: true, role: true },
+        where: { id: action.assigneeId },
+      });
+
+      if (!isEligibleActionUser(assignee)) {
+        return { kind: "assignee-ineligible" };
+      }
+    }
+
+    if (
+      completesAction &&
+      (action.result === null || action.result.trim().length === 0)
+    ) {
+      return { kind: "result-required" };
+    }
+
+    if (completesAction && action.followUpRequired) {
+      return { kind: "follow-up-unresolved" };
+    }
+
+    const now = new Date();
+    let nextStatus: PrismaActionStatus;
+    let eventType: "ActionStarted" | "ActionCompleted" | "ActionCancelled";
+    let lifecycleFields:
+      | { performedByUserId: number; startedAt: Date }
+      | { completedAt: Date; completedByUserId: number }
+      | { cancelledAt: Date; cancelledByUserId: number };
+    if (startsAction) {
+      nextStatus = "InProgress";
+      eventType = "ActionStarted";
+      lifecycleFields = { performedByUserId: actorId, startedAt: now };
+    } else if (completesAction) {
+      nextStatus = "Completed";
+      eventType = "ActionCompleted";
+      lifecycleFields = { completedAt: now, completedByUserId: actorId };
+    } else {
+      nextStatus = "Cancelled";
+      eventType = "ActionCancelled";
+      lifecycleFields = { cancelledAt: now, cancelledByUserId: actorId };
+    }
+    const updatedAction = await database.actionTaken.update({
+      data: {
+        ...lifecycleFields,
+        status: nextStatus,
+        updatedAt: now,
+        version: action.version + 1,
+      },
+      include: actionInclude,
+      where: { id: actionId },
+    });
+
+    await database.actionEvent.create({
+      data: {
+        actionId,
+        actionVersion: updatedAction.version,
+        actorId,
+        createdAt: now,
+        eventType,
+        fromStatus: action.status,
+        toStatus: nextStatus,
+      },
+    });
+
+    const updatedTicket = await database.ticket.update({
+      data: { updatedAt: now, version: ticket.version + 1 },
+      include: ticketDetailInclude,
+      where: { id: ticketId },
+    });
+
+    return {
+      action: updatedAction,
+      kind: "transitioned",
+      ticket: updatedTicket,
+    };
+  });
+};
 
 export const findActionsForTicket = async (
   ticketId: number,

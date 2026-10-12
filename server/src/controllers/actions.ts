@@ -6,6 +6,7 @@ import {
 } from "../middlewares/auth-context.js";
 import {
   parseActionListQuery,
+  validateActionTransitionInput,
   validateCreateActionInput,
   validateEditActionInput,
 } from "../services/action-rules.js";
@@ -14,6 +15,7 @@ import {
   editActionForStaff,
   listActionHistoryForReader,
   listActionsForReader,
+  transitionActionForStaff,
 } from "../services/actions.js";
 import { parsePositiveId } from "../utils/parse-id.js";
 
@@ -61,6 +63,17 @@ export const editAction: RequestHandler = async (request, response) => {
     parsePositiveId(request.params.ticketId, "ticketId"),
     parsePositiveId(request.params.actionId, "actionId"),
     validateEditActionInput(request.body)
+  );
+
+  response.json(result);
+};
+
+export const transitionAction: RequestHandler = async (request, response) => {
+  const result = await transitionActionForStaff(
+    getAuthenticatedUserId(response),
+    parsePositiveId(request.params.ticketId, "ticketId"),
+    parsePositiveId(request.params.actionId, "actionId"),
+    validateActionTransitionInput(request.body)
   );
 
   response.json(result);

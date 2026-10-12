@@ -5,6 +5,7 @@ import {
   editAction,
   getActionHistory,
   getActions,
+  transitionAction,
 } from "../controllers/actions.js";
 import { changePassword, getMe, login, logout } from "../controllers/auth.js";
 import { getHealth } from "../controllers/health.js";
@@ -141,6 +142,16 @@ apiRouter.put(
   requireCsrf,
   touchSession,
   editAction
+);
+apiRouter.post(
+  "/tickets/:ticketId/actions/:actionId/transition",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff", "Administrator"),
+  requireCsrf,
+  touchSession,
+  transitionAction
 );
 apiRouter.post(
   "/tickets/:ticketId/status",

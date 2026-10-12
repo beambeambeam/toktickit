@@ -1,0 +1,130 @@
+{
+  "branch": "feature/76-action-lifecycle",
+  "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/action-lifecycle.spec.ts",
+  "commit": "9c8ceb7cc56b8c53cde7fd43ef1b42f545502a3d",
+  "files": [
+    {
+      "capturedAt": "2026-10-11T20:09:38.390Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-start-ready-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Planned Action Taken assigned to a second worker",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 390×844; visualViewport.scale=1"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:09:41.748Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-lifecycle-minimum-width-320-css-pixels-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Action lifecycle at 320 CSS pixels",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 320
+      },
+      "zoom": {
+        "mode": "minimum-width-320-css-pixels",
+        "result": "320 CSS-pixel check passed with no page overflow"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:09:42.265Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-lifecycle-css-reflow-200-percent-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Action lifecycle at the 200% CSS reflow proxy",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 450,
+        "name": "mobile",
+        "width": 720
+      },
+      "zoom": {
+        "mode": "css-reflow-200-percent",
+        "result": "720 CSS-pixel reflow check passed with no page overflow"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:09:41.233Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-complete-confirmation-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Completion confirmation with a saved Result",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 390×844; visualViewport.scale=1"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:09:43.232Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-cancel-confirmation-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Cancellation confirmation for a Planned Action Taken",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 390×844; visualViewport.scale=1"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:09:46.273Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-terminal-history-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "Requester",
+      "scenario": "Requester reads completion and cancellation events",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 390×844; visualViewport.scale=1"
+      }
+    }
+  ],
+  "generatedAt": "2026-10-11T20:09:35.338Z",
+  "project": "mobile-chromium",
+  "sourceDirty": false
+}

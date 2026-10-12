@@ -5,6 +5,7 @@ import {
   createApiTicketAction,
   getApiTicketActions,
   getApiTicketActionHistory,
+  postApiTicketActionTransition,
   putApiTicketAction,
 } from "@/generated/hey-api/sdk.gen";
 import type {
@@ -16,6 +17,7 @@ import type {
   ActionPageSize,
   ActionStatus,
   ActionTaken,
+  ActionTransitionRequest,
   ActionUserRef,
   CreateActionRequest,
   EditActionRequest,
@@ -29,6 +31,7 @@ export type TicketActionsPage = ActionListResponse;
 export type CreateTicketActionInput = CreateActionRequest;
 export type ActionMutationResult = GeneratedActionMutationResult;
 export type EditTicketActionInput = EditActionRequest;
+export type TransitionTicketActionInput = ActionTransitionRequest;
 export type TicketActionHistoryPage = ActionHistoryListResponse;
 export type TicketActionsListParams = Required<
   Pick<NonNullable<GetApiTicketActionsData["query"]>, "page" | "pageSize">
@@ -223,6 +226,31 @@ export const editTicketAction = async (
       "The API returned an invalid Actions Taken mutation response."
     );
   }
+  return body;
+};
+
+export const transitionTicketAction = async (
+  ticketId: number,
+  actionId: number,
+  input: TransitionTicketActionInput,
+  signal?: AbortSignal
+): Promise<ActionMutationResult> => {
+  const body = await unwrap(
+    postApiTicketActionTransition({
+      body: input,
+      client: apiClient,
+      headers: csrfHeaders(),
+      path: { actionId, ticketId },
+      signal,
+    })
+  );
+
+  if (!isActionMutationResult(body)) {
+    throw invalidApiResponse(
+      "The API returned an invalid Actions Taken transition response."
+    );
+  }
+
   return body;
 };
 

@@ -1,0 +1,130 @@
+{
+  "branch": "feature/76-action-lifecycle",
+  "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/action-lifecycle.spec.ts",
+  "commit": "9c8ceb7cc56b8c53cde7fd43ef1b42f545502a3d",
+  "files": [
+    {
+      "capturedAt": "2026-10-11T20:09:27.280Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-start-ready-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Planned Action Taken assigned to a second worker",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 1024,
+        "name": "tablet",
+        "width": 768
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 768×1024; visualViewport.scale=1"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:09:30.684Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-lifecycle-minimum-width-320-css-pixels-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Action lifecycle at 320 CSS pixels",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "tablet",
+        "width": 320
+      },
+      "zoom": {
+        "mode": "minimum-width-320-css-pixels",
+        "result": "320 CSS-pixel check passed with no page overflow"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:09:31.214Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-lifecycle-css-reflow-200-percent-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Action lifecycle at the 200% CSS reflow proxy",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 450,
+        "name": "tablet",
+        "width": 720
+      },
+      "zoom": {
+        "mode": "css-reflow-200-percent",
+        "result": "720 CSS-pixel reflow check passed with no page overflow"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:09:30.164Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-complete-confirmation-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Completion confirmation with a saved Result",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 1024,
+        "name": "tablet",
+        "width": 768
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 768×1024; visualViewport.scale=1"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:09:32.074Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-cancel-confirmation-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Cancellation confirmation for a Planned Action Taken",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 1024,
+        "name": "tablet",
+        "width": 768
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 768×1024; visualViewport.scale=1"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:09:34.897Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-terminal-history-tablet.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "Requester",
+      "scenario": "Requester reads completion and cancellation events",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 1024,
+        "name": "tablet",
+        "width": 768
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 768×1024; visualViewport.scale=1"
+      }
+    }
+  ],
+  "generatedAt": "2026-10-11T20:09:24.293Z",
+  "project": "tablet-chromium",
+  "sourceDirty": false
+}

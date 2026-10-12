@@ -205,6 +205,21 @@ export type EditActionRequest = {
     attachmentNotes: string | null;
 };
 
+export type ActionTransitionRequest = {
+    actionVersion: number;
+    ticketVersion: number;
+    toStatus: 'In Progress';
+} | {
+    actionVersion: number;
+    ticketVersion: number;
+    toStatus: 'Completed' | 'Cancelled';
+    confirmed: true;
+} | {
+    actionVersion: number;
+    ticketVersion: number;
+    toStatus: 'Planned';
+};
+
 export type ActionEventSnapshot = {
     description: string;
     result: string | null;
@@ -907,6 +922,60 @@ export type PutApiTicketActionResponses = {
 };
 
 export type PutApiTicketActionResponse = PutApiTicketActionResponses[keyof PutApiTicketActionResponses];
+
+export type PostApiTicketActionTransitionData = {
+    body: ActionTransitionRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+        actionId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/actions/{actionId}/transition';
+};
+
+export type PostApiTicketActionTransitionErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type PostApiTicketActionTransitionError = PostApiTicketActionTransitionErrors[keyof PostApiTicketActionTransitionErrors];
+
+export type PostApiTicketActionTransitionResponses = {
+    /**
+     * The transitioned Action Taken and current parent Ticket.
+     */
+    200: ActionMutationResult;
+};
+
+export type PostApiTicketActionTransitionResponse = PostApiTicketActionTransitionResponses[keyof PostApiTicketActionTransitionResponses];
 
 export type GetApiTicketActionHistoryData = {
     body?: never;

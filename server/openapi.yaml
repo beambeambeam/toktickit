@@ -303,6 +303,42 @@ paths:
           $ref: "#/components/responses/ApiErrorResponse"
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/actions/{actionId}/transition:
+    post:
+      operationId: postApiTicketActionTransition
+      summary: Start, complete, or cancel an Action Taken
+      description: IT Staff and Administrators may apply only Planned to In Progress/Cancelled and In Progress to Completed/Cancelled transitions on nonterminal Tickets. Both current versions are required. Start attribution and terminal actor/times are set by the server; completion requires a nonblank Result, no required follow-up, and an active eligible assignee. Completion and cancellation require confirmed=true. Every successful transition appends one immutable event and advances the Action Taken and parent Ticket versions once.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+        - $ref: "#/components/parameters/ActionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActionTransitionRequest"
+      responses:
+        "200":
+          description: The transitioned Action Taken and current parent Ticket.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionMutationResult"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
   /api/tickets/{ticketId}/actions/{actionId}/history:
     get:
       operationId: getApiTicketActionHistory
@@ -1740,6 +1776,50 @@ components:
             - type: string
               maxLength: 2000
             - type: "null"
+    ActionTransitionRequest:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [actionVersion, ticketVersion, toStatus]
+          properties:
+            actionVersion:
+              type: integer
+              minimum: 1
+            ticketVersion:
+              type: integer
+              minimum: 1
+            toStatus:
+              type: string
+              const: "In Progress"
+        - type: object
+          additionalProperties: false
+          required: [actionVersion, ticketVersion, toStatus, confirmed]
+          properties:
+            actionVersion:
+              type: integer
+              minimum: 1
+            ticketVersion:
+              type: integer
+              minimum: 1
+            toStatus:
+              type: string
+              enum: [Completed, Cancelled]
+            confirmed:
+              type: boolean
+              const: true
+        - type: object
+          additionalProperties: false
+          required: [actionVersion, ticketVersion, toStatus]
+          properties:
+            actionVersion:
+              type: integer
+              minimum: 1
+            ticketVersion:
+              type: integer
+              minimum: 1
+            toStatus:
+              type: string
+              const: Planned
     ActionEventSnapshot:
       type: object
       additionalProperties: false
