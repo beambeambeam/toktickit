@@ -66,3 +66,28 @@ The shipped history endpoint matches `api-spec.md`: authorized reads, stable cre
 The parent-lock regression observes a waiting Ticket `SELECT ... FOR UPDATE`. Concurrent resolution makes the captured Ticket version stale. That edit returns `VERSION_CONFLICT`. An edit with the fresh version returns `TICKET_TERMINAL`. Both preserve the action, events and resolved Ticket metadata. Removing the explicit Ticket lock makes this test fail.
 
 GitHub tracks the review request and approval state. The reviewer must verify the replies and resolve the threads.
+
+## PR #84 — Issue #76 Action Taken lifecycle
+
+[PR #84](https://github.com/beambeambeam/toktickit/pull/84) targets `lab4-staging`. @Kiatisakk and greptile-apps raised nine inline threads. Two threads report the same focus defect and share one commit.
+
+Each finding has a pushed commit and a matching reply. All nine threads remain open for reviewer verification and resolution. This checkpoint does not claim human approval.
+
+| Finding | Commit | Reply / state |
+| --- | --- | --- |
+| Success status and focus lost after terminal change (greptile and @Kiatisakk) | [`06082d5`](https://github.com/beambeambeam/toktickit/commit/06082d589e84e72ec07039ab20eb72734d71f1cd) | [greptile](https://github.com/beambeambeam/toktickit/pull/84#discussion_r4243022270), [Kiatisakk](https://github.com/beambeambeam/toktickit/pull/84#discussion_r4243022379). Open. |
+| Test did not prove the terminal status and focus persist | [`c7673cf`](https://github.com/beambeambeam/toktickit/commit/c7673cf48e48d2a606e464b2e709f41b552f45e3) | [Reply](https://github.com/beambeambeam/toktickit/pull/84#discussion_r4243022483). Open. |
+| Duplicate ticket Actions query key | [`b51b70a`](https://github.com/beambeambeam/toktickit/commit/b51b70a0783cf5569714f74657ff1368e9f9c75a) | [Reply](https://github.com/beambeambeam/toktickit/pull/84#discussion_r4243022620). Open. |
+| Disabled lifecycle button not linked to its reason | [`ecf366b`](https://github.com/beambeambeam/toktickit/commit/ecf366bce9cf6aa3d49ed0b3bbcc22ff15c7bd40) | [Reply](https://github.com/beambeambeam/toktickit/pull/84#discussion_r4243022707). Open. |
+| Question: lifecycle change while an Action Taken draft is open | [`085a80f`](https://github.com/beambeambeam/toktickit/commit/085a80f1138645c793dce3428583fa9bba62d556) | [Reply](https://github.com/beambeambeam/toktickit/pull/84#discussion_r4243022793). Open. |
+| Assignee change between snapshot and lock | [`78b649a`](https://github.com/beambeambeam/toktickit/commit/78b649a929766971f8f8be1f2a78e8bc18cdf2df) | [Reply](https://github.com/beambeambeam/toktickit/pull/84#discussion_r4243022843). Open. |
+| Actor deactivated while waiting for the User lock | [`19a0b2a`](https://github.com/beambeambeam/toktickit/commit/19a0b2a6915a9e581a10a2c8eb708bcda1e785f3) | [Reply](https://github.com/beambeambeam/toktickit/pull/84#discussion_r4243022920). Open. |
+| Assignee eligibility recheck on completion | [`9c8ceb7`](https://github.com/beambeambeam/toktickit/commit/9c8ceb7cc56b8c53cde7fd43ef1b42f545502a3d) | [Reply](https://github.com/beambeambeam/toktickit/pull/84#discussion_r4243023013). Open. |
+
+The specification does not define lifecycle behavior while a draft is open. The smallest safe behavior disables Start, Complete and Cancel, and shows a hint. A lifecycle change would make the later Save return `ACTION_TERMINAL`, and FR-11 and AC-24 protect drafts. `ui-spec.md` states this.
+
+Mutation checks: the three server tests and the status and focus test fail when the matching production behavior is removed. Each reply states the result. The three server tests did not require a production change; they close coverage gaps in existing locking and recheck code.
+
+Capture refresh: the terminal-history screenshots changed because the success status now persists. The evidence commit is [`8d1f269`](https://github.com/beambeambeam/toktickit/commit/8d1f26965ab3483628c3f3ee5ed0abcae26fd5e2).
+
+GitHub tracks the review request and approval state. The reviewer must verify the replies and resolve the threads.

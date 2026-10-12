@@ -70,7 +70,7 @@ On 409 version conflict, preserve the draft, identify that the saved record chan
 
 ### Action lifecycle controls
 
-Show only permitted action transitions. Planned offers Start and Cancel; In Progress offers Complete and Cancel. Complete and Cancel require a keyboard-accessible confirmation dialog that explains the action becomes terminal and immutable. Completion requires a nonblank Result and Follow-Up Required=false. If follow-up remains, explain that it must be completed or corrected before the action can be completed. Confirmation or validation failure leaves the action and Ticket unchanged.
+Show only permitted action transitions. Planned offers Start and Cancel; In Progress offers Complete and Cancel. Complete and Cancel require a keyboard-accessible confirmation dialog that explains the action becomes terminal and immutable. Completion requires a nonblank Result and Follow-Up Required=false. If follow-up remains, explain that it must be completed or corrected before the action can be completed. Confirmation or validation failure leaves the action and Ticket unchanged. While an Edit or Assign draft is open on an action, disable its Start, Complete, and Cancel controls and explain why, so a saved draft cannot meet a terminal action.
 
 ## 5. Ticket Workflow
 
@@ -124,10 +124,10 @@ Capture each listed state at desktop (1440 × 900), tablet (768 × 1024), and mo
 | `artifacts/lab-04/screenshots/actions-edit/` | Edit and reassign a pending action | `action-edit-reassign-{viewport}.png` |
 | `artifacts/lab-04/screenshots/actions-edit/` | Pending edit version conflict with recoverable draft | `action-conflict-draft-{viewport}.png` |
 | `artifacts/lab-04/screenshots/actions-edit/` | Requester paginated create/edit revision history | `action-edit-requester-history-page-two-{viewport}.png` |
-| `artifacts/lab-04/screenshots/actions-taken/` | Start confirmation | `action-start-confirmation-{viewport}.png` |
-| `artifacts/lab-04/screenshots/actions-taken/` | Completion confirmation and Result | `action-complete-confirmation-{viewport}.png` |
-| `artifacts/lab-04/screenshots/actions-taken/` | Cancellation confirmation | `action-cancel-confirmation-{viewport}.png` |
-| `artifacts/lab-04/screenshots/actions-taken/` | Terminal event history | `action-terminal-history-{viewport}.png` |
+| `artifacts/lab-04/screenshots/actions-taken/lifecycle/` | Planned action with Start and Cancel controls | `action-start-ready-{viewport}.png` |
+| `artifacts/lab-04/screenshots/actions-taken/lifecycle/` | Completion confirmation and Result | `action-complete-confirmation-{viewport}.png` |
+| `artifacts/lab-04/screenshots/actions-taken/lifecycle/` | Cancellation confirmation | `action-cancel-confirmation-{viewport}.png` |
+| `artifacts/lab-04/screenshots/actions-taken/lifecycle/` | Terminal event history | `action-terminal-history-{viewport}.png` |
 | `artifacts/lab-04/screenshots/actions-taken/` | Version conflict with recoverable draft | `action-conflict-draft-{viewport}.png` |
 | `artifacts/lab-04/screenshots/actions-taken/` | Ticket resolution feedback with unmet requirements | `ticket-resolution-gate-{viewport}.png` |
 | `artifacts/lab-04/screenshots/requester-dashboard/` | Dashboard with counts and recent previews | `requester-dashboard-populated-{viewport}.png` |
@@ -142,7 +142,7 @@ Capture each listed state at desktop (1440 × 900), tablet (768 × 1024), and mo
 | `artifacts/lab-04/screenshots/staff-dashboard/` | My Actions list with parent Ticket links | `staff-my-actions-{viewport}.png` |
 | `artifacts/lab-04/screenshots/staff-dashboard/` | Queue drill-down with matching filters | `staff-dashboard-drilldown-{viewport}.png` |
 
-For the 320 CSS pixel and 200% zoom checks, record the viewport/zoom, scenario, and result in the same manifest; the three named screenshots above remain the required visual captures. Link each reviewed inventory item to its STYLE/VIS test result. No planned screenshot is marked complete before it exists and has been inspected.
+For the 320 CSS pixel and 200% zoom checks, record the viewport/zoom, scenario, and result in the same manifest. The screenshots below are required captures. Link each reviewed inventory item to its STYLE/VIS test result. No planned screenshot is marked complete before it exists and has been inspected.
 
 ## 9. Feature Completion Checklist
 

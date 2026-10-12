@@ -4,10 +4,12 @@ import {
   editAction,
   findActionHistoryForTicket,
   findActionsForTicket,
+  transitionAction,
 } from "../repositories/actions.js";
 import { findOwnedTicket, findTicketById } from "../repositories/tickets.js";
 import type {
   ActionListQuery,
+  ActionTransitionInput,
   CreateActionInput,
   EditActionInput,
 } from "../types/actions.js";
@@ -172,6 +174,104 @@ export const editActionForStaff = async (
   actionId: number,
   input: EditActionInput
 ) => resolveEditOutcome(await editAction(actorId, ticketId, actionId, input));
+
+const resolveTransitionOutcome = (
+  outcome: Awaited<ReturnType<typeof transitionAction>>
+) => {
+  switch (outcome.kind) {
+    case "actor-ineligible": {
+      throw new ApiError(403, "FORBIDDEN", "You cannot change Actions Taken.");
+    }
+    case "actor-inactive": {
+      throw new ApiError(
+        403,
+        "ACCOUNT_INACTIVE",
+        "This account is inactive. Contact your administrator."
+      );
+    }
+    case "action-terminal": {
+      throw new ApiError(
+        409,
+        "ACTION_TERMINAL",
+        "Completed or Cancelled Actions Taken cannot change."
+      );
+    }
+    case "assignee-ineligible": {
+      throw new ApiError(
+        409,
+        "ACTION_ASSIGNEE_INELIGIBLE",
+        "Assign this Action Taken to an active eligible user before you start or complete it.",
+        {
+          field: "assigneeId",
+          reason: "Assign it to an active IT Staff member or Administrator.",
+        }
+      );
+    }
+    case "follow-up-unresolved": {
+      throw new ApiError(
+        409,
+        "FOLLOW_UP_UNRESOLVED",
+        "Clear or correct the follow-up details before you complete this Action Taken."
+      );
+    }
+    case "invalid-transition": {
+      throw new ApiError(
+        409,
+        "INVALID_TRANSITION",
+        "This Action Taken cannot move to this status."
+      );
+    }
+    case "not-found": {
+      throw actionNotFound();
+    }
+    case "result-required": {
+      throw new ApiError(
+        409,
+        "RESULT_REQUIRED",
+        "Add a nonblank Result before you complete this Action Taken.",
+        { field: "result", reason: "Result is required for completion." }
+      );
+    }
+    case "ticket-terminal": {
+      throw new ApiError(
+        409,
+        "TICKET_TERMINAL",
+        "You cannot change Actions Taken on a Resolved, Closed, or Cancelled Ticket."
+      );
+    }
+    case "version-conflict": {
+      throw new ApiError(
+        409,
+        "VERSION_CONFLICT",
+        "The Action Taken or Ticket changed before you saved this transition. Refresh and review the latest values.",
+        { field: outcome.field, reason: "The supplied version is stale." }
+      );
+    }
+    case "transitioned": {
+      return {
+        action: toActionTaken(outcome.action),
+        ticket: toTicketDetail(outcome.ticket),
+      };
+    }
+    default: {
+      throw new ApiError(
+        500,
+        "INTERNAL_ERROR",
+        "Unable to transition the Action Taken."
+      );
+    }
+  }
+};
+
+export const transitionActionForStaff = async (
+  actorId: number,
+  ticketId: number,
+  actionId: number,
+  input: ActionTransitionInput
+) =>
+  resolveTransitionOutcome(
+    await transitionAction(actorId, ticketId, actionId, input)
+  );
 
 export const listActionsForReader = async (
   userId: number,

@@ -1,0 +1,150 @@
+{
+  "branch": "feature/76-action-lifecycle",
+  "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/action-lifecycle.spec.ts",
+  "commit": "9c8ceb7cc56b8c53cde7fd43ef1b42f545502a3d",
+  "files": [
+    {
+      "capturedAt": "2026-10-11T20:09:15.437Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-start-ready-desktop.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Planned Action Taken assigned to a second worker",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 900,
+        "name": "desktop",
+        "width": 1440
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 1440×900; visualViewport.scale=1"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:09:18.981Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-lifecycle-minimum-width-320-css-pixels-desktop.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Action lifecycle at 320 CSS pixels",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "desktop",
+        "width": 320
+      },
+      "zoom": {
+        "mode": "minimum-width-320-css-pixels",
+        "result": "320 CSS-pixel check passed with no page overflow"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:09:19.533Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-lifecycle-css-reflow-200-percent-desktop.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Action lifecycle at the 200% CSS reflow proxy",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 450,
+        "name": "desktop",
+        "width": 720
+      },
+      "zoom": {
+        "mode": "css-reflow-200-percent",
+        "result": "720 CSS-pixel reflow check passed with no page overflow"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:09:18.459Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-complete-confirmation-desktop.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Completion confirmation with a saved Result",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 900,
+        "name": "desktop",
+        "width": 1440
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 1440×900; visualViewport.scale=1"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:09:20.114Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-lifecycle-native-page-scale-200-percent-desktop.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Action lifecycle at 200% native page scale",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 900,
+        "name": "desktop",
+        "width": 1440
+      },
+      "zoom": {
+        "mode": "native-page-scale-200-percent",
+        "result": "Native page scale 2 passed without horizontal overflow"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:09:21.030Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-cancel-confirmation-desktop.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Cancellation confirmation for a Planned Action Taken",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 900,
+        "name": "desktop",
+        "width": 1440
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 1440×900; visualViewport.scale=1"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:09:23.857Z",
+      "path": "artifacts/lab-04/screenshots/actions-taken/lifecycle/action-terminal-history-desktop.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "Requester",
+      "scenario": "Requester reads completion and cancellation events",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 900,
+        "name": "desktop",
+        "width": 1440
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 1440×900; visualViewport.scale=1"
+      }
+    }
+  ],
+  "generatedAt": "2026-10-11T20:09:11.205Z",
+  "project": "desktop-chromium",
+  "sourceDirty": false
+}
