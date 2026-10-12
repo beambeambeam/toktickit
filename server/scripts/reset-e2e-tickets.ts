@@ -9,6 +9,7 @@ import { removeAttachmentFiles } from "../src/services/attachment-storage.js";
 const E2E_SUMMARY_PREFIXES = [
   "E2E actions taken ",
   "E2E boundary ",
+  "E2E requester dashboard ",
   "E2E internal note ",
   "E2E public comments flow ",
   "E2E requester flow ",

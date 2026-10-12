@@ -1,7 +1,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useEffect } from "react";
 
-import { AuthLoading } from "@/components/app-shell";
+import { AuthLoading, homeRouteForRole } from "@/components/app-shell";
 import { useAuth } from "@/context/auth";
 
 export const LandingPage = () => {
@@ -23,13 +23,7 @@ export const LandingPage = () => {
       return;
     }
 
-    if (user.role === "Requester") {
-      void navigate({ to: "/tickets" });
-    } else if (user.role === "IT Staff") {
-      void navigate({ to: "/staff/tickets" });
-    } else if (user.role === "Administrator") {
-      void navigate({ to: "/users" });
-    }
+    void navigate({ to: homeRouteForRole(user.role) });
   }, [isLoading, navigate, user]);
 
   return <AuthLoading />;

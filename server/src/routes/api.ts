@@ -13,6 +13,7 @@ import {
   getCategories,
   getRelatedSystems,
 } from "../controllers/reference-data.js";
+import { getRequesterDashboardController } from "../controllers/requester-dashboard.js";
 import {
   addAttachments,
   createInternalNote,
@@ -259,6 +260,14 @@ apiRouter.post(
   touchSession,
   parseAttachmentUpload,
   createTicket
+);
+apiRouter.get(
+  "/requester/dashboard",
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester"),
+  touchSession,
+  getRequesterDashboardController
 );
 apiRouter.get(
   "/tickets",

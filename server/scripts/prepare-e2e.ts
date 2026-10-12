@@ -36,6 +36,20 @@ const users: readonly E2EUser[] = [
     mustChangePassword: false,
     role: "Requester" as const,
   },
+  ...(["desktop", "tablet", "mobile"] as const).flatMap((viewport) => [
+    {
+      displayName: `E2E Dashboard ${viewport} Requester`,
+      email: `e2e-dashboard-${viewport}@example.test`,
+      mustChangePassword: false,
+      role: "Requester" as const,
+    },
+    {
+      displayName: `E2E Dashboard Foreign ${viewport} Requester`,
+      email: `e2e-dashboard-foreign-${viewport}@example.test`,
+      mustChangePassword: false,
+      role: "Requester" as const,
+    },
+  ]),
   {
     displayName: "E2E Inactive Requester",
     email: "e2e-inactive@example.test",

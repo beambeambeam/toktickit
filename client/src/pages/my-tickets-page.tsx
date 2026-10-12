@@ -25,6 +25,8 @@ import {
 import { Icon } from "@/components/icon";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
+import type { TicketScope } from "@/generated/hey-api/types.gen";
+import { formatBangkokDate } from "@/lib/action-format";
 import { isRequestedPriority } from "@/lib/ticket-priorities";
 import { currentStatuses, isCurrentStatus } from "@/lib/ticket-statuses";
 
@@ -35,12 +37,6 @@ const initialParams: TicketListParams = {
   sortDirection: "desc",
 };
 
-const formatDate = (value: string) =>
-  new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
-
 type TicketSortField = NonNullable<TicketListParams["sortBy"]>;
 type TicketSortDirection = NonNullable<TicketListParams["sortDirection"]>;
 
@@ -50,7 +46,8 @@ const isTicketSortField = (value: string): value is TicketSortField =>
   value === "summary" ||
   value === "requestedPriority" ||
   value === "currentStatus" ||
-  value === "updatedAt";
+  value === "updatedAt" ||
+  value === "resolvedAt";
 
 const isTicketSortDirection = (value: string): value is TicketSortDirection =>
   value === "asc" || value === "desc";
@@ -84,12 +81,41 @@ const parsePageSize = (value: string): 10 | 25 | 50 => {
   return 10;
 };
 
+const scopeLabel = (scope: TicketScope): string => {
+  switch (scope) {
+    case "active": {
+      return "active tickets";
+    }
+    case "waiting-for-requester": {
+      return "tickets waiting for you";
+    }
+    case "recently-updated": {
+      return "recently updated tickets";
+    }
+    case "recently-resolved": {
+      return "recently resolved tickets";
+    }
+    default: {
+      return scope;
+    }
+  }
+};
+
 const hasTicketFilters = (params: TicketListParams) =>
   (params.search !== undefined && params.search.length > 0) ||
   params.categoryId !== undefined ||
   params.relatedSystemId !== undefined ||
   params.requestedPriority !== undefined ||
-  params.currentStatus !== undefined;
+  params.currentStatus !== undefined ||
+  params.scope !== undefined ||
+  params.from !== undefined ||
+  params.through !== undefined;
+
+export interface MyTicketsInitialFilters {
+  from?: string;
+  scope?: TicketScope;
+  through?: string;
+}
 
 type PageToken = number | "ellipsis-before" | "ellipsis-after";
 
@@ -130,9 +156,22 @@ const getPageTokens = (
 };
 
 // oxlint-disable-next-line complexity -- this page renders the documented loading, error, empty, and data states.
-const MyTicketsContent = ({ user }: { user: AuthUser }) => {
+const MyTicketsContent = ({
+  initialFilters,
+  user,
+}: {
+  initialFilters: MyTicketsInitialFilters;
+  user: AuthUser;
+}) => {
   const navigate = useNavigate();
-  const [params, setParams] = useState<TicketListParams>(initialParams);
+  const [params, setParams] = useState<TicketListParams>(() => ({
+    ...initialParams,
+    ...initialFilters,
+    sortBy:
+      initialFilters.scope === "recently-resolved"
+        ? "resolvedAt"
+        : initialParams.sortBy,
+  }));
   const [searchDraft, setSearchDraft] = useState("");
 
   const categoriesQuery = useQuery(activeCategoriesQueryOptions());
@@ -148,6 +187,7 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
   const clearFilters = () => {
     setSearchDraft("");
     setParams(initialParams);
+    void navigate({ search: {}, to: "/tickets" });
   };
 
   const submitSearch = (event: SubmitEvent<HTMLFormElement>) => {
@@ -215,6 +255,15 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
       </div>
 
       <section className="surface-card filter-card" aria-label="Ticket filters">
+        {params.scope ? (
+          <p className="dashboard-scope-note">
+            Showing {scopeLabel(params.scope)}
+            {params.from !== undefined && params.through !== undefined
+              ? ` from ${formatBangkokDate(params.from)} through ${formatBangkokDate(params.through)}`
+              : ""}
+            .
+          </p>
+        ) : null}
         <form className="filter-grid" onSubmit={submitSearch}>
           <div className="search-field">
             <label htmlFor="ticket-search">Search</label>
@@ -331,6 +380,12 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
               }}
               value={`${params.sortBy ?? "updatedAt"}:${params.sortDirection ?? "desc"}`}
             >
+              {params.scope === "recently-resolved" ? (
+                <>
+                  <option value="resolvedAt:desc">Resolved (newest)</option>
+                  <option value="resolvedAt:asc">Resolved (oldest)</option>
+                </>
+              ) : null}
               <option value="updatedAt:desc">Last Updated (newest)</option>
               <option value="updatedAt:asc">Last Updated (oldest)</option>
               <option value="ticketDate:desc">Ticket Date (newest)</option>
@@ -526,7 +581,7 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
                           {ticket.ticketNumber}
                         </Link>
                       </td>
-                      <td>{formatDate(ticket.ticketDate)}</td>
+                      <td>{formatBangkokDate(ticket.ticketDate)}</td>
                       <td className="summary-cell">{ticket.summary}</td>
                       <td>{ticket.category.name}</td>
                       <td>
@@ -541,7 +596,7 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
                           value={ticket.currentStatus}
                         />
                       </td>
-                      <td>{formatDate(ticket.updatedAt)}</td>
+                      <td>{formatBangkokDate(ticket.updatedAt)}</td>
                     </tr>
                   ))}
                 </tbody>
@@ -564,7 +619,7 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
                   <dl>
                     <div>
                       <dt>Ticket Date</dt>
-                      <dd>{formatDate(ticket.ticketDate)}</dd>
+                      <dd>{formatBangkokDate(ticket.ticketDate)}</dd>
                     </div>
                     <div>
                       <dt>Category</dt>
@@ -585,7 +640,7 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
                     </div>
                     <div>
                       <dt>Last Updated</dt>
-                      <dd>{formatDate(ticket.updatedAt)}</dd>
+                      <dd>{formatBangkokDate(ticket.updatedAt)}</dd>
                     </div>
                   </dl>
                   <Link
@@ -659,7 +714,14 @@ const MyTicketsContent = ({ user }: { user: AuthUser }) => {
   );
 };
 
-export const MyTicketsPage = () => {
+const EMPTY_INITIAL_FILTERS: MyTicketsInitialFilters = {};
+const EMPTY_PAGE_PROPS: { initialFilters?: MyTicketsInitialFilters } = {};
+
+export const MyTicketsPage = ({
+  initialFilters = EMPTY_INITIAL_FILTERS,
+}: {
+  initialFilters?: MyTicketsInitialFilters;
+} = EMPTY_PAGE_PROPS) => {
   const { user } = useAuth();
 
   if (user === null) {
@@ -674,5 +736,11 @@ export const MyTicketsPage = () => {
     return <RequesterAccessDenied />;
   }
 
-  return <MyTicketsContent key={user.id} user={user} />;
+  return (
+    <MyTicketsContent
+      initialFilters={initialFilters}
+      key={`${user.id}:${JSON.stringify(initialFilters)}`}
+      user={user}
+    />
+  );
 };

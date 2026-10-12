@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as ChangePasswordRouteImport } from './routes/change-password'
 import { Route as CreateRouteImport } from './routes/create'
+import { Route as DashboardRouteImport } from './routes/dashboard'
 import { Route as LoginRouteImport } from './routes/login'
 import { Route as UsersRouteImport } from './routes/users'
 import { Route as TicketsIndexRouteImport } from './routes/tickets/index'
@@ -31,6 +32,11 @@ const ChangePasswordRoute = ChangePasswordRouteImport.update({
 const CreateRoute = CreateRouteImport.update({
   id: '/create',
   path: '/create',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardRoute = DashboardRouteImport.update({
+  id: '/dashboard',
+  path: '/dashboard',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LoginRoute = LoginRouteImport.update({
@@ -63,6 +69,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/change-password': typeof ChangePasswordRoute
   '/create': typeof CreateRoute
+  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/users': typeof UsersRoute
   '/tickets/$ticketId': typeof TicketsTicketIdRoute
@@ -73,6 +80,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/change-password': typeof ChangePasswordRoute
   '/create': typeof CreateRoute
+  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/users': typeof UsersRoute
   '/tickets/$ticketId': typeof TicketsTicketIdRoute
@@ -84,6 +92,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/change-password': typeof ChangePasswordRoute
   '/create': typeof CreateRoute
+  '/dashboard': typeof DashboardRoute
   '/login': typeof LoginRoute
   '/users': typeof UsersRoute
   '/tickets/$ticketId': typeof TicketsTicketIdRoute
@@ -96,6 +105,7 @@ export interface FileRouteTypes {
     | '/'
     | '/change-password'
     | '/create'
+    | '/dashboard'
     | '/login'
     | '/users'
     | '/tickets/$ticketId'
@@ -106,6 +116,7 @@ export interface FileRouteTypes {
     | '/'
     | '/change-password'
     | '/create'
+    | '/dashboard'
     | '/login'
     | '/users'
     | '/tickets/$ticketId'
@@ -116,6 +127,7 @@ export interface FileRouteTypes {
     | '/'
     | '/change-password'
     | '/create'
+    | '/dashboard'
     | '/login'
     | '/users'
     | '/tickets/$ticketId'
@@ -127,6 +139,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   ChangePasswordRoute: typeof ChangePasswordRoute
   CreateRoute: typeof CreateRoute
+  DashboardRoute: typeof DashboardRoute
   LoginRoute: typeof LoginRoute
   UsersRoute: typeof UsersRoute
   TicketsTicketIdRoute: typeof TicketsTicketIdRoute
@@ -155,6 +168,13 @@ declare module '@tanstack/react-router' {
       path: '/create'
       fullPath: '/create'
       preLoaderRoute: typeof CreateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboard': {
+      id: '/dashboard'
+      path: '/dashboard'
+      fullPath: '/dashboard'
+      preLoaderRoute: typeof DashboardRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/login': {
@@ -199,6 +219,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   ChangePasswordRoute: ChangePasswordRoute,
   CreateRoute: CreateRoute,
+  DashboardRoute: DashboardRoute,
   LoginRoute: LoginRoute,
   UsersRoute: UsersRoute,
   TicketsTicketIdRoute: TicketsTicketIdRoute,

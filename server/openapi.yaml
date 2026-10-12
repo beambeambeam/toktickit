@@ -690,6 +690,28 @@ paths:
           $ref: "#/components/responses/ApiErrorResponse"
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
+  /api/requester/dashboard:
+    get:
+      operationId: getApiRequesterDashboard
+      summary: Get the authenticated Requester's dashboard
+      description: Returns one UTC snapshot of the authenticated Requester's public Ticket metrics and bounded previews.
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: The authenticated Requester's dashboard.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequesterDashboardResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
   /api/health:
     get:
       operationId: getApiHealth
@@ -759,6 +781,9 @@ paths:
         - $ref: "#/components/parameters/RelatedSystemId"
         - $ref: "#/components/parameters/RequestedPriority"
         - $ref: "#/components/parameters/CurrentStatus"
+        - $ref: "#/components/parameters/TicketScope"
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/Through"
         - $ref: "#/components/parameters/SortBy"
         - $ref: "#/components/parameters/SortDirection"
         - $ref: "#/components/parameters/Page"
@@ -1124,6 +1149,33 @@ components:
       required: false
       schema:
         $ref: "#/components/schemas/CurrentStatus"
+    TicketScope:
+      name: scope
+      in: query
+      required: false
+      description: Exact active, waiting, recently updated, or recently resolved Ticket scope.
+      schema:
+        type: string
+        enum:
+          [active, waiting-for-requester, recently-updated, recently-resolved]
+    From:
+      name: from
+      in: query
+      required: false
+      description: Inclusive lower UTC bound. Required with recently-updated or recently-resolved scope.
+      schema:
+        type: string
+        format: date-time
+        pattern: "Z$"
+    Through:
+      name: through
+      in: query
+      required: false
+      description: Inclusive upper UTC bound. Required with recently-updated or recently-resolved scope.
+      schema:
+        type: string
+        format: date-time
+        pattern: "Z$"
     ItPriority:
       name: itPriority
       in: query
@@ -1155,6 +1207,7 @@ components:
             requestedPriority,
             currentStatus,
             updatedAt,
+            resolvedAt,
           ]
         default: updatedAt
     SortDirection:
@@ -1218,6 +1271,94 @@ components:
           schema:
             $ref: "#/components/schemas/ApiError"
   schemas:
+    RequesterDashboardResponse:
+      type: object
+      additionalProperties: false
+      required: [generatedAt, window, counts, previews]
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+        window:
+          type: object
+          additionalProperties: false
+          required: [from, through]
+          properties:
+            from:
+              type: string
+              format: date-time
+            through:
+              type: string
+              format: date-time
+        counts:
+          type: object
+          additionalProperties: false
+          required:
+            [
+              activeTickets,
+              waitingForRequester,
+              recentlyUpdated,
+              recentlyResolved,
+            ]
+          properties:
+            activeTickets:
+              type: integer
+              minimum: 0
+            waitingForRequester:
+              type: integer
+              minimum: 0
+            recentlyUpdated:
+              type: integer
+              minimum: 0
+            recentlyResolved:
+              type: integer
+              minimum: 0
+        previews:
+          type: object
+          additionalProperties: false
+          required: [recentlyUpdated, recentlyResolved]
+          properties:
+            recentlyUpdated:
+              type: array
+              maxItems: 5
+              items:
+                $ref: "#/components/schemas/RequesterTicketPreview"
+            recentlyResolved:
+              type: array
+              maxItems: 5
+              items:
+                $ref: "#/components/schemas/RequesterTicketPreview"
+    RequesterTicketPreview:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          ticketNumber,
+          summary,
+          currentStatus,
+          requestedPriority,
+          updatedAt,
+          resolvedAt,
+        ]
+      properties:
+        id:
+          type: integer
+        ticketNumber:
+          type: string
+          pattern: "^TKT-[0-9]{8}-[A-Z0-9]{6}$"
+        summary:
+          type: string
+        currentStatus:
+          $ref: "#/components/schemas/CurrentStatus"
+        requestedPriority:
+          $ref: "#/components/schemas/RequestedPriority"
+        updatedAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: [string, "null"]
+          format: date-time
     ApiError:
       type: object
       additionalProperties: false

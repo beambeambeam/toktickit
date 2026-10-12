@@ -96,3 +96,31 @@ This is an actual instruction summary from the launching request. It does not co
 The shared PostgreSQL server was down, so the agent ran its own container for the isolated database. The first mutation check changed the wrong code location and stayed green. The agent detected the invalid check and repeated it at the correct location. Results are in [tests.md](tests.md) and [reviewer.md](reviewer.md).
 
 This section records observed agent work. The student did not provide a reflection. Automated checks do not imply human approval.
+
+## Issue #78 implementation — 2026-10-11
+
+Codex in T3 Code supported the Requester dashboard API, My Tickets drill-down, UI, browser coverage, and verification record. The model was GPT-6 Luna with max reasoning. The work stayed on `feature/78-requester-dashboard` and did not implement sibling issues.
+
+These excerpts are actual instructions from the Issue #78 task:
+
+| Date | Prompt excerpt | Observed use |
+| --- | --- | --- |
+| 2026-10-11 | `Act as the implementation sub-agent for this task.` | Work as the implementer for the assigned issue. |
+| 2026-10-11 | `Implement #78 completely and verify it.` | Complete the Requester dashboard API, generated client, UI, query filters, tests, and feature records. |
+| 2026-10-11 | `Do not implement other tickets.` | Keep action lifecycle and staff dashboard work outside this change. |
+| 2026-10-11 | `Work ONLY in this git worktree: /Users/beam/.cache/toktickit-72/wt/78` | Keep commands and edits in the assigned worktree. |
+| 2026-10-11 | `Run the existing earlier-lab regression tests and this feature’s unit/rule, API/integration, UI and browser E2E tests as applicable` | Use the repository’s rule, API, UI, full client/server, and Requester browser test seams. |
+
+The implementation used test-first rule, API, UI, and browser checks. The API derives the Requester from the session. The tests check ownership, private-note isolation, exact UTC bounds, zero results, list parity, role restrictions, preview limits, and performance measurements. The browser journey checks the generated links, Ticket detail, account switch, focus, axe, viewport overflow, and zoom. Verification outcomes are recorded in [tests.md](tests.md). The student has not supplied an Issue #78 reflection.
+
+## PR #85 review follow-up — 2026-10-12
+
+Claude Code supported the PR #85 review follow-up. The model was Claude Sonnet 5.5. The work stayed on `feature/78-requester-dashboard` in the assigned worktree. It did not touch PR #84 or any issue.
+
+| Date | Prompt summary | Observed use |
+| --- | --- | --- |
+| 2026-10-12 | Handle the review follow-up for PR #85 with the pr-review-followup skill. | Reproduce each of the 16 threads, make one commit per defect, push, and reply in the thread. |
+| 2026-10-12 | Never resolve a thread. Use one commit for a shared defect. Run a mutation check for each test-gap finding. | Leave threads open. Share one commit across the four test-record threads. Confirm new tests fail without the fix. |
+| 2026-10-12 | Update the reviewer, AI-use, and test records. Run every check before the last push. | Record the commits and the actual test results. Request re-review from @Kiatisakk only. |
+
+Automated checks do not imply human approval. The student has not supplied a reflection for this follow-up.

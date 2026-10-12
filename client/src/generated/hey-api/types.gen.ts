@@ -4,6 +4,34 @@ export type ClientOptions = {
     baseUrl: 'http://localhost:3000' | (string & {});
 };
 
+export type RequesterDashboardResponse = {
+    generatedAt: string;
+    window: {
+        from: string;
+        through: string;
+    };
+    counts: {
+        activeTickets: number;
+        waitingForRequester: number;
+        recentlyUpdated: number;
+        recentlyResolved: number;
+    };
+    previews: {
+        recentlyUpdated: Array<RequesterTicketPreview>;
+        recentlyResolved: Array<RequesterTicketPreview>;
+    };
+};
+
+export type RequesterTicketPreview = {
+    id: number;
+    ticketNumber: string;
+    summary: string;
+    currentStatus: CurrentStatus;
+    requestedPriority: RequestedPriority;
+    updatedAt: string;
+    resolvedAt: string | null;
+};
+
 export type ApiError = {
     error: ApiErrorBody;
 };
@@ -423,6 +451,21 @@ export type RequestedPriority2 = RequestedPriority;
 
 export type CurrentStatus2 = CurrentStatus;
 
+/**
+ * Exact active, waiting, recently updated, or recently resolved Ticket scope.
+ */
+export type TicketScope = 'active' | 'waiting-for-requester' | 'recently-updated' | 'recently-resolved';
+
+/**
+ * Inclusive lower UTC bound. Required with recently-updated or recently-resolved scope.
+ */
+export type From = string;
+
+/**
+ * Inclusive upper UTC bound. Required with recently-updated or recently-resolved scope.
+ */
+export type Through = string;
+
 export type ItPriority = RequestedPriority;
 
 /**
@@ -430,7 +473,7 @@ export type ItPriority = RequestedPriority;
  */
 export type Owner2 = number | 'me' | 'unassigned';
 
-export type SortBy = 'ticketNumber' | 'ticketDate' | 'summary' | 'requestedPriority' | 'currentStatus' | 'updatedAt';
+export type SortBy = 'ticketNumber' | 'ticketDate' | 'summary' | 'requestedPriority' | 'currentStatus' | 'updatedAt' | 'resolvedAt';
 
 export type SortDirection = 'asc' | 'desc';
 
@@ -1477,6 +1520,43 @@ export type ResetApiUserInitialPasswordResponses = {
 
 export type ResetApiUserInitialPasswordResponse = ResetApiUserInitialPasswordResponses[keyof ResetApiUserInitialPasswordResponses];
 
+export type GetApiRequesterDashboardData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/requester/dashboard';
+};
+
+export type GetApiRequesterDashboardErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiRequesterDashboardError = GetApiRequesterDashboardErrors[keyof GetApiRequesterDashboardErrors];
+
+export type GetApiRequesterDashboardResponses = {
+    /**
+     * The authenticated Requester's dashboard.
+     */
+    200: RequesterDashboardResponse;
+};
+
+export type GetApiRequesterDashboardResponse = GetApiRequesterDashboardResponses[keyof GetApiRequesterDashboardResponses];
+
 export type GetApiHealthData = {
     body?: never;
     path?: never;
@@ -1511,7 +1591,19 @@ export type GetApiTicketsData = {
         relatedSystemId?: number;
         requestedPriority?: RequestedPriority;
         currentStatus?: CurrentStatus;
-        sortBy?: 'ticketNumber' | 'ticketDate' | 'summary' | 'requestedPriority' | 'currentStatus' | 'updatedAt';
+        /**
+         * Exact active, waiting, recently updated, or recently resolved Ticket scope.
+         */
+        scope?: 'active' | 'waiting-for-requester' | 'recently-updated' | 'recently-resolved';
+        /**
+         * Inclusive lower UTC bound. Required with recently-updated or recently-resolved scope.
+         */
+        from?: string;
+        /**
+         * Inclusive upper UTC bound. Required with recently-updated or recently-resolved scope.
+         */
+        through?: string;
+        sortBy?: 'ticketNumber' | 'ticketDate' | 'summary' | 'requestedPriority' | 'currentStatus' | 'updatedAt' | 'resolvedAt';
         sortDirection?: 'asc' | 'desc';
         page?: number;
         pageSize?: 10 | 25 | 50;

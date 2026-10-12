@@ -1,0 +1,130 @@
+{
+  "branch": "feature/78-requester-dashboard",
+  "command": "E2E_CLIENT_PORT=5278 E2E_API_URL=http://localhost:3078 E2E_BASE_URL=http://localhost:5278 PORT=3078 CORS_ORIGIN=http://localhost:5278 API_ORIGIN=http://localhost:3078 VITE_API_URL=http://localhost:3078 pnpm --filter @toktickit/e2e exec playwright test lab-04/requester-dashboard.spec.ts",
+  "commit": "7de0c707931999fb0b583957d932b6ac63f6cbc0",
+  "files": [
+    {
+      "capturedAt": "2026-10-11T20:27:46.895Z",
+      "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-populated-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-02",
+        "visual": "docs/lab-04/tests.md#vis-02"
+      },
+      "role": "Requester",
+      "scenario": "Requester dashboard with counts and recent previews",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 390×844"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:27:47.684Z",
+      "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-drilldown-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-02",
+        "visual": "docs/lab-04/tests.md#vis-02"
+      },
+      "role": "Requester",
+      "scenario": "Recently Updated My Tickets list with exact generated bounds",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 390×844"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:27:51.959Z",
+      "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-empty-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-02",
+        "visual": "docs/lab-04/tests.md#vis-02"
+      },
+      "role": "Requester",
+      "scenario": "Dashboard with zero counts and empty previews",
+      "stateSource": "intercepted",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 390×844"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:27:52.999Z",
+      "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-loading-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-02",
+        "visual": "docs/lab-04/tests.md#vis-02"
+      },
+      "role": "Requester",
+      "scenario": "Dashboard loading while its API response is pending",
+      "stateSource": "intercepted",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 390×844"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:27:54.018Z",
+      "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-forbidden-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-02",
+        "visual": "docs/lab-04/tests.md#vis-02"
+      },
+      "role": "Requester",
+      "scenario": "Dashboard safe forbidden response with retry option",
+      "stateSource": "intercepted",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 390×844"
+      }
+    },
+    {
+      "capturedAt": "2026-10-11T20:27:56.055Z",
+      "path": "artifacts/lab-04/screenshots/requester-dashboard/requester-dashboard-error-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-02",
+        "visual": "docs/lab-04/tests.md#vis-02"
+      },
+      "role": "Requester",
+      "scenario": "Recoverable dashboard network failure with retry option",
+      "stateSource": "intercepted",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport 390×844"
+      }
+    }
+  ],
+  "generatedAt": "2026-10-11T20:27:56.179Z",
+  "project": "mobile-chromium",
+  "sourceDirty": true
+}

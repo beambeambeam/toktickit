@@ -13,6 +13,7 @@ import type {
   StaffTicketListQuery,
   StaffTicketOwnerFilter,
   StaffTicketSortField,
+  TicketListScope,
   TicketSortDirection,
   TicketSortField,
   TicketVersionInput,
@@ -27,6 +28,7 @@ export type {
   TicketFields,
   TicketListQuery,
   TicketSortDirection,
+  TicketListScope,
   TicketSortField,
 } from "../types/tickets.js";
 
@@ -57,6 +59,14 @@ export const ticketSortFields = [
   "requestedPriority",
   "currentStatus",
   "updatedAt",
+  "resolvedAt",
+] as const;
+
+export const ticketListScopes = [
+  "active",
+  "waiting-for-requester",
+  "recently-updated",
+  "recently-resolved",
 ] as const;
 
 export const staffTicketSortFields = [
@@ -167,6 +177,43 @@ const parseOptionalPositiveInteger = (
   value === undefined
     ? undefined
     : parsePositiveInteger(value, field, issues, maximum);
+
+const parseOptionalUtcTimestamp = (
+  value: string | undefined,
+  field: string,
+  issues: ValidationIssue[]
+): Date | undefined => {
+  if (value === undefined) {
+    return undefined;
+  }
+
+  const match =
+    /^(?<seconds>\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2})(?:\.(?<fraction>\d{1,3}))?Z$/u.exec(
+      value
+    );
+  const date = new Date(value);
+  const seconds = match?.groups?.seconds;
+  const milliseconds = match?.groups?.fraction?.padEnd(3, "0") ?? "000";
+  const normalizedValue =
+    seconds === undefined ? undefined : `${seconds}.${milliseconds}Z`;
+
+  if (
+    match === null ||
+    Number.isNaN(date.getTime()) ||
+    normalizedValue !== date.toISOString()
+  ) {
+    issues.push({
+      field,
+      reason: `${field} must be a valid UTC timestamp ending in Z.`,
+    });
+    return undefined;
+  }
+
+  return date;
+};
+
+const isTicketListScope = (value: string): value is TicketListScope =>
+  ticketListScopes.some((scope) => scope === value);
 
 const parsePageSize = (
   value: string,
@@ -572,13 +619,16 @@ export const validatePublicCommentContent = (
 const allowedQueryFields = new Set([
   "categoryId",
   "currentStatus",
+  "from",
   "page",
   "pageSize",
   "relatedSystemId",
   "requestedPriority",
+  "scope",
   "search",
   "sortBy",
   "sortDirection",
+  "through",
 ]);
 
 const appendUnsupportedQueryIssues = (
@@ -589,6 +639,60 @@ const appendUnsupportedQueryIssues = (
     if (!allowedQueryFields.has(field)) {
       issues.push({ field, reason: "Query parameter is not supported." });
     }
+  }
+};
+
+const appendSearchLengthIssue = (
+  search: string | undefined,
+  issues: ValidationIssue[]
+): void => {
+  if (search !== undefined && search.length > 200) {
+    issues.push({
+      field: "search",
+      reason: "Search must contain at most 200 characters.",
+    });
+  }
+};
+
+const appendTicketListScopeIssues = (
+  scope: TicketListScope | undefined,
+  from: Date | undefined,
+  through: Date | undefined,
+  sortBy: TicketSortField | undefined,
+  issues: ValidationIssue[]
+): void => {
+  const hasTimeScope =
+    scope === "recently-updated" || scope === "recently-resolved";
+  if (hasTimeScope && from === undefined) {
+    issues.push({
+      field: "from",
+      reason: "from is required for this Ticket scope.",
+    });
+  }
+  if (hasTimeScope && through === undefined) {
+    issues.push({
+      field: "through",
+      reason: "through is required for this Ticket scope.",
+    });
+  }
+  if (!hasTimeScope && (from !== undefined || through !== undefined)) {
+    issues.push({
+      field: "scope",
+      reason:
+        "from and through are only supported for time-based Ticket scopes.",
+    });
+  }
+  if (from !== undefined && through !== undefined && from > through) {
+    issues.push({
+      field: "from",
+      reason: "from must not be later than through.",
+    });
+  }
+  if (sortBy === "resolvedAt" && scope !== "recently-resolved") {
+    issues.push({
+      field: "sortBy",
+      reason: "resolvedAt sorting requires the recently-resolved scope.",
+    });
   }
 };
 
@@ -612,6 +716,23 @@ export const parseTicketListQuery = (
   );
   const pageValue = getOptionalSingleValue(input, "page", issues);
   const pageSizeValue = getOptionalSingleValue(input, "pageSize", issues);
+  const scope = parseOptionalEnum(
+    getOptionalSingleValue(input, "scope", issues),
+    "scope",
+    isTicketListScope,
+    "Ticket scope is not supported.",
+    issues
+  );
+  const from = parseOptionalUtcTimestamp(
+    getOptionalSingleValue(input, "from", issues),
+    "from",
+    issues
+  );
+  const through = parseOptionalUtcTimestamp(
+    getOptionalSingleValue(input, "through", issues),
+    "through",
+    issues
+  );
   const page =
     pageValue === undefined
       ? 1
@@ -649,12 +770,9 @@ export const parseTicketListQuery = (
   const searchValue = getOptionalSingleValue(input, "search", issues);
   const normalizedSearch = searchValue?.trim();
 
-  if (normalizedSearch !== undefined && normalizedSearch.length > 200) {
-    issues.push({
-      field: "search",
-      reason: "Search must contain at most 200 characters.",
-    });
-  }
+  appendSearchLengthIssue(normalizedSearch, issues);
+
+  appendTicketListScopeIssues(scope, from, through, sortBy, issues);
 
   if (issues.length > 0 || page === undefined || pageSize === undefined) {
     throw createValidationError(issues);
@@ -663,12 +781,25 @@ export const parseTicketListQuery = (
   const query: TicketListQuery = {
     page,
     pageSize,
-    sortBy: sortBy ?? "updatedAt",
+    sortBy:
+      sortBy ?? (scope === "recently-resolved" ? "resolvedAt" : "updatedAt"),
     sortDirection: sortDirection ?? "desc",
   };
 
   if (categoryId !== undefined) {
     query.categoryId = categoryId;
+  }
+
+  if (from !== undefined) {
+    query.from = from;
+  }
+
+  if (scope !== undefined) {
+    query.scope = scope;
+  }
+
+  if (through !== undefined) {
+    query.through = through;
   }
 
   if (currentStatus !== undefined) {
