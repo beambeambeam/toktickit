@@ -6,12 +6,10 @@ import { useEffect, useRef } from "react";
 import { staffDashboardQueryOptions } from "@/api/dashboard-query-options";
 import { AppShell } from "@/components/app-shell";
 import { Icon } from "@/components/icon";
+import { MyActionListItem } from "@/components/my-action-list-item";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
-import type {
-  MyActionRow,
-  StaffDashboardTicketPreview,
-} from "@/generated/hey-api/types.gen";
+import type { StaffDashboardTicketPreview } from "@/generated/hey-api/types.gen";
 import { formatBangkokDate } from "@/lib/action-format";
 import { buildLoadFailureCopy, loadFailureKind } from "@/lib/load-failure";
 import { isStaffRole, STAFF_ROLES } from "@/lib/staff-roles";
@@ -57,28 +55,6 @@ const MetricCard = ({
       <span className="dashboard-metric-hint">View matching Tickets</span>
     </Link>
   </article>
-);
-
-const MyActionPreviewRow = ({ action }: { action: MyActionRow }) => (
-  <li className="dashboard-preview-item">
-    <div className="dashboard-preview-heading">
-      <Link
-        className="dashboard-ticket-link"
-        hash={`action-${action.id}`}
-        params={{ ticketId: action.ticketId.toString() }}
-        to="/tickets/$ticketId"
-      >
-        <span className="dashboard-preview-summary">{action.description}</span>
-        <span className="ticket-number">{action.ticket.ticketNumber}</span>
-      </Link>
-      <div className="badge-group">
-        <StatusBadge kind="status" value={action.ticket.currentStatus} />
-      </div>
-    </div>
-    <p className="dashboard-preview-date">
-      Action {action.status}. Updated {formatBangkokDate(action.updatedAt)}
-    </p>
-  </li>
 );
 
 type TicketPreviewSearch =
@@ -319,7 +295,7 @@ export const StaffDashboardPage = () => {
               ) : (
                 <ul className="dashboard-preview-list">
                   {dashboard.previews.myActions.map((action) => (
-                    <MyActionPreviewRow action={action} key={action.id} />
+                    <MyActionListItem action={action} compact key={action.id} />
                   ))}
                 </ul>
               )}

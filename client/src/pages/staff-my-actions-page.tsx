@@ -4,7 +4,6 @@ import {
   Ticket01Icon,
 } from "@hugeicons/core-free-icons";
 import { useQuery } from "@tanstack/react-query";
-import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
 import type {
@@ -14,10 +13,8 @@ import type {
 import { staffMyActionsQueryOptions } from "@/api/staff-actions-query-options";
 import { AppShell } from "@/components/app-shell";
 import { Icon } from "@/components/icon";
-import { StatusBadge } from "@/components/status-badge";
+import { MyActionListItem } from "@/components/my-action-list-item";
 import { useAuth } from "@/context/auth";
-import type { MyActionRow } from "@/generated/hey-api/types.gen";
-import { formatBangkokDate } from "@/lib/action-format";
 import { buildLoadFailureCopy, loadFailureKind } from "@/lib/load-failure";
 import { getPageTokens } from "@/lib/pagination";
 import { isStaffRole, STAFF_ROLES } from "@/lib/staff-roles";
@@ -26,32 +23,6 @@ const PAGE_SIZES: readonly StaffMyActionsPageSize[] = [10, 20, 50];
 
 const parsePageSize = (value: string): StaffMyActionsPageSize =>
   PAGE_SIZES.find((pageSize) => String(pageSize) === value) ?? 20;
-
-const MyActionListItem = ({ action }: { action: MyActionRow }) => (
-  <li className="dashboard-preview-item">
-    <div className="dashboard-preview-heading">
-      <Link
-        className="dashboard-ticket-link"
-        hash={`action-${action.id}`}
-        params={{ ticketId: action.ticketId.toString() }}
-        to="/tickets/$ticketId"
-      >
-        <span className="dashboard-preview-summary">{action.description}</span>
-        <span className="ticket-number">{action.ticket.ticketNumber}</span>
-        <span className="dashboard-preview-ticket">
-          {action.ticket.summary}
-        </span>
-      </Link>
-      <div className="badge-group">
-        <StatusBadge kind="status" value={action.ticket.currentStatus} />
-        <StatusBadge kind="owner" value={action.assignee.displayName} />
-      </div>
-    </div>
-    <p className="dashboard-preview-date">
-      Action {action.status}. Updated {formatBangkokDate(action.updatedAt)}
-    </p>
-  </li>
-);
 
 const FAILURE_COPY = buildLoadFailureCopy({
   forbiddenBody: "You do not have permission to view My Actions.",
