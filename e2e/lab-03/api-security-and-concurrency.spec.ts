@@ -1,4 +1,5 @@
 import { execFileSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
 import path from "node:path";
 
 import { expect, test } from "@playwright/test";
@@ -227,6 +228,67 @@ const createTicket = async (
   };
 };
 
+const readTicket = async (
+  session: ApiSession,
+  ticketId: number
+): Promise<JsonObject> => {
+  const response = await api(session, "GET", `/api/tickets/${ticketId}`);
+  expect(response.status()).toBe(200);
+  return await readJson(response);
+};
+
+// Resolved requires an owner and a Completed Action Taken (BR-11, Lab 4 gate).
+const completeActionTaken = async (
+  session: ApiSession,
+  ticketId: number,
+  assigneeId: number
+): Promise<void> => {
+  const created = await api(
+    session,
+    "POST",
+    `/api/tickets/${ticketId}/actions`,
+    {
+      body: {
+        assigneeId,
+        description: "Completed action for the resolution gate.",
+        followUpRequired: false,
+        requestId: randomUUID(),
+        result: "Resolved for the status lifecycle test.",
+        version: getNumber(await readTicket(session, ticketId), "version"),
+      },
+    }
+  );
+  expect(created.status()).toBe(201);
+  const action = asJsonObject(
+    (await readJson(created)).action,
+    "created Action Taken"
+  );
+  const actionPath = `/api/tickets/${ticketId}/actions/${getNumber(action, "id")}/transition`;
+
+  const started = await api(session, "POST", actionPath, {
+    body: {
+      actionVersion: getNumber(action, "version"),
+      ticketVersion: getNumber(await readTicket(session, ticketId), "version"),
+      toStatus: "In Progress",
+    },
+  });
+  expect(started.status()).toBe(200);
+  const inProgress = asJsonObject(
+    (await readJson(started)).action,
+    "started Action Taken"
+  );
+
+  const completed = await api(session, "POST", actionPath, {
+    body: {
+      actionVersion: getNumber(inProgress, "version"),
+      confirmed: true,
+      ticketVersion: getNumber(await readTicket(session, ticketId), "version"),
+      toStatus: "Completed",
+    },
+  });
+  expect(completed.status()).toBe(200);
+};
+
 test("covers every role boundary for protected reads and writes", async ({
   browser,
 }) => {
@@ -360,20 +422,21 @@ test("covers every role boundary for protected reads and writes", async ({
         "FORBIDDEN"
       );
     }
-    await expectApiError(
-      await api(admin, "POST", `/api/tickets/${ticket.id}/comments`, {
-        body: { content: "Administrator read-only boundary" },
-      }),
-      403,
-      "FORBIDDEN"
-    );
-    await expectApiError(
-      await api(admin, "POST", `/api/tickets/${ticket.id}/internal-notes`, {
-        body: { content: "Administrator read-only boundary" },
-      }),
-      403,
-      "FORBIDDEN"
-    );
+    // Lab 4 grants Administrators the IT Staff comment and note write permissions.
+    expect(
+      (
+        await api(admin, "POST", `/api/tickets/${ticket.id}/comments`, {
+          body: { content: "Administrator public comment is allowed." },
+        })
+      ).status()
+    ).toBe(201);
+    expect(
+      (
+        await api(admin, "POST", `/api/tickets/${ticket.id}/internal-notes`, {
+          body: { content: "Administrator internal note is allowed." },
+        })
+      ).status()
+    ).toBe(201);
 
     expect(
       (
@@ -707,6 +770,8 @@ test("covers the complete status lifecycle, confirmation, and stale-version edge
       "CONFIRMATION_REQUIRED"
     );
 
+    await completeActionTaken(activeStaff, ticket.id, activeStaff.user.id);
+    current = await readTicket(activeStaff, ticket.id);
     await applyStatus("Resolved", true);
     await applyStatus("Reopened");
     await applyStatus("In Progress");
@@ -811,6 +876,17 @@ test("covers every current-status and next-status pair through the live API", as
         let version = getNumber(await readJson(claim), "version");
 
         for (const pathStatus of paths[currentStatus]) {
+          if (pathStatus === "Resolved") {
+            await completeActionTaken(
+              activeStaff,
+              ticket.id,
+              activeStaff.user.id
+            );
+            version = getNumber(
+              await readTicket(activeStaff, ticket.id),
+              "version"
+            );
+          }
           const response = await api(
             activeStaff,
             "POST",
@@ -827,6 +903,20 @@ test("covers every current-status and next-status pair through the live API", as
           version = getNumber(await readJson(response), "version");
         }
 
+        if (
+          nextStatus === "Resolved" &&
+          allowed[currentStatus].includes("Resolved")
+        ) {
+          await completeActionTaken(
+            activeStaff,
+            ticket.id,
+            activeStaff.user.id
+          );
+          version = getNumber(
+            await readTicket(activeStaff, ticket.id),
+            "version"
+          );
+        }
         const response = await api(
           activeStaff,
           "POST",
