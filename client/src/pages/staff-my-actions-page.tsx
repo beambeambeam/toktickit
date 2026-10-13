@@ -157,7 +157,7 @@ export const StaffMyActionsPage = () => {
           <div aria-hidden="true" className="empty-icon">
             <Icon icon={Ticket01Icon} />
           </div>
-          <h3>No assigned actions</h3>
+          <h2>No assigned actions</h2>
           <p>
             No Planned or In Progress actions are assigned to you on active
             Tickets.
