@@ -37,6 +37,16 @@ export const ownerSelection = {
   role: true,
 } as const;
 
+export const ticketPreviewSelection = {
+  currentStatus: true,
+  id: true,
+  requestedPriority: true,
+  resolvedAt: true,
+  summary: true,
+  ticketNumber: true,
+  updatedAt: true,
+} as const;
+
 const attachmentSelection = {
   byteSize: true,
   id: true,

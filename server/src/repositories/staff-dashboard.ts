@@ -1,22 +1,20 @@
 import type { Prisma } from "../generated/prisma/client.js";
 import { actionSummaryInclude, myActionsWhere } from "./actions.js";
 import { withDashboardSnapshot } from "./dashboard-snapshot.js";
-import { activePrismaStatuses, ownerSelection } from "./tickets.js";
+import {
+  activePrismaStatuses,
+  ownerSelection,
+  ticketPreviewSelection,
+} from "./tickets.js";
 
-const ticketPreviewSelection = {
-  currentStatus: true,
-  id: true,
+const staffTicketPreviewSelection = {
+  ...ticketPreviewSelection,
   itPriority: true,
   owner: { select: ownerSelection },
-  requestedPriority: true,
-  resolvedAt: true,
-  summary: true,
-  ticketNumber: true,
-  updatedAt: true,
 } as const;
 
 export type StaffDashboardTicketRecord = Prisma.TicketGetPayload<{
-  select: typeof ticketPreviewSelection;
+  select: typeof staffTicketPreviewSelection;
 }>;
 
 export const findStaffDashboard = async (
@@ -56,13 +54,13 @@ export const findStaffDashboard = async (
         database.actionTaken.count({ where: myActionWhere }),
         database.ticket.findMany({
           orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
-          select: ticketPreviewSelection,
+          select: staffTicketPreviewSelection,
           take: 5,
           where: { updatedAt: { gte: from, lte: through } },
         }),
         database.ticket.findMany({
           orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
-          select: ticketPreviewSelection,
+          select: staffTicketPreviewSelection,
           take: 5,
           where: { ...activeWhere, itPriority: "Urgent" },
         }),

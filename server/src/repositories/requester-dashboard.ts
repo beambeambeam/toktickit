@@ -1,16 +1,6 @@
 import type { CurrentStatus as PrismaCurrentStatus } from "../generated/prisma/enums.js";
 import { withDashboardSnapshot } from "./dashboard-snapshot.js";
-import { activePrismaStatuses } from "./tickets.js";
-
-const ticketPreviewSelection = {
-  currentStatus: true,
-  id: true,
-  requestedPriority: true,
-  resolvedAt: true,
-  summary: true,
-  ticketNumber: true,
-  updatedAt: true,
-} as const;
+import { activePrismaStatuses, ticketPreviewSelection } from "./tickets.js";
 
 const recentlyResolvedStatuses: PrismaCurrentStatus[] = ["Resolved", "Closed"];
 
