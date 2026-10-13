@@ -1,6 +1,5 @@
 import {
   ArrowLeft01Icon,
-  ArrowRight01Icon,
   RefreshIcon,
   Search01Icon,
   Ticket01Icon,
@@ -31,6 +30,7 @@ import {
   AuthRequired,
 } from "@/components/app-shell";
 import { Icon } from "@/components/icon";
+import { PaginationNav } from "@/components/pagination-nav";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
 import { formatBangkokDate } from "@/lib/action-format";
@@ -116,44 +116,6 @@ const hasTicketFilters = (params: StaffTicketListParams) =>
   params.currentStatus !== undefined ||
   params.owner !== undefined ||
   params.scope !== undefined;
-
-type PageToken = number | "ellipsis-before" | "ellipsis-after";
-
-const getPageTokens = (
-  totalPages: number,
-  currentPage: number
-): PageToken[] => {
-  if (totalPages <= 0) {
-    return [];
-  }
-
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, index) => index + 1);
-  }
-
-  const firstVisiblePage = Math.max(2, currentPage - 1);
-  const lastVisiblePage = Math.min(totalPages - 1, currentPage + 1);
-  const pages: PageToken[] = [1];
-
-  if (firstVisiblePage > 2) {
-    pages.push("ellipsis-before");
-  }
-
-  for (
-    let pageNumber = firstVisiblePage;
-    pageNumber <= lastVisiblePage;
-    pageNumber += 1
-  ) {
-    pages.push(pageNumber);
-  }
-
-  if (lastVisiblePage < totalPages - 1) {
-    pages.push("ellipsis-after");
-  }
-
-  pages.push(totalPages);
-  return pages;
-};
 
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat(undefined, {
@@ -281,7 +243,6 @@ const StaffTicketQueueContent = ({
     data !== undefined && !ticketsQuery.isError && data.items.length > 0;
   const page = data?.page ?? params.page ?? 1;
   const totalPages = data?.totalPages ?? 0;
-  const pageTokens = getPageTokens(totalPages, page);
   const hasFilterDataError =
     categoriesQuery.isError ||
     relatedSystemsQuery.isError ||
@@ -777,60 +738,14 @@ const StaffTicketQueueContent = ({
                 </article>
               ))}
             </div>
-            <nav className="pagination" aria-label="Ticket Queue pages">
-              <button
-                className="button button-secondary"
-                disabled={page <= 1}
-                onClick={() => {
-                  setParams((current) => ({ ...current, page: page - 1 }));
-                }}
-                type="button"
-              >
-                <Icon icon={ArrowLeft01Icon} /> Previous
-              </button>
-              <span>
-                Page {page} of {totalPages > 0 ? totalPages : 1}
-              </span>
-              <div className="pagination-pages">
-                {pageTokens.map((pageToken) =>
-                  typeof pageToken === "number" ? (
-                    <button
-                      aria-current={pageToken === page ? "page" : undefined}
-                      aria-label={`Go to page ${pageToken}`}
-                      className="button button-secondary pagination-page"
-                      key={pageToken}
-                      onClick={() => {
-                        setParams((current) => ({
-                          ...current,
-                          page: pageToken,
-                        }));
-                      }}
-                      type="button"
-                    >
-                      {pageToken}
-                    </button>
-                  ) : (
-                    <span
-                      aria-hidden="true"
-                      className="pagination-ellipsis"
-                      key={pageToken}
-                    >
-                      …
-                    </span>
-                  )
-                )}
-              </div>
-              <button
-                className="button button-secondary"
-                disabled={page >= totalPages}
-                onClick={() => {
-                  setParams((current) => ({ ...current, page: page + 1 }));
-                }}
-                type="button"
-              >
-                Next <Icon icon={ArrowRight01Icon} />
-              </button>
-            </nav>
+            <PaginationNav
+              label="Ticket Queue pages"
+              onPageChange={(nextPage) => {
+                setParams((current) => ({ ...current, page: nextPage }));
+              }}
+              page={page}
+              totalPages={totalPages}
+            />
           </>
         ) : null}
       </section>

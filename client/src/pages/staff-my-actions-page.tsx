@@ -1,8 +1,4 @@
-import {
-  ArrowLeft01Icon,
-  ArrowRight01Icon,
-  Ticket01Icon,
-} from "@hugeicons/core-free-icons";
+import { Ticket01Icon } from "@hugeicons/core-free-icons";
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
 
@@ -14,9 +10,9 @@ import { staffMyActionsQueryOptions } from "@/api/staff-actions-query-options";
 import { AppShell } from "@/components/app-shell";
 import { Icon } from "@/components/icon";
 import { MyActionListItem } from "@/components/my-action-list-item";
+import { PaginationNav } from "@/components/pagination-nav";
 import { useAuth } from "@/context/auth";
 import { buildLoadFailureCopy, loadFailureKind } from "@/lib/load-failure";
-import { getPageTokens } from "@/lib/pagination";
 import { isStaffRole, STAFF_ROLES } from "@/lib/staff-roles";
 
 const PAGE_SIZES: readonly StaffMyActionsPageSize[] = [10, 20, 50];
@@ -131,57 +127,14 @@ export const StaffMyActionsPage = () => {
         </section>
       ) : null}
       {data === undefined || data.totalPages === 0 ? null : (
-        <nav aria-label="My Actions pages" className="pagination">
-          <button
-            className="button button-secondary"
-            disabled={data.page <= 1}
-            onClick={() => {
-              setParams((current) => ({ ...current, page: current.page - 1 }));
-            }}
-            type="button"
-          >
-            <Icon icon={ArrowLeft01Icon} /> Previous
-          </button>
-          <span>
-            Page {data.page} of {data.totalPages}
-          </span>
-          <div className="pagination-pages">
-            {getPageTokens(data.totalPages, data.page).map((pageToken) =>
-              typeof pageToken === "number" ? (
-                <button
-                  aria-current={pageToken === data.page ? "page" : undefined}
-                  aria-label={`Go to page ${pageToken}`}
-                  className="button button-secondary pagination-page"
-                  key={pageToken}
-                  onClick={() => {
-                    setParams((current) => ({ ...current, page: pageToken }));
-                  }}
-                  type="button"
-                >
-                  {pageToken}
-                </button>
-              ) : (
-                <span
-                  aria-hidden="true"
-                  className="pagination-ellipsis"
-                  key={pageToken}
-                >
-                  …
-                </span>
-              )
-            )}
-          </div>
-          <button
-            className="button button-secondary"
-            disabled={data.page >= data.totalPages}
-            onClick={() => {
-              setParams((current) => ({ ...current, page: current.page + 1 }));
-            }}
-            type="button"
-          >
-            Next <Icon icon={ArrowRight01Icon} />
-          </button>
-        </nav>
+        <PaginationNav
+          label="My Actions pages"
+          onPageChange={(nextPage) => {
+            setParams((current) => ({ ...current, page: nextPage }));
+          }}
+          page={data.page}
+          totalPages={data.totalPages}
+        />
       )}
     </AppShell>
   );
