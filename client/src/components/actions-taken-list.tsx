@@ -32,7 +32,7 @@ const ActionDetails = ({
   action: TicketAction;
   context: ActionInteractionContext;
 }) => (
-  <article className="action-card">
+  <article className="action-card" id={`action-${action.id}`}>
     <div className="action-card-heading">
       <div>
         <h3>Action Taken #{action.id}</h3>

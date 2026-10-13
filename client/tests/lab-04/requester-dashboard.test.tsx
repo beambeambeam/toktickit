@@ -358,9 +358,9 @@ describe("Requester dashboard UI", () => {
     });
   });
 
-  it("uses Dashboard as the Requester landing and keeps the other roles on their current routes", () => {
+  it("uses Dashboard as the landing for every role", () => {
     expect(homeRouteForRole("Requester")).toBe("/dashboard");
-    expect(homeRouteForRole("IT Staff")).toBe("/staff/tickets");
-    expect(homeRouteForRole("Administrator")).toBe("/users");
+    expect(homeRouteForRole("IT Staff")).toBe("/dashboard");
+    expect(homeRouteForRole("Administrator")).toBe("/dashboard");
   });
 });

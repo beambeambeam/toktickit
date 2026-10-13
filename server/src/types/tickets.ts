@@ -52,18 +52,26 @@ export type StaffTicketSortField =
 
 export type StaffTicketOwnerFilter = number | "me" | "unassigned";
 
+export type StaffTicketListScope =
+  | "active"
+  | "recently-updated"
+  | "urgent-active";
+
 export interface StaffTicketListQuery {
   categoryId?: number;
   currentStatus?: CurrentStatus;
+  from?: Date;
   itPriority?: RequestedPriority;
   owner?: StaffTicketOwnerFilter;
   page: number;
   pageSize: 10 | 20 | 50;
   relatedSystemId?: number;
   requestedPriority?: RequestedPriority;
+  scope?: StaffTicketListScope;
   search?: string;
   sortBy: StaffTicketSortField;
   sortDirection: TicketSortDirection;
+  through?: Date;
 }
 
 export interface TicketFields {

@@ -14,7 +14,8 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthUser } from "@/api/auth";
 import { ApiRequestError } from "@/api/errors";
-import type { StaffTicketListParams } from "@/api/staff";
+import type { getStaffTickets, StaffTicketListParams } from "@/api/staff";
+import type { StaffTicketSearch } from "@/lib/ticket-search";
 import { StaffTicketQueuePage } from "@/pages/staff-ticket-queue-page";
 
 const {
@@ -26,7 +27,7 @@ const {
 } = vi.hoisted(() => ({
   authState: { user: null as AuthUser | null },
   getStaffOwnersMock: vi.fn(),
-  getStaffTicketsMock: vi.fn(),
+  getStaffTicketsMock: vi.fn<typeof getStaffTickets>(),
   navigateMock: vi.fn(),
   refetchAuthMock: vi.fn(),
 }));
@@ -152,7 +153,7 @@ const paginatedQueueResponse = {
   totalPages: 4,
 };
 
-const renderPage = () => {
+const renderPage = (initialFilters: StaffTicketSearch = {}) => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { gcTime: 0, retry: false },
@@ -161,7 +162,7 @@ const renderPage = () => {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <StaffTicketQueuePage />
+      <StaffTicketQueuePage initialFilters={initialFilters} />
     </QueryClientProvider>
   );
 };
@@ -382,5 +383,112 @@ describe("Staff Ticket Queue page", () => {
     expect(screen.getByText("Loading the Ticket Queue…")).toBeTruthy();
     resolveTickets(queueResponse);
     await screen.findAllByText("TKT-20260902-QUEUE01");
+  });
+
+  it("applies the URL scope to the request and keeps Clear Filters available", async () => {
+    renderPage({ scope: "urgent-active" });
+
+    await screen.findAllByText("TKT-20260902-QUEUE01");
+    expect(getStaffTicketsMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ page: 1, scope: "urgent-active" }),
+      expect.anything()
+    );
+    expect(
+      screen.getByRole<HTMLButtonElement>("button", {
+        name: /Clear Filters/u,
+      }).disabled
+    ).toBe(false);
+  });
+
+  it("sends the recently-updated window and shows it in Bangkok time", async () => {
+    getStaffTicketsMock.mockResolvedValue(queueResponse);
+    renderPage({
+      from: "2026-09-01T00:00:00.000Z",
+      scope: "recently-updated",
+      through: "2026-09-08T00:00:00.000Z",
+    });
+
+    await screen.findAllByText("TKT-20260902-QUEUE01");
+    expect(getStaffTicketsMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        from: "2026-09-01T00:00:00.000Z",
+        scope: "recently-updated",
+        through: "2026-09-08T00:00:00.000Z",
+      }),
+      expect.anything()
+    );
+    expect(
+      screen.getByText(
+        /Updated between .+07:00 \(Asia\/Bangkok\) and .+07:00 \(Asia\/Bangkok\)/u
+      )
+    ).toBeTruthy();
+  });
+
+  it("drops the window from the request when Scope changes to Active", async () => {
+    getStaffTicketsMock.mockResolvedValue(queueResponse);
+    renderPage({
+      from: "2026-09-01T00:00:00.000Z",
+      scope: "recently-updated",
+      through: "2026-09-08T00:00:00.000Z",
+    });
+
+    await screen.findAllByText("TKT-20260902-QUEUE01");
+    fireEvent.change(screen.getByLabelText("Scope"), {
+      target: { value: "active" },
+    });
+
+    await waitFor(() => {
+      expect(getStaffTicketsMock).toHaveBeenLastCalledWith(
+        expect.objectContaining({ page: 1, scope: "active" }),
+        expect.anything()
+      );
+    });
+    const lastParams = getStaffTicketsMock.mock.lastCall?.[0];
+    expect(lastParams?.from).toBeUndefined();
+    expect(lastParams?.through).toBeUndefined();
+    expect(screen.queryByText(/Updated between/u)).toBeNull();
+  });
+
+  it("applies the Scope filter and returns to page one", async () => {
+    getStaffTicketsMock.mockResolvedValue(paginatedQueueResponse);
+    renderPage();
+
+    await screen.findAllByText("TKT-20260902-QUEUE01");
+    fireEvent.click(screen.getByRole("button", { name: "Go to page 4" }));
+    await waitFor(() => {
+      expect(getStaffTicketsMock).toHaveBeenLastCalledWith(
+        expect.objectContaining({ page: 4 }),
+        expect.anything()
+      );
+    });
+
+    fireEvent.change(screen.getByLabelText("Scope"), {
+      target: { value: "active" },
+    });
+    await waitFor(() => {
+      expect(getStaffTicketsMock).toHaveBeenLastCalledWith(
+        expect.objectContaining({ page: 1, scope: "active" }),
+        expect.anything()
+      );
+    });
+  });
+
+  it("keys cached ticket lists by account and role", async () => {
+    getStaffTicketsMock.mockResolvedValue(queueResponse);
+    const queryClient = new QueryClient({
+      defaultOptions: { queries: { gcTime: 0, retry: false } },
+    });
+    render(
+      <QueryClientProvider client={queryClient}>
+        <StaffTicketQueuePage initialFilters={{ scope: "active" }} />
+      </QueryClientProvider>
+    );
+
+    await screen.findAllByText("TKT-20260902-QUEUE01");
+    const keys = queryClient
+      .getQueryCache()
+      .findAll({ queryKey: ["staff-tickets"] })
+      .map((query) => query.queryKey.slice(0, 3));
+    expect(keys).toEqual([["staff-tickets", 10, "IT Staff"]]);
   });
 });

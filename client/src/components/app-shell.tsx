@@ -86,19 +86,9 @@ export const RequesterAccessDenied = () => (
   <AccessDeniedMessage message="This client currently provides the Requester workspace. Your account role cannot open this page." />
 );
 
-export const homeRouteForRole = (
-  role: AuthUser["role"]
-): "/" | "/dashboard" | "/tickets" | "/staff/tickets" | "/users" => {
-  if (role === "Requester") {
-    return "/dashboard";
-  }
-
-  if (role === "Administrator") {
-    return "/users";
-  }
-
-  return "/staff/tickets";
-};
+// Every role lands on Dashboard; DashboardPage selects the role-specific view.
+export const homeRouteForRole = (_role: AuthUser["role"]): "/dashboard" =>
+  "/dashboard";
 
 export const AppShell = ({
   allowedRoles,
@@ -173,28 +163,37 @@ export const AppShell = ({
             <span>TokTickIT</span>
           </Link>
           <nav aria-label="Primary navigation" className="desktop-nav">
+            <Link
+              activeProps={{ className: "nav-link active" }}
+              className="nav-link"
+              to="/dashboard"
+            >
+              Dashboard
+            </Link>
             {isQueueReader ? (
-              <Link
-                activeOptions={{ exact: false }}
-                activeProps={{ className: "nav-link active" }}
-                className="nav-link"
-                to="/staff/tickets"
-              >
-                <span aria-hidden="true">
-                  <Icon icon={Ticket01Icon} />
-                </span>{" "}
-                Ticket Queue
-              </Link>
-            ) : null}
-            {user.role === "Requester" ? (
               <>
                 <Link
                   activeProps={{ className: "nav-link active" }}
                   className="nav-link"
-                  to="/dashboard"
+                  to="/staff/actions"
                 >
-                  Dashboard
+                  My Actions
                 </Link>
+                <Link
+                  activeOptions={{ exact: false }}
+                  activeProps={{ className: "nav-link active" }}
+                  className="nav-link"
+                  to="/staff/tickets"
+                >
+                  <span aria-hidden="true">
+                    <Icon icon={Ticket01Icon} />
+                  </span>{" "}
+                  Ticket Queue
+                </Link>
+              </>
+            ) : null}
+            {user.role === "Requester" ? (
+              <>
                 <Link
                   activeOptions={{ exact: false }}
                   activeProps={{ className: "nav-link active" }}
@@ -264,20 +263,43 @@ export const AppShell = ({
           <details className="mobile-nav">
             <summary aria-label="Open navigation">Menu</summary>
             <nav aria-label="Mobile navigation">
+              <Link activeProps={{ className: "active" }} to="/dashboard">
+                Dashboard
+              </Link>
               {isQueueReader ? (
-                <Link to="/staff/tickets">Ticket Queue</Link>
+                <>
+                  <Link
+                    activeProps={{ className: "active" }}
+                    to="/staff/actions"
+                  >
+                    My Actions
+                  </Link>
+                  <Link
+                    activeProps={{ className: "active" }}
+                    to="/staff/tickets"
+                  >
+                    Ticket Queue
+                  </Link>
+                </>
               ) : null}
               {user.role === "Requester" ? (
                 <>
-                  <Link to="/dashboard">Dashboard</Link>
-                  <Link to="/tickets">My Tickets</Link>
-                  <Link to="/create">Create Ticket</Link>
+                  <Link activeProps={{ className: "active" }} to="/tickets">
+                    My Tickets
+                  </Link>
+                  <Link activeProps={{ className: "active" }} to="/create">
+                    Create Ticket
+                  </Link>
                 </>
               ) : null}
               {user.role === "Administrator" ? (
-                <Link to="/users">User Management</Link>
+                <Link activeProps={{ className: "active" }} to="/users">
+                  User Management
+                </Link>
               ) : null}
-              <Link to="/change-password">Change Password</Link>
+              <Link activeProps={{ className: "active" }} to="/change-password">
+                Change Password
+              </Link>
               <button
                 disabled={isLoggingOut}
                 onClick={() => void handleLogout()}

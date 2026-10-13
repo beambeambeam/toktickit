@@ -20,6 +20,7 @@ import type {
   QueueSortBy,
   RequestedPriority,
   StaffTicketListResponse,
+  StaffTicketScope,
   StatusMutationRequest,
   TicketDetail,
   TicketStatusHistoryListResponse,
@@ -33,15 +34,18 @@ export type StaffTicketOwnerFilter = number | "me" | "unassigned";
 export interface StaffTicketListParams {
   categoryId?: number;
   currentStatus?: CurrentStatus;
+  from?: string;
   itPriority?: RequestedPriority;
   owner?: StaffTicketOwnerFilter;
   page?: number;
   pageSize?: QueuePageSize;
   relatedSystemId?: number;
   requestedPriority?: RequestedPriority;
+  scope?: StaffTicketScope;
   search?: string;
   sortBy?: QueueSortBy;
   sortDirection?: "asc" | "desc";
+  through?: string;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>

@@ -1,11 +1,6 @@
-import { prisma } from "../db/client.js";
-import { Prisma } from "../generated/prisma/client.js";
 import type { CurrentStatus as PrismaCurrentStatus } from "../generated/prisma/enums.js";
-import { getSevenDayWindow } from "../types/dashboard.js";
-import {
-  activeTicketStatuses,
-  currentStatusToPrisma,
-} from "../types/ticket-workflow.js";
+import { withDashboardSnapshot } from "./dashboard-snapshot.js";
+import { activePrismaStatuses } from "./tickets.js";
 
 const ticketPreviewSelection = {
   currentStatus: true,
@@ -17,27 +12,15 @@ const ticketPreviewSelection = {
   updatedAt: true,
 } as const;
 
-const activePrismaStatuses = activeTicketStatuses.map(
-  (status): PrismaCurrentStatus => currentStatusToPrisma[status]
-);
 const recentlyResolvedStatuses: PrismaCurrentStatus[] = ["Resolved", "Closed"];
 
-// Tests pass `snapshotAt` to pin the window; production reads the database clock.
 export const findRequesterDashboard = async (
   requesterId: number,
   snapshotAt?: Date
 ) =>
-  await prisma.$transaction(
-    async (database) => {
-      const [snapshot] = await database.$queryRaw<{ generatedAt: Date }[]>(
-        Prisma.sql`SELECT transaction_timestamp() AS "generatedAt"`
-      );
-      if (snapshot === undefined) {
-        throw new Error("The dashboard snapshot time is unavailable.");
-      }
-
-      const generatedAt = snapshotAt ?? snapshot.generatedAt;
-      const { from, through } = getSevenDayWindow(generatedAt);
+  await withDashboardSnapshot(
+    snapshotAt,
+    async (database, { from, through }) => {
       const requester = { requesterId };
       const recentlyUpdatedWhere = {
         ...requester,
@@ -85,13 +68,10 @@ export const findRequesterDashboard = async (
           recentlyUpdated,
           waitingForRequester,
         },
-        generatedAt,
         previews: {
           recentlyResolved: recentlyResolvedPreviews,
           recentlyUpdated: recentlyUpdatedPreviews,
         },
-        window: { from, through },
       };
-    },
-    { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead }
+    }
   );

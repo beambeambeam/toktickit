@@ -4,6 +4,7 @@ import {
   editAction,
   findActionHistoryForTicket,
   findActionsForTicket,
+  findMyActions,
   transitionAction,
 } from "../repositories/actions.js";
 import { findOwnedTicket, findTicketById } from "../repositories/tickets.js";
@@ -15,7 +16,11 @@ import type {
 } from "../types/actions.js";
 import { isStaffRole } from "../types/users.js";
 import type { UserRoleValue } from "../types/users.js";
-import { toActionEvent, toActionTaken } from "./action-presenters.js";
+import {
+  toActionEvent,
+  toActionTaken,
+  toMyActionRow,
+} from "./action-presenters.js";
 import { toTicketDetail } from "./ticket-presenters.js";
 
 const notFound = () =>
@@ -301,6 +306,23 @@ export const listActionsForReader = async (
   } catch (error: unknown) {
     console.error("Unable to load Actions Taken.", error);
     throw new ApiError(500, "INTERNAL_ERROR", "Unable to load Actions Taken.");
+  }
+};
+
+export const listMyActions = async (userId: number, query: ActionListQuery) => {
+  try {
+    const result = await findMyActions(userId, query);
+
+    return {
+      items: result.items.map(toMyActionRow),
+      page: query.page,
+      pageSize: query.pageSize,
+      totalItems: result.totalItems,
+      totalPages: Math.ceil(result.totalItems / query.pageSize),
+    };
+  } catch (error: unknown) {
+    console.error("Unable to load My Actions.", error);
+    throw new ApiError(500, "INTERNAL_ERROR", "Unable to load My Actions.");
   }
 };
 

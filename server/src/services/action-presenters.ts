@@ -1,9 +1,13 @@
 import type {
   ActionEventType as PrismaActionEventType,
   ActionStatus as PrismaActionStatus,
+  CurrentStatus as PrismaCurrentStatus,
 } from "../generated/prisma/enums.js";
 import type { ActionStatus } from "../types/actions.js";
-import { isEligibleTicketOwner } from "../types/ticket-workflow.js";
+import {
+  isEligibleTicketOwner,
+  prismaStatusToCurrent,
+} from "../types/ticket-workflow.js";
 import type { UserRoleValue } from "../types/users.js";
 import { toUserRoleLabel } from "../types/users.js";
 
@@ -55,7 +59,7 @@ export interface ActionRecord {
   version: number;
 }
 
-const actionStatusLabels: Record<PrismaActionStatus, string> = {
+const actionStatusLabels: Record<PrismaActionStatus, ActionStatus> = {
   Cancelled: "Cancelled",
   Completed: "Completed",
   InProgress: "In Progress",
@@ -163,4 +167,43 @@ export const toActionEvent = (event: ActionEventRecord) => ({
   id: event.id,
   snapshot: toActionEventSnapshot(event.snapshot),
   toStatus: event.toStatus === null ? null : actionStatusLabels[event.toStatus],
+});
+
+export interface ActionSummaryRecord {
+  assignee: ActionUserRecord;
+  description: string;
+  followUpRequired: boolean;
+  id: number;
+  status: PrismaActionStatus;
+  ticketId: number;
+  updatedAt: Date;
+}
+
+export interface MyActionRecord extends ActionSummaryRecord {
+  ticket: {
+    currentStatus: PrismaCurrentStatus;
+    id: number;
+    summary: string;
+    ticketNumber: string;
+  };
+}
+
+export const toActionSummary = (action: ActionSummaryRecord) => ({
+  assignee: toAssignee(action.assignee),
+  description: action.description,
+  followUpRequired: action.followUpRequired,
+  id: action.id,
+  status: actionStatusLabels[action.status],
+  ticketId: action.ticketId,
+  updatedAt: action.updatedAt.toISOString(),
+});
+
+export const toMyActionRow = (action: MyActionRecord) => ({
+  ...toActionSummary(action),
+  ticket: {
+    currentStatus: prismaStatusToCurrent[action.ticket.currentStatus],
+    id: action.ticket.id,
+    summary: action.ticket.summary,
+    ticketNumber: action.ticket.ticketNumber,
+  },
 });

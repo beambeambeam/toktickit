@@ -32,6 +32,76 @@ export type RequesterTicketPreview = {
     resolvedAt: string | null;
 };
 
+export type StaffDashboardResponse = {
+    generatedAt: string;
+    window: {
+        from: string;
+        through: string;
+    };
+    counts: {
+        activeUnassigned: number;
+        activeOwned: number;
+        byStatus: {
+            New: number;
+            Open: number;
+            'In Progress': number;
+            'Waiting for Requester': number;
+            Reopened: number;
+            Resolved: number;
+            Closed: number;
+            Cancelled: number;
+        };
+        activeByPriority: {
+            High: number;
+            Low: number;
+            Medium: number;
+            Urgent: number;
+        };
+        myActions: number;
+    };
+    previews: {
+        myActions: Array<MyActionRow>;
+        recentlyUpdatedTickets: Array<StaffDashboardTicketPreview>;
+        urgentActiveTickets: Array<StaffDashboardTicketPreview>;
+    };
+};
+
+export type StaffDashboardTicketPreview = {
+    id: number;
+    ticketNumber: string;
+    summary: string;
+    currentStatus: CurrentStatus;
+    requestedPriority: RequestedPriority;
+    itPriority: RequestedPriority;
+    owner: Owner | null;
+    updatedAt: string;
+    resolvedAt: string | null;
+};
+
+export type MyActionRow = {
+    id: number;
+    ticketId: number;
+    description: string;
+    followUpRequired: boolean;
+    status: ActionStatus;
+    assignee: Owner;
+    updatedAt: string;
+    ticket: {
+        id: number;
+        ticketNumber: string;
+        summary: string;
+        currentStatus: CurrentStatus;
+    };
+};
+
+export type MyActionListResponse = {
+    items: Array<MyActionRow>;
+    page: number;
+    pageSize: 10 | 20 | 50;
+    totalItems: number;
+    totalPages: number;
+};
+
 export type ApiError = {
     error: ApiErrorBody;
 };
@@ -488,19 +558,24 @@ export type CurrentStatus2 = CurrentStatus;
 export type TicketScope = 'active' | 'waiting-for-requester' | 'recently-updated' | 'recently-resolved';
 
 /**
- * Inclusive lower UTC bound. Required with recently-updated or recently-resolved scope.
+ * Exact active, recently updated, or urgent active Ticket scope for the shared queue.
+ */
+export type StaffTicketScope = 'active' | 'recently-updated' | 'urgent-active';
+
+/**
+ * Inclusive lower UTC bound. Required with time-based scopes and rejected otherwise.
  */
 export type From = string;
 
 /**
- * Inclusive upper UTC bound. Required with recently-updated or recently-resolved scope.
+ * Inclusive upper UTC bound. Required with time-based scopes and rejected otherwise.
  */
 export type Through = string;
 
 export type ItPriority = RequestedPriority;
 
 /**
- * Eligible owner ID, me, or unassigned.
+ * Eligible owner ID, me, or unassigned. A specific ID must be currently eligible.
  */
 export type Owner2 = number | 'me' | 'unassigned';
 
@@ -723,7 +798,19 @@ export type GetApiStaffTicketsData = {
         itPriority?: RequestedPriority;
         currentStatus?: CurrentStatus;
         /**
-         * Eligible owner ID, me, or unassigned.
+         * Exact active, recently updated, or urgent active Ticket scope for the shared queue.
+         */
+        scope?: 'active' | 'recently-updated' | 'urgent-active';
+        /**
+         * Inclusive lower UTC bound. Required with time-based scopes and rejected otherwise.
+         */
+        from?: string;
+        /**
+         * Inclusive upper UTC bound. Required with time-based scopes and rejected otherwise.
+         */
+        through?: string;
+        /**
+         * Eligible owner ID, me, or unassigned. A specific ID must be currently eligible.
          */
         owner?: number | 'me' | 'unassigned';
         sortBy?: 'ticketDate' | 'updatedAt' | 'itPriority' | 'ticketNumber';
@@ -796,6 +883,83 @@ export type GetApiStaffOwnersResponses = {
 };
 
 export type GetApiStaffOwnersResponse = GetApiStaffOwnersResponses[keyof GetApiStaffOwnersResponses];
+
+export type GetApiStaffDashboardData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/staff/dashboard';
+};
+
+export type GetApiStaffDashboardErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiStaffDashboardError = GetApiStaffDashboardErrors[keyof GetApiStaffDashboardErrors];
+
+export type GetApiStaffDashboardResponses = {
+    /**
+     * The authenticated staff member's dashboard.
+     */
+    200: StaffDashboardResponse;
+};
+
+export type GetApiStaffDashboardResponse = GetApiStaffDashboardResponses[keyof GetApiStaffDashboardResponses];
+
+export type GetApiStaffActionsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        pageSize?: 10 | 20 | 50;
+    };
+    url: '/api/staff/actions';
+};
+
+export type GetApiStaffActionsErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiStaffActionsError = GetApiStaffActionsErrors[keyof GetApiStaffActionsErrors];
+
+export type GetApiStaffActionsResponses = {
+    /**
+     * The authenticated user's My Actions page.
+     */
+    200: MyActionListResponse;
+};
+
+export type GetApiStaffActionsResponse = GetApiStaffActionsResponses[keyof GetApiStaffActionsResponses];
 
 export type GetApiTicketActionsData = {
     body?: never;
@@ -1673,11 +1837,11 @@ export type GetApiTicketsData = {
          */
         scope?: 'active' | 'waiting-for-requester' | 'recently-updated' | 'recently-resolved';
         /**
-         * Inclusive lower UTC bound. Required with recently-updated or recently-resolved scope.
+         * Inclusive lower UTC bound. Required with time-based scopes and rejected otherwise.
          */
         from?: string;
         /**
-         * Inclusive upper UTC bound. Required with recently-updated or recently-resolved scope.
+         * Inclusive upper UTC bound. Required with time-based scopes and rejected otherwise.
          */
         through?: string;
         sortBy?: 'ticketNumber' | 'ticketDate' | 'summary' | 'requestedPriority' | 'currentStatus' | 'updatedAt' | 'resolvedAt';

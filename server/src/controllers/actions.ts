@@ -15,6 +15,7 @@ import {
   editActionForStaff,
   listActionHistoryForReader,
   listActionsForReader,
+  listMyActions,
   transitionActionForStaff,
 } from "../services/actions.js";
 import { parsePositiveId } from "../utils/parse-id.js";
@@ -25,6 +26,15 @@ export const getActions: RequestHandler = async (request, response) => {
     user.id,
     user.role,
     parsePositiveId(request.params.ticketId, "ticketId"),
+    parseActionListQuery(request.query)
+  );
+
+  response.json(actions);
+};
+
+export const getStaffActions: RequestHandler = async (request, response) => {
+  const actions = await listMyActions(
+    getAuthenticatedUserId(response),
     parseActionListQuery(request.query)
   );
 

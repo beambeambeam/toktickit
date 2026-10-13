@@ -11,6 +11,7 @@ import type {
   TicketFields,
   TicketListQuery,
   StaffTicketListQuery,
+  StaffTicketListScope,
   StaffTicketOwnerFilter,
   StaffTicketSortField,
   TicketListScope,
@@ -23,6 +24,7 @@ export type {
   CurrentStatus,
   RequestedPriority,
   StaffTicketListQuery,
+  StaffTicketListScope,
   StaffTicketOwnerFilter,
   StaffTicketSortField,
   TicketFields,
@@ -67,6 +69,12 @@ export const ticketListScopes = [
   "waiting-for-requester",
   "recently-updated",
   "recently-resolved",
+] as const;
+
+const staffTicketListScopes = [
+  "active",
+  "recently-updated",
+  "urgent-active",
 ] as const;
 
 export const staffTicketSortFields = [
@@ -654,15 +662,12 @@ const appendSearchLengthIssue = (
   }
 };
 
-const appendTicketListScopeIssues = (
-  scope: TicketListScope | undefined,
+const appendTimeBoundIssues = (
+  hasTimeScope: boolean,
   from: Date | undefined,
   through: Date | undefined,
-  sortBy: TicketSortField | undefined,
   issues: ValidationIssue[]
 ): void => {
-  const hasTimeScope =
-    scope === "recently-updated" || scope === "recently-resolved";
   if (hasTimeScope && from === undefined) {
     issues.push({
       field: "from",
@@ -688,6 +693,21 @@ const appendTicketListScopeIssues = (
       reason: "from must not be later than through.",
     });
   }
+};
+
+const appendTicketListScopeIssues = (
+  scope: TicketListScope | undefined,
+  from: Date | undefined,
+  through: Date | undefined,
+  sortBy: TicketSortField | undefined,
+  issues: ValidationIssue[]
+): void => {
+  appendTimeBoundIssues(
+    scope === "recently-updated" || scope === "recently-resolved",
+    from,
+    through,
+    issues
+  );
   if (sortBy === "resolvedAt" && scope !== "recently-resolved") {
     issues.push({
       field: "sortBy",
@@ -824,16 +844,22 @@ export const parseTicketListQuery = (
 const staffAllowedQueryFields = new Set([
   "categoryId",
   "currentStatus",
+  "from",
   "itPriority",
   "owner",
   "page",
   "pageSize",
   "relatedSystemId",
   "requestedPriority",
+  "scope",
   "search",
   "sortBy",
   "sortDirection",
+  "through",
 ]);
+
+const isStaffTicketListScope = (value: string): value is StaffTicketListScope =>
+  staffTicketListScopes.some((scope) => scope === value);
 
 const parseStaffPageSize = (
   value: string,
@@ -928,6 +954,23 @@ export const parseStaffTicketListQuery = (
     "Requested priority must be Low, Medium, High, or Urgent.",
     issues
   );
+  const scope = parseOptionalEnum(
+    getOptionalSingleValue(input, "scope", issues),
+    "scope",
+    isStaffTicketListScope,
+    "Ticket scope is not supported.",
+    issues
+  );
+  const from = parseOptionalUtcTimestamp(
+    getOptionalSingleValue(input, "from", issues),
+    "from",
+    issues
+  );
+  const through = parseOptionalUtcTimestamp(
+    getOptionalSingleValue(input, "through", issues),
+    "through",
+    issues
+  );
   const searchValue = getOptionalSingleValue(input, "search", issues);
   const normalizedSearch = searchValue?.trim();
   if (normalizedSearch !== undefined && normalizedSearch.length > 200) {
@@ -936,6 +979,7 @@ export const parseStaffTicketListQuery = (
       reason: "Search must contain at most 200 characters.",
     });
   }
+  appendTimeBoundIssues(scope === "recently-updated", from, through, issues);
   const sortBy = parseOptionalEnum(
     getOptionalSingleValue(input, "sortBy", issues),
     "sortBy",
@@ -970,6 +1014,10 @@ export const parseStaffTicketListQuery = (
     query.currentStatus = currentStatus;
   }
 
+  if (from !== undefined) {
+    query.from = from;
+  }
+
   if (itPriority !== undefined) {
     query.itPriority = itPriority;
   }
@@ -988,6 +1036,14 @@ export const parseStaffTicketListQuery = (
 
   if (requestedPriority !== undefined) {
     query.requestedPriority = requestedPriority;
+  }
+
+  if (scope !== undefined) {
+    query.scope = scope;
+  }
+
+  if (through !== undefined) {
+    query.through = through;
   }
 
   return query;

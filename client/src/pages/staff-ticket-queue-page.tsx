@@ -33,7 +33,10 @@ import {
 import { Icon } from "@/components/icon";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
+import { formatBangkokDate } from "@/lib/action-format";
 import { isRequestedPriority } from "@/lib/ticket-priorities";
+import { isStaffTicketScope } from "@/lib/ticket-search";
+import type { StaffTicketSearch } from "@/lib/ticket-search";
 import { currentStatuses, isCurrentStatus } from "@/lib/ticket-statuses";
 
 const initialParams: StaffTicketListParams = {
@@ -110,7 +113,8 @@ const hasTicketFilters = (params: StaffTicketListParams) =>
   params.requestedPriority !== undefined ||
   params.itPriority !== undefined ||
   params.currentStatus !== undefined ||
-  params.owner !== undefined;
+  params.owner !== undefined ||
+  params.scope !== undefined;
 
 type PageToken = number | "ellipsis-before" | "ellipsis-after";
 
@@ -173,20 +177,27 @@ const getQueueErrorMessage = (
 
 // oxlint-disable-next-line complexity -- this page renders documented queue filters and data states.
 const StaffTicketQueueContent = ({
+  initialFilters,
   onAccessError,
   user,
 }: {
+  initialFilters: StaffTicketSearch;
   onAccessError: (error: ApiRequestError) => void;
   user: AuthUser;
 }) => {
-  const [params, setParams] = useState<StaffTicketListParams>(initialParams);
+  const [params, setParams] = useState<StaffTicketListParams>(() => ({
+    ...initialParams,
+    ...initialFilters,
+  }));
   const [searchDraft, setSearchDraft] = useState("");
   const handledOwnerError = useRef<ApiRequestError | null>(null);
 
   const categoriesQuery = useQuery(activeCategoriesQueryOptions());
   const relatedSystemsQuery = useQuery(relatedSystemsQueryOptions());
   const ownersQuery = useQuery(staffOwnersQueryOptions());
-  const ticketsQuery = useQuery(staffTicketsQueryOptions(params));
+  const ticketsQuery = useQuery(
+    staffTicketsQueryOptions(user.id, user.role, params)
+  );
   const refetchOwners = ownersQuery.refetch;
 
   useEffect(() => {
@@ -331,6 +342,35 @@ const StaffTicketQueueContent = ({
                 value={searchDraft}
               />
             </div>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="staff-ticket-scope-filter">Scope</label>
+            <select
+              id="staff-ticket-scope-filter"
+              onChange={(event) => {
+                const scope = isStaffTicketScope(event.target.value)
+                  ? event.target.value
+                  : undefined;
+                updateParams(
+                  scope === "recently-updated"
+                    ? { scope }
+                    : { from: undefined, scope, through: undefined }
+                );
+              }}
+              value={params.scope ?? ""}
+            >
+              <option value="">All Tickets</option>
+              <option value="active">Active</option>
+              <option value="urgent-active">Urgent active</option>
+              <option
+                disabled={
+                  params.from === undefined || params.through === undefined
+                }
+                value="recently-updated"
+              >
+                Recently updated
+              </option>
+            </select>
           </div>
           <div className="filter-field">
             <label htmlFor="staff-ticket-category-filter">Category</label>
@@ -501,6 +541,14 @@ const StaffTicketQueueContent = ({
             Search
           </button>
         </form>
+        {params.scope === "recently-updated" &&
+        params.from !== undefined &&
+        params.through !== undefined ? (
+          <p className="filter-window">
+            Updated between {formatBangkokDate(params.from)} and{" "}
+            {formatBangkokDate(params.through)}
+          </p>
+        ) : null}
         {hasFilterDataError ? (
           <div
             className="feedback feedback-warning filter-feedback"
@@ -789,7 +837,13 @@ const StaffTicketQueueContent = ({
   );
 };
 
-export const StaffTicketQueuePage = () => {
+const noInitialFilters: StaffTicketSearch = {};
+
+export const StaffTicketQueuePage = ({
+  initialFilters = noInitialFilters,
+}: {
+  initialFilters?: StaffTicketSearch;
+}) => {
   const { refetchAuth, user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -834,7 +888,8 @@ export const StaffTicketQueuePage = () => {
 
   return (
     <StaffTicketQueueContent
-      key={user.id}
+      initialFilters={initialFilters}
+      key={`${user.id}:${JSON.stringify(initialFilters)}`}
       onAccessError={setAccessError}
       user={user}
     />
