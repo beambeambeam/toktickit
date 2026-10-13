@@ -1,9 +1,12 @@
 import { describe, expect, it } from "vitest";
 
 import {
+  allowedNextStatuses,
   getResolutionGateReasons,
+  isAllowedStatusTransition,
   isCancellationBlockedByActions,
 } from "../../src/types/ticket-workflow.js";
+import type { CurrentStatus } from "../../src/types/tickets.js";
 
 const eligibleOwner = { isActive: true, role: "ITStaff" } as const;
 const satisfiedGate = {
@@ -90,5 +93,51 @@ describe("Ticket cancellation gate rules", () => {
 
   it("blocks cancellation while any Planned or In Progress action remains", () => {
     expect(isCancellationBlockedByActions(1)).toBe(true);
+  });
+});
+
+describe("Ticket status transition matrix", () => {
+  const statuses: readonly CurrentStatus[] = [
+    "New",
+    "Open",
+    "In Progress",
+    "Waiting for Requester",
+    "Resolved",
+    "Closed",
+    "Reopened",
+    "Cancelled",
+  ];
+  const approvedEdges = new Set([
+    "New>Open",
+    "New>Cancelled",
+    "Open>In Progress",
+    "Open>Waiting for Requester",
+    "Open>Cancelled",
+    "In Progress>Waiting for Requester",
+    "In Progress>Resolved",
+    "In Progress>Cancelled",
+    "Waiting for Requester>In Progress",
+    "Waiting for Requester>Resolved",
+    "Waiting for Requester>Cancelled",
+    "Resolved>Closed",
+    "Resolved>Reopened",
+    "Reopened>Open",
+    "Reopened>In Progress",
+    "Reopened>Cancelled",
+  ]);
+
+  it("allows exactly the approved edges among all eight statuses", () => {
+    for (const from of statuses) {
+      for (const to of statuses) {
+        expect(isAllowedStatusTransition(from, to), `${from} -> ${to}`).toBe(
+          approvedEdges.has(`${from}>${to}`)
+        );
+      }
+    }
+  });
+
+  it("keeps Closed and Cancelled terminal", () => {
+    expect(allowedNextStatuses.Closed).toEqual([]);
+    expect(allowedNextStatuses.Cancelled).toEqual([]);
   });
 });
