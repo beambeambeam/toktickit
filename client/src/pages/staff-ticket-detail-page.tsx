@@ -67,20 +67,42 @@ const getOwnerQueryError = (error: unknown): Error =>
 
 const getStatusConfirmationMessage = (status: CurrentStatus): string => {
   if (status === "Resolved") {
-    return "This formally marks the Ticket resolved. No Actions Taken entry is required. Staff can reopen it if the problem returns.";
+    return "This formally marks the Ticket resolved. Resolving requires at least one Completed Action Taken, no Planned or In Progress Action Taken, and an active eligible Ticket Owner. Staff can reopen it if the problem returns.";
   }
 
   if (status === "Closed") {
     return "This closes the resolved Ticket. Closed Tickets have no further workflow transitions.";
   }
 
-  return "This cancels the Ticket. Cancelled Tickets have no further workflow transitions.";
+  return "Complete or cancel every Planned and In Progress Action Taken before cancelling this Ticket. Cancelled Tickets have no further workflow transitions.";
 };
 
 interface StatusConfirmation {
   status: CurrentStatus;
   version: number;
 }
+
+const resolutionReasonLabels: Partial<Record<string, string>> = {
+  NO_COMPLETED_ACTION: "Record at least one Completed Action Taken.",
+  OWNER_INELIGIBLE:
+    "Assign an active eligible IT Staff or Administrator Ticket Owner.",
+  OWNER_REQUIRED:
+    "Assign an active eligible IT Staff or Administrator Ticket Owner.",
+  PENDING_ACTIONS:
+    "Complete or cancel every Planned and In Progress Action Taken.",
+};
+
+const getResolutionReasons = (error: ApiRequestError): string[] => {
+  const reasons = error.details?.reasons;
+
+  if (error.code !== "RESOLUTION_GATE_FAILED" || !Array.isArray(reasons)) {
+    return [];
+  }
+
+  return reasons.filter(
+    (reason: unknown): reason is string => typeof reason === "string"
+  );
+};
 
 const focusableDialogSelector =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
@@ -120,6 +142,7 @@ const StaffTicketDetailContent = ({
     null
   );
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [statusReasons, setStatusReasons] = useState<string[]>([]);
   const [statusSuccess, setStatusSuccess] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<CurrentStatus | "">("");
   const [statusConfirmation, setStatusConfirmation] =
@@ -240,6 +263,9 @@ const StaffTicketDetailContent = ({
           ? error.message
           : "Unable to update the Ticket status."
       );
+      setStatusReasons(
+        error instanceof ApiRequestError ? getResolutionReasons(error) : []
+      );
       if (error instanceof ApiRequestError && error.status === 409) {
         setSelectedStatus("");
         void ticketQuery.refetch();
@@ -323,7 +349,7 @@ const StaffTicketDetailContent = ({
   const ownerValue = selectedOwnerId ?? ticket?.owner?.id.toString() ?? "";
   const itPriorityValue = selectedItPriority ?? ticket?.itPriority ?? "Low";
   const canOperate =
-    user.role === "IT Staff" &&
+    (user.role === "IT Staff" || user.role === "Administrator") &&
     ticket !== undefined &&
     !["Resolved", "Closed", "Cancelled"].includes(ticket.currentStatus);
   const operationBusy =
@@ -370,8 +396,8 @@ const StaffTicketDetailContent = ({
     >
       <div className="page-actions">
         <p className="page-description">
-          Submitted Ticket data and evidence stay read-only. IT Staff can manage
-          workflow, ownership, and IT Priority below.
+          Submitted Ticket data and evidence stay read-only. IT Staff and
+          Administrators can manage workflow, ownership, and IT Priority below.
         </p>
         <Link className="button button-secondary" to="/staff/tickets">
           <Icon icon={ArrowLeft01Icon} /> Back to Ticket Queue
@@ -497,7 +523,7 @@ const StaffTicketDetailContent = ({
             ticketVersion={ticket.version}
           />
 
-          {user.role === "IT Staff" ? (
+          {user.role === "IT Staff" || user.role === "Administrator" ? (
             <>
               <section
                 aria-labelledby="staff-status-heading"
@@ -584,6 +610,20 @@ const StaffTicketDetailContent = ({
                   </div>
                 )}
 
+                {statusError === null || statusReasons.length === 0 ? null : (
+                  <ul
+                    aria-label="Resolution requirements not met"
+                    className="list-disc pl-5 error-message"
+                  >
+                    {statusReasons.flatMap((reason) => {
+                      const label = resolutionReasonLabels[reason];
+
+                      return label === undefined
+                        ? []
+                        : [<li key={reason}>{label}</li>];
+                    })}
+                  </ul>
+                )}
                 <div
                   aria-live="polite"
                   className="operation-status"
@@ -801,14 +841,14 @@ const StaffTicketDetailContent = ({
           ) : null}
 
           <PublicCommentsSection
-            canPost={user.role === "IT Staff"}
+            canPost={user.role === "IT Staff" || user.role === "Administrator"}
             currentStatus={ticket.currentStatus}
             principalId={user.id}
             ticketId={numericTicketId}
           />
 
           <InternalNotesSection
-            canPost={user.role === "IT Staff"}
+            canPost={user.role === "IT Staff" || user.role === "Administrator"}
             currentStatus={ticket.currentStatus}
             principalId={user.id}
             ticketId={numericTicketId}

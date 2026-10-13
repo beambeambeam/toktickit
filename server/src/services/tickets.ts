@@ -13,6 +13,7 @@ import {
   findInternalNotesForReader,
 } from "../repositories/ticket-internal-notes.js";
 import {
+  findStatusHistoryForTicket,
   indicateTicketResolution,
   updateTicketStatus,
 } from "../repositories/ticket-workflow.js";
@@ -33,6 +34,7 @@ import {
   updateTicketItPriority,
   updateTicketOwner,
 } from "../repositories/tickets.js";
+import type { ActionListQuery } from "../types/actions.js";
 import { currentStatusToPrisma } from "../types/ticket-workflow.js";
 import type {
   ItPriorityMutationInput,
@@ -56,6 +58,7 @@ import {
   toOwner,
   toTicketEntry,
   toTicketDetail,
+  toTicketStatusEvent,
   toTicketSummary,
 } from "./ticket-presenters.js";
 import {
@@ -325,6 +328,13 @@ const resolveStatusMutation = (
         "You do not have permission to progress this Ticket."
       );
     }
+    case "cancellation-blocked": {
+      throw new ApiError(
+        409,
+        "TICKET_HAS_PENDING_ACTIONS",
+        "Finish or cancel every Planned and In Progress Action Taken before cancelling this Ticket."
+      );
+    }
     case "confirmation-required": {
       throw new ApiError(
         400,
@@ -348,6 +358,14 @@ const resolveStatusMutation = (
         409,
         "OWNER_REQUIRED",
         "An active eligible Ticket Owner is required for this status."
+      );
+    }
+    case "resolution-gate-failed": {
+      throw new ApiError(
+        409,
+        "RESOLUTION_GATE_FAILED",
+        "The Ticket does not meet the resolution requirements.",
+        { reasons: outcome.reasons }
       );
     }
     case "version-conflict": {
@@ -537,6 +555,44 @@ export const getTicketForReader = async (
   return toTicketDetail(ticket);
 };
 
+export const listStatusHistoryForReader = async (
+  userId: number,
+  role: UserRoleValue,
+  ticketId: number,
+  query: ActionListQuery
+) => {
+  const ticket = readerCanAccessTicket(role)
+    ? await findTicketById(ticketId)
+    : await findOwnedTicket(userId, ticketId);
+
+  if (ticket === null) {
+    throw notFound("Ticket");
+  }
+
+  try {
+    const result = await findStatusHistoryForTicket(ticketId, query);
+
+    return {
+      items: result.items.map(toTicketStatusEvent),
+      page: query.page,
+      pageSize: query.pageSize,
+      totalItems: result.totalItems,
+      totalPages: Math.ceil(result.totalItems / query.pageSize),
+    };
+  } catch (error: unknown) {
+    if (error instanceof ApiError) {
+      throw error;
+    }
+
+    console.error("Unable to load Ticket status history.", error);
+    throw new ApiError(
+      500,
+      "INTERNAL_ERROR",
+      "Unable to load Ticket status history."
+    );
+  }
+};
+
 export const getAttachmentsForReader = async (
   userId: number,
   role: UserRoleValue,
@@ -576,7 +632,7 @@ export const createInternalNoteForUser = async (
   ticketId: number,
   body: Record<string, unknown>
 ) => {
-  if (role !== "ITStaff") {
+  if (!readerCanAccessTicket(role)) {
     throw internalNoteForbiddenError();
   }
 

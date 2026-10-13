@@ -261,7 +261,7 @@ describe("Staff Ticket Detail page", () => {
     cleanup();
   });
 
-  it("renders submitted Ticket data and attachments as read-only for Administrators", async () => {
+  it("keeps Attachment management away from Administrators", async () => {
     renderPage();
 
     await screen.findByText("TKT-20260902-DETAIL01");
@@ -338,7 +338,7 @@ describe("Staff Ticket Detail page", () => {
 
     const dialog = await screen.findByRole("alertdialog");
     expect(
-      within(dialog).getByText(/No Actions Taken entry is required/u)
+      within(dialog).getByText(/at least one Completed Action Taken/u)
     ).toBeTruthy();
     fireEvent.click(
       within(dialog).getByRole("button", { name: "Confirm Resolved" })

@@ -72,3 +72,43 @@ export const isEligibleTicketOwner = (user: {
   role: PrismaUserRole;
 }): boolean =>
   user.isActive && (user.role === "ITStaff" || user.role === "Administrator");
+
+export type ResolutionGateReason =
+  | "NO_COMPLETED_ACTION"
+  | "OWNER_INELIGIBLE"
+  | "OWNER_REQUIRED"
+  | "PENDING_ACTIONS";
+
+interface ResolutionGateFacts {
+  completedActionCount: number;
+  owner: { isActive: boolean; role: PrismaUserRole } | null;
+  pendingActionCount: number;
+}
+
+export const getResolutionGateReasons = ({
+  completedActionCount,
+  owner,
+  pendingActionCount,
+}: ResolutionGateFacts): ResolutionGateReason[] => {
+  const reasons: ResolutionGateReason[] = [];
+
+  if (owner === null) {
+    reasons.push("OWNER_REQUIRED");
+  } else if (!isEligibleTicketOwner(owner)) {
+    reasons.push("OWNER_INELIGIBLE");
+  }
+
+  if (pendingActionCount > 0) {
+    reasons.push("PENDING_ACTIONS");
+  }
+
+  if (completedActionCount === 0) {
+    reasons.push("NO_COMPLETED_ACTION");
+  }
+
+  return reasons;
+};
+
+export const isCancellationBlockedByActions = (
+  pendingActionCount: number
+): boolean => pendingActionCount > 0;

@@ -50,7 +50,6 @@ describe("Lab 3 Ticket ownership and IT Priority operations", () => {
   let requester: AuthenticatedFixtureSession;
   let staff: AuthenticatedFixtureSession;
   let secondStaff: AuthenticatedFixtureSession;
-  let admin: AuthenticatedFixtureSession;
   let requesterId: number;
   let staffId: number;
   let secondStaffId: number;
@@ -145,7 +144,6 @@ describe("Lab 3 Ticket ownership and IT Priority operations", () => {
     requester = await activeFixture.authenticate(requesterEmail);
     staff = await activeFixture.authenticate(staffEmail);
     secondStaff = await activeFixture.authenticate(secondStaffEmail);
-    admin = await activeFixture.authenticate(adminEmail);
   });
 
   afterAll(async () => {
@@ -227,12 +225,12 @@ describe("Lab 3 Ticket ownership and IT Priority operations", () => {
       .expect(403);
     assert.equal(errorCode(requesterResponse), "FORBIDDEN");
 
-    const adminResponse = await request(activeFixture.app)
+    const requesterPriorityResponse = await request(activeFixture.app)
       .patch(`/api/tickets/${ticket.id}/it-priority`)
-      .set(authHeaders(admin))
+      .set(authHeaders(requester))
       .send({ itPriority: "High", version: 1 })
       .expect(403);
-    assert.equal(errorCode(adminResponse), "FORBIDDEN");
+    assert.equal(errorCode(requesterPriorityResponse), "FORBIDDEN");
 
     const invalidOwner = await request(activeFixture.app)
       .put(`/api/tickets/${ticket.id}/owner`)

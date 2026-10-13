@@ -525,7 +525,7 @@ const isEligibleStaffActor = (
   user !== null &&
   user.isActive &&
   !user.mustChangePassword &&
-  user.role === "ITStaff";
+  (user.role === "ITStaff" || user.role === "Administrator");
 
 const findStaffActor = async (database: TicketDatabase, userId: number) =>
   await database.user.findUnique({

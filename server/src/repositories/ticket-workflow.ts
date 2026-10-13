@@ -4,13 +4,17 @@ import type {
   CurrentStatus as PrismaCurrentStatus,
   UserRole as PrismaUserRole,
 } from "../generated/prisma/enums.js";
+import type { ActionListQuery } from "../types/actions.js";
 import {
+  getResolutionGateReasons,
   isAllowedStatusTransition,
+  isCancellationBlockedByActions,
   isEligibleTicketOwner,
   prismaStatusToCurrent,
   statusRequiresEligibleOwner,
   terminalStatuses,
 } from "../types/ticket-workflow.js";
+import type { ResolutionGateReason } from "../types/ticket-workflow.js";
 import { ticketDetailInclude } from "./tickets.js";
 
 type TicketDatabase = Prisma.TransactionClient;
@@ -21,10 +25,12 @@ type TicketDetailDatabaseRecord = Prisma.TicketGetPayload<{
 
 type StatusMutationOutcome =
   | { kind: "actor-ineligible" }
+  | { kind: "cancellation-blocked" }
   | { kind: "confirmation-required" }
   | { kind: "invalid-transition" }
   | { kind: "not-found" }
   | { kind: "owner-required" }
+  | { kind: "resolution-gate-failed"; reasons: ResolutionGateReason[] }
   | { kind: "success"; ticket: TicketDetailDatabaseRecord }
   | { kind: "version-conflict" };
 
@@ -58,6 +64,14 @@ const findLockedTicket = async (
   await database.ticket.findUnique({
     include: ticketDetailInclude,
     where: { id: ticketId },
+  });
+
+const countPendingActions = async (
+  database: TicketDatabase,
+  ticketId: number
+): Promise<number> =>
+  await database.actionTaken.count({
+    where: { status: { in: ["Planned", "InProgress"] }, ticketId },
   });
 
 const isEligibleOwner = (user: {
@@ -121,7 +135,7 @@ export const updateTicketStatus = async (
     if (
       currentUser === null ||
       !currentUser.isActive ||
-      currentUser.role !== "ITStaff"
+      (currentUser.role !== "ITStaff" && currentUser.role !== "Administrator")
     ) {
       return { kind: "actor-ineligible" };
     }
@@ -157,7 +171,27 @@ export const updateTicketStatus = async (
       return { kind: "confirmation-required" };
     }
 
-    if (
+    if (nextStatusLabel === "Resolved") {
+      const pendingActionCount = await countPendingActions(database, ticketId);
+      const completedActionCount = await database.actionTaken.count({
+        where: { status: "Completed", ticketId },
+      });
+      const reasons = getResolutionGateReasons({
+        completedActionCount,
+        owner: ticket.owner,
+        pendingActionCount,
+      });
+
+      if (reasons.length > 0) {
+        return { kind: "resolution-gate-failed", reasons };
+      }
+    } else if (nextStatusLabel === "Cancelled") {
+      const pendingActionCount = await countPendingActions(database, ticketId);
+
+      if (isCancellationBlockedByActions(pendingActionCount)) {
+        return { kind: "cancellation-blocked" };
+      }
+    } else if (
       statusRequiresEligibleOwner(nextStatusLabel) &&
       (ticket.owner === null || !isEligibleOwner(ticket.owner))
     ) {
@@ -185,6 +219,17 @@ export const updateTicketStatus = async (
       },
       include: ticketDetailInclude,
       where: { id: ticketId },
+    });
+
+    await database.ticketStatusEvent.create({
+      data: {
+        actorId: currentUserId,
+        confirmed: confirmed === true,
+        fromStatus: ticket.currentStatus,
+        ticketId,
+        ticketVersion: updated.version,
+        toStatus: nextStatus,
+      },
     });
 
     return { kind: "success", ticket: updated };
@@ -246,3 +291,43 @@ export const indicateTicketResolution = async (
 
     return { indication, kind: "success" };
   });
+
+const ticketStatusEventInclude = {
+  actor: { select: { displayName: true, id: true, role: true } },
+} satisfies Prisma.TicketStatusEventInclude;
+
+type TicketStatusEventDatabaseRecord = Prisma.TicketStatusEventGetPayload<{
+  include: typeof ticketStatusEventInclude;
+}>;
+
+interface TicketStatusHistoryResult {
+  items: TicketStatusEventDatabaseRecord[];
+  totalItems: number;
+}
+
+export const findStatusHistoryForTicket = async (
+  ticketId: number,
+  query: ActionListQuery
+): Promise<TicketStatusHistoryResult> =>
+  await prisma.$transaction(
+    async (database) => {
+      const where = { ticketId };
+      const totalItems = await database.ticketStatusEvent.count({ where });
+      const skip = (query.page - 1) * query.pageSize;
+
+      if (skip >= totalItems) {
+        return { items: [], totalItems };
+      }
+
+      const items = await database.ticketStatusEvent.findMany({
+        include: ticketStatusEventInclude,
+        orderBy: [{ createdAt: "asc" }, { id: "asc" }],
+        skip,
+        take: query.pageSize,
+        where,
+      });
+
+      return { items, totalItems };
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead }
+  );

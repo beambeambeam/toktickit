@@ -250,6 +250,25 @@ export type ActionHistoryListResponse = {
     totalPages: number;
 };
 
+export type TicketStatusEvent = {
+    id: number;
+    ticketId: number;
+    actor: ActionUserRef;
+    fromStatus: CurrentStatus;
+    toStatus: CurrentStatus;
+    ticketVersion: number;
+    confirmed: boolean;
+    createdAt: string;
+};
+
+export type TicketStatusHistoryListResponse = {
+    items: Array<TicketStatusEvent>;
+    page: number;
+    pageSize: 10 | 20 | 50;
+    totalItems: number;
+    totalPages: number;
+};
+
 export type ActionTaken = {
     id: number;
     ticketId: number;
@@ -1023,6 +1042,52 @@ export type GetApiTicketActionHistoryResponses = {
 };
 
 export type GetApiTicketActionHistoryResponse = GetApiTicketActionHistoryResponses[keyof GetApiTicketActionHistoryResponses];
+
+export type GetApiTicketStatusHistoryData = {
+    body?: never;
+    path: {
+        ticketId: number;
+    };
+    query?: {
+        page?: number;
+        pageSize?: 10 | 20 | 50;
+    };
+    url: '/api/tickets/{ticketId}/status-history';
+};
+
+export type GetApiTicketStatusHistoryErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiTicketStatusHistoryError = GetApiTicketStatusHistoryErrors[keyof GetApiTicketStatusHistoryErrors];
+
+export type GetApiTicketStatusHistoryResponses = {
+    /**
+     * The stable paginated TicketStatusEvent history.
+     */
+    200: TicketStatusHistoryListResponse;
+};
+
+export type GetApiTicketStatusHistoryResponse = GetApiTicketStatusHistoryResponses[keyof GetApiTicketStatusHistoryResponses];
 
 export type UpdateApiTicketStatusData = {
     body: StatusMutationRequest;

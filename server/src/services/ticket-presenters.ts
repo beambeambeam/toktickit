@@ -130,6 +130,32 @@ export const toTicketEntry = (entry: TicketEntryRecord) => ({
   id: entry.id,
 });
 
+export interface TicketStatusEventRecord {
+  actor: { displayName: string; id: number; role: UserRoleValue };
+  confirmed: boolean;
+  createdAt: Date;
+  fromStatus: PrismaCurrentStatus;
+  id: number;
+  toStatus: PrismaCurrentStatus;
+  ticketId: number;
+  ticketVersion: number;
+}
+
+export const toTicketStatusEvent = (event: TicketStatusEventRecord) => ({
+  actor: {
+    displayName: event.actor.displayName,
+    id: event.actor.id,
+    role: toUserRoleLabel(event.actor.role),
+  },
+  confirmed: event.confirmed,
+  createdAt: event.createdAt.toISOString(),
+  fromStatus: toCurrentStatus(event.fromStatus),
+  id: event.id,
+  ticketId: event.ticketId,
+  ticketVersion: event.ticketVersion,
+  toStatus: toCurrentStatus(event.toStatus),
+});
+
 export const toTicketDetail = (ticket: TicketDetailRecord) => ({
   ...toTicketSummary(ticket),
   attachments: ticket.attachments.map(toAttachmentMetadata),
