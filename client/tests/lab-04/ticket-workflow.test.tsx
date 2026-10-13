@@ -287,6 +287,33 @@ describe("Lab 4 Ticket workflow controls", () => {
     expect(screen.getByRole("button", { name: "Apply Status" })).toBeTruthy();
   });
 
+  it("offers only the permitted next statuses for the current Ticket status", async () => {
+    renderPage();
+    await screen.findByText("TKT-20260902-DETAIL01");
+
+    const options = within(screen.getByLabelText("Next status"))
+      .getAllByRole("option")
+      .map((option) => option.textContent);
+
+    expect(options).toEqual([
+      "Choose a next status",
+      "Waiting for Requester",
+      "Resolved",
+      "Cancelled",
+    ]);
+  });
+
+  it("offers no next status for a terminal Ticket", async () => {
+    getTicketMock.mockResolvedValue({ ...ticket, currentStatus: "Closed" });
+    renderPage();
+    await screen.findByText("TKT-20260902-DETAIL01");
+
+    expect(screen.queryByLabelText("Next status")).toBeNull();
+    expect(
+      screen.getByText(/This Ticket has no available next status/u)
+    ).toBeTruthy();
+  });
+
   it("lets an Administrator post Public Comments and Internal Notes", async () => {
     authState.user = administratorUser;
     renderPage();
