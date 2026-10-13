@@ -49,6 +49,8 @@ test("keeps the Requester and IT Staff public conversation shared", async ({
   const staffComment = `Staff update ${uniqueId}`;
 
   await logIn(page, requesterEmail);
+  await expect(page).toHaveURL(/\/dashboard$/u);
+  await page.goto("/tickets");
   await expect(page).toHaveURL(/\/tickets$/u);
   await page.getByRole("button", { name: /Create Ticket/u }).click();
   await expect(
