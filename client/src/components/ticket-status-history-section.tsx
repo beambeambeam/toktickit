@@ -1,8 +1,8 @@
 import { useQuery } from "@tanstack/react-query";
 
-import { ApiConnectionError } from "@/api/client";
 import { ApiRequestError } from "@/api/errors";
 import { getTicketStatusHistory } from "@/api/staff";
+import { getRequestErrorMessage } from "@/lib/request-error-message";
 
 const HISTORY_PAGE_SIZE = 20;
 
@@ -13,19 +13,14 @@ const formatDate = (value: string) =>
   }).format(new Date(value));
 
 const getErrorMessage = (error: unknown): string => {
-  if (error instanceof ApiConnectionError) {
-    return "Unable to connect to the TokTickIT API. Check the server and retry.";
-  }
-
   if (error instanceof ApiRequestError && error.status === 404) {
     return "This Ticket is not available to your account.";
   }
 
-  if (error instanceof Error && error.message.length > 0) {
-    return error.message;
-  }
-
-  return "Unable to load Ticket status history. Try again.";
+  return getRequestErrorMessage(
+    error,
+    "Unable to load Ticket status history. Try again."
+  );
 };
 
 interface TicketStatusHistorySectionProps {
