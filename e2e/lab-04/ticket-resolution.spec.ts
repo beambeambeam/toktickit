@@ -209,6 +209,23 @@ const checkLayoutAndAccessibility = async (page: Page): Promise<void> => {
   expect(results.violations).toEqual([]);
 };
 
+const checkReflowAt = async (
+  page: Page,
+  ticketId: number,
+  width: number
+): Promise<void> => {
+  await page.setViewportSize({ height: 900, width });
+  await page.goto(`/tickets/${ticketId}`);
+  await confirmStatusChange(page, "Resolved");
+  await expect(
+    page.getByRole("list", { name: "Resolution requirements not met" })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Status history" })
+  ).toBeVisible();
+  await checkLayoutAndAccessibility(page);
+};
+
 test("resolution is gated, indicated, resolved, and reopened", async ({
   page,
 }) => {
@@ -337,5 +354,27 @@ test("cancellation waits for pending Action Taken", async ({ page }) => {
   await expect(
     page.getByText("This Ticket has no available next status.")
   ).toBeVisible();
+  await logOut(page);
+});
+
+test("status controls reflow at 320 and 640 CSS px", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "desktop-chromium",
+    "Reflow checks set their own viewport width."
+  );
+  await signIn(page, requesterEmail);
+  const ticketId = await createTicket(page);
+  await logOut(page);
+
+  await signIn(page, staffEmail);
+  await claimTicket(page, ticketId);
+  await setStatusByApi(page, ticketId, "Open");
+  await setStatusByApi(page, ticketId, "In Progress");
+
+  // 320 CSS px is the WCAG 1.4.10 reflow width. 640 CSS px matches 200% zoom on a 1280 px desktop.
+  await checkReflowAt(page, ticketId, 320);
+  await checkReflowAt(page, ticketId, 640);
   await logOut(page);
 });
