@@ -4,7 +4,6 @@ import { Link } from "@tanstack/react-router";
 import { useEffect, useRef } from "react";
 
 import { staffDashboardQueryOptions } from "@/api/dashboard-query-options";
-import { ApiRequestError } from "@/api/errors";
 import { AppShell } from "@/components/app-shell";
 import { Icon } from "@/components/icon";
 import { StatusBadge } from "@/components/status-badge";
@@ -14,6 +13,7 @@ import type {
   StaffDashboardTicketPreview,
 } from "@/generated/hey-api/types.gen";
 import { formatBangkokDate } from "@/lib/action-format";
+import { buildLoadFailureCopy, loadFailureKind } from "@/lib/load-failure";
 import { isStaffRole, STAFF_ROLES } from "@/lib/staff-roles";
 
 const TICKET_STATUSES = [
@@ -155,32 +155,13 @@ const TicketPreviewSection = ({
   </section>
 );
 
-type DashboardFailure = "forbidden" | "generic" | "session";
-
-const failureKind = (error: unknown): DashboardFailure => {
-  if (error instanceof ApiRequestError && error.status === 401) {
-    return "session";
-  }
-  if (error instanceof ApiRequestError && error.status === 403) {
-    return "forbidden";
-  }
-  return "generic";
-};
-
-const FAILURE_COPY = {
-  forbidden: {
-    body: "You do not have permission to view this dashboard.",
-    heading: "Access denied",
-  },
-  generic: {
-    body: "Could not load your dashboard. Check your connection and try again.",
-    heading: "Dashboard could not be loaded",
-  },
-  session: {
-    body: "Sign in again to view your dashboard.",
-    heading: "Your session has ended",
-  },
-} as const;
+const FAILURE_COPY = buildLoadFailureCopy({
+  forbiddenBody: "You do not have permission to view this dashboard.",
+  genericBody:
+    "Could not load your dashboard. Check your connection and try again.",
+  genericHeading: "Dashboard could not be loaded",
+  sessionBody: "Sign in again to view your dashboard.",
+});
 
 export const StaffDashboardPage = () => {
   const { user } = useAuth();
@@ -191,7 +172,7 @@ export const StaffDashboardPage = () => {
   });
   const dashboard = dashboardQuery.isError ? undefined : dashboardQuery.data;
   const failure = dashboardQuery.isError
-    ? failureKind(dashboardQuery.error)
+    ? loadFailureKind(dashboardQuery.error)
     : null;
   const windowNoteRef = useRef<HTMLParagraphElement>(null);
   const focusAfterRetry = useRef(false);

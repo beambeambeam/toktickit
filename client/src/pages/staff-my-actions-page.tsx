@@ -7,7 +7,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Link } from "@tanstack/react-router";
 import { useState } from "react";
 
-import { ApiRequestError } from "@/api/errors";
 import type {
   StaffMyActionsPageSize,
   StaffMyActionsParams,
@@ -19,6 +18,7 @@ import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
 import type { MyActionRow } from "@/generated/hey-api/types.gen";
 import { formatBangkokDate } from "@/lib/action-format";
+import { buildLoadFailureCopy, loadFailureKind } from "@/lib/load-failure";
 import { getPageTokens } from "@/lib/pagination";
 import { isStaffRole, STAFF_ROLES } from "@/lib/staff-roles";
 
@@ -53,32 +53,13 @@ const MyActionListItem = ({ action }: { action: MyActionRow }) => (
   </li>
 );
 
-type MyActionsFailure = "forbidden" | "generic" | "session";
-
-const failureKind = (error: unknown): MyActionsFailure => {
-  if (error instanceof ApiRequestError && error.status === 401) {
-    return "session";
-  }
-  if (error instanceof ApiRequestError && error.status === 403) {
-    return "forbidden";
-  }
-  return "generic";
-};
-
-const FAILURE_COPY = {
-  forbidden: {
-    body: "You do not have permission to view My Actions.",
-    heading: "Access denied",
-  },
-  generic: {
-    body: "Could not load your actions. Check your connection and try again.",
-    heading: "My Actions could not be loaded",
-  },
-  session: {
-    body: "Sign in again to view your actions.",
-    heading: "Your session has ended",
-  },
-} as const;
+const FAILURE_COPY = buildLoadFailureCopy({
+  forbiddenBody: "You do not have permission to view My Actions.",
+  genericBody:
+    "Could not load your actions. Check your connection and try again.",
+  genericHeading: "My Actions could not be loaded",
+  sessionBody: "Sign in again to view your actions.",
+});
 
 export const StaffMyActionsPage = () => {
   const { user } = useAuth();
@@ -97,7 +78,9 @@ export const StaffMyActionsPage = () => {
   });
   // A failed refetch must not leave the previous page looking current.
   const data = actionsQuery.isError ? undefined : actionsQuery.data;
-  const failure = actionsQuery.isError ? failureKind(actionsQuery.error) : null;
+  const failure = actionsQuery.isError
+    ? loadFailureKind(actionsQuery.error)
+    : null;
 
   return (
     <AppShell
