@@ -23,7 +23,7 @@ export const LandingPage = () => {
       return;
     }
 
-    void navigate({ to: homeRouteForRole(user.role) });
+    void navigate({ to: homeRouteForRole() });
   }, [isLoading, navigate, user]);
 
   return <AuthLoading />;

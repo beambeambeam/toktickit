@@ -88,8 +88,7 @@ export const RequesterAccessDenied = () => (
 );
 
 // Every role lands on Dashboard; DashboardPage selects the role-specific view.
-export const homeRouteForRole = (_role: AuthUser["role"]): "/dashboard" =>
-  "/dashboard";
+export const homeRouteForRole = (): "/dashboard" => "/dashboard";
 
 export const AppShell = ({
   allowedRoles,
@@ -156,7 +155,7 @@ export const AppShell = ({
     <div className="app-shell">
       <header className="app-header">
         <div className="app-header-inner">
-          <Link className="brand" to={homeRouteForRole(user.role)}>
+          <Link className="brand" to={homeRouteForRole()}>
             <span aria-hidden="true" className="brand-mark">
               <Icon icon={Clock01Icon} />
             </span>
