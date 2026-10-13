@@ -36,8 +36,8 @@ export const TicketStatusHistorySection = ({
   ticketId,
 }: TicketStatusHistorySectionProps) => {
   const historyQuery = useQuery({
-    queryFn:  async ({ signal }) =>
-      getTicketStatusHistory(
+    queryFn: async ({ signal }) =>
+      await getTicketStatusHistory(
         ticketId,
         { page: 1, pageSize: HISTORY_PAGE_SIZE },
         signal
