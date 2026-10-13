@@ -357,6 +357,111 @@ describe("Lab 4 Ticket lifecycle gate API", () => {
     assert.equal(asJsonObject(response.body).currentStatus, "Cancelled");
   });
 
+  it("rejects unlisted Ticket status edges without writing", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket({
+      currentStatus: "In Progress",
+      ownerIdValue: ownerId,
+    });
+
+    const response = await postStatus(
+      ticket.id,
+      { confirmed: true, currentStatus: "Closed", version: 1 },
+      staff
+    ).expect(409);
+
+    assert.equal(readError(response).code, "INVALID_TRANSITION");
+
+    const stored = await activeFixture.prisma.ticket.findUniqueOrThrow({
+      where: { id: ticket.id },
+    });
+    assert.equal(stored.currentStatus, "InProgress");
+    assert.equal(stored.version, 1);
+    assert.equal(
+      await activeFixture.prisma.ticketStatusEvent.count({
+        where: { ticketId: ticket.id },
+      }),
+      0
+    );
+  });
+
+  it("requires confirmed true for Resolved, Closed, and Cancelled", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket({
+      currentStatus: "In Progress",
+      ownerIdValue: ownerId,
+    });
+    await createActionTaken({ status: "Completed", ticketId: ticket.id });
+
+    const responses = await Promise.all(
+      [
+        { currentStatus: "Resolved" },
+        { confirmed: false, currentStatus: "Resolved" },
+        { currentStatus: "Closed" },
+        { confirmed: false, currentStatus: "Closed" },
+        { currentStatus: "Cancelled" },
+        { confirmed: false, currentStatus: "Cancelled" },
+      ].map((body) => postStatus(ticket.id, { ...body, version: 1 }, staff))
+    );
+
+    for (const response of responses) {
+      assert.equal(response.status, 400, response.text);
+      assert.equal(readError(response).code, "CONFIRMATION_REQUIRED");
+    }
+
+    const stored = await activeFixture.prisma.ticket.findUniqueOrThrow({
+      where: { id: ticket.id },
+    });
+    assert.equal(stored.currentStatus, "InProgress");
+    assert.equal(stored.version, 1);
+  });
+
+  it("requires an active eligible Ticket Owner before In Progress", async () => {
+    const activeFixture = getFixture();
+    const unowned = await createTicket({
+      currentStatus: "Waiting for Requester",
+    });
+    const owned = await createTicket({
+      currentStatus: "Waiting for Requester",
+      ownerIdValue: ownerId,
+    });
+
+    const unownedResponse = await postStatus(
+      unowned.id,
+      { currentStatus: "In Progress", version: 1 },
+      staff
+    ).expect(409);
+    assert.equal(readError(unownedResponse).code, "OWNER_REQUIRED");
+
+    await postStatus(
+      owned.id,
+      { currentStatus: "In Progress", version: 1 },
+      staff
+    ).expect(200);
+
+    await activeFixture.prisma.user.update({
+      data: { isActive: false },
+      where: { id: ownerId },
+    });
+    const inactiveOwner = await createTicket({
+      currentStatus: "Waiting for Requester",
+      ownerIdValue: ownerId,
+    });
+
+    const inactiveResponse = await postStatus(
+      inactiveOwner.id,
+      { currentStatus: "In Progress", version: 1 },
+      staff
+    ).expect(409);
+    assert.equal(readError(inactiveResponse).code, "OWNER_REQUIRED");
+
+    const stored = await activeFixture.prisma.ticket.findUniqueOrThrow({
+      where: { id: inactiveOwner.id },
+    });
+    assert.equal(stored.currentStatus, "WaitingForRequester");
+    assert.equal(stored.version, 1);
+  });
+
   it("keeps legacy terminal Tickets readable with no synthetic status history", async () => {
     const activeFixture = getFixture();
     const resolvedAt = new Date("2026-09-01T09:00:00.000Z");
