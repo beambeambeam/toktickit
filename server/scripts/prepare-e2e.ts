@@ -115,6 +115,7 @@ try {
       completedActions: { none: {} },
       createdActions: { none: {} },
       performedActions: { none: {} },
+      ticketStatusEvents: { none: {} },
       tickets: { none: {} },
     },
   });

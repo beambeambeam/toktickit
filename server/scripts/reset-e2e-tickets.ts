@@ -39,6 +39,9 @@ if (ticketIds.length > 0) {
   await prisma.publicComment.deleteMany({
     where: { ticketId: { in: ticketIds } },
   });
+  await prisma.ticketStatusEvent.deleteMany({
+    where: { ticketId: { in: ticketIds } },
+  });
   const attachments = await prisma.attachment.findMany({
     select: { storageKey: true },
     where: { ticketId: { in: ticketIds } },
