@@ -100,7 +100,8 @@ export const getStaffDashboard = async (
         through: dashboard.window.through.toISOString(),
       },
     };
-  } catch {
+  } catch (error: unknown) {
+    console.error("Unable to load the Staff dashboard.", error);
     throw new ApiError(
       500,
       "STAFF_DASHBOARD_FAILURE",
