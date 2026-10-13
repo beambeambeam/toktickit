@@ -230,6 +230,9 @@ const StaffTicketDetailContent = ({
       nextTicket
     );
     void queryClient.invalidateQueries({ queryKey: ["staff-tickets"] });
+    void queryClient.invalidateQueries({
+      queryKey: ["ticket-status-history", numericTicketId],
+    });
     setOperationError(null);
     setOperationSuccess(message);
     setSelectedOwnerId(nextTicket.owner?.id.toString() ?? "");
@@ -278,6 +281,9 @@ const StaffTicketDetailContent = ({
         nextTicket
       );
       void queryClient.invalidateQueries({ queryKey: ["staff-tickets"] });
+      void queryClient.invalidateQueries({
+        queryKey: ["ticket-status-history", numericTicketId],
+      });
       setSelectedStatus("");
       setStatusError(null);
       setStatusSuccess(`Ticket status changed to ${nextTicket.currentStatus}.`);
