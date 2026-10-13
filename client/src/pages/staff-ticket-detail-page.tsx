@@ -31,6 +31,7 @@ import { Icon } from "@/components/icon";
 import { InternalNotesSection } from "@/components/internal-notes-section";
 import { PublicCommentsSection } from "@/components/public-comments-section";
 import { StatusBadge } from "@/components/status-badge";
+import { TicketStatusHistorySection } from "@/components/ticket-status-history-section";
 import { useAuth } from "@/context/auth";
 import { cn } from "@/lib/class-names";
 import { isRequestedPriority } from "@/lib/ticket-priorities";
@@ -839,6 +840,8 @@ const StaffTicketDetailContent = ({
               </div>
             </section>
           ) : null}
+
+          <TicketStatusHistorySection ticketId={numericTicketId} />
 
           <PublicCommentsSection
             canPost={user.role === "IT Staff" || user.role === "Administrator"}
