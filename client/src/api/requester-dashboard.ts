@@ -1,5 +1,10 @@
 import { apiClient } from "@/api/client";
 import { invalidApiResponse, unwrap } from "@/api/errors";
+import {
+  hasExactKeys,
+  isNonNegativeSafeInteger,
+  isRecord,
+} from "@/api/response-guards";
 import { getApiRequesterDashboard } from "@/generated/hey-api/sdk.gen";
 import type {
   RequesterDashboardResponse,
@@ -8,25 +13,11 @@ import type {
 import { isRequestedPriority } from "@/lib/ticket-priorities";
 import { isCurrentStatus } from "@/lib/ticket-statuses";
 
-const isRecord = (value: unknown): value is Record<string, unknown> =>
-  typeof value === "object" && value !== null && !Array.isArray(value);
-
-const hasExactKeys = (
-  value: Record<string, unknown>,
-  keys: readonly string[]
-): boolean => {
-  const actual = Object.keys(value);
-  return actual.length === keys.length && keys.every((key) => key in value);
-};
-
 const isUtcIsoString = (value: unknown): value is string =>
   typeof value === "string" &&
   /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{3}Z$/u.test(value) &&
   !Number.isNaN(Date.parse(value)) &&
   new Date(value).toISOString() === value;
-
-const isNonNegativeSafeInteger = (value: unknown): value is number =>
-  typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
 
 const isRequesterTicketPreview = (
   value: unknown
