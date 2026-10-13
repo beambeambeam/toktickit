@@ -2,6 +2,8 @@ import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import type { Page } from "@playwright/test";
 
+import { searchStaffQueue } from "./queue-search.js";
+
 const password = "correct horse battery staple";
 
 const signIn = async (page: Page, email: string): Promise<void> => {
@@ -51,6 +53,7 @@ test("passes automated WCAG checks on staff operational surfaces", async ({
   ).toBeVisible();
   await expectAccessible(page, "staff Ticket Queue");
 
+  await searchStaffQueue(page, "TKT-20260901-NEW001");
   const ticketLink = page.getByRole("link", {
     name: "TKT-20260901-NEW001",
   });
