@@ -19,6 +19,7 @@ import {
   updateStaffTicketStatus,
 } from "@/api/staff";
 import { staffOwnersQueryOptions } from "@/api/staff-query-options";
+import type { UserRole } from "@/api/users";
 import { ActionsTakenSection } from "@/components/actions-taken-section";
 import {
   AccessDenied,
@@ -83,26 +84,41 @@ interface StatusConfirmation {
   version: number;
 }
 
-const resolutionReasonLabels: Partial<Record<string, string>> = {
+const isStaffRole = (role: UserRole | undefined): boolean =>
+  role === "IT Staff" || role === "Administrator";
+
+type ResolutionReasonCode =
+  | "NO_COMPLETED_ACTION"
+  | "OWNER_INELIGIBLE"
+  | "OWNER_REQUIRED"
+  | "PENDING_ACTIONS";
+
+const ownerRequirementLabel =
+  "Assign an active eligible IT Staff or Administrator Ticket Owner.";
+
+const resolutionReasonLabels: Record<ResolutionReasonCode, string> = {
   NO_COMPLETED_ACTION: "Record at least one Completed Action Taken.",
-  OWNER_INELIGIBLE:
-    "Assign an active eligible IT Staff or Administrator Ticket Owner.",
-  OWNER_REQUIRED:
-    "Assign an active eligible IT Staff or Administrator Ticket Owner.",
+  OWNER_INELIGIBLE: ownerRequirementLabel,
+  OWNER_REQUIRED: ownerRequirementLabel,
   PENDING_ACTIONS:
     "Complete or cancel every Planned and In Progress Action Taken.",
 };
 
-const getResolutionReasons = (error: ApiRequestError): string[] => {
+const isResolutionReasonCode = (
+  reason: unknown
+): reason is ResolutionReasonCode =>
+  typeof reason === "string" && Object.hasOwn(resolutionReasonLabels, reason);
+
+const getResolutionReasons = (
+  error: ApiRequestError
+): ResolutionReasonCode[] => {
   const reasons = error.details?.reasons;
 
   if (error.code !== "RESOLUTION_GATE_FAILED" || !Array.isArray(reasons)) {
     return [];
   }
 
-  return reasons.filter(
-    (reason: unknown): reason is string => typeof reason === "string"
-  );
+  return reasons.filter(isResolutionReasonCode);
 };
 
 const focusableDialogSelector =
@@ -123,18 +139,15 @@ const StaffTicketDetailContent = ({
     /^[1-9]\d*$/u.test(ticketId) &&
     Number.isSafeInteger(numericTicketId) &&
     numericTicketId <= 2_147_483_647;
+  const isStaff = isStaffRole(user?.role);
+  const canLoadStaffData = isStaff && user !== null && !user.mustChangePassword;
   const ticketQuery = useQuery({
     ...ticketQueryOptions(numericTicketId, user?.id ?? 0),
-    enabled:
-      (user?.role === "IT Staff" || user?.role === "Administrator") &&
-      !user.mustChangePassword &&
-      hasValidTicketId,
+    enabled: canLoadStaffData && hasValidTicketId,
   });
   const ownersQuery = useQuery({
     ...staffOwnersQueryOptions(),
-    enabled:
-      (user?.role === "IT Staff" || user?.role === "Administrator") &&
-      !user.mustChangePassword,
+    enabled: canLoadStaffData,
   });
   const [operationError, setOperationError] = useState<string | null>(null);
   const [operationSuccess, setOperationSuccess] = useState<string | null>(null);
@@ -143,7 +156,9 @@ const StaffTicketDetailContent = ({
     null
   );
   const [statusError, setStatusError] = useState<string | null>(null);
-  const [statusReasons, setStatusReasons] = useState<string[]>([]);
+  const [statusReasons, setStatusReasons] = useState<ResolutionReasonCode[]>(
+    []
+  );
   const [statusSuccess, setStatusSuccess] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<CurrentStatus | "">("");
   const [statusConfirmation, setStatusConfirmation] =
@@ -286,6 +301,7 @@ const StaffTicketDetailContent = ({
       });
       setSelectedStatus("");
       setStatusError(null);
+      setStatusReasons([]);
       setStatusSuccess(`Ticket status changed to ${nextTicket.currentStatus}.`);
     },
   });
@@ -347,7 +363,7 @@ const StaffTicketDetailContent = ({
     return <AuthRequired />;
   }
 
-  if (user.role !== "IT Staff" && user.role !== "Administrator") {
+  if (!isStaff) {
     return <AccessDenied />;
   }
 
@@ -356,13 +372,14 @@ const StaffTicketDetailContent = ({
   const ownerValue = selectedOwnerId ?? ticket?.owner?.id.toString() ?? "";
   const itPriorityValue = selectedItPriority ?? ticket?.itPriority ?? "Low";
   const canOperate =
-    (user.role === "IT Staff" || user.role === "Administrator") &&
+    isStaff &&
     ticket !== undefined &&
     !["Resolved", "Closed", "Cancelled"].includes(ticket.currentStatus);
   const operationBusy =
     claimMutation.isPending ||
     ownerMutation.isPending ||
     priorityMutation.isPending;
+  const showStatusReasons = statusError !== null && statusReasons.length > 0;
 
   const download = async (attachmentId: number) => {
     try {
@@ -530,7 +547,7 @@ const StaffTicketDetailContent = ({
             ticketVersion={ticket.version}
           />
 
-          {user.role === "IT Staff" || user.role === "Administrator" ? (
+          {isStaff ? (
             <>
               <section
                 aria-labelledby="staff-status-heading"
@@ -617,20 +634,16 @@ const StaffTicketDetailContent = ({
                   </div>
                 )}
 
-                {statusError === null || statusReasons.length === 0 ? null : (
+                {showStatusReasons ? (
                   <ul
                     aria-label="Resolution requirements not met"
                     className="list-disc pl-5 error-message"
                   >
-                    {statusReasons.flatMap((reason) => {
-                      const label = resolutionReasonLabels[reason];
-
-                      return label === undefined
-                        ? []
-                        : [<li key={reason}>{label}</li>];
-                    })}
+                    {statusReasons.map((reason) => (
+                      <li key={reason}>{resolutionReasonLabels[reason]}</li>
+                    ))}
                   </ul>
-                )}
+                ) : null}
                 <div
                   aria-live="polite"
                   className="operation-status"
@@ -850,14 +863,14 @@ const StaffTicketDetailContent = ({
           <TicketStatusHistorySection ticketId={numericTicketId} />
 
           <PublicCommentsSection
-            canPost={user.role === "IT Staff" || user.role === "Administrator"}
+            canPost={isStaff}
             currentStatus={ticket.currentStatus}
             principalId={user.id}
             ticketId={numericTicketId}
           />
 
           <InternalNotesSection
-            canPost={user.role === "IT Staff" || user.role === "Administrator"}
+            canPost={isStaff}
             currentStatus={ticket.currentStatus}
             principalId={user.id}
             ticketId={numericTicketId}
@@ -1053,7 +1066,7 @@ export const StaffTicketDetailPage = ({ ticketId }: { ticketId: string }) => {
     return <AuthRequired />;
   }
 
-  if (user.role !== "IT Staff" && user.role !== "Administrator") {
+  if (!isStaffRole(user.role)) {
     return <AccessDenied />;
   }
 
