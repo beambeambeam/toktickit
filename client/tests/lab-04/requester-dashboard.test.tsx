@@ -358,9 +358,7 @@ describe("Requester dashboard UI", () => {
     });
   });
 
-  it("uses Dashboard as the landing for every role", () => {
-    expect(homeRouteForRole("Requester")).toBe("/dashboard");
-    expect(homeRouteForRole("IT Staff")).toBe("/dashboard");
-    expect(homeRouteForRole("Administrator")).toBe("/dashboard");
+  it("uses Dashboard as the landing route", () => {
+    expect(homeRouteForRole()).toBe("/dashboard");
   });
 });
