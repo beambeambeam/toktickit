@@ -1,4 +1,5 @@
 import type { CurrentStatus as PrismaCurrentStatus } from "../generated/prisma/enums.js";
+import { isEligibleTicketOwner } from "../types/ticket-workflow.js";
 import type { CurrentStatus, OwnerRecord } from "../types/tickets.js";
 import { toUserRoleLabel } from "../types/users.js";
 import type { UserRoleValue } from "../types/users.js";
@@ -30,6 +31,7 @@ export interface TicketOwnerRecord {
   displayName: string;
   id: number;
   isActive: boolean;
+  mustChangePassword: boolean;
   role: UserRoleValue;
 }
 
@@ -90,9 +92,7 @@ export const toOwner = (
     displayName: owner.displayName,
     id: owner.id,
     isActive: owner.isActive,
-    isEligible:
-      owner.isActive &&
-      (owner.role === "ITStaff" || owner.role === "Administrator"),
+    isEligible: isEligibleTicketOwner(owner),
     role: toUserRoleLabel(owner.role),
   };
 };

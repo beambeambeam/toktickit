@@ -2,6 +2,7 @@ import { prisma } from "../db/client.js";
 import { UserEmailConflictError } from "../errors/user-errors.js";
 import { Prisma } from "../generated/prisma/client.js";
 import type { UserListQuery, UserRoleValue } from "../types/users.js";
+import { isStaffRole } from "../types/users.js";
 import { deleteSessionsForUser, publicUserSelection } from "./auth.js";
 
 const escapeLikePattern = (value: string): string =>
@@ -112,8 +113,7 @@ const lockNonterminalTicketsOwnedBy = async (
 const isEligibleOwner = (user: {
   isActive: boolean;
   role: UserRoleValue;
-}): boolean =>
-  user.isActive && (user.role === "ITStaff" || user.role === "Administrator");
+}): boolean => user.isActive && isStaffRole(user.role);
 
 const getLockedActorAndTarget = async (
   database: UserDatabase,

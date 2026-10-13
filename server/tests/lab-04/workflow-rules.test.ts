@@ -8,7 +8,11 @@ import {
 } from "../../src/types/ticket-workflow.js";
 import type { CurrentStatus } from "../../src/types/tickets.js";
 
-const eligibleOwner = { isActive: true, role: "ITStaff" } as const;
+const eligibleOwner = {
+  isActive: true,
+  mustChangePassword: false,
+  role: "ITStaff",
+} as const;
 const satisfiedGate = {
   completedActionCount: 1,
   owner: eligibleOwner,
@@ -24,7 +28,11 @@ describe("Ticket resolution gate rules", () => {
     expect(
       getResolutionGateReasons({
         ...satisfiedGate,
-        owner: { isActive: true, role: "Administrator" },
+        owner: {
+          isActive: true,
+          mustChangePassword: false,
+          role: "Administrator",
+        },
       })
     ).toEqual([]);
   });
@@ -39,7 +47,16 @@ describe("Ticket resolution gate rules", () => {
     expect(
       getResolutionGateReasons({
         ...satisfiedGate,
-        owner: { isActive: false, role: "ITStaff" },
+        owner: { isActive: false, mustChangePassword: false, role: "ITStaff" },
+      })
+    ).toEqual(["OWNER_INELIGIBLE"]);
+  });
+
+  it("reports an owner who must change password as OWNER_INELIGIBLE", () => {
+    expect(
+      getResolutionGateReasons({
+        ...satisfiedGate,
+        owner: { isActive: true, mustChangePassword: true, role: "ITStaff" },
       })
     ).toEqual(["OWNER_INELIGIBLE"]);
   });
@@ -48,7 +65,7 @@ describe("Ticket resolution gate rules", () => {
     expect(
       getResolutionGateReasons({
         ...satisfiedGate,
-        owner: { isActive: true, role: "Requester" },
+        owner: { isActive: true, mustChangePassword: false, role: "Requester" },
       })
     ).toEqual(["OWNER_INELIGIBLE"]);
   });
@@ -79,7 +96,11 @@ describe("Ticket resolution gate rules", () => {
     expect(
       getResolutionGateReasons({
         completedActionCount: 1,
-        owner: { isActive: false, role: "Administrator" },
+        owner: {
+          isActive: false,
+          mustChangePassword: false,
+          role: "Administrator",
+        },
         pendingActionCount: 1,
       })
     ).toEqual(["OWNER_INELIGIBLE", "PENDING_ACTIONS"]);

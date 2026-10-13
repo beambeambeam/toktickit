@@ -462,6 +462,60 @@ describe("Lab 4 Ticket lifecycle gate API", () => {
     assert.equal(stored.version, 1);
   });
 
+  it("rejects an Owner who must change password before In Progress", async () => {
+    const activeFixture = getFixture();
+    const mustChangeOwner = await activeFixture.createUser({
+      displayName: "Must Change Owner",
+      email: "must-change-owner@example.test",
+      mustChangePassword: true,
+      role: "ITStaff",
+    });
+    const ticket = await createTicket({
+      currentStatus: "Waiting for Requester",
+      ownerIdValue: mustChangeOwner.id,
+    });
+
+    const response = await postStatus(
+      ticket.id,
+      { currentStatus: "In Progress", version: 1 },
+      staff
+    ).expect(409);
+    assert.equal(readError(response).code, "OWNER_REQUIRED");
+
+    const stored = await activeFixture.prisma.ticket.findUniqueOrThrow({
+      where: { id: ticket.id },
+    });
+    assert.equal(stored.currentStatus, "WaitingForRequester");
+    assert.equal(stored.version, 1);
+  });
+
+  it("rejects a Staff actor who must change password in the status repository", async () => {
+    const activeFixture = getFixture();
+    const mustChangeStaff = await activeFixture.createUser({
+      displayName: "Must Change Status Staff",
+      email: "must-change-status-staff@example.test",
+      mustChangePassword: true,
+      role: "ITStaff",
+    });
+    const ticket = await createTicket({
+      currentStatus: "Waiting for Requester",
+      ownerIdValue: ownerId,
+    });
+    const { updateTicketStatus } =
+      await import("../../src/repositories/ticket-workflow.js");
+
+    assert.deepEqual(
+      await updateTicketStatus(mustChangeStaff.id, ticket.id, "InProgress", 1),
+      { kind: "actor-ineligible" }
+    );
+
+    const stored = await activeFixture.prisma.ticket.findUniqueOrThrow({
+      where: { id: ticket.id },
+    });
+    assert.equal(stored.currentStatus, "WaitingForRequester");
+    assert.equal(stored.version, 1);
+  });
+
   it("keeps legacy terminal Tickets readable with no synthetic status history", async () => {
     const activeFixture = getFixture();
     const resolvedAt = new Date("2026-09-01T09:00:00.000Z");

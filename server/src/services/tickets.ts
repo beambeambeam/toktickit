@@ -45,6 +45,7 @@ import type {
   TicketListQuery,
   TicketVersionInput,
 } from "../types/tickets.js";
+import { isStaffRole } from "../types/users.js";
 import type { UserRoleValue } from "../types/users.js";
 import {
   removeAttachmentFiles,
@@ -244,8 +245,7 @@ export const listTicketsForRequester = async (
   }
 };
 
-const readerCanAccessTicket = (role: UserRoleValue) =>
-  role === "ITStaff" || role === "Administrator";
+const readerCanAccessTicket = (role: UserRoleValue) => isStaffRole(role);
 
 const internalNoteForbiddenError = () =>
   new ApiError(

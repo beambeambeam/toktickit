@@ -1,9 +1,6 @@
 import { prisma } from "../db/client.js";
 import { Prisma } from "../generated/prisma/client.js";
-import type {
-  CurrentStatus as PrismaCurrentStatus,
-  UserRole as PrismaUserRole,
-} from "../generated/prisma/enums.js";
+import type { CurrentStatus as PrismaCurrentStatus } from "../generated/prisma/enums.js";
 import type { ActionListQuery } from "../types/actions.js";
 import {
   getResolutionGateReasons,
@@ -11,6 +8,7 @@ import {
   isCancellationBlockedByActions,
   isEligibleTicketOwner,
   prismaStatusToCurrent,
+  statusRequiresConfirmation,
   statusRequiresEligibleOwner,
   terminalStatuses,
 } from "../types/ticket-workflow.js";
@@ -74,11 +72,6 @@ const countPendingActions = async (
     where: { status: { in: ["Planned", "InProgress"] }, ticketId },
   });
 
-const isEligibleOwner = (user: {
-  isActive: boolean;
-  role: PrismaUserRole;
-}): boolean => isEligibleTicketOwner(user);
-
 const toResolutionIndication = (
   ticket: TicketDetailDatabaseRecord
 ): ResolutionIndication | null =>
@@ -128,15 +121,11 @@ export const updateTicketStatus = async (
       await lockUser(database, userId);
     }
     const currentUser = await database.user.findUnique({
-      select: { isActive: true, role: true },
+      select: { isActive: true, mustChangePassword: true, role: true },
       where: { id: currentUserId },
     });
 
-    if (
-      currentUser === null ||
-      !currentUser.isActive ||
-      (currentUser.role !== "ITStaff" && currentUser.role !== "Administrator")
-    ) {
+    if (!isEligibleTicketOwner(currentUser)) {
       return { kind: "actor-ineligible" };
     }
 
@@ -162,12 +151,7 @@ export const updateTicketStatus = async (
       return { kind: "invalid-transition" };
     }
 
-    if (
-      (nextStatusLabel === "Resolved" ||
-        nextStatusLabel === "Closed" ||
-        nextStatusLabel === "Cancelled") &&
-      confirmed !== true
-    ) {
+    if (statusRequiresConfirmation(nextStatusLabel) && confirmed !== true) {
       return { kind: "confirmation-required" };
     }
 
@@ -193,7 +177,7 @@ export const updateTicketStatus = async (
       }
     } else if (
       statusRequiresEligibleOwner(nextStatusLabel) &&
-      (ticket.owner === null || !isEligibleOwner(ticket.owner))
+      !isEligibleTicketOwner(ticket.owner)
     ) {
       return { kind: "owner-required" };
     }

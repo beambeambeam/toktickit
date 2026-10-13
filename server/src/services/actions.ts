@@ -13,6 +13,7 @@ import type {
   CreateActionInput,
   EditActionInput,
 } from "../types/actions.js";
+import { isStaffRole } from "../types/users.js";
 import type { UserRoleValue } from "../types/users.js";
 import { toActionEvent, toActionTaken } from "./action-presenters.js";
 import { toTicketDetail } from "./ticket-presenters.js";
@@ -24,7 +25,7 @@ const actionNotFound = () =>
   new ApiError(404, "RESOURCE_NOT_FOUND", "Action Taken was not found.");
 
 const readerCanAccessAnyTicket = (role: UserRoleValue): boolean =>
-  role === "ITStaff" || role === "Administrator";
+  isStaffRole(role);
 
 const resolveCreateOutcome = (
   outcome: Awaited<ReturnType<typeof createAction>>

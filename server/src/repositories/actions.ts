@@ -15,13 +15,14 @@ import type {
   CreateActionInput,
   EditActionInput,
 } from "../types/actions.js";
-import type { UserRoleValue } from "../types/users.js";
+import { isEligibleTicketOwner } from "../types/ticket-workflow.js";
 import { ticketDetailInclude } from "./tickets.js";
 
 const actionUserSelection = {
   displayName: true,
   id: true,
   isActive: true,
+  mustChangePassword: true,
   role: true,
 } as const;
 
@@ -105,16 +106,6 @@ const actionClosedStatuses = new Set<PrismaCurrentStatus>([
   "Cancelled",
 ]);
 
-const isEligibleActionUser = (
-  user: {
-    isActive: boolean;
-    role: UserRoleValue;
-  } | null
-): boolean =>
-  user !== null &&
-  user.isActive &&
-  (user.role === "ITStaff" || user.role === "Administrator");
-
 const lockUser = async (database: ActionDatabase, userId: number) => {
   await database.$queryRaw(
     Prisma.sql`SELECT "id" FROM "User" WHERE "id" = ${userId} FOR UPDATE`
@@ -188,11 +179,16 @@ export const createAction = async (
     await lockUsers(database, [actorId, assigneeId]);
 
     const actor = await database.user.findUnique({
-      select: { id: true, isActive: true, role: true },
+      select: {
+        id: true,
+        isActive: true,
+        mustChangePassword: true,
+        role: true,
+      },
       where: { id: actorId },
     });
 
-    if (!isEligibleActionUser(actor)) {
+    if (!isEligibleTicketOwner(actor)) {
       return { kind: "actor-ineligible" };
     }
 
@@ -229,11 +225,11 @@ export const createAction = async (
     }
 
     const assignee = await database.user.findUnique({
-      select: { isActive: true, role: true },
+      select: { isActive: true, mustChangePassword: true, role: true },
       where: { id: assigneeId },
     });
 
-    if (!isEligibleActionUser(assignee)) {
+    if (!isEligibleTicketOwner(assignee)) {
       return { kind: "assignee-ineligible" };
     }
 
@@ -308,7 +304,12 @@ export const editAction = async (
     await lockUsers(database, [actorId, input.assigneeId]);
 
     const actor = await database.user.findUnique({
-      select: { id: true, isActive: true, role: true },
+      select: {
+        id: true,
+        isActive: true,
+        mustChangePassword: true,
+        role: true,
+      },
       where: { id: actorId },
     });
 
@@ -316,7 +317,7 @@ export const editAction = async (
       return { kind: "actor-inactive" };
     }
 
-    if (!isEligibleActionUser(actor)) {
+    if (!isEligibleTicketOwner(actor)) {
       return { kind: "actor-ineligible" };
     }
 
@@ -355,11 +356,11 @@ export const editAction = async (
 
     if (action.assigneeId !== input.assigneeId) {
       const assignee = await database.user.findUnique({
-        select: { isActive: true, role: true },
+        select: { isActive: true, mustChangePassword: true, role: true },
         where: { id: input.assigneeId },
       });
 
-      if (!isEligibleActionUser(assignee)) {
+      if (!isEligibleTicketOwner(assignee)) {
         return { kind: "assignee-ineligible" };
       }
     }
@@ -435,7 +436,12 @@ export const transitionAction = async (
     await lockUsers(database, [actorId, actionSnapshot.assigneeId]);
 
     const actor = await database.user.findUnique({
-      select: { id: true, isActive: true, role: true },
+      select: {
+        id: true,
+        isActive: true,
+        mustChangePassword: true,
+        role: true,
+      },
       where: { id: actorId },
     });
 
@@ -443,7 +449,7 @@ export const transitionAction = async (
       return { kind: "actor-inactive" };
     }
 
-    if (!isEligibleActionUser(actor)) {
+    if (!isEligibleTicketOwner(actor)) {
       return { kind: "actor-ineligible" };
     }
 
@@ -498,11 +504,11 @@ export const transitionAction = async (
 
     if (startsAction || completesAction) {
       const assignee = await database.user.findUnique({
-        select: { isActive: true, role: true },
+        select: { isActive: true, mustChangePassword: true, role: true },
         where: { id: action.assigneeId },
       });
 
-      if (!isEligibleActionUser(assignee)) {
+      if (!isEligibleTicketOwner(assignee)) {
         return { kind: "assignee-ineligible" };
       }
     }

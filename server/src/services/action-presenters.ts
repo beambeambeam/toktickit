@@ -3,6 +3,7 @@ import type {
   ActionStatus as PrismaActionStatus,
 } from "../generated/prisma/enums.js";
 import type { ActionStatus } from "../types/actions.js";
+import { isEligibleTicketOwner } from "../types/ticket-workflow.js";
 import type { UserRoleValue } from "../types/users.js";
 import { toUserRoleLabel } from "../types/users.js";
 
@@ -10,6 +11,7 @@ export interface ActionUserRecord {
   displayName: string;
   id: number;
   isActive: boolean;
+  mustChangePassword: boolean;
   role: UserRoleValue;
 }
 
@@ -122,8 +124,7 @@ const toAssignee = (user: ActionUserRecord) => ({
   displayName: user.displayName,
   id: user.id,
   isActive: user.isActive,
-  isEligible:
-    user.isActive && (user.role === "ITStaff" || user.role === "Administrator"),
+  isEligible: isEligibleTicketOwner(user),
   role: toUserRoleLabel(user.role),
 });
 
