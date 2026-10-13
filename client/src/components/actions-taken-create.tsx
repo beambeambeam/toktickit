@@ -18,6 +18,7 @@ import type {
   ActionFormValues,
   NormalizedActionForm,
 } from "@/lib/action-rules";
+import { isStaffRole } from "@/lib/staff-roles";
 import type { CurrentStatus } from "@/lib/ticket-statuses";
 
 const terminalTicketStatuses = new Set<CurrentStatus>([
@@ -106,9 +107,6 @@ const getCreateErrorMessage = (error: unknown): string => {
 const isUncertainCreateFailure = (error: unknown): boolean =>
   error instanceof ApiConnectionError ||
   (error instanceof ApiRequestError && error.status >= 500);
-
-const isStaffRole = (role: UserRole): boolean =>
-  role === "IT Staff" || role === "Administrator";
 
 export const useActionsTakenCreate = ({
   currentStatus,

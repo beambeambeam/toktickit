@@ -11,6 +11,7 @@ import type { PropsWithChildren } from "react";
 import type { AuthUser } from "@/api/auth";
 import { Icon } from "@/components/icon";
 import { useAuth } from "@/context/auth";
+import { isStaffRole } from "@/lib/staff-roles";
 
 type AppShellProps = PropsWithChildren<{
   allowedRoles?: readonly AuthUser["role"][];
@@ -129,8 +130,7 @@ export const AppShell = ({
     return <AccessDenied />;
   }
 
-  const isQueueReader =
-    user.role === "IT Staff" || user.role === "Administrator";
+  const isQueueReader = isStaffRole(user.role);
 
   const handleLogout = async () => {
     setLogoutError(null);

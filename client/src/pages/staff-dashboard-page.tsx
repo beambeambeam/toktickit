@@ -14,6 +14,7 @@ import type {
   StaffDashboardTicketPreview,
 } from "@/generated/hey-api/types.gen";
 import { formatBangkokDate } from "@/lib/action-format";
+import { isStaffRole, STAFF_ROLES } from "@/lib/staff-roles";
 
 const TICKET_STATUSES = [
   "New",
@@ -183,11 +184,10 @@ const FAILURE_COPY = {
 
 export const StaffDashboardPage = () => {
   const { user } = useAuth();
+  const canViewDashboard = user !== null && isStaffRole(user.role);
   const dashboardQuery = useQuery({
     ...staffDashboardQueryOptions(user?.id ?? 0, user?.role ?? "IT Staff"),
-    enabled:
-      user !== null &&
-      (user.role === "IT Staff" || user.role === "Administrator"),
+    enabled: canViewDashboard,
   });
   const dashboard = dashboardQuery.isError ? undefined : dashboardQuery.data;
   const failure = dashboardQuery.isError
@@ -204,7 +204,7 @@ export const StaffDashboardPage = () => {
 
   return (
     <AppShell
-      allowedRoles={["IT Staff", "Administrator"]}
+      allowedRoles={STAFF_ROLES}
       eyebrow="Staff workspace"
       title="Dashboard"
     >

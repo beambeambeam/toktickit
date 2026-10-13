@@ -34,6 +34,7 @@ import { Icon } from "@/components/icon";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
 import { formatBangkokDate } from "@/lib/action-format";
+import { isStaffRole, STAFF_ROLES } from "@/lib/staff-roles";
 import { isRequestedPriority } from "@/lib/ticket-priorities";
 import { isStaffTicketScope } from "@/lib/ticket-search";
 import type { StaffTicketSearch } from "@/lib/ticket-search";
@@ -301,7 +302,7 @@ const StaffTicketQueueContent = ({
     <AppShell
       eyebrow={workspaceLabel}
       title="Ticket Queue"
-      allowedRoles={["IT Staff", "Administrator"]}
+      allowedRoles={STAFF_ROLES}
     >
       <div className="page-actions">
         <p className="page-description">
@@ -882,7 +883,7 @@ export const StaffTicketQueuePage = ({
     return <AuthRequired />;
   }
 
-  if (user.role !== "IT Staff" && user.role !== "Administrator") {
+  if (!isStaffRole(user.role)) {
     return <AccessDenied />;
   }
 

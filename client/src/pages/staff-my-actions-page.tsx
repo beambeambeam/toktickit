@@ -20,6 +20,7 @@ import { useAuth } from "@/context/auth";
 import type { MyActionRow } from "@/generated/hey-api/types.gen";
 import { formatBangkokDate } from "@/lib/action-format";
 import { getPageTokens } from "@/lib/pagination";
+import { isStaffRole, STAFF_ROLES } from "@/lib/staff-roles";
 
 const PAGE_SIZES: readonly StaffMyActionsPageSize[] = [10, 20, 50];
 
@@ -85,15 +86,14 @@ export const StaffMyActionsPage = () => {
     page: 1,
     pageSize: 20,
   });
+  const canViewActions = user !== null && isStaffRole(user.role);
   const actionsQuery = useQuery({
     ...staffMyActionsQueryOptions(
       user?.id ?? 0,
       user?.role ?? "IT Staff",
       params
     ),
-    enabled:
-      user !== null &&
-      (user.role === "IT Staff" || user.role === "Administrator"),
+    enabled: canViewActions,
   });
   // A failed refetch must not leave the previous page looking current.
   const data = actionsQuery.isError ? undefined : actionsQuery.data;
@@ -101,7 +101,7 @@ export const StaffMyActionsPage = () => {
 
   return (
     <AppShell
-      allowedRoles={["IT Staff", "Administrator"]}
+      allowedRoles={STAFF_ROLES}
       eyebrow="Staff workspace"
       title="My Actions"
     >
