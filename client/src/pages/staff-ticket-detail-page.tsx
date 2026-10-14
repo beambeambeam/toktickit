@@ -126,9 +126,11 @@ const focusableDialogSelector =
 
 // oxlint-disable-next-line complexity -- this page renders documented read-only detail and attachment states.
 const StaffTicketDetailContent = ({
+  focusActionId,
   onAccessError,
   ticketId,
 }: {
+  focusActionId: number | undefined;
   onAccessError: (error: ApiRequestError) => void;
   ticketId: string;
 }) => {
@@ -556,6 +558,7 @@ const StaffTicketDetailContent = ({
           <ActionsTakenSection
             currentStatus={ticket.currentStatus}
             defaultAssigneeId={user.id}
+            focusActionId={focusActionId}
             onRefreshTicket={async () => await ticketQuery.refetch()}
             onRetryAssignees={async () => await ownersQuery.refetch()}
             owners={ownersQuery.data ?? []}
@@ -1057,7 +1060,13 @@ const StaffTicketDetailContent = ({
   );
 };
 
-export const StaffTicketDetailPage = ({ ticketId }: { ticketId: string }) => {
+export const StaffTicketDetailPage = ({
+  focusActionId,
+  ticketId,
+}: {
+  focusActionId?: number;
+  ticketId: string;
+}) => {
   const { refetchAuth, user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -1096,6 +1105,7 @@ export const StaffTicketDetailPage = ({ ticketId }: { ticketId: string }) => {
 
   return (
     <StaffTicketDetailContent
+      focusActionId={focusActionId}
       key={user.id}
       onAccessError={setAccessError}
       ticketId={ticketId}
