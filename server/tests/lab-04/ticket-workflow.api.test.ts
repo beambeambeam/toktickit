@@ -644,6 +644,39 @@ describe("Lab 4 Ticket lifecycle gate API", () => {
     );
   });
 
+  it("hides status history from a Requester who does not own the Ticket", async () => {
+    const activeFixture = getFixture();
+    const otherRequesterEmail = "workflow-history-foreign@example.test";
+    const ticket = await createTicket({
+      currentStatus: "Waiting for Requester",
+      ownerIdValue: ownerId,
+    });
+    await postStatus(
+      ticket.id,
+      { currentStatus: "In Progress", version: 1 },
+      staff
+    ).expect(200);
+    await activeFixture.createUser({
+      displayName: "Workflow Foreign Requester",
+      email: otherRequesterEmail,
+      role: "Requester",
+    });
+    const otherRequester =
+      await activeFixture.authenticate(otherRequesterEmail);
+
+    const own = await request(activeFixture.app)
+      .get(`/api/tickets/${ticket.id}/status-history`)
+      .set("Cookie", requester.cookie)
+      .expect(200);
+    assert.equal(asJsonObject(own.body).totalItems, 1);
+
+    const foreign = await request(activeFixture.app)
+      .get(`/api/tickets/${ticket.id}/status-history`)
+      .set("Cookie", otherRequester.cookie)
+      .expect(404);
+    assert.equal(readError(foreign).code, "RESOURCE_NOT_FOUND");
+  });
+
   it("treats the Requester resolution indication as advisory and idempotent", async () => {
     const activeFixture = getFixture();
     const otherRequesterEmail = "workflow-other-requester@example.test";
