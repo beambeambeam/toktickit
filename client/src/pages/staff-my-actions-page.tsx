@@ -12,6 +12,7 @@ import { Icon } from "@/components/icon";
 import { MyActionListItem } from "@/components/my-action-list-item";
 import { PaginationNav } from "@/components/pagination-nav";
 import { useAuth } from "@/context/auth";
+import type { MyActionListResponse } from "@/generated/hey-api/types.gen";
 import { buildLoadFailureCopy, loadFailureKind } from "@/lib/load-failure";
 import { isStaffRole, STAFF_ROLES } from "@/lib/staff-roles";
 
@@ -27,6 +28,36 @@ const FAILURE_COPY = buildLoadFailureCopy({
   genericHeading: "My Actions could not be loaded",
   sessionBody: "Sign in again to view your actions.",
 });
+
+const MyActionsResults = ({ data }: { data: MyActionListResponse }) => {
+  if (data.totalItems === 0) {
+    return (
+      <div className="empty-state">
+        <div aria-hidden="true" className="empty-icon">
+          <Icon icon={Ticket01Icon} />
+        </div>
+        <h2>No assigned actions</h2>
+        <p>
+          No Planned or In Progress actions are assigned to you on active
+          Tickets.
+        </p>
+      </div>
+    );
+  }
+
+  return data.items.length === 0 ? null : (
+    <section
+      aria-label="My Actions"
+      className="surface-card dashboard-preview-card"
+    >
+      <ul className="dashboard-preview-list">
+        {data.items.map((action) => (
+          <MyActionListItem action={action} key={action.id} />
+        ))}
+      </ul>
+    </section>
+  );
+};
 
 export const StaffMyActionsPage = () => {
   const { user } = useAuth();
@@ -48,6 +79,12 @@ export const StaffMyActionsPage = () => {
   const failure = actionsQuery.isError
     ? loadFailureKind(actionsQuery.error)
     : null;
+  const lastPage = data?.totalPages ?? 0;
+
+  // Actions finished elsewhere can shrink the list below the current page.
+  if (lastPage > 0 && params.page > lastPage) {
+    setParams({ ...params, page: lastPage });
+  }
 
   return (
     <AppShell
@@ -102,30 +139,7 @@ export const StaffMyActionsPage = () => {
           ) : null}
         </section>
       )}
-      {data !== undefined && data.items.length === 0 ? (
-        <div className="empty-state">
-          <div aria-hidden="true" className="empty-icon">
-            <Icon icon={Ticket01Icon} />
-          </div>
-          <h2>No assigned actions</h2>
-          <p>
-            No Planned or In Progress actions are assigned to you on active
-            Tickets.
-          </p>
-        </div>
-      ) : null}
-      {data !== undefined && data.items.length > 0 ? (
-        <section
-          aria-label="My Actions"
-          className="surface-card dashboard-preview-card"
-        >
-          <ul className="dashboard-preview-list">
-            {data.items.map((action) => (
-              <MyActionListItem action={action} key={action.id} />
-            ))}
-          </ul>
-        </section>
-      ) : null}
+      {data === undefined ? null : <MyActionsResults data={data} />}
       {data === undefined || data.totalPages === 0 ? null : (
         <PaginationNav
           label="My Actions pages"

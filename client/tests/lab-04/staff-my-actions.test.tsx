@@ -297,6 +297,32 @@ describe("Staff My Actions UI", () => {
     ).toBeNull();
   });
 
+  it("moves back to the last page when the current page no longer has actions", async () => {
+    getStaffActionsMock.mockImplementation(async (params) => {
+      if (params.page === 3) {
+        return await Promise.resolve(
+          actionPage({ items: [], page: 3, totalItems: 25, totalPages: 2 })
+        );
+      }
+      return await resolveActionPage(params);
+    });
+    renderPage();
+
+    fireEvent.click(
+      await screen.findByRole("button", { name: "Go to page 3" })
+    );
+    await waitFor(() => {
+      expect(getStaffActionsMock).toHaveBeenLastCalledWith(
+        { page: 2, pageSize: 20 },
+        expect.anything()
+      );
+    });
+    await screen.findByText("Page 2 of 3");
+    expect(
+      screen.queryByRole("heading", { name: "No assigned actions" })
+    ).toBeNull();
+  });
+
   it("shows a session-ended message for 401 without retrying", async () => {
     getStaffActionsMock.mockRejectedValue(
       new ApiRequestError(401, "Session expired.")
