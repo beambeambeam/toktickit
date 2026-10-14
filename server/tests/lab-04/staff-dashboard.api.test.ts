@@ -4,7 +4,6 @@ import { randomUUID } from "node:crypto";
 import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
 
-import { findStaffDashboard } from "../../src/repositories/staff-dashboard.js";
 import {
   createUsersAdminFixture,
   TEST_ORIGIN,
@@ -293,6 +292,9 @@ describe("Lab 4 staff dashboard API", () => {
       )
     );
 
+    // Import after the fixture sets DATABASE_URL so Prisma binds to the test database.
+    const { findStaffDashboard } =
+      await import("../../src/repositories/staff-dashboard.js");
     const dashboard = await findStaffDashboard(staffId, through);
     assert.equal(dashboard.window.from.toISOString(), from.toISOString());
     assert.equal(dashboard.window.through.toISOString(), through.toISOString());
