@@ -146,3 +146,31 @@ Each finding has its own commit or commits. Every thread has a reply that names 
 Each test-gap fix has a mutation check. The new test failed when the fix was removed: In Progress as pending, `lockTicket`, the focus target, `canOperate` for Administrators, `setQueryData` after success, the status history invalidation, and the ticket refetch on a 409. Removing `setStatusReasons([])` on success stays green. That change is equivalent, because the list renders only when an error shows.
 
 The reviewer must verify the replies and resolve the threads. A re-review request goes to @Kiatisakk only.
+
+## PR #87 — Issue #79 Staff dashboard
+
+[PR #87](https://github.com/beambeambeam/toktickit/pull/87) targets `lab4-staging`. @Kiatisakk requested changes and Greptile left inline findings. The review has 14 inline threads. Two threads (one from each reviewer) report the same empty-page defect and share one commit.
+
+Each finding has its own commit or commits. Every thread has a reply that names its commit. All threads stay open for the reviewer to verify and resolve. This checkpoint does not claim human approval.
+
+| Finding | Commit | Reply / state |
+| --- | --- | --- |
+| Dashboard repository imported before the test database fixture set `DATABASE_URL` | [`b45796e`](https://github.com/beambeambeam/toktickit/commit/b45796eb55ea386fd681a9cc0abe75bdae2c6798) | [Reply](https://github.com/beambeambeam/toktickit/pull/87#discussion_r4274578425). Open. |
+| Urgent preview cap and active filter had surviving mutants | [`e746da0`](https://github.com/beambeambeam/toktickit/commit/e746da09c4cdcf48a6d5d2008ba923b7165f3e78) | [Reply](https://github.com/beambeambeam/toktickit/pull/87#discussion_r4274584172). Open. |
+| My Actions preview cap had a surviving mutant | [`7732af1`](https://github.com/beambeambeam/toktickit/commit/7732af15d230ac0e905a8fb3930137bb0ac2eced) | [Reply](https://github.com/beambeambeam/toktickit/pull/87#discussion_r4274597484). Open. |
+| My Actions showed an empty state when the current page emptied | [`89e086b`](https://github.com/beambeambeam/toktickit/commit/89e086b5fbbc09b44d7717699a3ffd130c528449) | [Reply](https://github.com/beambeambeam/toktickit/pull/87#discussion_r4274612595), [Reply](https://github.com/beambeambeam/toktickit/pull/87#discussion_r4274612936). Open. |
+| My Actions pagination lost focus during page loads | [`5270097`](https://github.com/beambeambeam/toktickit/commit/5270097ba49418b550286380f68ccfd81bce9a68) | [Reply](https://github.com/beambeambeam/toktickit/pull/87#discussion_r4274619801). Open. |
+| Clear Filters left Ticket Queue URL filters in place | [`c47c265`](https://github.com/beambeambeam/toktickit/commit/c47c265d25ce4eeb1115e5b213292163fcf94896) | [Reply](https://github.com/beambeambeam/toktickit/pull/87#discussion_r4274630369). Open. |
+| Action links did not open the Actions Taken page that holds the action | [`2a8e808`](https://github.com/beambeambeam/toktickit/commit/2a8e808ac4c366105d92d749e56d728d430fb655) | [Reply](https://github.com/beambeambeam/toktickit/pull/87#discussion_r4274656190). Open. |
+| Staff writes invalidated unused cache keys | [`a8d31e5`](https://github.com/beambeambeam/toktickit/commit/a8d31e55c82b2521ef8bbc9a1b27edc5c5083a28) | [Reply](https://github.com/beambeambeam/toktickit/pull/87#discussion_r4274671416). Open. |
+| Invalid Queue link date range was ignored silently | [`30360f7`](https://github.com/beambeambeam/toktickit/commit/30360f7d5388fdf5f450da7e825a7095be7f8636) | [Reply](https://github.com/beambeambeam/toktickit/pull/87#discussion_r4274682221). Open. |
+| No staff card-vs-list parity test (API-31) | [`34b9d83`](https://github.com/beambeambeam/toktickit/commit/34b9d83486e2204216ec61e843c8edee9d79155a), [`840392b`](https://github.com/beambeambeam/toktickit/commit/840392b98d9d7ce896a283cfd7f5aa82fff4eb14) | [Reply](https://github.com/beambeambeam/toktickit/pull/87#discussion_r4274710229). Open. |
+| E2E drill-down did not compare card count with Queue total | [`97a6860`](https://github.com/beambeambeam/toktickit/commit/97a68600267611d8d21cac5733f92f6d4fcd0d82), [`40ef76b`](https://github.com/beambeambeam/toktickit/commit/40ef76bd7e4862c1f9a94570d3b235a9cd9affc5) | [Reply](https://github.com/beambeambeam/toktickit/pull/87#discussion_r4274720149), [Reply](https://github.com/beambeambeam/toktickit/pull/87#discussion_r4274727592). Open. |
+| UI-05 and Known gaps understated the Queue filter tests | [`dc9970a`](https://github.com/beambeambeam/toktickit/commit/dc9970ac52d07bcb1615d7342d9e4aac592329e2) | [Reply](https://github.com/beambeambeam/toktickit/pull/87#discussion_r4274727920). Open. |
+| Axe, reflow, zoom, visual, performance, and Administrator checks not run | [`2dec500`](https://github.com/beambeambeam/toktickit/commit/2dec500ed7d309704686cf96d4e75d518a14a2b4), [`681b190`](https://github.com/beambeambeam/toktickit/commit/681b190accf57368f9297598816628eb3e345b15), [`ba8fdb2`](https://github.com/beambeambeam/toktickit/commit/ba8fdb2bffae548918e01c6557b010b75146935a), [`41d87c7`](https://github.com/beambeambeam/toktickit/commit/41d87c7b156d1feff4e9ac771d612cb3157e356b), [`42409d3`](https://github.com/beambeambeam/toktickit/commit/42409d332d75212855f38f500405d87917ab9e79), [`b3d9c36`](https://github.com/beambeambeam/toktickit/commit/b3d9c36adee894268166302f38377c3d468d7506) | [Reply](https://github.com/beambeambeam/toktickit/pull/87#discussion_r4274827947). Open. |
+
+The first reply in the Urgent preview thread named the wrong commit. That reply was edited to name `e746da0`.
+
+Each test-gap fix has a mutation check: the new test failed when the fix was removed, or when the code under test was changed. These checks cover the Urgent and My Actions preview caps, the `activeOwned` active filter (parity test), the Administrator role gate (UI test), and the duplicated time zone label. During the visual review, the screenshots showed `(Asia/Bangkok)` twice in the dashboard note. `ba8fdb2` fixes this.
+
+The reviewer must verify the replies and resolve the threads. A re-review request goes to @Kiatisakk only.
