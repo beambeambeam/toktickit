@@ -27,7 +27,7 @@ const { getStaffDashboardMock, navigateMock, user } = vi.hoisted(() => ({
     id: 7,
     isActive: true,
     mustChangePassword: false,
-    role: "IT Staff" as const,
+    role: "IT Staff",
     updatedAt: "2026-09-01T00:00:00.000Z",
   },
 }));
@@ -217,10 +217,31 @@ describe("Staff dashboard UI", () => {
   beforeEach(() => {
     getStaffDashboardMock.mockReset().mockResolvedValue(populatedDashboard);
     navigateMock.mockReset();
+    user.role = "IT Staff";
   });
 
   afterEach(() => {
     cleanup();
+  });
+
+  it("gives an Administrator the same staff cards, previews, and links", async () => {
+    user.role = "Administrator";
+    renderDashboard();
+
+    expectQueueLink(
+      await screen.findByRole("link", { name: /Active Unassigned.*2/u }),
+      { owner: "unassigned", scope: "active" }
+    );
+    expectQueueLink(screen.getByRole("link", { name: "Active Owned: 1" }), {
+      owner: "me",
+      scope: "active",
+    });
+    expect(
+      screen.getByRole("link", { name: "My Actions: 1" }).getAttribute("href")
+    ).toBe("/staff/actions");
+    expect(screen.getByText("Reset the access point")).toBeTruthy();
+    expect(getStaffDashboardMock).toHaveBeenCalledTimes(1);
+    expect(screen.queryByText(/Access denied/u)).toBeNull();
   });
 
   it("links the Active Unassigned count to the exact unassigned active queue", async () => {
