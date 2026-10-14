@@ -15,6 +15,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthUser } from "@/api/auth";
 import { ApiRequestError } from "@/api/errors";
+import type * as StaffQueryOptions from "@/api/staff-query-options";
 import type { Owner } from "@/generated/hey-api/types.gen";
 import { StaffTicketDetailPage } from "@/pages/staff-ticket-detail-page";
 
@@ -108,7 +109,10 @@ vi.mock("@/api/staff", () => ({
   updateStaffTicketStatus: updateStaffTicketStatusMock,
 }));
 
-vi.mock("@/api/staff-query-options", () => ({
+vi.mock("@/api/staff-query-options", async () => ({
+  ...(await vi.importActual<typeof StaffQueryOptions>(
+    "@/api/staff-query-options"
+  )),
   staffOwnersQueryOptions: () => ({
     queryFn: async () => await getStaffOwnersMock(),
     queryKey: ["staff-owners"],

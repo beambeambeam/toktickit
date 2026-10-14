@@ -18,7 +18,10 @@ import {
   updateStaffTicketOwner,
   updateStaffTicketStatus,
 } from "@/api/staff";
-import { staffOwnersQueryOptions } from "@/api/staff-query-options";
+import {
+  invalidateStaffWorkQueries,
+  staffOwnersQueryOptions,
+} from "@/api/staff-query-options";
 import type { UserRole } from "@/api/users";
 import { ActionsTakenSection } from "@/components/actions-taken-section";
 import {
@@ -248,7 +251,7 @@ const StaffTicketDetailContent = ({
       ["ticket", user?.id ?? 0, numericTicketId],
       nextTicket
     );
-    void queryClient.invalidateQueries({ queryKey: ["staff-tickets"] });
+    void invalidateStaffWorkQueries(queryClient);
     void queryClient.invalidateQueries({
       queryKey: ["ticket-status-history", numericTicketId],
     });
@@ -299,7 +302,7 @@ const StaffTicketDetailContent = ({
         ["ticket", user?.id ?? 0, numericTicketId],
         nextTicket
       );
-      void queryClient.invalidateQueries({ queryKey: ["staff-tickets"] });
+      void invalidateStaffWorkQueries(queryClient);
       void queryClient.invalidateQueries({
         queryKey: ["ticket-status-history", numericTicketId],
       });
