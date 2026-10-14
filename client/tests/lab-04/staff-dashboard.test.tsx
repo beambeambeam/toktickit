@@ -532,6 +532,14 @@ describe("Staff dashboard UI", () => {
     });
   });
 
+  it("names the Bangkok time zone once for each window timestamp", async () => {
+    const { container } = renderDashboard();
+
+    await screen.findByLabelText("Ticket metrics");
+    const note = container.querySelector(".dashboard-window")?.textContent;
+    expect(note?.match(/\(Asia\/Bangkok\)/gu)).toHaveLength(3);
+  });
+
   it("offers no Create Ticket action and no trend controls", async () => {
     renderDashboard();
     await screen.findByRole("link", { name: "Active Owned: 1" });

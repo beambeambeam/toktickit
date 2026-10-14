@@ -222,9 +222,8 @@ export const StaffDashboardPage = () => {
       {dashboard === undefined ? null : (
         <>
           <p className="dashboard-window" ref={windowNoteRef} tabIndex={-1}>
-            Updated {formatBangkokDate(dashboard.generatedAt)} (Asia/Bangkok).
-            Recently updated Tickets cover{" "}
-            {formatBangkokDate(dashboard.window.from)} through{" "}
+            Updated {formatBangkokDate(dashboard.generatedAt)}. Recently updated
+            Tickets cover {formatBangkokDate(dashboard.window.from)} through{" "}
             {formatBangkokDate(dashboard.window.through)}.
           </p>
           <section
