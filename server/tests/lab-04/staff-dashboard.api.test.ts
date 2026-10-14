@@ -492,14 +492,15 @@ describe("Lab 4 staff dashboard API", () => {
       updatedAt: new Date(now - 30 * 60 * 1000),
     });
     await Promise.all(
-      [1, 2, 3, 4, 5, 6].map( async (index) =>
-        createTicket({
-          currentStatus: "Open",
-          itPriority: "Urgent",
-          ownerId: null,
-          ticketNumber: `TKT-URG-ACTIVE-${index}`,
-          updatedAt: new Date(now - index * hourMs),
-        })
+      [1, 2, 3, 4, 5, 6].map(
+        async (index) =>
+          await createTicket({
+            currentStatus: "Open",
+            itPriority: "Urgent",
+            ownerId: null,
+            ticketNumber: `TKT-URG-ACTIVE-${index}`,
+            updatedAt: new Date(now - index * hourMs),
+          })
       )
     );
 
@@ -524,6 +525,48 @@ describe("Lab 4 staff dashboard API", () => {
         "TKT-URG-ACTIVE-3",
         "TKT-URG-ACTIVE-4",
         "TKT-URG-ACTIVE-5",
+      ]
+    );
+  });
+
+  it("caps the My Actions preview at five pending Actions", async () => {
+    const now = Date.now();
+    const ticket = await createTicket({
+      currentStatus: "Open",
+      itPriority: "Medium",
+      ownerId: staffId,
+      ticketNumber: "TKT-MYACT-CAP",
+      updatedAt: new Date(now - dayMs),
+    });
+    await Promise.all(
+      [1, 2, 3, 4, 5, 6].map(
+        async (index) =>
+          await createAction({
+            assigneeId: staffId,
+            createdById: staffId,
+            description: `Pending action ${index}`,
+            status: index % 2 === 0 ? "InProgress" : "Planned",
+            ticketId: ticket.id,
+            updatedAt: new Date(now - index * hourMs),
+          })
+      )
+    );
+
+    const response = await request(getFixture().app)
+      .get("/api/staff/dashboard")
+      .set(authHeaders(staff))
+      .expect(200);
+    const dashboard = asJsonObject(response.body);
+
+    assert.equal(asJsonObject(dashboard.counts).myActions, 6);
+    assert.deepEqual(
+      fieldValues(asJsonObject(dashboard.previews).myActions, "description"),
+      [
+        "Pending action 1",
+        "Pending action 2",
+        "Pending action 3",
+        "Pending action 4",
+        "Pending action 5",
       ]
     );
   });
