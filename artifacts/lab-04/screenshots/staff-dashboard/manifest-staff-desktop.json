@@ -1,0 +1,110 @@
+{
+  "branch": "feature/79-staff-dashboard",
+  "command": "E2E_CLIENT_PORT=5279 E2E_API_URL=http://localhost:3079 VITE_API_URL=http://localhost:3079 pnpm --filter @toktickit/e2e exec playwright test lab-04/staff-dashboard-evidence.spec.ts",
+  "commit": "41d87c7b156d1feff4e9ac771d612cb3157e356b",
+  "files": [
+    {
+      "path": "artifacts/lab-04/screenshots/staff-dashboard/staff-dashboard-minimum-width-320-css-pixels.png",
+      "role": "IT Staff",
+      "scenario": "IT Staff dashboard with seeded counts at 320 CSS px",
+      "viewport": {
+        "width": 320,
+        "height": 900
+      },
+      "zoom": "minimum-width-320-css-pixels"
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/staff-dashboard/staff-dashboard-css-reflow-200-percent.png",
+      "role": "IT Staff",
+      "scenario": "IT Staff dashboard with seeded counts at 720 CSS px",
+      "viewport": {
+        "width": 720,
+        "height": 900
+      },
+      "zoom": "css-reflow-200-percent"
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/staff-dashboard/staff-dashboard-desktop.png",
+      "role": "IT Staff",
+      "scenario": "IT Staff dashboard with seeded counts",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "zoom": "default"
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/staff-dashboard/staff-queue-unassigned-minimum-width-320-css-pixels.png",
+      "role": "IT Staff",
+      "scenario": "IT Staff Active Unassigned Queue drill-down at 320 CSS px",
+      "viewport": {
+        "width": 320,
+        "height": 900
+      },
+      "zoom": "minimum-width-320-css-pixels"
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/staff-dashboard/staff-queue-unassigned-css-reflow-200-percent.png",
+      "role": "IT Staff",
+      "scenario": "IT Staff Active Unassigned Queue drill-down at 720 CSS px",
+      "viewport": {
+        "width": 720,
+        "height": 900
+      },
+      "zoom": "css-reflow-200-percent"
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/staff-dashboard/staff-queue-unassigned-desktop.png",
+      "role": "IT Staff",
+      "scenario": "IT Staff Active Unassigned Queue drill-down",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "zoom": "default"
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/staff-dashboard/staff-my-actions-minimum-width-320-css-pixels.png",
+      "role": "IT Staff",
+      "scenario": "IT Staff My Actions list at 320 CSS px",
+      "viewport": {
+        "width": 320,
+        "height": 900
+      },
+      "zoom": "minimum-width-320-css-pixels"
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/staff-dashboard/staff-my-actions-css-reflow-200-percent.png",
+      "role": "IT Staff",
+      "scenario": "IT Staff My Actions list at 720 CSS px",
+      "viewport": {
+        "width": 720,
+        "height": 900
+      },
+      "zoom": "css-reflow-200-percent"
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/staff-dashboard/staff-my-actions-desktop.png",
+      "role": "IT Staff",
+      "scenario": "IT Staff My Actions list",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "zoom": "default"
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/staff-dashboard/staff-dashboard-error-desktop.png",
+      "role": "IT Staff",
+      "scenario": "Recoverable dashboard network failure with retry option",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      },
+      "zoom": "default"
+    }
+  ],
+  "generatedAt": "2026-10-14T18:40:13.142Z",
+  "project": "desktop-chromium",
+  "sourceDirty": false
+}
