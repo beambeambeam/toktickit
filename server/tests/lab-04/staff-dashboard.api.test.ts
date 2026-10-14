@@ -753,4 +753,105 @@ describe("Lab 4 staff dashboard API", () => {
       ]
     );
   });
+
+  it("serves the dashboard and first list pages within a bounded time and payload", async () => {
+    const { app, prisma } = getFixture();
+    const statuses: readonly TicketStatus[] = [
+      "New",
+      "Open",
+      "InProgress",
+      "WaitingForRequester",
+      "Resolved",
+      "Closed",
+    ];
+    const priorities: readonly TicketPriority[] = [
+      "Low",
+      "Medium",
+      "High",
+      "Urgent",
+    ];
+    const now = Date.now();
+    // 600 Tickets: a representative staff workload with every card non-zero.
+    await prisma.ticket.createMany({
+      data: Array.from({ length: 600 }, (_, index) => {
+        const updatedAt = new Date(now - (index + 1) * 30 * 60_000);
+        return {
+          categoryId,
+          currentStatus: statuses[index % statuses.length] ?? "New",
+          description:
+            "A Staff dashboard fixture Ticket with enough detail to read.",
+          itPriority: priorities[index % priorities.length] ?? "Low",
+          ownerId: [null, staffId, otherStaffId][index % 3] ?? null,
+          relatedSystemId,
+          requestedPriority: "Medium" as const,
+          requesterId,
+          statusChangedAt: updatedAt,
+          summary: `Staff dashboard perf ${index}`,
+          ticketDate: new Date(updatedAt.getTime() - dayMs),
+          ticketNumber: `TKT-PERF-${String(index).padStart(4, "0")}`,
+          updatedAt,
+        };
+      }),
+    });
+    const tickets = await prisma.ticket.findMany({
+      select: { id: true },
+      where: { ticketNumber: { startsWith: "TKT-PERF-" } },
+    });
+    // Two Actions per Ticket for IT Staff A: 1,200 Actions in all states.
+    await prisma.actionTaken.createMany({
+      data: tickets.flatMap((ticket, index) =>
+        [0, 1].map((offset) => ({
+          assigneeId: staffId,
+          createdByUserId: staffId,
+          description: `Perf action ${index}-${offset}`,
+          payloadHash: "a".repeat(64),
+          requestId: randomUUID(),
+          status:
+            (["Planned", "InProgress", "Completed", "Cancelled"] as const)[
+              (index + offset) % 4
+            ] ?? "Planned",
+          ticketId: ticket.id,
+          updatedAt: new Date(now - (index * 2 + offset + 1) * 60_000),
+        }))
+      ),
+    });
+
+    const measure = async (path: string, query: Record<string, string>) => {
+      const startedAt = performance.now();
+      const response = await request(app)
+        .get(path)
+        .query(query)
+        .set(authHeaders(staff))
+        .expect(200);
+      const durationMs = performance.now() - startedAt;
+      const bytes = Buffer.byteLength(response.text);
+      // Smoke budget for a local database: one second and 16 KiB per response.
+      assert.ok(durationMs < 1000, `${path} took ${durationMs} ms`);
+      assert.ok(bytes < 16_384, `${path} returned ${bytes} bytes`);
+      return asJsonObject(response.body);
+    };
+
+    const dashboard = await measure("/api/staff/dashboard", {});
+    const previews = asJsonObject(dashboard.previews);
+    for (const preview of [
+      previews.urgentActiveTickets,
+      previews.recentlyUpdatedTickets,
+      previews.myActions,
+    ]) {
+      assert.equal(asJsonArray(preview).length, 5);
+    }
+    const counts = asJsonObject(dashboard.counts);
+    assert.equal(counts.activeUnassigned, 200);
+    assert.equal(counts.myActions, 400);
+
+    const queue = await measure("/api/staff/tickets", {
+      owner: "unassigned",
+      scope: "active",
+    });
+    const actions = await measure("/api/staff/actions", {});
+    assert.equal(queue.totalItems, counts.activeUnassigned);
+    assert.equal(actions.totalItems, counts.myActions);
+    assert.ok(asJsonArray(queue.items).length <= 20);
+    assert.ok(asJsonArray(actions.items).length <= 20);
+  });
 });
