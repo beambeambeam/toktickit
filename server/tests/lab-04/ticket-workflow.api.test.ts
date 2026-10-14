@@ -505,7 +505,12 @@ describe("Lab 4 Ticket lifecycle gate API", () => {
       await import("../../src/repositories/ticket-workflow.js");
 
     assert.deepEqual(
-      await updateTicketStatus(mustChangeStaff.id, ticket.id, "InProgress", 1),
+      await updateTicketStatus(
+        mustChangeStaff.id,
+        ticket.id,
+        "InProgress",
+        1
+      ),
       { kind: "actor-ineligible" }
     );
 
