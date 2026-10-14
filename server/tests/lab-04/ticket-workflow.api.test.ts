@@ -340,6 +340,39 @@ describe("Lab 4 Ticket lifecycle gate API", () => {
     assert.equal(stored.version, 1);
   });
 
+  it("treats an In Progress action as pending for Resolved and Cancelled", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket({
+      currentStatus: "In Progress",
+      ownerIdValue: ownerId,
+    });
+    await createActionTaken({ status: "Completed", ticketId: ticket.id });
+    await createActionTaken({ status: "InProgress", ticketId: ticket.id });
+
+    const resolveResponse = await postStatus(
+      ticket.id,
+      { confirmed: true, currentStatus: "Resolved", version: 1 },
+      staff
+    ).expect(409);
+    assert.equal(readError(resolveResponse).code, "RESOLUTION_GATE_FAILED");
+    assert.deepEqual(asJsonObject(readError(resolveResponse).details).reasons, [
+      "PENDING_ACTIONS",
+    ]);
+
+    const cancelResponse = await postStatus(
+      ticket.id,
+      { confirmed: true, currentStatus: "Cancelled", version: 1 },
+      staff
+    ).expect(409);
+    assert.equal(readError(cancelResponse).code, "TICKET_HAS_PENDING_ACTIONS");
+
+    const stored = await activeFixture.prisma.ticket.findUniqueOrThrow({
+      where: { id: ticket.id },
+    });
+    assert.equal(stored.currentStatus, "InProgress");
+    assert.equal(stored.version, 1);
+  });
+
   it("allows Cancelled once no Planned or In Progress action remains", async () => {
     const activeFixture = getFixture();
     const ticket = await createTicket({
@@ -505,12 +538,7 @@ describe("Lab 4 Ticket lifecycle gate API", () => {
       await import("../../src/repositories/ticket-workflow.js");
 
     assert.deepEqual(
-      await updateTicketStatus(
-        mustChangeStaff.id,
-        ticket.id,
-        "InProgress",
-        1
-      ),
+      await updateTicketStatus(mustChangeStaff.id, ticket.id, "InProgress", 1),
       { kind: "actor-ineligible" }
     );
 
