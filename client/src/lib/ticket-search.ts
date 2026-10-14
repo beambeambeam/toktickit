@@ -98,3 +98,15 @@ export const parseStaffTicketSearch = (
     ...(itPriority === undefined ? {} : { itPriority }),
   };
 };
+
+/** True when a recently-updated link carried a window the Queue had to drop. */
+export const hasIgnoredTimeWindow = (searchStr: string): boolean => {
+  const search = new URLSearchParams(searchStr);
+  return (
+    search.get("scope") === "recently-updated" &&
+    parseTimeWindow(
+      search.get("from") ?? undefined,
+      search.get("through") ?? undefined
+    ) === undefined
+  );
+};

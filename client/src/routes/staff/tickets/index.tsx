@@ -1,11 +1,24 @@
-import { createFileRoute, useSearch } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useLocation,
+  useSearch,
+} from "@tanstack/react-router";
 
-import { parseStaffTicketSearch } from "@/lib/ticket-search";
+import {
+  hasIgnoredTimeWindow,
+  parseStaffTicketSearch,
+} from "@/lib/ticket-search";
 import { StaffTicketQueuePage } from "@/pages/staff-ticket-queue-page";
 
 const StaffTicketsRoute = () => {
   const search = useSearch({ from: "/staff/tickets/" });
-  return <StaffTicketQueuePage initialFilters={search} />;
+  const searchStr = useLocation({ select: (location) => location.searchStr });
+  return (
+    <StaffTicketQueuePage
+      ignoredTimeWindow={hasIgnoredTimeWindow(searchStr)}
+      initialFilters={search}
+    />
+  );
 };
 
 export const Route = createFileRoute("/staff/tickets/")({

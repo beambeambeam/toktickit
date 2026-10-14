@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 
-import { parseTimeWindow } from "@/lib/ticket-search";
+import { hasIgnoredTimeWindow, parseTimeWindow } from "@/lib/ticket-search";
 import { Route as StaffTicketsRoute } from "@/routes/staff/tickets/index";
 import { Route } from "@/routes/tickets/index";
 
@@ -111,5 +111,26 @@ describe("Staff Ticket Queue search", () => {
         through: "2026-09-08T00:00:00.000Z",
       })
     ).toEqual({ scope: "active" });
+  });
+});
+
+describe("Ignored Ticket Queue window", () => {
+  it("reports a recently-updated link whose window was dropped", () => {
+    expect(
+      hasIgnoredTimeWindow(
+        "?scope=recently-updated&from=2026-09-08T00%3A00%3A00.000Z&through=bad"
+      )
+    ).toBe(true);
+    expect(hasIgnoredTimeWindow("?scope=recently-updated")).toBe(true);
+  });
+
+  it("does not report a valid window or another scope", () => {
+    expect(
+      hasIgnoredTimeWindow(
+        "?scope=recently-updated&from=2026-09-01T00%3A00%3A00.000Z&through=2026-09-08T00%3A00%3A00.000Z"
+      )
+    ).toBe(false);
+    expect(hasIgnoredTimeWindow("?scope=active&from=bad")).toBe(false);
+    expect(hasIgnoredTimeWindow("")).toBe(false);
   });
 });

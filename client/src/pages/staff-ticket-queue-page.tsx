@@ -140,10 +140,12 @@ const getQueueErrorMessage = (
 
 // oxlint-disable-next-line complexity -- this page renders documented queue filters and data states.
 const StaffTicketQueueContent = ({
+  ignoredTimeWindow,
   initialFilters,
   onAccessError,
   user,
 }: {
+  ignoredTimeWindow: boolean;
   initialFilters: StaffTicketSearch;
   onAccessError: (error: ApiRequestError) => void;
   user: AuthUser;
@@ -506,6 +508,11 @@ const StaffTicketQueueContent = ({
             Search
           </button>
         </form>
+        {ignoredTimeWindow ? (
+          <p className="filter-window" role="status">
+            The date range in the link was invalid and was ignored.
+          </p>
+        ) : null}
         {params.scope === "recently-updated" &&
         params.from !== undefined &&
         params.through !== undefined ? (
@@ -759,8 +766,10 @@ const StaffTicketQueueContent = ({
 const noInitialFilters: StaffTicketSearch = {};
 
 export const StaffTicketQueuePage = ({
+  ignoredTimeWindow = false,
   initialFilters = noInitialFilters,
 }: {
+  ignoredTimeWindow?: boolean;
   initialFilters?: StaffTicketSearch;
 }) => {
   const { refetchAuth, user } = useAuth();
@@ -807,6 +816,7 @@ export const StaffTicketQueuePage = ({
 
   return (
     <StaffTicketQueueContent
+      ignoredTimeWindow={ignoredTimeWindow}
       initialFilters={initialFilters}
       key={`${user.id}:${JSON.stringify(initialFilters)}`}
       onAccessError={setAccessError}

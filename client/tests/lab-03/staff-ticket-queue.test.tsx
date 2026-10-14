@@ -153,7 +153,10 @@ const paginatedQueueResponse = {
   totalPages: 4,
 };
 
-const renderPage = (initialFilters: StaffTicketSearch = {}) => {
+const renderPage = (
+  initialFilters: StaffTicketSearch = {},
+  ignoredTimeWindow = false
+) => {
   const queryClient = new QueryClient({
     defaultOptions: {
       queries: { gcTime: 0, retry: false },
@@ -162,7 +165,10 @@ const renderPage = (initialFilters: StaffTicketSearch = {}) => {
 
   return render(
     <QueryClientProvider client={queryClient}>
-      <StaffTicketQueuePage initialFilters={initialFilters} />
+      <StaffTicketQueuePage
+        ignoredTimeWindow={ignoredTimeWindow}
+        initialFilters={initialFilters}
+      />
     </QueryClientProvider>
   );
 };
@@ -404,6 +410,18 @@ describe("Staff Ticket Queue page", () => {
       search: {},
       to: "/staff/tickets",
     });
+  });
+
+  it("says when a link's date range was invalid and was ignored", async () => {
+    getStaffTicketsMock.mockResolvedValue(queueResponse);
+    renderPage({}, true);
+
+    await screen.findAllByText("TKT-20260902-QUEUE01");
+    expect(
+      screen.getByText(
+        "The date range in the link was invalid and was ignored."
+      )
+    ).toBeTruthy();
   });
 
   it("sends the recently-updated window and shows it in Bangkok time", async () => {
