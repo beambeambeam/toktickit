@@ -570,4 +570,187 @@ describe("Lab 4 staff dashboard API", () => {
       ]
     );
   });
+
+  it("matches every card count and preview to its drill-down list for each staff account", async () => {
+    const { app, prisma } = getFixture();
+    const adminUser = await prisma.user.findUniqueOrThrow({
+      where: { email: adminEmail },
+    });
+    const statuses: readonly TicketStatus[] = [
+      "New",
+      "Open",
+      "InProgress",
+      "WaitingForRequester",
+      "Reopened",
+      "Resolved",
+      "Closed",
+      "Cancelled",
+    ];
+    const priorities: readonly TicketPriority[] = [
+      "Low",
+      "Medium",
+      "High",
+      "Urgent",
+    ];
+    const owners = [null, staffId, otherStaffId, adminUser.id];
+    const actionStatuses: readonly ActionStatus[] = [
+      "Planned",
+      "InProgress",
+      "Completed",
+      "Cancelled",
+    ];
+    const assignees = [staffId, otherStaffId, adminUser.id];
+    const now = Date.now();
+    const combinations = statuses.flatMap((currentStatus) =>
+      priorities.flatMap((itPriority) =>
+        owners.map((ownerId) => ({ currentStatus, itPriority, ownerId }))
+      )
+    );
+
+    // 128 Tickets at distinct 2-hour steps, so some fall outside the 7-day window.
+    const tickets = await Promise.all(
+      combinations.map(
+        async (combination, index) =>
+          await createTicket({
+            ...combination,
+            ticketNumber: `TKT-PARITY-${String(index).padStart(3, "0")}`,
+            updatedAt: new Date(now - (index + 1) * 2 * hourMs),
+          })
+      )
+    );
+    // Every Ticket gets one Action per assignee, rotating through all four states.
+    await Promise.all(
+      tickets.flatMap((ticket, index) =>
+        assignees.map(
+          async (assigneeId, assigneeIndex) =>
+            await createAction({
+              assigneeId,
+              createdById: staffId,
+              description: `Parity action ${index}-${assigneeIndex}`,
+              status:
+                actionStatuses[
+                  (index + assigneeIndex) % actionStatuses.length
+                ] ?? "Planned",
+              ticketId: ticket.id,
+              updatedAt: new Date(
+                now - (index * 3 + assigneeIndex + 1) * 60_000
+              ),
+            })
+        )
+      )
+    );
+
+    const getJson = async (
+      session: AuthenticatedFixtureSession,
+      path: string,
+      query: Record<string, string> = {}
+    ): Promise<JsonObject> => {
+      const response = await request(app)
+        .get(path)
+        .query(query)
+        .set(authHeaders(session))
+        .expect(200);
+      return asJsonObject(response.body);
+    };
+    const ticketTotal = async (
+      session: AuthenticatedFixtureSession,
+      query: Record<string, string>
+    ) => {
+      const page = await getJson(session, "/api/staff/tickets", query);
+      return page.totalItems;
+    };
+    const firstTicketNumbers = async (
+      session: AuthenticatedFixtureSession,
+      query: Record<string, string>
+    ) => {
+      const page = await getJson(session, "/api/staff/tickets", {
+        ...query,
+        sortBy: "updatedAt",
+        sortDirection: "desc",
+      });
+      return fieldValues(page.items, "ticketNumber").slice(0, 5);
+    };
+
+    const checkAccount = async (session: AuthenticatedFixtureSession) => {
+      const dashboard = await getJson(session, "/api/staff/dashboard");
+      const counts = asJsonObject(dashboard.counts);
+      const previews = asJsonObject(dashboard.previews);
+      const window = asJsonObject(dashboard.window);
+      const byStatus = asJsonObject(counts.byStatus);
+      const activeByPriority = asJsonObject(counts.activeByPriority);
+
+      const [
+        unassigned,
+        owned,
+        statusTotals,
+        priorityTotals,
+        urgentTotal,
+        urgentFirst,
+        recentFirst,
+        actionsPage,
+      ] = await Promise.all([
+        ticketTotal(session, { owner: "unassigned", scope: "active" }),
+        ticketTotal(session, { owner: "me", scope: "active" }),
+        Promise.all(
+          Object.keys(byStatus).map(
+            async (currentStatus) =>
+              [
+                currentStatus,
+                await ticketTotal(session, { currentStatus }),
+              ] as const
+          )
+        ),
+        Promise.all(
+          Object.keys(activeByPriority).map(
+            async (itPriority) =>
+              [
+                itPriority,
+                await ticketTotal(session, { itPriority, scope: "active" }),
+              ] as const
+          )
+        ),
+        ticketTotal(session, { scope: "urgent-active" }),
+        firstTicketNumbers(session, { scope: "urgent-active" }),
+        firstTicketNumbers(session, {
+          from: getString(window, "from"),
+          scope: "recently-updated",
+          through: getString(window, "through"),
+        }),
+        getJson(session, "/api/staff/actions", { pageSize: "50" }),
+      ]);
+
+      assert.equal(unassigned, counts.activeUnassigned);
+      assert.equal(owned, counts.activeOwned);
+      assert.deepEqual(Object.fromEntries(statusTotals), byStatus);
+      assert.deepEqual(Object.fromEntries(priorityTotals), activeByPriority);
+      assert.equal(urgentTotal, activeByPriority.Urgent);
+      assert.deepEqual(
+        urgentFirst,
+        fieldValues(previews.urgentActiveTickets, "ticketNumber")
+      );
+      assert.deepEqual(
+        recentFirst,
+        fieldValues(previews.recentlyUpdatedTickets, "ticketNumber")
+      );
+      assert.equal(actionsPage.totalItems, counts.myActions);
+      assert.deepEqual(
+        fieldValues(actionsPage.items, "description").slice(0, 5),
+        fieldValues(previews.myActions, "description")
+      );
+      return counts;
+    };
+
+    const accountCounts = await Promise.all(
+      [staff, otherStaff, admin].map(checkAccount)
+    );
+    // The fixture must exercise non-zero, per-account values.
+    assert.deepEqual(
+      accountCounts.map((counts) => [counts.activeOwned, counts.myActions]),
+      [
+        [20, 40],
+        [20, 40],
+        [20, 40],
+      ]
+    );
+  });
 });
