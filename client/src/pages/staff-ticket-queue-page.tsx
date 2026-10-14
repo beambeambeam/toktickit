@@ -154,6 +154,7 @@ const StaffTicketQueueContent = ({
   }));
   const [searchDraft, setSearchDraft] = useState("");
   const handledOwnerError = useRef<ApiRequestError | null>(null);
+  const navigate = useNavigate();
 
   const categoriesQuery = useQuery(activeCategoriesQueryOptions());
   const relatedSystemsQuery = useQuery(relatedSystemsQueryOptions());
@@ -213,6 +214,8 @@ const StaffTicketQueueContent = ({
   const clearFilters = () => {
     setSearchDraft("");
     setParams({ ...initialParams });
+    // Drop drill-down filters from the URL so a reload does not restore them.
+    void navigate({ search: {}, to: "/staff/tickets" });
   };
 
   const submitSearch = (event: SubmitEvent<HTMLFormElement>) => {

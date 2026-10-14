@@ -385,7 +385,7 @@ describe("Staff Ticket Queue page", () => {
     await screen.findAllByText("TKT-20260902-QUEUE01");
   });
 
-  it("applies the URL scope to the request and keeps Clear Filters available", async () => {
+  it("applies the URL scope to the request and clears it from the URL", async () => {
     renderPage({ scope: "urgent-active" });
 
     await screen.findAllByText("TKT-20260902-QUEUE01");
@@ -398,6 +398,12 @@ describe("Staff Ticket Queue page", () => {
         name: /Clear Filters/u,
       }).disabled
     ).toBe(false);
+
+    fireEvent.click(screen.getByRole("button", { name: /Clear Filters/u }));
+    expect(navigateMock).toHaveBeenCalledWith({
+      search: {},
+      to: "/staff/tickets",
+    });
   });
 
   it("sends the recently-updated window and shows it in Bangkok time", async () => {
