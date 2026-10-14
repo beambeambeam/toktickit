@@ -480,4 +480,51 @@ describe("Lab 4 staff dashboard API", () => {
     assert.equal(otherCounts.activeUnassigned, 3);
     assert.equal(otherCounts.myActions, 1);
   });
+
+  it("caps the urgent preview at five active Urgent Tickets", async () => {
+    const now = Date.now();
+    await createTicket({
+      currentStatus: "Resolved",
+      itPriority: "Urgent",
+      ownerId: staffId,
+      resolvedAt: new Date(now - 30 * 60 * 1000),
+      ticketNumber: "TKT-URG-RESOLVED",
+      updatedAt: new Date(now - 30 * 60 * 1000),
+    });
+    await Promise.all(
+      [1, 2, 3, 4, 5, 6].map( async (index) =>
+        createTicket({
+          currentStatus: "Open",
+          itPriority: "Urgent",
+          ownerId: null,
+          ticketNumber: `TKT-URG-ACTIVE-${index}`,
+          updatedAt: new Date(now - index * hourMs),
+        })
+      )
+    );
+
+    const response = await request(getFixture().app)
+      .get("/api/staff/dashboard")
+      .set(authHeaders(staff))
+      .expect(200);
+    const dashboard = asJsonObject(response.body);
+
+    assert.equal(
+      asJsonObject(asJsonObject(dashboard.counts).activeByPriority).Urgent,
+      6
+    );
+    assert.deepEqual(
+      fieldValues(
+        asJsonObject(dashboard.previews).urgentActiveTickets,
+        "ticketNumber"
+      ),
+      [
+        "TKT-URG-ACTIVE-1",
+        "TKT-URG-ACTIVE-2",
+        "TKT-URG-ACTIVE-3",
+        "TKT-URG-ACTIVE-4",
+        "TKT-URG-ACTIVE-5",
+      ]
+    );
+  });
 });
