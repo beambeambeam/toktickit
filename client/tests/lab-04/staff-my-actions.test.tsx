@@ -278,6 +278,19 @@ describe("Staff My Actions UI", () => {
     await screen.findByText("Page 2 of 3");
   });
 
+  it("keeps focus on the clicked pagination control while the next page loads", async () => {
+    getStaffActionsMock.mockImplementation(resolveActionPage);
+    renderPage();
+
+    const next = await screen.findByRole("button", { name: /Next/u });
+    next.focus();
+    fireEvent.click(next);
+    await screen.findByText("Page 2 of 3");
+
+    expect(next.isConnected).toBe(true);
+    expect(document.activeElement).toBe(next);
+  });
+
   it("explains when no Planned or In Progress actions are assigned", async () => {
     getStaffActionsMock.mockResolvedValue(
       actionPage({ items: [], totalItems: 0, totalPages: 0 })

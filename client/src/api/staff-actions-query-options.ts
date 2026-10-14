@@ -1,4 +1,4 @@
-import { queryOptions } from "@tanstack/react-query";
+import { keepPreviousData, queryOptions } from "@tanstack/react-query";
 
 import type { AuthUser } from "@/api/auth";
 import { dashboardRetry } from "@/api/dashboard-query-options";
@@ -11,6 +11,8 @@ export const staffMyActionsQueryOptions = (
   params: StaffMyActionsParams
 ) =>
   queryOptions({
+    // Keep the current page mounted while the next one loads so pagination keeps focus.
+    placeholderData: keepPreviousData,
     queryFn: async ({ signal }) => await getStaffActions(params, signal),
     queryKey: [
       "staff-my-actions",
