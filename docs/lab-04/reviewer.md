@@ -116,3 +116,33 @@ The first reply in the cache-refresh thread named the wrong commit. A second rep
 Each test-gap fix has a mutation check. The new test failed when the fix was removed: the sign-in landing, the bad URL date, the Bangkok date format, Refresh focus, Retry focus, the refresh announcement, refetch on mount, `gte`/`lte` to `gt`/`lt` changes, the foreign Waiting count, and the active status set. The Dashboard repository now takes an optional snapshot time so the endpoint test can pin the window.
 
 The reviewer must verify the replies and resolve the threads. A re-review request goes to @Kiatisakk only.
+
+## PR #86 — Issue #77 Ticket lifecycle gate
+
+[PR #86](https://github.com/beambeambeam/toktickit/pull/86) targets `lab4-staging`. @Kiatisakk requested changes and Greptile left inline findings. The review has 18 inline threads. Two threads (one from each reviewer) report the same status history paging defect and share one commit.
+
+Each finding has its own commit or commits. Every thread has a reply that names its commit. All threads stay open for the reviewer to verify and resolve. This checkpoint does not claim human approval.
+
+| Finding | Commit | Reply / state |
+| --- | --- | --- |
+| Status repository test called the function without the `confirmed` argument (TS2554) | [`0aee185`](https://github.com/beambeambeam/toktickit/commit/0aee1853099a838ac76354af16105003ff9b9f02) | [Reply](https://github.com/beambeambeam/toktickit/pull/86#discussion_r4276086402). Open. |
+| An In Progress Action was not tested as pending for the gate | [`878fa3e`](https://github.com/beambeambeam/toktickit/commit/878fa3e69f13033c0749a31f0ac22c82e1d8ecf7) | [Reply](https://github.com/beambeambeam/toktickit/pull/86#discussion_r4276092964). Open. |
+| No test showed that a foreign Requester cannot read status history | [`4e2e840`](https://github.com/beambeambeam/toktickit/commit/4e2e840d598e5baf7c24ad22c4369b1d9c48ad43) | [Reply](https://github.com/beambeambeam/toktickit/pull/86#discussion_r4276100116). Open. |
+| Paged status history reads were not tested | [`b0d34ff`](https://github.com/beambeambeam/toktickit/commit/b0d34ff78410331baaa8ce59f641975726392a66) | [Reply](https://github.com/beambeambeam/toktickit/pull/86#discussion_r4280312542). Open. |
+| Removing `lockTicket` kept the race tests green | [`aff2f7e`](https://github.com/beambeambeam/toktickit/commit/aff2f7efc13710259f51cbfbe1ad19c1dfb9aae2) | [Reply](https://github.com/beambeambeam/toktickit/pull/86#discussion_r4280320554). Open. |
+| API-20 did not name its test, and `resolvedAt` on Close was not tested | [`217269b`](https://github.com/beambeambeam/toktickit/commit/217269be7a6bb08d7148b8a64b4b0b80c45f28b0) | [Reply](https://github.com/beambeambeam/toktickit/pull/86#discussion_r4280329874). Open. |
+| AUTH-01 wording did not match its tests | [`0236316`](https://github.com/beambeambeam/toktickit/commit/0236316e5715e87a8342532d8e5c5d35bc6edf6f) | [Reply](https://github.com/beambeambeam/toktickit/pull/86#discussion_r4280332194). Open. |
+| A password reset left the owner on nonterminal Tickets (Greptile) | [`f827656`](https://github.com/beambeambeam/toktickit/commit/f8276568d1861db835b5a218bc6cba86a6898b2b) | [Reply](https://github.com/beambeambeam/toktickit/pull/86#discussion_r4280344551). Open. |
+| The `mustChangePassword` owner rule was not documented | [`d179b3b`](https://github.com/beambeambeam/toktickit/commit/d179b3bdc3b35abafa15f95f5310903244510895) | [Reply](https://github.com/beambeambeam/toktickit/pull/86#discussion_r4280349077). Open. |
+| OpenAPI status and staff write descriptions were out of date | [`36845a3`](https://github.com/beambeambeam/toktickit/commit/36845a3e2a6bb053053c2452d1b27eeff3efaf63) | [Reply](https://github.com/beambeambeam/toktickit/pull/86#discussion_r4280360575). Open. |
+| Status history times were not in Asia/Bangkok | [`847472e`](https://github.com/beambeambeam/toktickit/commit/847472e37ced716574a9e961898e94497df331fe) | [Reply](https://github.com/beambeambeam/toktickit/pull/86#discussion_r4280367897). Open. |
+| Status history showed only the first page (reviewer and Greptile) | [`f5df2d9`](https://github.com/beambeambeam/toktickit/commit/f5df2d900c3b27bcd991cbe9b632235f1fe89bb9) | [Reply](https://github.com/beambeambeam/toktickit/pull/86#discussion_r4280378258), [Reply](https://github.com/beambeambeam/toktickit/pull/86#discussion_r4280378446). Open. |
+| The Requester Ticket detail did not show status history | [`4157313`](https://github.com/beambeambeam/toktickit/commit/4157313582172d26b6f3c8cd2e3048fed6dab8df) | [Reply](https://github.com/beambeambeam/toktickit/pull/86#discussion_r4280388398). Open. |
+| Focus fell to the page body after the status dialog, and the reasons were outside the live region | [`7ec29f1`](https://github.com/beambeambeam/toktickit/commit/7ec29f1396f44d47423c9f9a0b36c2b7dafa1bd1) | [Reply](https://github.com/beambeambeam/toktickit/pull/86#discussion_r4280412983). Open. |
+| Status write outcomes and Administrator controls had surviving mutants | [`d239cf7`](https://github.com/beambeambeam/toktickit/commit/d239cf7882e84ddb303cf66afb270498ffcc68fb) | [Reply](https://github.com/beambeambeam/toktickit/pull/86#discussion_r4280438177). Open. |
+| No E2E concurrency test for Issue #77 | [`8ca8ba8`](https://github.com/beambeambeam/toktickit/commit/8ca8ba8be06fb5ed853a1a46fb6e980da2633ac3) | [Reply](https://github.com/beambeambeam/toktickit/pull/86#discussion_r4280468208). Open. |
+| No resolution gate screenshots or tablet and mobile reflow results | [`25137f3`](https://github.com/beambeambeam/toktickit/commit/25137f39000d6656a5cf4021d0badc8618192407), [`67c5221`](https://github.com/beambeambeam/toktickit/commit/67c5221733e1646191d0e88e0622ec5d8f8f0e95) | [Reply](https://github.com/beambeambeam/toktickit/pull/86#discussion_r4280515669). Open. |
+
+Each test-gap fix has a mutation check. The new test failed when the fix was removed: In Progress as pending, `lockTicket`, the focus target, `canOperate` for Administrators, `setQueryData` after success, the status history invalidation, and the ticket refetch on a 409. Removing `setStatusReasons([])` on success stays green. That change is equivalent, because the list renders only when an error shows.
+
+The reviewer must verify the replies and resolve the threads. A re-review request goes to @Kiatisakk only.
