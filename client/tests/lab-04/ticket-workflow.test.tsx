@@ -340,6 +340,95 @@ describe("Lab 4 Ticket workflow controls", () => {
 
     expect(screen.getByLabelText("Next status")).toBeTruthy();
     expect(screen.getByRole("button", { name: "Apply Status" })).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "Ticket Owner" })).toBeTruthy();
+    expect(screen.getByRole("combobox", { name: "IT Priority" })).toBeTruthy();
+  });
+
+  it("refreshes the Ticket summary and status history after a status change", async () => {
+    updateStaffTicketStatusMock.mockResolvedValue({
+      ...ticket,
+      currentStatus: "Waiting for Requester",
+      version: 3,
+    });
+    renderPage();
+    await screen.findByText("TKT-20260902-DETAIL01");
+    await vi.waitFor(() => {
+      expect(getTicketStatusHistoryMock).toHaveBeenCalledTimes(1);
+    });
+
+    fireEvent.change(screen.getByLabelText("Next status"), {
+      target: { value: "Waiting for Requester" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply Status" }));
+
+    await screen.findByText("Ticket status changed to Waiting for Requester.");
+    const section = screen.getByRole("region", { name: "Progress Ticket" });
+
+    expect(
+      within(section).getByText(
+        "Current status: Waiting for Requester · Version 3"
+      )
+    ).toBeTruthy();
+    expect(getTicketMock).toHaveBeenCalledTimes(1);
+    await vi.waitFor(() => {
+      expect(getTicketStatusHistoryMock).toHaveBeenCalledTimes(2);
+    });
+  });
+
+  it("clears resolution reasons after a later status change succeeds", async () => {
+    updateStaffTicketStatusMock
+      .mockRejectedValueOnce(
+        new ApiRequestError(
+          409,
+          "The Ticket does not meet the resolution requirements.",
+          "RESOLUTION_GATE_FAILED",
+          { reasons: ["NO_COMPLETED_ACTION"] }
+        )
+      )
+      .mockResolvedValueOnce({ ...ticket, currentStatus: "Resolved" });
+    renderPage();
+    await screen.findByText("TKT-20260902-DETAIL01");
+
+    await requestResolved();
+    await screen.findByRole("list", {
+      name: "Resolution requirements not met",
+    });
+    await requestResolved();
+
+    await screen.findByText("Ticket status changed to Resolved.");
+    expect(
+      screen.queryByRole("list", { name: "Resolution requirements not met" })
+    ).toBeNull();
+  });
+
+  it("clears the selection and reloads the Ticket after a version conflict", async () => {
+    updateStaffTicketStatusMock.mockRejectedValue(
+      new ApiRequestError(
+        409,
+        "The Ticket changed. Reload and try again.",
+        "VERSION_CONFLICT"
+      )
+    );
+    renderPage();
+    await screen.findByText("TKT-20260902-DETAIL01");
+
+    fireEvent.change(screen.getByLabelText("Next status"), {
+      target: { value: "Waiting for Requester" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply Status" }));
+
+    const section = screen.getByRole("region", { name: "Progress Ticket" });
+    const alert = await within(section).findByRole("alert");
+    const statusSelect =
+      screen.getByLabelText<HTMLSelectElement>("Next status");
+
+    expect(alert.textContent).toContain(
+      "The Ticket changed. Reload and try again."
+    );
+    expect(statusSelect.value).toBe("");
+    await vi.waitFor(() => {
+      expect(getTicketMock).toHaveBeenCalledTimes(2);
+    });
   });
 
   it("offers only the permitted next statuses for the current Ticket status", async () => {
