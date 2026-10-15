@@ -188,6 +188,17 @@ const ticket = {
   version: 2,
 };
 
+const historyEvent = (index: number) => ({
+  actor: { displayName: "Iris IT Staff", id: 10, role: "IT Staff" },
+  confirmed: false,
+  createdAt: "2026-09-02T10:45:00.000Z",
+  fromStatus: index % 2 === 0 ? "Waiting for Requester" : "In Progress",
+  id: index,
+  ticketId: 11,
+  ticketVersion: index + 1,
+  toStatus: index % 2 === 0 ? "In Progress" : "Waiting for Requester",
+});
+
 const renderPage = (ticketId = "11") => {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -384,6 +395,52 @@ describe("Lab 4 Ticket workflow controls", () => {
       { page: 1, pageSize: 20 },
       expect.anything()
     );
+  });
+
+  it("pages status history so changes after the first 20 stay reachable", async () => {
+    getTicketStatusHistoryMock.mockImplementation(
+      async (_ticketId: number, query: { page: number; pageSize: number }) =>
+        await Promise.resolve({
+          items:
+            query.page === 1
+              ? Array.from({ length: 20 }, (_, index) =>
+                  historyEvent(index + 1)
+                )
+              : [historyEvent(21), historyEvent(22)],
+          page: query.page,
+          pageSize: 20,
+          totalItems: 22,
+          totalPages: 2,
+        })
+    );
+    renderPage();
+    await screen.findByText("TKT-20260902-DETAIL01");
+
+    const history = await screen.findByRole("region", {
+      name: "Status history",
+    });
+    const pages = await within(history).findByRole("navigation", {
+      name: "Status history pages",
+    });
+    expect(within(pages).getByText(/Page 1 of 2/u)).toBeTruthy();
+    expect(within(history).getAllByRole("listitem")).toHaveLength(20);
+
+    fireEvent.click(within(pages).getByRole("button", { name: "Next" }));
+
+    expect(await within(history).findByText(/Ticket version 23/u)).toBeTruthy();
+    expect(within(history).getAllByRole("listitem")).toHaveLength(2);
+    expect(getTicketStatusHistoryMock).toHaveBeenLastCalledWith(
+      11,
+      { page: 2, pageSize: 20 },
+      expect.anything()
+    );
+    expect(
+      within(
+        within(history).getByRole("navigation", {
+          name: "Status history pages",
+        })
+      ).getByRole("button", { name: "Next" })
+    ).toHaveProperty("disabled", true);
   });
 
   it("explains that Planned and In Progress Actions must be finished before cancelling", async () => {

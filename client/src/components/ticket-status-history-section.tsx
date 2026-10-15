@@ -1,4 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
 
 import { ApiRequestError } from "@/api/errors";
 import { getTicketStatusHistory } from "@/api/staff";
@@ -25,18 +26,25 @@ interface TicketStatusHistorySectionProps {
 export const TicketStatusHistorySection = ({
   ticketId,
 }: TicketStatusHistorySectionProps) => {
+  const [pageState, setPageState] = useState({ page: 1, ticketId });
+  // Start again at page 1 when the section shows a different Ticket.
+  const page = pageState.ticketId === ticketId ? pageState.page : 1;
+  const setPage = (nextPage: number) => {
+    setPageState({ page: nextPage, ticketId });
+  };
   const historyQuery = useQuery({
     queryFn: async ({ signal }) =>
       await getTicketStatusHistory(
         ticketId,
-        { page: 1, pageSize: HISTORY_PAGE_SIZE },
+        { page, pageSize: HISTORY_PAGE_SIZE },
         signal
       ),
-    queryKey: ["ticket-status-history", ticketId],
+    queryKey: ["ticket-status-history", ticketId, page],
     retry: 1,
   });
-  const events = historyQuery.data?.items ?? [];
-  const totalItems = historyQuery.data?.totalItems ?? 0;
+  const historyPage = historyQuery.data;
+  const events = historyPage?.items ?? [];
+  const totalItems = historyPage?.totalItems ?? 0;
 
   return (
     <section
@@ -99,6 +107,34 @@ export const TicketStatusHistorySection = ({
             </li>
           ))}
         </ol>
+      ) : null}
+      {historyPage !== undefined && historyPage.totalPages > 1 ? (
+        <nav aria-label="Status history pages" className="pagination">
+          <button
+            className="button button-secondary"
+            disabled={page <= 1 || historyQuery.isFetching}
+            onClick={() => {
+              setPage(Math.max(1, page - 1));
+            }}
+            type="button"
+          >
+            Previous
+          </button>
+          <span>
+            Page {historyPage.page} of {historyPage.totalPages} ·{" "}
+            {historyPage.totalItems} total
+          </span>
+          <button
+            className="button button-secondary"
+            disabled={page >= historyPage.totalPages || historyQuery.isFetching}
+            onClick={() => {
+              setPage(Math.min(historyPage.totalPages, page + 1));
+            }}
+            type="button"
+          >
+            Next
+          </button>
+        </nav>
       ) : null}
     </section>
   );
