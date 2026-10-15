@@ -2,13 +2,14 @@ import { randomUUID } from "node:crypto";
 
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import type { Page } from "@playwright/test";
+import type { Browser, Page } from "@playwright/test";
 
 const apiUrl = process.env.E2E_API_URL ?? "http://localhost:3000";
 const appOrigin = process.env.E2E_BASE_URL ?? "http://localhost:5173";
 const password = "correct horse battery staple";
 const requesterEmail = "e2e-desktop@example.test";
 const staffEmail = "e2e-staff@example.test";
+const secondStaffEmail = "e2e-staff-second@example.test";
 
 type JsonObject = Record<string, unknown>;
 
@@ -376,5 +377,91 @@ test("status controls reflow at 320 and 640 CSS px", async ({
   // 320 CSS px is the WCAG 1.4.10 reflow width. 640 CSS px matches 200% zoom on a 1280 px desktop.
   await checkReflowAt(page, ticketId, 320);
   await checkReflowAt(page, ticketId, 640);
+  await logOut(page);
+});
+
+const openStaffPage = async (
+  browser: Browser,
+  email: string
+): Promise<Page> => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await signIn(page, email);
+  return page;
+};
+
+test("serializes a Resolved request against a concurrent Action Taken from other staff", async ({
+  browser,
+  page,
+}) => {
+  await signIn(page, requesterEmail);
+  const ticketId = await createTicket(page);
+  await logOut(page);
+
+  await signIn(page, staffEmail);
+  const { userId: staffId } = await readSession(page);
+  await claimTicket(page, ticketId);
+  await setStatusByApi(page, ticketId, "Open");
+  await setStatusByApi(page, ticketId, "In Progress");
+  const planned = await createAction(page, ticketId, {
+    assigneeId: staffId,
+    description: "Reseat the network cable.",
+    result: "Cable reseated.",
+  });
+  const started = await transitionAction(
+    page,
+    ticketId,
+    planned,
+    "In Progress",
+    false
+  );
+  await transitionAction(page, ticketId, started, "Completed", true);
+
+  const secondStaff = await openStaffPage(browser, secondStaffEmail);
+  try {
+    const secondSession = await readSession(secondStaff);
+    const firstSession = await readSession(page);
+    const version = await ticketVersion(page, ticketId);
+    const [resolveResponse, actionResponse] = await Promise.all([
+      page.request.post(`${apiUrl}/api/tickets/${ticketId}/status`, {
+        data: { confirmed: true, currentStatus: "Resolved", version },
+        headers: { Origin: appOrigin, "X-CSRF-Token": firstSession.csrfToken },
+      }),
+      secondStaff.request.post(`${apiUrl}/api/tickets/${ticketId}/actions`, {
+        data: {
+          assigneeId: secondSession.userId,
+          description: "Check the switch port.",
+          followUpRequired: false,
+          requestId: randomUUID(),
+          result: null,
+          version,
+        },
+        headers: {
+          Origin: appOrigin,
+          "X-CSRF-Token": secondSession.csrfToken,
+        },
+      }),
+    ]);
+    const statuses = [resolveResponse.status(), actionResponse.status()];
+
+    // Both writes use the same Ticket version, so exactly one can win.
+    expect([
+      [200, 409],
+      [409, 201],
+    ]).toContainEqual(statuses);
+
+    const ticket = await apiGet(page, `/api/tickets/${ticketId}`);
+    const actions = await apiGet(page, `/api/tickets/${ticketId}/actions`);
+
+    if (resolveResponse.status() === 200) {
+      expect(ticket.currentStatus).toBe("Resolved");
+      expect(actions.totalItems).toBe(1);
+    } else {
+      expect(ticket.currentStatus).toBe("In Progress");
+      expect(actions.totalItems).toBe(2);
+    }
+  } finally {
+    await secondStaff.context().close();
+  }
   await logOut(page);
 });
