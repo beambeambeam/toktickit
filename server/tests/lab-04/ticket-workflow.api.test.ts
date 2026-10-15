@@ -644,6 +644,49 @@ describe("Lab 4 Ticket lifecycle gate API", () => {
     );
   });
 
+  it("pages status history in recorded order", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket({
+      currentStatus: "In Progress",
+      ownerIdValue: ownerId,
+    });
+    const firstEventAt = Date.parse("2026-09-30T05:00:00.000Z");
+    await activeFixture.prisma.ticketStatusEvent.createMany({
+      data: Array.from({ length: 12 }, (_, index) => ({
+        actorId: staffId,
+        confirmed: false,
+        createdAt: new Date(firstEventAt + index * 60_000),
+        fromStatus: index % 2 === 0 ? "WaitingForRequester" : "InProgress",
+        ticketId: ticket.id,
+        ticketVersion: index + 2,
+        toStatus: index % 2 === 0 ? "InProgress" : "WaitingForRequester",
+      })),
+    });
+
+    const readPage = async (page: number) => {
+      const response = await request(activeFixture.app)
+        .get(`/api/tickets/${ticket.id}/status-history`)
+        .query({ page, pageSize: 10 })
+        .set(authHeaders(staff))
+        .expect(200);
+      return asJsonObject(response.body);
+    };
+
+    const secondPage = await readPage(2);
+    assert.equal(secondPage.page, 2);
+    assert.equal(secondPage.pageSize, 10);
+    assert.equal(secondPage.totalItems, 12);
+    assert.equal(secondPage.totalPages, 2);
+    assert.deepEqual(
+      asJsonObjectArray(secondPage.items).map((event) => event.ticketVersion),
+      [12, 13]
+    );
+
+    const outOfRange = await readPage(3);
+    assert.deepEqual(outOfRange.items, []);
+    assert.equal(outOfRange.totalItems, 12);
+  });
+
   it("hides status history from a Requester who does not own the Ticket", async () => {
     const activeFixture = getFixture();
     const otherRequesterEmail = "workflow-history-foreign@example.test";
