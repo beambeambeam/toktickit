@@ -22,6 +22,7 @@ const {
   downloadTicketAttachmentMock,
   getTicketCommentsMock,
   getTicketMock,
+  getTicketStatusHistoryMock,
   indicateTicketResolutionMock,
   logoutMock,
   postTicketCommentMock,
@@ -41,6 +42,7 @@ const {
   downloadTicketAttachmentMock: vi.fn(),
   getTicketCommentsMock: vi.fn(),
   getTicketMock: vi.fn(),
+  getTicketStatusHistoryMock: vi.fn(),
   indicateTicketResolutionMock: vi.fn(),
   logoutMock: vi.fn(),
   postTicketCommentMock: vi.fn(),
@@ -60,6 +62,10 @@ vi.mock("@/api/requester", async () => {
     uploadTicketAttachments: uploadTicketAttachmentsMock,
   };
 });
+
+vi.mock("@/api/staff", () => ({
+  getTicketStatusHistory: getTicketStatusHistoryMock,
+}));
 
 vi.mock("@/api/ticket-comments", () => ({
   getTicketComments: getTicketCommentsMock,
@@ -177,6 +183,49 @@ describe("Requester Ticket Detail page", () => {
     getTicketCommentsMock.mockReset().mockResolvedValue([]);
     postTicketCommentMock.mockReset();
     indicateTicketResolutionMock.mockReset();
+    getTicketStatusHistoryMock.mockReset().mockResolvedValue({
+      items: [],
+      page: 1,
+      pageSize: 20,
+      totalItems: 0,
+      totalPages: 0,
+    });
+  });
+
+  it("shows the Ticket status history, including a reopen, to the owning Requester", async () => {
+    getTicketStatusHistoryMock.mockResolvedValue({
+      items: [
+        {
+          actor: { displayName: "Iris IT Staff", id: 10, role: "IT Staff" },
+          confirmed: false,
+          createdAt: "2026-09-03T03:00:00.000Z",
+          fromStatus: "Resolved",
+          id: 7,
+          ticketId: 11,
+          ticketVersion: 5,
+          toStatus: "Reopened",
+        },
+      ],
+      page: 1,
+      pageSize: 20,
+      totalItems: 1,
+      totalPages: 1,
+    });
+    renderTicketDetail();
+    await screen.findByText("TKT-20260902-ABC123");
+
+    const history = await screen.findByRole("region", {
+      name: "Status history",
+    });
+    expect(
+      await within(history).findByText(/Resolved\s*→\s*Reopened/u)
+    ).toBeTruthy();
+    expect(within(history).getByText(/10:00 \(Asia\/Bangkok\)$/u)).toBeTruthy();
+    expect(getTicketStatusHistoryMock).toHaveBeenCalledWith(
+      11,
+      { page: 1, pageSize: 20 },
+      expect.anything()
+    );
   });
 
   afterEach(() => {
