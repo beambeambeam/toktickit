@@ -124,3 +124,15 @@ Claude Code supported the PR #85 review follow-up. The model was Claude Sonnet 5
 | 2026-10-12 | Update the reviewer, AI-use, and test records. Run every check before the last push. | Record the commits and the actual test results. Request re-review from @Kiatisakk only. |
 
 Automated checks do not imply human approval. The student has not supplied a reflection for this follow-up.
+
+## PR #86 review follow-up — 2026-10-15
+
+Claude Code supported the PR #86 review follow-up for Issue #77. The model was Claude Opus 5.5. The work stayed on `feature/77-ticket-lifecycle-gate` in the assigned worktree. It did not touch PR #87 or any other issue.
+
+| Date | Prompt summary | Observed use |
+| --- | --- | --- |
+| 2026-10-15 | Handle the review follow-up for PR #86 with the pr-review-followup skill, as for PR #87. | Reproduce each of the 18 threads, make one commit for each finding, push, and reply in the thread. |
+| 2026-10-15 | Never resolve a thread. Request re-review at the end. | Leave threads open. Request re-review from @Kiatisakk only. |
+| 2026-10-15 | Record actual outcomes only in the test record. | Run the API, UI, two-staff race, axe, reflow, and screenshot checks. Inspect the captures. Record the measured results and the remaining limits. |
+
+Automated checks do not imply human approval. The student has not supplied a reflection for this follow-up.

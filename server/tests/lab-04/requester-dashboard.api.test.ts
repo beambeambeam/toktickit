@@ -3,7 +3,6 @@ import assert from "node:assert/strict";
 import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
 
-import { findRequesterDashboard } from "../../src/repositories/requester-dashboard.js";
 import {
   createUsersAdminFixture,
   TEST_ORIGIN,
@@ -399,6 +398,9 @@ describe("Lab 4 Requester dashboard API", () => {
       .filter((offset) => offset[2])
       .map((offset) => offset[0]);
 
+    // Load the repository after the fixture points DATABASE_URL at the disposable DB.
+    const { findRequesterDashboard } =
+      await import("../../src/repositories/requester-dashboard.js");
     const dashboard = await findRequesterDashboard(requesterId, through);
     assert.equal(dashboard.window.from.toISOString(), from.toISOString());
     assert.equal(dashboard.window.through.toISOString(), through.toISOString());

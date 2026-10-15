@@ -5,6 +5,7 @@ import {
   getAuthenticatedUser,
   getAuthenticatedUserId,
 } from "../middlewares/auth-context.js";
+import { parseActionListQuery } from "../services/action-rules.js";
 import {
   parseStaffTicketListQuery,
   parseTicketListQuery,
@@ -30,6 +31,7 @@ import {
   listPublicCommentsForReader,
   listStaffOwners,
   listStaffTickets,
+  listStatusHistoryForReader,
   listTicketsForRequester,
   removeAttachmentForRequester,
   createInternalNoteForUser,
@@ -209,6 +211,18 @@ export const getInternalNotes: RequestHandler = async (request, response) => {
   );
 
   response.json({ internalNotes });
+};
+
+export const getStatusHistory: RequestHandler = async (request, response) => {
+  const user = getAuthenticatedUser(response);
+  const history = await listStatusHistoryForReader(
+    user.id,
+    user.role,
+    parsePositiveId(request.params.ticketId, "ticketId"),
+    parseActionListQuery(request.query)
+  );
+
+  response.json(history);
 };
 
 export const createInternalNote: RequestHandler = async (request, response) => {

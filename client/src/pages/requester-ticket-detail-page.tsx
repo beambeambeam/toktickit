@@ -27,6 +27,7 @@ import { FormField, ReadOnlyField } from "@/components/form-field";
 import { Icon } from "@/components/icon";
 import { PublicCommentsSection } from "@/components/public-comments-section";
 import { StatusBadge } from "@/components/status-badge";
+import { TicketStatusHistorySection } from "@/components/ticket-status-history-section";
 import { useAuth } from "@/context/auth";
 import { cn } from "@/lib/class-names";
 import { validateSelectedFiles } from "@/lib/ticket-rules";
@@ -351,6 +352,8 @@ export const RequesterTicketDetailPage = ({
             ticketId={numericTicketId}
             ticketVersion={ticket.version}
           />
+
+          <TicketStatusHistorySection ticketId={numericTicketId} />
 
           <PublicCommentsSection
             canPost

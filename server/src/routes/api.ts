@@ -23,6 +23,7 @@ import {
   downloadAttachment,
   getAttachments,
   getInternalNotes,
+  getStatusHistory,
   getStaffOwners,
   getStaffTickets,
   getTicket,
@@ -158,7 +159,7 @@ apiRouter.post(
   requireAllowedOrigin,
   requireSession,
   requireUnrestricted,
-  requireRole("ITStaff"),
+  requireRole("ITStaff", "Administrator"),
   requireCsrf,
   touchSession,
   updateTicketStatus
@@ -178,7 +179,7 @@ apiRouter.post(
   requireAllowedOrigin,
   requireSession,
   requireUnrestricted,
-  requireRole("ITStaff"),
+  requireRole("ITStaff", "Administrator"),
   requireCsrf,
   touchSession,
   claimTicket
@@ -188,7 +189,7 @@ apiRouter.put(
   requireAllowedOrigin,
   requireSession,
   requireUnrestricted,
-  requireRole("ITStaff"),
+  requireRole("ITStaff", "Administrator"),
   requireCsrf,
   touchSession,
   updateTicketOwner
@@ -198,7 +199,7 @@ apiRouter.patch(
   requireAllowedOrigin,
   requireSession,
   requireUnrestricted,
-  requireRole("ITStaff"),
+  requireRole("ITStaff", "Administrator"),
   requireCsrf,
   touchSession,
   updateTicketItPriority
@@ -294,6 +295,14 @@ apiRouter.get(
   getAttachments
 );
 apiRouter.get(
+  "/tickets/:ticketId/status-history",
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester", "ITStaff", "Administrator"),
+  touchSession,
+  getStatusHistory
+);
+apiRouter.get(
   "/tickets/:ticketId/internal-notes",
   requireSession,
   requireUnrestricted,
@@ -306,7 +315,7 @@ apiRouter.post(
   requireAllowedOrigin,
   requireSession,
   requireUnrestricted,
-  requireRole("ITStaff"),
+  requireRole("ITStaff", "Administrator"),
   requireCsrf,
   touchSession,
   createInternalNote
@@ -324,7 +333,7 @@ apiRouter.post(
   requireAllowedOrigin,
   requireSession,
   requireUnrestricted,
-  requireRole("Requester", "ITStaff"),
+  requireRole("Requester", "ITStaff", "Administrator"),
   requireCsrf,
   touchSession,
   createPublicComment

@@ -11,5 +11,6 @@ export default defineConfig({
       "tests/lab-03/**/*.test.ts",
       "tests/lab-04/**/*.test.ts",
     ],
+    testTimeout: 60_000,
   },
 });

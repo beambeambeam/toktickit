@@ -277,16 +277,15 @@ describe("Lab 3 public Ticket comments", () => {
     );
   });
 
-  it("rejects Administrator, foreign Requester, and malformed writes", async () => {
+  it("accepts Administrator writes and rejects foreign Requester and malformed writes", async () => {
     const activeFixture = getFixture();
     const ticket = await createTicket();
 
-    const adminResponse = await request(activeFixture.app)
+    await request(activeFixture.app)
       .post(`/api/tickets/${ticket.id}/comments`)
       .set(authHeaders(admin))
-      .send({ content: "Administrator must be read-only." })
-      .expect(403);
-    assert.equal(errorCode(adminResponse), "FORBIDDEN");
+      .send({ content: "Administrators may post public comments." })
+      .expect(201);
 
     const foreignResponse = await request(activeFixture.app)
       .post(`/api/tickets/${ticket.id}/comments`)
@@ -315,7 +314,7 @@ describe("Lab 3 public Ticket comments", () => {
       await activeFixture.prisma.publicComment.count({
         where: { ticketId: ticket.id },
       }),
-      0
+      1
     );
   });
 

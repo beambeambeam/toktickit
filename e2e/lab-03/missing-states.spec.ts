@@ -2,6 +2,7 @@ import { expect, test } from "@playwright/test";
 import type { Page, Route } from "@playwright/test";
 
 import { captureLab3Evidence } from "./evidence.js";
+import { searchStaffQueue } from "./queue-search.js";
 
 const password = "correct horse battery staple";
 const origin = process.env.E2E_BASE_URL ?? "http://localhost:5173";
@@ -247,6 +248,7 @@ test("captures shared queue empty, no-results, loading, and failure states", asy
   mode = "live";
   await page.unroute("**/api/staff/tickets**", queueRoute);
   await page.getByRole("button", { exact: true, name: "Retry" }).click();
+  await searchStaffQueue(page, "TKT-20260901-NEW001");
   await expect(
     page.getByRole("link", { exact: true, name: "TKT-20260901-NEW001" })
   ).toBeVisible();
@@ -257,6 +259,7 @@ test("captures Staff Ticket Detail failure and forbidden states", async ({
 }, testInfo) => {
   await signIn(page, "e2e-staff@example.test");
   await page.goto("/staff/tickets");
+  await searchStaffQueue(page, "TKT-20260901-NEW001");
   const ticketLink = page.getByRole("link", {
     name: "TKT-20260901-NEW001",
   });

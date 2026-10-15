@@ -6,6 +6,8 @@ import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
 import type { Page, Route, TestInfo } from "@playwright/test";
 
+import { addCompletedAction, readTicketVersion } from "./resolution-gate.js";
+
 const apiUrl = process.env.E2E_API_URL ?? "http://localhost:3000";
 const origin = process.env.E2E_BASE_URL ?? "http://localhost:5173";
 const password = "correct horse battery staple";
@@ -281,15 +283,11 @@ const resolveTicketForDashboard = async (page: Page, ticket: TicketRef) => {
   let currentTicket = ticketRefFrom(await claim.json());
 
   // oxlint-disable no-await-in-loop -- Each status write returns the version for the next transition.
-  for (const currentStatus of ["Open", "In Progress", "Resolved"] as const) {
+  for (const currentStatus of ["Open", "In Progress"] as const) {
     const response = await page.request.post(
       `${apiUrl}/api/tickets/${ticket.id}/status`,
       {
-        data: {
-          confirmed: currentStatus === "Resolved" ? true : undefined,
-          currentStatus,
-          version: currentTicket.version,
-        },
+        data: { currentStatus, version: currentTicket.version },
         headers,
       }
     );
@@ -297,6 +295,21 @@ const resolveTicketForDashboard = async (page: Page, ticket: TicketRef) => {
     currentTicket = ticketRefFrom(await response.json());
   }
   // oxlint-enable no-await-in-loop
+
+  // Resolved requires an owner and a Completed Action Taken (Lab 4 gate).
+  await addCompletedAction(page, ticket.id);
+  const resolved = await page.request.post(
+    `${apiUrl}/api/tickets/${ticket.id}/status`,
+    {
+      data: {
+        confirmed: true,
+        currentStatus: "Resolved",
+        version: await readTicketVersion(page, ticket.id),
+      },
+      headers,
+    }
+  );
+  expect(resolved.status(), await resolved.text()).toBe(200);
 };
 
 const expectNoHorizontalOverflow = async (page: Page) => {

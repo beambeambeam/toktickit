@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { ClaimApiTicketData, ClaimApiTicketErrors, ClaimApiTicketResponses, CreateApiTicketActionData, CreateApiTicketActionErrors, CreateApiTicketActionResponses, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsErrors, CreateApiTicketAttachmentsResponses, CreateApiTicketCommentData, CreateApiTicketCommentErrors, CreateApiTicketCommentResponses, CreateApiTicketData, CreateApiTicketErrors, CreateApiTicketInternalNoteData, CreateApiTicketInternalNoteErrors, CreateApiTicketInternalNoteResponses, CreateApiTicketResponses, CreateApiUserData, CreateApiUserErrors, CreateApiUserResponses, GetApiAuthMeData, GetApiAuthMeErrors, GetApiAuthMeResponses, GetApiCategoriesData, GetApiCategoriesErrors, GetApiCategoriesResponses, GetApiHealthData, GetApiHealthErrors, GetApiHealthResponses, GetApiRelatedSystemsData, GetApiRelatedSystemsErrors, GetApiRelatedSystemsResponses, GetApiRequesterDashboardData, GetApiRequesterDashboardErrors, GetApiRequesterDashboardResponses, GetApiStaffOwnersData, GetApiStaffOwnersErrors, GetApiStaffOwnersResponses, GetApiStaffTicketsData, GetApiStaffTicketsErrors, GetApiStaffTicketsResponses, GetApiTicketActionHistoryData, GetApiTicketActionHistoryErrors, GetApiTicketActionHistoryResponses, GetApiTicketActionsData, GetApiTicketActionsErrors, GetApiTicketActionsResponses, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentErrors, GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentsData, GetApiTicketAttachmentsErrors, GetApiTicketAttachmentsResponses, GetApiTicketCommentsData, GetApiTicketCommentsErrors, GetApiTicketCommentsResponses, GetApiTicketData, GetApiTicketErrors, GetApiTicketInternalNotesData, GetApiTicketInternalNotesErrors, GetApiTicketInternalNotesResponses, GetApiTicketResponses, GetApiTicketsData, GetApiTicketsErrors, GetApiTicketsResponses, GetApiUserData, GetApiUserErrors, GetApiUserResponses, GetApiUsersData, GetApiUsersErrors, GetApiUsersResponses, IndicateApiTicketResolutionData, IndicateApiTicketResolutionErrors, IndicateApiTicketResolutionResponses, PostApiAuthChangePasswordData, PostApiAuthChangePasswordErrors, PostApiAuthChangePasswordResponses, PostApiAuthLoginData, PostApiAuthLoginErrors, PostApiAuthLoginResponses, PostApiAuthLogoutData, PostApiAuthLogoutErrors, PostApiAuthLogoutResponses, PostApiTicketActionTransitionData, PostApiTicketActionTransitionErrors, PostApiTicketActionTransitionResponses, PutApiTicketActionData, PutApiTicketActionErrors, PutApiTicketActionResponses, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentErrors, RemoveApiTicketAttachmentResponses, ResetApiUserInitialPasswordData, ResetApiUserInitialPasswordErrors, ResetApiUserInitialPasswordResponses, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityErrors, UpdateApiTicketItPriorityResponses, UpdateApiTicketOwnerData, UpdateApiTicketOwnerErrors, UpdateApiTicketOwnerResponses, UpdateApiTicketStatusData, UpdateApiTicketStatusErrors, UpdateApiTicketStatusResponses, UpdateApiUserData, UpdateApiUserErrors, UpdateApiUserResponses } from './types.gen';
+import type { ClaimApiTicketData, ClaimApiTicketErrors, ClaimApiTicketResponses, CreateApiTicketActionData, CreateApiTicketActionErrors, CreateApiTicketActionResponses, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsErrors, CreateApiTicketAttachmentsResponses, CreateApiTicketCommentData, CreateApiTicketCommentErrors, CreateApiTicketCommentResponses, CreateApiTicketData, CreateApiTicketErrors, CreateApiTicketInternalNoteData, CreateApiTicketInternalNoteErrors, CreateApiTicketInternalNoteResponses, CreateApiTicketResponses, CreateApiUserData, CreateApiUserErrors, CreateApiUserResponses, GetApiAuthMeData, GetApiAuthMeErrors, GetApiAuthMeResponses, GetApiCategoriesData, GetApiCategoriesErrors, GetApiCategoriesResponses, GetApiHealthData, GetApiHealthErrors, GetApiHealthResponses, GetApiRelatedSystemsData, GetApiRelatedSystemsErrors, GetApiRelatedSystemsResponses, GetApiRequesterDashboardData, GetApiRequesterDashboardErrors, GetApiRequesterDashboardResponses, GetApiStaffOwnersData, GetApiStaffOwnersErrors, GetApiStaffOwnersResponses, GetApiStaffTicketsData, GetApiStaffTicketsErrors, GetApiStaffTicketsResponses, GetApiTicketActionHistoryData, GetApiTicketActionHistoryErrors, GetApiTicketActionHistoryResponses, GetApiTicketActionsData, GetApiTicketActionsErrors, GetApiTicketActionsResponses, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentErrors, GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentsData, GetApiTicketAttachmentsErrors, GetApiTicketAttachmentsResponses, GetApiTicketCommentsData, GetApiTicketCommentsErrors, GetApiTicketCommentsResponses, GetApiTicketData, GetApiTicketErrors, GetApiTicketInternalNotesData, GetApiTicketInternalNotesErrors, GetApiTicketInternalNotesResponses, GetApiTicketResponses, GetApiTicketsData, GetApiTicketsErrors, GetApiTicketsResponses, GetApiTicketStatusHistoryData, GetApiTicketStatusHistoryErrors, GetApiTicketStatusHistoryResponses, GetApiUserData, GetApiUserErrors, GetApiUserResponses, GetApiUsersData, GetApiUsersErrors, GetApiUsersResponses, IndicateApiTicketResolutionData, IndicateApiTicketResolutionErrors, IndicateApiTicketResolutionResponses, PostApiAuthChangePasswordData, PostApiAuthChangePasswordErrors, PostApiAuthChangePasswordResponses, PostApiAuthLoginData, PostApiAuthLoginErrors, PostApiAuthLoginResponses, PostApiAuthLogoutData, PostApiAuthLogoutErrors, PostApiAuthLogoutResponses, PostApiTicketActionTransitionData, PostApiTicketActionTransitionErrors, PostApiTicketActionTransitionResponses, PutApiTicketActionData, PutApiTicketActionErrors, PutApiTicketActionResponses, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentErrors, RemoveApiTicketAttachmentResponses, ResetApiUserInitialPasswordData, ResetApiUserInitialPasswordErrors, ResetApiUserInitialPasswordResponses, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityErrors, UpdateApiTicketItPriorityResponses, UpdateApiTicketOwnerData, UpdateApiTicketOwnerErrors, UpdateApiTicketOwnerResponses, UpdateApiTicketStatusData, UpdateApiTicketStatusErrors, UpdateApiTicketStatusResponses, UpdateApiUserData, UpdateApiUserErrors, UpdateApiUserResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -225,9 +225,24 @@ export const getApiTicketActionHistory = <ThrowOnError extends boolean = false>(
 });
 
 /**
+ * Read Ticket status history
+ *
+ * Requesters may read history only for their own Tickets. IT Staff and Administrators may read history for any Ticket. Events use stable createdAt then ID order and bounded pagination. Legacy terminal Tickets have no synthesized events.
+ */
+export const getApiTicketStatusHistory = <ThrowOnError extends boolean = false>(options: Options<GetApiTicketStatusHistoryData, ThrowOnError>): RequestResult<GetApiTicketStatusHistoryResponses, GetApiTicketStatusHistoryErrors, ThrowOnError> => (options.client ?? client).get<GetApiTicketStatusHistoryResponses, GetApiTicketStatusHistoryErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/tickets/{ticketId}/status-history',
+    ...options
+});
+
+/**
  * Progress a Ticket
  *
- * Applies one approved status transition for IT Staff.
+ * Applies one approved status transition for IT Staff or an Administrator. Resolved, Closed, and Cancelled require `confirmed` true; otherwise the API returns 400 `CONFIRMATION_REQUIRED`. The actor must be an eligible staff account (BR-08); otherwise the API returns 403 `FORBIDDEN`.
  */
 export const updateApiTicketStatus = <ThrowOnError extends boolean = false>(options: Options<UpdateApiTicketStatusData, ThrowOnError>): RequestResult<UpdateApiTicketStatusResponses, UpdateApiTicketStatusErrors, ThrowOnError> => (options.client ?? client).post<UpdateApiTicketStatusResponses, UpdateApiTicketStatusErrors, ThrowOnError>({
     security: [{
@@ -496,7 +511,7 @@ export const getApiTicketInternalNotes = <ThrowOnError extends boolean = false>(
 /**
  * Add a private Internal Note
  *
- * IT Staff can append a private Internal Note to any non-terminal Ticket. Administrators and Requesters cannot write notes.
+ * IT Staff and Administrators can append a private Internal Note to any non-terminal Ticket. Requesters cannot write notes.
  */
 export const createApiTicketInternalNote = <ThrowOnError extends boolean = false>(options: Options<CreateApiTicketInternalNoteData, ThrowOnError>): RequestResult<CreateApiTicketInternalNoteResponses, CreateApiTicketInternalNoteErrors, ThrowOnError> => (options.client ?? client).post<CreateApiTicketInternalNoteResponses, CreateApiTicketInternalNoteErrors, ThrowOnError>({
     security: [{
@@ -530,7 +545,7 @@ export const getApiTicketComments = <ThrowOnError extends boolean = false>(optio
 /**
  * Post a public Ticket comment
  *
- * A Requester may post to an owned Ticket and IT Staff may post to any Ticket. Administrators have read-only access.
+ * A Requester may post to an owned Ticket. IT Staff and Administrators may post to any Ticket.
  */
 export const createApiTicketComment = <ThrowOnError extends boolean = false>(options: Options<CreateApiTicketCommentData, ThrowOnError>): RequestResult<CreateApiTicketCommentResponses, CreateApiTicketCommentErrors, ThrowOnError> => (options.client ?? client).post<CreateApiTicketCommentResponses, CreateApiTicketCommentErrors, ThrowOnError>({
     security: [{

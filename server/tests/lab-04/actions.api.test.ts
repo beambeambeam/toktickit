@@ -1587,6 +1587,36 @@ describe("Lab 4 Action Taken create and list API", () => {
     );
   });
 
+  it("rejects an assignee who must change password with ACTION_ASSIGNEE_INELIGIBLE", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket();
+    const mustChangeAssignee = await activeFixture.createUser({
+      displayName: "Must Change Action Assignee",
+      email: "must-change-actions-assignee@example.test",
+      mustChangePassword: true,
+      role: "ITStaff",
+    });
+
+    const response = await request(activeFixture.app)
+      .post(`/api/tickets/${ticket.id}/actions`)
+      .set(authHeaders(staff))
+      .send({
+        assigneeId: mustChangeAssignee.id,
+        description: "Do not assign work to Staff who must change password.",
+        followUpRequired: false,
+        requestId: "f5726990-c560-45d5-ae76-2f75659bb541",
+        version: 1,
+      })
+      .expect(409);
+    assert.equal(errorCode(response), "ACTION_ASSIGNEE_INELIGIBLE");
+    assert.equal(
+      await activeFixture.prisma.actionTaken.count({
+        where: { ticketId: ticket.id },
+      }),
+      0
+    );
+  });
+
   it("rechecks an assignee after a concurrent deactivation commits", async () => {
     const activeFixture = getFixture();
     const ticket = await createTicket();

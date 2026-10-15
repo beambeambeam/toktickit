@@ -1,10 +1,10 @@
 import { prisma } from "../db/client.js";
 import { Prisma } from "../generated/prisma/client.js";
-import type {
-  CurrentStatus as PrismaCurrentStatus,
-  UserRole as PrismaUserRole,
-} from "../generated/prisma/enums.js";
-import { activeTicketStatuses } from "../types/ticket-workflow.js";
+import type { CurrentStatus as PrismaCurrentStatus } from "../generated/prisma/enums.js";
+import {
+  activeTicketStatuses,
+  isEligibleTicketOwner,
+} from "../types/ticket-workflow.js";
 import type {
   StaffTicketOwnerFilter,
   StaffTicketListQuery,
@@ -32,6 +32,7 @@ const ownerSelection = {
   displayName: true,
   id: true,
   isActive: true,
+  mustChangePassword: true,
   role: true,
 } as const;
 
@@ -267,13 +268,22 @@ export const findEligibleOwners = async () =>
   await prisma.user.findMany({
     orderBy: [{ displayName: "asc" }, { id: "asc" }],
     select: ownerSelection,
-    where: { isActive: true, role: { in: ["ITStaff", "Administrator"] } },
+    where: {
+      isActive: true,
+      mustChangePassword: false,
+      role: { in: ["ITStaff", "Administrator"] },
+    },
   });
 
 export const findEligibleOwner = async (id: number) =>
   await prisma.user.findFirst({
     select: ownerSelection,
-    where: { id, isActive: true, role: { in: ["ITStaff", "Administrator"] } },
+    where: {
+      id,
+      isActive: true,
+      mustChangePassword: false,
+      role: { in: ["ITStaff", "Administrator"] },
+    },
   });
 
 export const findStaffTicketSummaries = async (
@@ -509,24 +519,6 @@ const findLockedTicket = async (
     where: { id: ticketId },
   });
 
-const isEligibleOwner = (user: {
-  isActive: boolean;
-  role: PrismaUserRole;
-}): boolean =>
-  user.isActive && (user.role === "ITStaff" || user.role === "Administrator");
-
-const isEligibleStaffActor = (
-  user: {
-    isActive: boolean;
-    mustChangePassword: boolean;
-    role: PrismaUserRole;
-  } | null
-): boolean =>
-  user !== null &&
-  user.isActive &&
-  !user.mustChangePassword &&
-  user.role === "ITStaff";
-
 const findStaffActor = async (database: TicketDatabase, userId: number) =>
   await database.user.findUnique({
     select: { isActive: true, mustChangePassword: true, role: true },
@@ -544,7 +536,7 @@ export const claimTicket = async (
     await lockUsersForOwnerMutation(database, [currentUserId]);
     const currentUser = await findStaffActor(database, currentUserId);
 
-    if (!isEligibleStaffActor(currentUser)) {
+    if (!isEligibleTicketOwner(currentUser)) {
       return { kind: "actor-ineligible" };
     }
 
@@ -593,7 +585,7 @@ export const updateTicketOwner = async (
     );
     const currentUser = await findStaffActor(database, currentUserId);
 
-    if (!isEligibleStaffActor(currentUser)) {
+    if (!isEligibleTicketOwner(currentUser)) {
       return { kind: "actor-ineligible" };
     }
 
@@ -601,10 +593,10 @@ export const updateTicketOwner = async (
 
     if (ownerId !== null) {
       const owner = await database.user.findUnique({
-        select: { isActive: true, role: true },
+        select: { isActive: true, mustChangePassword: true, role: true },
         where: { id: ownerId },
       });
-      ownerEligible = owner !== null && isEligibleOwner(owner);
+      ownerEligible = isEligibleTicketOwner(owner);
     }
 
     await lockTicketForMutation(database, ticketId);
@@ -653,7 +645,7 @@ export const updateTicketItPriority = async (
     await lockUsersForOwnerMutation(database, [currentUserId]);
     const currentUser = await findStaffActor(database, currentUserId);
 
-    if (!isEligibleStaffActor(currentUser)) {
+    if (!isEligibleTicketOwner(currentUser)) {
       return { kind: "actor-ineligible" };
     }
 

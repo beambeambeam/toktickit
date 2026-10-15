@@ -111,6 +111,7 @@ beforeEach(async () => {
   await database.actionEvent.deleteMany();
   await database.actionTaken.deleteMany();
   await database.attachment.deleteMany();
+  await database.ticketStatusEvent.deleteMany();
   await database.ticket.deleteMany();
   await database.category.deleteMany();
   const passwordHash = await argon2.hash("correct horse battery staple", {

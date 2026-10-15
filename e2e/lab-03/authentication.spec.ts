@@ -93,6 +93,8 @@ test("changes an initial password and rejects the old session after logout", asy
     .fill(replacementPassword);
   await page.getByRole("button", { name: "Save and continue" }).click();
 
+  await expect(page).toHaveURL(/\/dashboard$/u);
+  await page.goto("/tickets");
   await expect(page).toHaveURL(/\/tickets$/u);
   await expect(page.getByRole("heading", { name: "My Tickets" })).toBeVisible();
   await expect(page.getByText("Loading your Tickets…")).toBeHidden();

@@ -1,4 +1,5 @@
 import type { CurrentStatus as PrismaCurrentStatus } from "../generated/prisma/enums.js";
+import { isEligibleTicketOwner } from "../types/ticket-workflow.js";
 import type { CurrentStatus, OwnerRecord } from "../types/tickets.js";
 import { toUserRoleLabel } from "../types/users.js";
 import type { UserRoleValue } from "../types/users.js";
@@ -30,6 +31,7 @@ export interface TicketOwnerRecord {
   displayName: string;
   id: number;
   isActive: boolean;
+  mustChangePassword: boolean;
   role: UserRoleValue;
 }
 
@@ -90,9 +92,7 @@ export const toOwner = (
     displayName: owner.displayName,
     id: owner.id,
     isActive: owner.isActive,
-    isEligible:
-      owner.isActive &&
-      (owner.role === "ITStaff" || owner.role === "Administrator"),
+    isEligible: isEligibleTicketOwner(owner),
     role: toUserRoleLabel(owner.role),
   };
 };
@@ -128,6 +128,32 @@ export const toTicketEntry = (entry: TicketEntryRecord) => ({
   content: entry.content,
   createdAt: entry.createdAt.toISOString(),
   id: entry.id,
+});
+
+export interface TicketStatusEventRecord {
+  actor: { displayName: string; id: number; role: UserRoleValue };
+  confirmed: boolean;
+  createdAt: Date;
+  fromStatus: PrismaCurrentStatus;
+  id: number;
+  toStatus: PrismaCurrentStatus;
+  ticketId: number;
+  ticketVersion: number;
+}
+
+export const toTicketStatusEvent = (event: TicketStatusEventRecord) => ({
+  actor: {
+    displayName: event.actor.displayName,
+    id: event.actor.id,
+    role: toUserRoleLabel(event.actor.role),
+  },
+  confirmed: event.confirmed,
+  createdAt: event.createdAt.toISOString(),
+  fromStatus: toCurrentStatus(event.fromStatus),
+  id: event.id,
+  ticketId: event.ticketId,
+  ticketVersion: event.ticketVersion,
+  toStatus: toCurrentStatus(event.toStatus),
 });
 
 export const toTicketDetail = (ticket: TicketDetailRecord) => ({

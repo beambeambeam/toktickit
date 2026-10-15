@@ -96,6 +96,7 @@ model User {
   completedActions    ActionTaken[]   @relation("ActionCompletedBy")
   cancelledActions    ActionTaken[]   @relation("ActionCancelledBy")
   actionEvents        ActionEvent[]   @relation("ActionEventActor")
+  ticketStatusEvents    TicketStatusEvent[] @relation("TicketStatusEventActor")
 
   @@index([isActive, displayName])
 }
@@ -133,6 +134,7 @@ model Ticket {
   internalNotes      InternalNote[]
   publicComments     PublicComment[]
   actionsTaken       ActionTaken[]
+  statusEvents                TicketStatusEvent[]
 
   @@index([requesterId, updatedAt])
   @@index([requesterId, currentStatus])
@@ -198,6 +200,22 @@ model ActionEvent {
 
   @@unique([actionId, actionVersion])
   @@index([actionId, createdAt, id])
+}
+
+model TicketStatusEvent {
+  id            Int           @id @default(autoincrement())
+  ticketId      Int
+  actorId       Int
+  fromStatus    CurrentStatus
+  toStatus      CurrentStatus
+  ticketVersion Int
+  confirmed     Boolean
+  createdAt     DateTime      @default(now()) @db.Timestamptz(3)
+  ticket        Ticket        @relation(fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+  actor         User          @relation("TicketStatusEventActor", fields: [actorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@unique([ticketId, ticketVersion])
+  @@index([ticketId, createdAt, id])
 }
 
 model InternalNote {

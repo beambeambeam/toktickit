@@ -5,6 +5,9 @@ export type UserRoleLabel = "Requester" | "IT Staff" | "Administrator";
 export const toUserRoleLabel = (role: UserRoleValue): UserRoleLabel =>
   role === "ITStaff" ? "IT Staff" : role;
 
+export const isStaffRole = (role: UserRoleValue): boolean =>
+  role === "ITStaff" || role === "Administrator";
+
 export interface UserListQuery {
   role?: UserRoleValue;
   search?: string;

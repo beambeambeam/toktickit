@@ -2,12 +2,12 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useRef, useState } from "react";
 import type { SubmitEvent } from "react";
 
-import { ApiConnectionError } from "@/api/client";
 import { ApiRequestError } from "@/api/errors";
 import { ticketCommentsQueryOptions } from "@/api/query-options";
 import { postTicketComment } from "@/api/ticket-comments";
 import { fieldDescribedBy, FormField } from "@/components/form-field";
 import type { CurrentStatus, Entry } from "@/generated/hey-api/types.gen";
+import { getRequestErrorMessage } from "@/lib/request-error-message";
 
 const MAX_COMMENT_CODE_POINTS = 5000;
 const terminalStatuses = new Set<CurrentStatus>(["Closed", "Cancelled"]);
@@ -19,19 +19,14 @@ const formatDate = (value: string) =>
   }).format(new Date(value));
 
 const getErrorMessage = (error: unknown): string => {
-  if (error instanceof ApiConnectionError) {
-    return "Unable to connect to the TokTickIT API. Check the server and retry.";
-  }
-
   if (error instanceof ApiRequestError && error.status === 409) {
     return `${error.message} Refresh the Ticket before trying again.`;
   }
 
-  if (error instanceof Error && error.message.length > 0) {
-    return error.message;
-  }
-
-  return "Unable to load public comments. Try again.";
+  return getRequestErrorMessage(
+    error,
+    "Unable to load public comments. Try again."
+  );
 };
 
 const codePointLength = (value: string): number =>
