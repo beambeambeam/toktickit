@@ -166,7 +166,9 @@ const StaffTicketDetailContent = ({
   const statusTriggerRef = useRef<HTMLButtonElement | null>(null);
   const statusDialogRef = useRef<HTMLDivElement | null>(null);
   const statusCancelRef = useRef<HTMLButtonElement | null>(null);
+  const statusSelectRef = useRef<HTMLSelectElement | null>(null);
   const wasStatusConfirmationOpen = useRef(false);
+  const shouldRestoreStatusFocus = useRef(false);
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;
@@ -174,7 +176,7 @@ const StaffTicketDetailContent = ({
     if (statusConfirmation === null) {
       if (wasStatusConfirmationOpen.current) {
         wasStatusConfirmationOpen.current = false;
-        statusTriggerRef.current?.focus();
+        shouldRestoreStatusFocus.current = true;
       }
     } else {
       wasStatusConfirmationOpen.current = true;
@@ -305,6 +307,26 @@ const StaffTicketDetailContent = ({
       setStatusSuccess(`Ticket status changed to ${nextTicket.currentStatus}.`);
     },
   });
+
+  useEffect(() => {
+    if (
+      !shouldRestoreStatusFocus.current ||
+      statusConfirmation !== null ||
+      statusMutation.isPending
+    ) {
+      return;
+    }
+
+    shouldRestoreStatusFocus.current = false;
+    const trigger = statusTriggerRef.current;
+
+    if (trigger !== null && !trigger.disabled) {
+      trigger.focus();
+      return;
+    }
+
+    statusSelectRef.current?.focus();
+  }, [selectedStatus, statusConfirmation, statusMutation.isPending]);
 
   const claimMutation = useMutation({
     mutationFn: async (version: number) =>
@@ -575,6 +597,7 @@ const StaffTicketDetailContent = ({
                       <select
                         disabled={statusMutation.isPending}
                         id="ticket-next-status"
+                        ref={statusSelectRef}
                         onChange={(event) => {
                           if (isCurrentStatus(event.target.value)) {
                             setSelectedStatus(event.target.value);
@@ -619,6 +642,7 @@ const StaffTicketDetailContent = ({
 
                           setStatusError(null);
                           setStatusSuccess(null);
+                          shouldRestoreStatusFocus.current = true;
                           statusMutation.mutate({
                             currentStatus: selectedStatus,
                             version: ticket.version,
@@ -634,16 +658,6 @@ const StaffTicketDetailContent = ({
                   </div>
                 )}
 
-                {showStatusReasons ? (
-                  <ul
-                    aria-label="Resolution requirements not met"
-                    className="list-disc pl-5 error-message"
-                  >
-                    {statusReasons.map((reason) => (
-                      <li key={reason}>{resolutionReasonLabels[reason]}</li>
-                    ))}
-                  </ul>
-                ) : null}
                 <div
                   aria-live="polite"
                   className="operation-status"
@@ -657,6 +671,16 @@ const StaffTicketDetailContent = ({
                       {statusError}
                     </span>
                   )}
+                  {showStatusReasons ? (
+                    <ul
+                      aria-label="Resolution requirements not met"
+                      className="list-disc pl-5 error-message"
+                    >
+                      {statusReasons.map((reason) => (
+                        <li key={reason}>{resolutionReasonLabels[reason]}</li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </div>
               </section>
 

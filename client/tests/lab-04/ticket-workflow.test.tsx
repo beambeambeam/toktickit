@@ -289,6 +289,50 @@ describe("Lab 4 Ticket workflow controls", () => {
     );
   });
 
+  it("announces resolution reasons and keeps focus on the status control after a gate failure", async () => {
+    updateStaffTicketStatusMock.mockRejectedValue(
+      new ApiRequestError(
+        409,
+        "The Ticket does not meet the resolution requirements.",
+        "RESOLUTION_GATE_FAILED",
+        { reasons: ["NO_COMPLETED_ACTION"] }
+      )
+    );
+    renderPage();
+    await screen.findByText("TKT-20260902-DETAIL01");
+
+    await requestResolved();
+
+    const section = screen.getByRole("region", { name: "Progress Ticket" });
+    const liveRegion = within(section).getByRole("status");
+    const reasons = await within(liveRegion).findByRole("list", {
+      name: "Resolution requirements not met",
+    });
+    const statusSelect = screen.getByLabelText("Next status");
+
+    expect(reasons.textContent).toContain(
+      "Record at least one Completed Action Taken."
+    );
+    expect(document.activeElement).toBe(statusSelect);
+  });
+
+  it("moves focus to the status control after a confirmed status change", async () => {
+    updateStaffTicketStatusMock.mockResolvedValue({
+      ...ticket,
+      currentStatus: "Resolved",
+      version: 3,
+    });
+    renderPage();
+    await screen.findByText("TKT-20260902-DETAIL01");
+
+    await requestResolved();
+
+    await screen.findByText("Ticket status changed to Resolved.");
+    const statusSelect = screen.getByLabelText("Next status");
+
+    expect(document.activeElement).toBe(statusSelect);
+  });
+
   it("lets an Administrator move a Ticket through the status workflow", async () => {
     authState.user = administratorUser;
     renderPage();
