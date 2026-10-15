@@ -110,6 +110,25 @@ const lockNonterminalTicketsOwnedBy = async (
   );
 };
 
+// BR-18: an owner who loses eligibility leaves nonterminal Tickets unassigned.
+// Call lockNonterminalTicketsOwnedBy first in the same transaction.
+const unassignNonterminalTicketsOwnedBy = async (
+  database: UserDatabase,
+  userId: number
+) => {
+  await database.ticket.updateMany({
+    data: {
+      ownerId: null,
+      updatedAt: new Date(),
+      version: { increment: 1 },
+    },
+    where: {
+      currentStatus: { notIn: [...terminalStatuses] },
+      ownerId: userId,
+    },
+  });
+};
+
 const isEligibleOwner = (user: {
   isActive: boolean;
   role: UserRoleValue;
@@ -226,7 +245,6 @@ export const updateUserAccount = async (input: {
         nextRole,
         nextIsActive
       );
-      const now = new Date();
 
       if (eligibilityLost) {
         await lockNonterminalTicketsOwnedBy(database, target.id);
@@ -243,17 +261,7 @@ export const updateUserAccount = async (input: {
       }
 
       if (eligibilityLost) {
-        await database.ticket.updateMany({
-          data: {
-            ownerId: null,
-            updatedAt: now,
-            version: { increment: 1 },
-          },
-          where: {
-            currentStatus: { notIn: [...terminalStatuses] },
-            ownerId: target.id,
-          },
-        });
+        await unassignNonterminalTicketsOwnedBy(database, target.id);
       }
 
       return {
@@ -300,6 +308,8 @@ export const resetUserInitialPassword = async (input: {
       return { kind: "not-found" };
     }
 
+    // mustChangePassword makes the target an ineligible Ticket Owner.
+    await lockNonterminalTicketsOwnedBy(database, target.id);
     const user = await database.user.update({
       data: {
         mustChangePassword: true,
@@ -309,6 +319,7 @@ export const resetUserInitialPassword = async (input: {
       where: { id: target.id },
     });
     await deleteSessionsForUser(database, target.id);
+    await unassignNonterminalTicketsOwnedBy(database, target.id);
 
     return { kind: "success", sessionRevoked: true, user };
   });

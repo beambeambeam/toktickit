@@ -553,6 +553,64 @@ describe("Lab 4 Ticket lifecycle gate API", () => {
     assert.equal(stored.version, 1);
   });
 
+  it("unassigns an owner's nonterminal Tickets when an Administrator resets their password", async () => {
+    const activeFixture = getFixture();
+    const administratorEmail = "workflow-reset-admin@example.test";
+    await activeFixture.createUser({
+      displayName: "Workflow Reset Administrator",
+      email: administratorEmail,
+      role: "Administrator",
+    });
+    const administrator = await activeFixture.authenticate(administratorEmail);
+    const active = await createTicket({
+      currentStatus: "In Progress",
+      ownerIdValue: ownerId,
+    });
+    const resolvedAt = new Date("2026-09-30T06:00:00.000Z");
+    const resolved = await activeFixture.prisma.ticket.create({
+      data: {
+        categoryId,
+        currentStatus: "Resolved",
+        description: "A Resolved fixture Ticket keeps its historical owner.",
+        itPriority: "Medium",
+        ownerId,
+        relatedSystemId,
+        requestedPriority: "Medium",
+        requesterId,
+        resolvedAt,
+        statusChangedAt: resolvedAt,
+        summary: "Resolved owned fixture Ticket",
+        ticketDate: resolvedAt,
+        ticketNumber: "TKT-20260930-RST001",
+        updatedAt: resolvedAt,
+      },
+    });
+
+    await request(activeFixture.app)
+      .post(`/api/users/${ownerId}/initial-password`)
+      .set(authHeaders(administrator))
+      .send({
+        confirmed: true,
+        initialPassword: "a fresh initial reset phrase",
+      })
+      .expect(200);
+
+    const [unassigned, retained] = await Promise.all([
+      activeFixture.prisma.ticket.findUniqueOrThrow({
+        where: { id: active.id },
+      }),
+      activeFixture.prisma.ticket.findUniqueOrThrow({
+        where: { id: resolved.id },
+      }),
+    ]);
+    assert.equal(unassigned.ownerId, null);
+    assert.equal(unassigned.version, 2);
+    assert.ok(unassigned.updatedAt > active.updatedAt);
+    assert.equal(retained.ownerId, ownerId);
+    assert.equal(retained.version, 1);
+    assert.deepEqual(retained.updatedAt, resolvedAt);
+  });
+
   it("rejects a Staff actor who must change password in the status repository", async () => {
     const activeFixture = getFixture();
     const mustChangeStaff = await activeFixture.createUser({
