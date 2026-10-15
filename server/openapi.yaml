@@ -1300,11 +1300,7 @@ components:
             $ref: "#/components/schemas/ApiError"
     TicketStatusConflictResponse:
       description: >-
-        The status write conflicts with the current Ticket. `error.code` is
-        `VERSION_CONFLICT`, `INVALID_TRANSITION`, `OWNER_REQUIRED`,
-        `TICKET_HAS_PENDING_ACTIONS`, or `RESOLUTION_GATE_FAILED`.
-        `RESOLUTION_GATE_FAILED` lists every unmet reason in
-        `error.details.reasons`, in fixed order.
+        The status write conflicts with the current Ticket. `error.code` is `VERSION_CONFLICT`, `INVALID_TRANSITION`, `OWNER_REQUIRED`, `TICKET_HAS_PENDING_ACTIONS`, or `RESOLUTION_GATE_FAILED`. `RESOLUTION_GATE_FAILED` lists every unmet reason in `error.details.reasons`, in fixed order.
       content:
         application/json:
           schema:
@@ -1409,7 +1405,8 @@ components:
           $ref: "#/components/schemas/ApiErrorBody"
     ResolutionGateReason:
       type: string
-      enum: [OWNER_REQUIRED, OWNER_INELIGIBLE, PENDING_ACTIONS, NO_COMPLETED_ACTION]
+      enum:
+        [OWNER_REQUIRED, OWNER_INELIGIBLE, PENDING_ACTIONS, NO_COMPLETED_ACTION]
     ResolutionGateFailedError:
       type: object
       additionalProperties: false
