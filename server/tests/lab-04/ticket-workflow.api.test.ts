@@ -857,6 +857,65 @@ describe("Lab 4 Ticket lifecycle gate API", () => {
     }
   });
 
+  it("serializes Resolved and Action create from different staff on the Ticket lock", async () => {
+    const activeFixture = getFixture();
+    const otherStaffEmail = "workflow-other-staff@example.test";
+    const otherStaffUser = await activeFixture.createUser({
+      displayName: "Workflow Other Staff",
+      email: otherStaffEmail,
+      role: "ITStaff",
+    });
+    const otherStaff = await activeFixture.authenticate(otherStaffEmail);
+
+    // Staff A locks A and Owner O; Staff B locks only B. No User row lock is
+    // shared, so only the Ticket row lock keeps the gate and the create apart.
+    // oxlint-disable no-await-in-loop -- Each iteration races on a fresh Ticket.
+    for (let iteration = 0; iteration < 10; iteration += 1) {
+      const ticket = await createTicket({
+        currentStatus: "In Progress",
+        ownerIdValue: ownerId,
+      });
+      await createActionTaken({ status: "Completed", ticketId: ticket.id });
+
+      const [actionResponse, statusResponse] = await Promise.all([
+        request(activeFixture.app)
+          .post(`/api/tickets/${ticket.id}/actions`)
+          .set(authHeaders(otherStaff))
+          .send({
+            assigneeId: otherStaffUser.id,
+            description: "Racing Action Taken from another staff member.",
+            followUpRequired: false,
+            requestId: randomUUID(),
+            version: 1,
+          }),
+        postStatus(
+          ticket.id,
+          { confirmed: true, currentStatus: "Resolved", version: 1 },
+          staff
+        ),
+      ]);
+
+      assert.ok(
+        (actionResponse.status === 201) !== (statusResponse.status === 200),
+        `Exactly one racing write must win: ${actionResponse.status} ${statusResponse.status}`
+      );
+      const stored = await activeFixture.prisma.ticket.findUniqueOrThrow({
+        where: { id: ticket.id },
+      });
+      const pendingActions = await activeFixture.prisma.actionTaken.count({
+        where: {
+          status: { in: ["Planned", "InProgress"] },
+          ticketId: ticket.id,
+        },
+      });
+      assert.ok(
+        stored.currentStatus !== "Resolved" || pendingActions === 0,
+        "A Resolved Ticket must not keep a pending action."
+      );
+    }
+    // oxlint-enable no-await-in-loop
+  });
+
   it("lets exactly one of a racing owner deactivation and Resolved transition win", async () => {
     const activeFixture = getFixture();
     const administratorEmail = "workflow-administrator@example.test";
