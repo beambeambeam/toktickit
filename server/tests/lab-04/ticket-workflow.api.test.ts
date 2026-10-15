@@ -235,6 +235,37 @@ describe("Lab 4 Ticket lifecycle gate API", () => {
     assert.equal(asJsonObject(response.body).currentStatus, "Resolved");
   });
 
+  it("keeps resolvedAt when a Resolved Ticket is Closed", async () => {
+    const ticket = await createTicket({
+      currentStatus: "In Progress",
+      ownerIdValue: ownerId,
+    });
+    await createActionTaken({ status: "Completed", ticketId: ticket.id });
+
+    const resolved = await postStatus(
+      ticket.id,
+      { confirmed: true, currentStatus: "Resolved", version: 1 },
+      staff
+    ).expect(200);
+    const { resolvedAt } = asJsonObject(resolved.body);
+    assert.equal(typeof resolvedAt, "string");
+
+    const closed = await postStatus(
+      ticket.id,
+      { confirmed: true, currentStatus: "Closed", version: 2 },
+      staff
+    ).expect(200);
+    const body = asJsonObject(closed.body);
+    assert.equal(body.currentStatus, "Closed");
+    assert.equal(body.resolvedAt, resolvedAt);
+    assert.equal(body.closedAt, body.statusChangedAt);
+
+    const stored = await getFixture().prisma.ticket.findUniqueOrThrow({
+      where: { id: ticket.id },
+    });
+    assert.equal(stored.resolvedAt?.toISOString(), resolvedAt);
+  });
+
   it("reopens a Resolved Ticket, clears resolution fields, and records each status event", async () => {
     const activeFixture = getFixture();
     const ticket = await createTicket({
