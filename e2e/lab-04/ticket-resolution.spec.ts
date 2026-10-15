@@ -1,4 +1,7 @@
+import { execFileSync } from "node:child_process";
 import { randomUUID } from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
 
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
@@ -10,6 +13,20 @@ const password = "correct horse battery staple";
 const requesterEmail = "e2e-desktop@example.test";
 const staffEmail = "e2e-staff@example.test";
 const secondStaffEmail = "e2e-staff-second@example.test";
+
+const repositoryRoot = path.resolve(import.meta.dirname, "..", "..");
+const screenshotsRoot = path.join(
+  repositoryRoot,
+  "artifacts",
+  "lab-04",
+  "screenshots",
+  "actions-taken"
+);
+const viewportByProject = new Map([
+  ["desktop-chromium", "desktop"],
+  ["tablet-chromium", "tablet"],
+  ["mobile-chromium", "mobile"],
+]);
 
 type JsonObject = Record<string, unknown>;
 
@@ -63,25 +80,25 @@ const readSession = async (
   return { csrfToken: body.csrfToken, userId: user.id };
 };
 
-const apiGet = async (page: Page, path: string): Promise<JsonObject> => {
-  const response = await page.request.get(`${apiUrl}${path}`);
+const apiGet = async (page: Page, apiPath: string): Promise<JsonObject> => {
+  const response = await page.request.get(`${apiUrl}${apiPath}`);
   expect(response.status(), await response.text()).toBe(200);
-  return asRecord(await response.json(), `GET ${path}`);
+  return asRecord(await response.json(), `GET ${apiPath}`);
 };
 
 const apiPost = async (
   page: Page,
-  path: string,
+  apiPath: string,
   data: JsonObject,
   expectedStatus = 200
 ): Promise<JsonObject> => {
   const { csrfToken } = await readSession(page);
-  const response = await page.request.post(`${apiUrl}${path}`, {
+  const response = await page.request.post(`${apiUrl}${apiPath}`, {
     data,
     headers: { Origin: appOrigin, "X-CSRF-Token": csrfToken },
   });
   expect(response.status(), await response.text()).toBe(expectedStatus);
-  return asRecord(await response.json(), `POST ${path}`);
+  return asRecord(await response.json(), `POST ${apiPath}`);
 };
 
 const ticketVersion = async (page: Page, ticketId: number): Promise<number> => {
@@ -464,4 +481,108 @@ test("serializes a Resolved request against a concurrent Action Taken from other
     await secondStaff.context().close();
   }
   await logOut(page);
+});
+
+const gitOutput = (args: string[]): string =>
+  execFileSync("git", args, { cwd: repositoryRoot, encoding: "utf-8" }).trim();
+
+test("captures resolution gate feedback at every viewport", async ({
+  page,
+}, testInfo) => {
+  const viewportName = viewportByProject.get(testInfo.project.name);
+  const initialViewport = page.viewportSize();
+  if (viewportName === undefined || initialViewport === null) {
+    throw new Error(`Unexpected project: ${testInfo.project.name}`);
+  }
+  await signIn(page, requesterEmail);
+  const ticketId = await createTicket(page);
+  await logOut(page);
+
+  await signIn(page, staffEmail);
+  const { userId: staffId } = await readSession(page);
+  await claimTicket(page, ticketId);
+  await setStatusByApi(page, ticketId, "Open");
+  await setStatusByApi(page, ticketId, "In Progress");
+  await createAction(page, ticketId, {
+    assigneeId: staffId,
+    description: "Replace the faulty access point.",
+    result: null,
+  });
+
+  await page.goto(`/tickets/${ticketId}`);
+  await confirmStatusChange(page, "Resolved");
+  const progress = page.getByRole("region", { name: "Progress Ticket" });
+  await expect(
+    progress.getByRole("list", { name: "Resolution requirements not met" })
+  ).toBeVisible();
+  await expect(progress.getByLabel("Next status")).toBeFocused();
+  await checkLayoutAndAccessibility(page);
+
+  await mkdir(screenshotsRoot, { recursive: true });
+  const files: { path: string; viewport: { height: number; width: number } }[] =
+    [];
+  const capture = async (name: string): Promise<void> => {
+    const absolutePath = path.join(screenshotsRoot, `${name}.png`);
+    await progress.screenshot({ path: absolutePath });
+    files.push({
+      path: path.relative(repositoryRoot, absolutePath),
+      viewport: page.viewportSize() ?? initialViewport,
+    });
+  };
+  await capture(`ticket-resolution-gate-${viewportName}`);
+
+  if (viewportName === "desktop") {
+    // 320 CSS px is the minimum width. 720 CSS px matches 200% zoom on a 1440 px desktop.
+    // oxlint-disable no-await-in-loop -- Resize and capture each width in order.
+    for (const { name, width } of [
+      { name: "minimum-width-320-css-pixels", width: 320 },
+      { name: "css-reflow-200-percent", width: 720 },
+    ]) {
+      await page.setViewportSize({ height: initialViewport.height, width });
+      await checkLayoutAndAccessibility(page);
+      await capture(`ticket-resolution-gate-${name}-desktop`);
+    }
+    // oxlint-enable no-await-in-loop
+    await page.setViewportSize(initialViewport);
+    const cdpSession = await page.context().newCDPSession(page);
+    try {
+      await cdpSession.send("Emulation.setPageScaleFactor", {
+        pageScaleFactor: 2,
+      });
+      await expect
+        .poll(async () => await page.evaluate(() => visualViewport?.scale ?? 0))
+        .toBe(2);
+      expect(
+        await page.evaluate(
+          () =>
+            document.documentElement.scrollWidth <=
+            document.documentElement.clientWidth
+        )
+      ).toBe(true);
+    } finally {
+      await cdpSession.send("Emulation.resetPageScaleFactor");
+    }
+  }
+
+  await writeFile(
+    path.join(
+      screenshotsRoot,
+      `manifest-ticket-resolution-gate-${viewportName}.json`
+    ),
+    `${JSON.stringify(
+      {
+        branch: gitOutput(["branch", "--show-current"]),
+        command:
+          "pnpm --filter @toktickit/e2e exec playwright test lab-04/ticket-resolution.spec.ts -g 'captures resolution gate'",
+        commit: gitOutput(["rev-parse", "HEAD"]),
+        files,
+        generatedAt: new Date().toISOString(),
+        project: testInfo.project.name,
+        scenario:
+          "IT Staff requests Resolved with a Planned Action Taken and no Completed Action Taken",
+      },
+      null,
+      2
+    )}\n`
+  );
 });
