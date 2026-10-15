@@ -376,6 +376,9 @@ describe("Lab 4 Ticket workflow controls", () => {
     expect(texts).toHaveLength(2);
     expect(texts[0]).toMatch(/New\s*→\s*Open/u);
     expect(texts[1]).toMatch(/Open\s*→\s*In Progress/u);
+    expect(
+      within(items[0]).getByText(/17:45 \(Asia\/Bangkok\)$/u)
+    ).toBeTruthy();
     expect(getTicketStatusHistoryMock).toHaveBeenCalledWith(
       11,
       { page: 1, pageSize: 20 },

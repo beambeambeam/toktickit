@@ -2,15 +2,10 @@ import { useQuery } from "@tanstack/react-query";
 
 import { ApiRequestError } from "@/api/errors";
 import { getTicketStatusHistory } from "@/api/staff";
+import { formatBangkokDate } from "@/lib/action-format";
 import { getRequestErrorMessage } from "@/lib/request-error-message";
 
 const HISTORY_PAGE_SIZE = 20;
-
-const formatDate = (value: string) =>
-  new Intl.DateTimeFormat(undefined, {
-    dateStyle: "medium",
-    timeStyle: "short",
-  }).format(new Date(value));
 
 const getErrorMessage = (error: unknown): string => {
   if (error instanceof ApiRequestError && error.status === 404) {
@@ -94,7 +89,7 @@ export const TicketStatusHistorySection = ({
                   {event.fromStatus} → {event.toStatus}
                 </strong>
                 <time dateTime={event.createdAt}>
-                  {formatDate(event.createdAt)}
+                  {formatBangkokDate(event.createdAt)}
                 </time>
               </div>
               <p className="ticket-entry-content">
