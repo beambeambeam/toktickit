@@ -242,7 +242,7 @@ export const getApiTicketStatusHistory = <ThrowOnError extends boolean = false>(
 /**
  * Progress a Ticket
  *
- * Applies one approved status transition for IT Staff.
+ * Applies one approved status transition for IT Staff or an Administrator. Resolved, Closed, and Cancelled require `confirmed` true; otherwise the API returns 400 `CONFIRMATION_REQUIRED`. The actor must be an eligible staff account (BR-08); otherwise the API returns 403 `FORBIDDEN`.
  */
 export const updateApiTicketStatus = <ThrowOnError extends boolean = false>(options: Options<UpdateApiTicketStatusData, ThrowOnError>): RequestResult<UpdateApiTicketStatusResponses, UpdateApiTicketStatusErrors, ThrowOnError> => (options.client ?? client).post<UpdateApiTicketStatusResponses, UpdateApiTicketStatusErrors, ThrowOnError>({
     security: [{
@@ -511,7 +511,7 @@ export const getApiTicketInternalNotes = <ThrowOnError extends boolean = false>(
 /**
  * Add a private Internal Note
  *
- * IT Staff can append a private Internal Note to any non-terminal Ticket. Administrators and Requesters cannot write notes.
+ * IT Staff and Administrators can append a private Internal Note to any non-terminal Ticket. Requesters cannot write notes.
  */
 export const createApiTicketInternalNote = <ThrowOnError extends boolean = false>(options: Options<CreateApiTicketInternalNoteData, ThrowOnError>): RequestResult<CreateApiTicketInternalNoteResponses, CreateApiTicketInternalNoteErrors, ThrowOnError> => (options.client ?? client).post<CreateApiTicketInternalNoteResponses, CreateApiTicketInternalNoteErrors, ThrowOnError>({
     security: [{
@@ -545,7 +545,7 @@ export const getApiTicketComments = <ThrowOnError extends boolean = false>(optio
 /**
  * Post a public Ticket comment
  *
- * A Requester may post to an owned Ticket and IT Staff may post to any Ticket. Administrators have read-only access.
+ * A Requester may post to an owned Ticket. IT Staff and Administrators may post to any Ticket.
  */
 export const createApiTicketComment = <ThrowOnError extends boolean = false>(options: Options<CreateApiTicketCommentData, ThrowOnError>): RequestResult<CreateApiTicketCommentResponses, CreateApiTicketCommentErrors, ThrowOnError> => (options.client ?? client).post<CreateApiTicketCommentResponses, CreateApiTicketCommentErrors, ThrowOnError>({
     security: [{

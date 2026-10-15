@@ -36,6 +36,18 @@ export type ApiError = {
     error: ApiErrorBody;
 };
 
+export type ResolutionGateReason = 'OWNER_REQUIRED' | 'OWNER_INELIGIBLE' | 'PENDING_ACTIONS' | 'NO_COMPLETED_ACTION';
+
+export type ResolutionGateFailedError = {
+    error: {
+        code: 'RESOLUTION_GATE_FAILED';
+        message: string;
+        details: {
+            reasons: Array<ResolutionGateReason>;
+        };
+    };
+};
+
 export type ApiErrorBody = {
     code: string;
     message: string;
@@ -1122,9 +1134,9 @@ export type UpdateApiTicketStatusErrors = {
      */
     404: ApiError;
     /**
-     * The API could not complete the request.
+     * The status write conflicts with the current Ticket. `error.code` is `VERSION_CONFLICT`, `INVALID_TRANSITION`, `OWNER_REQUIRED`, `TICKET_HAS_PENDING_ACTIONS`, or `RESOLUTION_GATE_FAILED`. `RESOLUTION_GATE_FAILED` lists every unmet reason in `error.details.reasons`, in fixed order.
      */
-    409: ApiError;
+    409: ResolutionGateFailedError | ApiError;
     /**
      * The API could not complete the request.
      */

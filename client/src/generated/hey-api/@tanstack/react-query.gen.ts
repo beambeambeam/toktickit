@@ -465,7 +465,7 @@ export const getApiTicketStatusHistoryInfiniteOptions = (options: Options<GetApi
 /**
  * Progress a Ticket
  *
- * Applies one approved status transition for IT Staff.
+ * Applies one approved status transition for IT Staff or an Administrator. Resolved, Closed, and Cancelled require `confirmed` true; otherwise the API returns 400 `CONFIRMATION_REQUIRED`. The actor must be an eligible staff account (BR-08); otherwise the API returns 403 `FORBIDDEN`.
  */
 export const updateApiTicketStatusMutation = (options?: Partial<Options<UpdateApiTicketStatusData>>): UseMutationOptions<UpdateApiTicketStatusResponse, UpdateApiTicketStatusError, Options<UpdateApiTicketStatusData>> => {
     const mutationOptions: UseMutationOptions<UpdateApiTicketStatusResponse, UpdateApiTicketStatusError, Options<UpdateApiTicketStatusData>> = {
@@ -808,7 +808,7 @@ export const getApiTicketInternalNotesOptions = (options: Options<GetApiTicketIn
 /**
  * Add a private Internal Note
  *
- * IT Staff can append a private Internal Note to any non-terminal Ticket. Administrators and Requesters cannot write notes.
+ * IT Staff and Administrators can append a private Internal Note to any non-terminal Ticket. Requesters cannot write notes.
  */
 export const createApiTicketInternalNoteMutation = (options?: Partial<Options<CreateApiTicketInternalNoteData>>): UseMutationOptions<CreateApiTicketInternalNoteResponse, CreateApiTicketInternalNoteError, Options<CreateApiTicketInternalNoteData>> => {
     const mutationOptions: UseMutationOptions<CreateApiTicketInternalNoteResponse, CreateApiTicketInternalNoteError, Options<CreateApiTicketInternalNoteData>> = {
@@ -847,7 +847,7 @@ export const getApiTicketCommentsOptions = (options: Options<GetApiTicketComment
 /**
  * Post a public Ticket comment
  *
- * A Requester may post to an owned Ticket and IT Staff may post to any Ticket. Administrators have read-only access.
+ * A Requester may post to an owned Ticket. IT Staff and Administrators may post to any Ticket.
  */
 export const createApiTicketCommentMutation = (options?: Partial<Options<CreateApiTicketCommentData>>): UseMutationOptions<CreateApiTicketCommentResponse, CreateApiTicketCommentError, Options<CreateApiTicketCommentData>> => {
     const mutationOptions: UseMutationOptions<CreateApiTicketCommentResponse, CreateApiTicketCommentError, Options<CreateApiTicketCommentData>> = {
