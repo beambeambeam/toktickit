@@ -178,6 +178,16 @@ export const createUsersAdminFixture = async (): Promise<UsersAdminFixture> => {
 
     const importedDatabase = await import("../../src/db/client.js");
     database = importedDatabase.prisma;
+    // A static import of src/db/client.js loads Prisma before DATABASE_URL
+    // changes, so reset() would delete rows in the ambient database.
+    const [{ current_database: connectedDatabase }] = await database.$queryRaw<
+      { current_database: string }[]
+    >`SELECT current_database()`;
+    if (connectedDatabase !== databaseName) {
+      throw new Error(
+        `Prisma is connected to ${connectedDatabase}, not ${databaseName}. Import src modules dynamically after createUsersAdminFixture().`
+      );
+    }
     const importedApp = await import("../../src/app.js");
     const getDatabase = (): PrismaClient => {
       if (database === undefined) {
