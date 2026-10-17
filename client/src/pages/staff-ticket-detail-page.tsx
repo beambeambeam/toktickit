@@ -18,7 +18,10 @@ import {
   updateStaffTicketOwner,
   updateStaffTicketStatus,
 } from "@/api/staff";
-import { staffOwnersQueryOptions } from "@/api/staff-query-options";
+import {
+  invalidateStaffWorkQueries,
+  staffOwnersQueryOptions,
+} from "@/api/staff-query-options";
 import type { UserRole } from "@/api/users";
 import { ActionsTakenSection } from "@/components/actions-taken-section";
 import {
@@ -126,9 +129,11 @@ const focusableDialogSelector =
 
 // oxlint-disable-next-line complexity -- this page renders documented read-only detail and attachment states.
 const StaffTicketDetailContent = ({
+  focusActionId,
   onAccessError,
   ticketId,
 }: {
+  focusActionId: number | undefined;
   onAccessError: (error: ApiRequestError) => void;
   ticketId: string;
 }) => {
@@ -246,7 +251,7 @@ const StaffTicketDetailContent = ({
       ["ticket", user?.id ?? 0, numericTicketId],
       nextTicket
     );
-    void queryClient.invalidateQueries({ queryKey: ["staff-tickets"] });
+    void invalidateStaffWorkQueries(queryClient);
     void queryClient.invalidateQueries({
       queryKey: ["ticket-status-history", numericTicketId],
     });
@@ -297,7 +302,7 @@ const StaffTicketDetailContent = ({
         ["ticket", user?.id ?? 0, numericTicketId],
         nextTicket
       );
-      void queryClient.invalidateQueries({ queryKey: ["staff-tickets"] });
+      void invalidateStaffWorkQueries(queryClient);
       void queryClient.invalidateQueries({
         queryKey: ["ticket-status-history", numericTicketId],
       });
@@ -556,6 +561,7 @@ const StaffTicketDetailContent = ({
           <ActionsTakenSection
             currentStatus={ticket.currentStatus}
             defaultAssigneeId={user.id}
+            focusActionId={focusActionId}
             onRefreshTicket={async () => await ticketQuery.refetch()}
             onRetryAssignees={async () => await ownersQuery.refetch()}
             owners={ownersQuery.data ?? []}
@@ -1057,7 +1063,13 @@ const StaffTicketDetailContent = ({
   );
 };
 
-export const StaffTicketDetailPage = ({ ticketId }: { ticketId: string }) => {
+export const StaffTicketDetailPage = ({
+  focusActionId,
+  ticketId,
+}: {
+  focusActionId?: number;
+  ticketId: string;
+}) => {
   const { refetchAuth, user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -1096,6 +1108,7 @@ export const StaffTicketDetailPage = ({ ticketId }: { ticketId: string }) => {
 
   return (
     <StaffTicketDetailContent
+      focusActionId={focusActionId}
       key={user.id}
       onAccessError={setAccessError}
       ticketId={ticketId}

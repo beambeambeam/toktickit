@@ -150,7 +150,7 @@ paths:
     get:
       operationId: getApiStaffTickets
       summary: List the shared Ticket Queue
-      description: Returns operational Ticket summaries for IT Staff and read-only Administrators.
+      description: Returns operational Ticket summaries for IT Staff and read-only Administrators. Scope, time bounds, and owner filters combine with the other filters.
       security:
         - sessionCookie: []
       parameters:
@@ -160,6 +160,9 @@ paths:
         - $ref: "#/components/parameters/RequestedPriority"
         - $ref: "#/components/parameters/ItPriority"
         - $ref: "#/components/parameters/CurrentStatus"
+        - $ref: "#/components/parameters/StaffTicketScope"
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/Through"
         - $ref: "#/components/parameters/Owner"
         - $ref: "#/components/parameters/QueueSortBy"
         - $ref: "#/components/parameters/SortDirection"
@@ -193,6 +196,53 @@ paths:
             application/json:
               schema:
                 $ref: "#/components/schemas/OwnerListResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/staff/dashboard:
+    get:
+      operationId: getApiStaffDashboard
+      summary: Get the authenticated staff dashboard
+      description: Returns one UTC snapshot of Ticket counts and bounded previews for IT Staff and Administrators. Accepts no query parameters.
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: The authenticated staff member's dashboard.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffDashboardResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/staff/actions:
+    get:
+      operationId: getApiStaffActions
+      summary: List My Actions
+      description: Returns Actions Taken assigned to the authenticated user with status Planned or In Progress on an active Ticket.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/ActionPageSize"
+      responses:
+        "200":
+          description: The authenticated user's My Actions page.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyActionListResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
         "401":
           $ref: "#/components/responses/ApiErrorResponse"
         "403":
@@ -1186,11 +1236,19 @@ components:
         type: string
         enum:
           [active, waiting-for-requester, recently-updated, recently-resolved]
+    StaffTicketScope:
+      name: scope
+      in: query
+      required: false
+      description: Exact active, recently updated, or urgent active Ticket scope for the shared queue.
+      schema:
+        type: string
+        enum: [active, recently-updated, urgent-active]
     From:
       name: from
       in: query
       required: false
-      description: Inclusive lower UTC bound. Required with recently-updated or recently-resolved scope.
+      description: Inclusive lower UTC bound. Required with time-based scopes and rejected otherwise.
       schema:
         type: string
         format: date-time
@@ -1199,7 +1257,7 @@ components:
       name: through
       in: query
       required: false
-      description: Inclusive upper UTC bound. Required with recently-updated or recently-resolved scope.
+      description: Inclusive upper UTC bound. Required with time-based scopes and rejected otherwise.
       schema:
         type: string
         format: date-time
@@ -1214,7 +1272,7 @@ components:
       name: owner
       in: query
       required: false
-      description: Eligible owner ID, me, or unassigned.
+      description: Eligible owner ID, me, or unassigned. A specific ID must be currently eligible.
       schema:
         oneOf:
           - type: integer
@@ -1396,6 +1454,206 @@ components:
         resolvedAt:
           type: [string, "null"]
           format: date-time
+    StaffDashboardResponse:
+      type: object
+      additionalProperties: false
+      required: [generatedAt, window, counts, previews]
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+        window:
+          type: object
+          additionalProperties: false
+          required: [from, through]
+          properties:
+            from:
+              type: string
+              format: date-time
+            through:
+              type: string
+              format: date-time
+        counts:
+          type: object
+          additionalProperties: false
+          required:
+            [
+              activeUnassigned,
+              activeOwned,
+              byStatus,
+              activeByPriority,
+              myActions,
+            ]
+          properties:
+            activeUnassigned:
+              type: integer
+              minimum: 0
+            activeOwned:
+              type: integer
+              minimum: 0
+            byStatus:
+              type: object
+              additionalProperties: false
+              required:
+                [
+                  New,
+                  Open,
+                  In Progress,
+                  Waiting for Requester,
+                  Reopened,
+                  Resolved,
+                  Closed,
+                  Cancelled,
+                ]
+              properties:
+                New: { type: integer, minimum: 0 }
+                Open: { type: integer, minimum: 0 }
+                In Progress: { type: integer, minimum: 0 }
+                Waiting for Requester: { type: integer, minimum: 0 }
+                Reopened: { type: integer, minimum: 0 }
+                Resolved: { type: integer, minimum: 0 }
+                Closed: { type: integer, minimum: 0 }
+                Cancelled: { type: integer, minimum: 0 }
+            activeByPriority:
+              type: object
+              additionalProperties: false
+              required: [High, Low, Medium, Urgent]
+              properties:
+                High: { type: integer, minimum: 0 }
+                Low: { type: integer, minimum: 0 }
+                Medium: { type: integer, minimum: 0 }
+                Urgent: { type: integer, minimum: 0 }
+            myActions:
+              type: integer
+              minimum: 0
+        previews:
+          type: object
+          additionalProperties: false
+          required: [myActions, recentlyUpdatedTickets, urgentActiveTickets]
+          properties:
+            myActions:
+              type: array
+              maxItems: 5
+              items:
+                $ref: "#/components/schemas/MyActionRow"
+            recentlyUpdatedTickets:
+              type: array
+              maxItems: 5
+              items:
+                $ref: "#/components/schemas/StaffDashboardTicketPreview"
+            urgentActiveTickets:
+              type: array
+              maxItems: 5
+              items:
+                $ref: "#/components/schemas/StaffDashboardTicketPreview"
+    StaffDashboardTicketPreview:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          ticketNumber,
+          summary,
+          currentStatus,
+          requestedPriority,
+          itPriority,
+          owner,
+          updatedAt,
+          resolvedAt,
+        ]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        ticketNumber:
+          type: string
+          pattern: "^TKT-[0-9]{8}-[A-Z0-9]{6}$"
+        summary:
+          type: string
+        currentStatus:
+          $ref: "#/components/schemas/CurrentStatus"
+        requestedPriority:
+          $ref: "#/components/schemas/RequestedPriority"
+        itPriority:
+          $ref: "#/components/schemas/RequestedPriority"
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/Owner"
+            - type: "null"
+        updatedAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: [string, "null"]
+          format: date-time
+    MyActionRow:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          ticketId,
+          description,
+          followUpRequired,
+          status,
+          assignee,
+          updatedAt,
+          ticket,
+        ]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        ticketId:
+          type: integer
+          minimum: 1
+        description:
+          type: string
+        followUpRequired:
+          type: boolean
+        status:
+          $ref: "#/components/schemas/ActionStatus"
+        assignee:
+          $ref: "#/components/schemas/Owner"
+        updatedAt:
+          type: string
+          format: date-time
+        ticket:
+          type: object
+          additionalProperties: false
+          required: [id, ticketNumber, summary, currentStatus]
+          properties:
+            id:
+              type: integer
+              minimum: 1
+            ticketNumber:
+              type: string
+              pattern: "^TKT-[0-9]{8}-[A-Z0-9]{6}$"
+            summary:
+              type: string
+            currentStatus:
+              $ref: "#/components/schemas/CurrentStatus"
+    MyActionListResponse:
+      type: object
+      additionalProperties: false
+      required: [items, page, pageSize, totalItems, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MyActionRow"
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          enum: [10, 20, 50]
+        totalItems:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
     ApiError:
       type: object
       additionalProperties: false

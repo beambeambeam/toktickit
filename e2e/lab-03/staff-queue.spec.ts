@@ -14,6 +14,8 @@ test("browses the shared queue and opens a read-only Ticket detail", async ({
   await page.getByRole("textbox", { name: "Password" }).fill(staffPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
 
+  await expect(page).toHaveURL(/\/dashboard$/u);
+  await page.goto("/staff/tickets");
   await expect(page).toHaveURL(/\/staff\/tickets$/u);
   await expect(
     page.getByRole("heading", { name: "Ticket Queue" })

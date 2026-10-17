@@ -1,0 +1,40 @@
+{
+  "branch": "feature/79-staff-dashboard",
+  "command": "E2E_CLIENT_PORT=5279 E2E_API_URL=http://localhost:3079 VITE_API_URL=http://localhost:3079 pnpm --filter @toktickit/e2e exec playwright test lab-04/staff-dashboard-evidence.spec.ts",
+  "commit": "41d87c7b156d1feff4e9ac771d612cb3157e356b",
+  "files": [
+    {
+      "path": "artifacts/lab-04/screenshots/staff-dashboard/admin-dashboard-tablet.png",
+      "role": "Administrator",
+      "scenario": "Administrator dashboard with seeded counts",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "zoom": "default"
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/staff-dashboard/admin-queue-unassigned-tablet.png",
+      "role": "Administrator",
+      "scenario": "Administrator Active Unassigned Queue drill-down",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "zoom": "default"
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/staff-dashboard/admin-my-actions-tablet.png",
+      "role": "Administrator",
+      "scenario": "Administrator My Actions list",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "zoom": "default"
+    }
+  ],
+  "generatedAt": "2026-10-14T18:40:41.820Z",
+  "project": "tablet-chromium",
+  "sourceDirty": false
+}

@@ -136,3 +136,16 @@ Claude Code supported the PR #86 review follow-up for Issue #77. The model was C
 | 2026-10-15 | Record actual outcomes only in the test record. | Run the API, UI, two-staff race, axe, reflow, and screenshot checks. Inspect the captures. Record the measured results and the remaining limits. |
 
 Automated checks do not imply human approval. The student has not supplied a reflection for this follow-up.
+
+## PR #87 review follow-up — 2026-10-15
+
+Claude Code supported the PR #87 review follow-up for Issue #79. The model was Claude Opus 5.5. The work stayed on `feature/79-staff-dashboard` in the assigned worktree. It did not touch PR #86 or any other issue.
+
+| Date | Prompt summary | Observed use |
+| --- | --- | --- |
+| 2026-10-15 | Handle the review follow-up for Issue #79 (PR #87) with the pr-review-followup skill. | Reproduce each of the 14 threads, make one commit for each finding, push, and reply in the thread. |
+| 2026-10-15 | Never resolve a thread. Request re-review at the end. | Leave threads open. Request re-review from @Kiatisakk only. |
+| 2026-10-15 | Record actual outcomes only in the test record. | Run the parity, performance, Administrator, axe, reflow, and visual checks. Record the measured results and the remaining limits. |
+| 2026-10-15 | Rebase PR #87 onto `lab4-staging` and handle the second review. | Rebase onto `78be599` and resolve the conflicts. Fix one test mock that the rebase broke. Add a fixture database guard and a Ticket detail invalidation test, each with a mutation check. Reply to both nits and leave the threads open. |
+
+Automated checks do not imply human approval. The student has not supplied a reflection for this follow-up.

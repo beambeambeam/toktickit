@@ -5,6 +5,7 @@ import {
   editAction,
   getActionHistory,
   getActions,
+  getStaffActions,
   transitionAction,
 } from "../controllers/actions.js";
 import { changePassword, getMe, login, logout } from "../controllers/auth.js";
@@ -14,6 +15,7 @@ import {
   getRelatedSystems,
 } from "../controllers/reference-data.js";
 import { getRequesterDashboardController } from "../controllers/requester-dashboard.js";
+import { getStaffDashboardController } from "../controllers/staff-dashboard.js";
 import {
   addAttachments,
   createInternalNote,
@@ -107,6 +109,22 @@ apiRouter.get(
   requireRole("ITStaff", "Administrator"),
   touchSession,
   getStaffOwners
+);
+apiRouter.get(
+  "/staff/dashboard",
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff", "Administrator"),
+  touchSession,
+  getStaffDashboardController
+);
+apiRouter.get(
+  "/staff/actions",
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff", "Administrator"),
+  touchSession,
+  getStaffActions
 );
 apiRouter.get(
   "/tickets/:ticketId/actions",

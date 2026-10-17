@@ -3,6 +3,7 @@ import { Prisma } from "../generated/prisma/client.js";
 import type { CurrentStatus as PrismaCurrentStatus } from "../generated/prisma/enums.js";
 import {
   activeTicketStatuses,
+  currentStatusToPrisma,
   isEligibleTicketOwner,
 } from "../types/ticket-workflow.js";
 import type {
@@ -28,12 +29,22 @@ const requesterSelection = {
   id: true,
 } as const;
 
-const ownerSelection = {
+export const ownerSelection = {
   displayName: true,
   id: true,
   isActive: true,
   mustChangePassword: true,
   role: true,
+} as const;
+
+export const ticketPreviewSelection = {
+  currentStatus: true,
+  id: true,
+  requestedPriority: true,
+  resolvedAt: true,
+  summary: true,
+  ticketNumber: true,
+  updatedAt: true,
 } as const;
 
 const attachmentSelection = {
@@ -134,6 +145,9 @@ const currentStatusByWire: Record<
   "Waiting for Requester": "WaitingForRequester",
 };
 
+export const activePrismaStatuses: PrismaCurrentStatus[] =
+  activeTicketStatuses.map((status) => currentStatusToPrisma[status]);
+
 const buildTicketWhere = (
   requesterId: number,
   query: TicketListQuery
@@ -141,11 +155,7 @@ const buildTicketWhere = (
   const and: Prisma.TicketWhereInput[] = [];
 
   if (query.scope === "active") {
-    and.push({
-      currentStatus: {
-        in: activeTicketStatuses.map((status) => currentStatusByWire[status]),
-      },
-    });
+    and.push({ currentStatus: { in: activePrismaStatuses } });
   } else if (query.scope === "waiting-for-requester") {
     and.push({ currentStatus: "WaitingForRequester" });
   } else if (
@@ -223,40 +233,60 @@ const resolveOwnerId = (
 const buildStaffTicketWhere = (
   query: StaffTicketListQuery,
   currentUserId: number
-): Prisma.TicketWhereInput => ({
-  ...(query.categoryId === undefined ? {} : { categoryId: query.categoryId }),
-  ...(query.currentStatus === undefined
-    ? {}
-    : { currentStatus: currentStatusByWire[query.currentStatus] }),
-  ...(query.itPriority === undefined ? {} : { itPriority: query.itPriority }),
-  ...(query.owner === undefined
-    ? {}
-    : { ownerId: resolveOwnerId(query.owner, currentUserId) }),
-  ...(query.relatedSystemId === undefined
-    ? {}
-    : { relatedSystemId: query.relatedSystemId }),
-  ...(query.requestedPriority === undefined
-    ? {}
-    : { requestedPriority: query.requestedPriority }),
-  ...(query.search === undefined
-    ? {}
-    : {
-        OR: [
-          {
-            ticketNumber: {
-              contains: escapeLikePattern(query.search),
-              mode: "insensitive",
+): Prisma.TicketWhereInput => {
+  const and: Prisma.TicketWhereInput[] = [];
+
+  if (query.scope === "active") {
+    and.push({ currentStatus: { in: activePrismaStatuses } });
+  } else if (query.scope === "urgent-active") {
+    and.push({
+      currentStatus: { in: activePrismaStatuses },
+      itPriority: "Urgent",
+    });
+  } else if (
+    query.scope === "recently-updated" &&
+    query.from !== undefined &&
+    query.through !== undefined
+  ) {
+    and.push({ updatedAt: { gte: query.from, lte: query.through } });
+  }
+
+  return {
+    ...(query.categoryId === undefined ? {} : { categoryId: query.categoryId }),
+    ...(query.currentStatus === undefined
+      ? {}
+      : { currentStatus: currentStatusByWire[query.currentStatus] }),
+    ...(query.itPriority === undefined ? {} : { itPriority: query.itPriority }),
+    ...(query.owner === undefined
+      ? {}
+      : { ownerId: resolveOwnerId(query.owner, currentUserId) }),
+    ...(query.relatedSystemId === undefined
+      ? {}
+      : { relatedSystemId: query.relatedSystemId }),
+    ...(query.requestedPriority === undefined
+      ? {}
+      : { requestedPriority: query.requestedPriority }),
+    ...(query.search === undefined
+      ? {}
+      : {
+          OR: [
+            {
+              ticketNumber: {
+                contains: escapeLikePattern(query.search),
+                mode: "insensitive",
+              },
             },
-          },
-          {
-            summary: {
-              contains: escapeLikePattern(query.search),
-              mode: "insensitive",
+            {
+              summary: {
+                contains: escapeLikePattern(query.search),
+                mode: "insensitive",
+              },
             },
-          },
-        ],
-      }),
-});
+          ],
+        }),
+    ...(and.length === 0 ? {} : { AND: and }),
+  };
+};
 
 const staffTicketSummaryInclude = {
   category: { select: categorySelection },

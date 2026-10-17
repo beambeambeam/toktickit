@@ -1,6 +1,7 @@
 import type { QueryClient } from "@tanstack/react-query";
 
 import type { ActionMutationResult } from "@/api/actions";
+import { invalidateStaffWorkQueries } from "@/api/staff-query-options";
 import type { UserRole } from "@/generated/hey-api/types.gen";
 
 export const refreshActionMutationQueries = async (
@@ -28,12 +29,6 @@ export const refreshActionMutationQueries = async (
       ],
     }),
     queryClient.invalidateQueries({ queryKey: ["tickets"] }),
-    queryClient.invalidateQueries({ queryKey: ["staff-tickets"] }),
-    queryClient.invalidateQueries({
-      queryKey: ["dashboard", principalId, principalRole],
-    }),
-    queryClient.invalidateQueries({
-      queryKey: ["staff-actions", principalId, principalRole],
-    }),
+    invalidateStaffWorkQueries(queryClient),
   ]);
 };

@@ -15,6 +15,7 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 
 import type { AuthUser } from "@/api/auth";
 import { ApiRequestError } from "@/api/errors";
+import type * as StaffQueryOptions from "@/api/staff-query-options";
 import type { Owner } from "@/generated/hey-api/types.gen";
 import { StaffTicketDetailPage } from "@/pages/staff-ticket-detail-page";
 
@@ -108,7 +109,10 @@ vi.mock("@/api/staff", () => ({
   updateStaffTicketStatus: updateStaffTicketStatusMock,
 }));
 
-vi.mock("@/api/staff-query-options", () => ({
+vi.mock("@/api/staff-query-options", async () => ({
+  ...(await vi.importActual<typeof StaffQueryOptions>(
+    "@/api/staff-query-options"
+  )),
   staffOwnersQueryOptions: () => ({
     queryFn: async () => await getStaffOwnersMock(),
     queryKey: ["staff-owners"],
@@ -507,5 +511,45 @@ describe("Staff Ticket Detail page", () => {
     expect(
       await screen.findByText("IT Priority saved successfully.")
     ).toBeTruthy();
+  });
+
+  it("refreshes staff dashboard and My Actions after Owner and status writes", async () => {
+    authState.user = staffUser;
+    updateStaffTicketOwnerMock.mockResolvedValue({ ...ticket, version: 3 });
+    updateStaffTicketStatusMock.mockResolvedValue({
+      ...ticket,
+      currentStatus: "Resolved",
+      resolvedAt: "2026-09-02T12:00:00.000Z",
+      statusChangedAt: "2026-09-02T12:00:00.000Z",
+      updatedAt: "2026-09-02T12:00:00.000Z",
+      version: 4,
+    });
+    const { queryClient } = renderPage();
+    const invalidateSpy = vi.spyOn(queryClient, "invalidateQueries");
+    const invalidatedKeys = () =>
+      invalidateSpy.mock.calls.map(([filters]) => filters?.queryKey?.[0]);
+    await screen.findByText("TKT-20260902-DETAIL01");
+
+    fireEvent.click(screen.getByRole("button", { name: "Save Owner" }));
+    await waitFor(() => {
+      expect(invalidatedKeys()).toEqual(
+        expect.arrayContaining(["staff-dashboard", "staff-my-actions"])
+      );
+    });
+
+    invalidateSpy.mockClear();
+    fireEvent.change(screen.getByLabelText("Next status"), {
+      target: { value: "Resolved" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Apply Status" }));
+    const dialog = await screen.findByRole("alertdialog");
+    fireEvent.click(
+      within(dialog).getByRole("button", { name: "Confirm Resolved" })
+    );
+    await waitFor(() => {
+      expect(invalidatedKeys()).toEqual(
+        expect.arrayContaining(["staff-dashboard", "staff-my-actions"])
+      );
+    });
   });
 });

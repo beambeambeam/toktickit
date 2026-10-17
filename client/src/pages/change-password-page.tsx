@@ -192,7 +192,7 @@ const PasswordForm = ({
       setConfirmation("");
       setSuccessMessage("Password changed. Your session was renewed.");
       await navigate({
-        to: user === null ? "/" : homeRouteForRole(user.role),
+        to: user === null ? "/" : homeRouteForRole(),
       });
     } catch (error: unknown) {
       setFieldErrors(getPasswordFieldErrors(error));
@@ -405,7 +405,7 @@ export const ChangePasswordPage = () => {
       mandatory={user.mustChangePassword}
       onCancel={() =>
         void navigate({
-          to: homeRouteForRole(user.role),
+          to: homeRouteForRole(),
         })
       }
     />

@@ -91,7 +91,8 @@ a:focus-visible,
 input:focus-visible,
 select:focus-visible,
 textarea:focus-visible,
-summary:focus-visible {
+summary:focus-visible,
+.action-card:focus {
   outline: 3px solid #8bd4ac;
   outline-offset: 2px;
 }
@@ -307,7 +308,8 @@ button:disabled,
 }
 
 .mobile-nav nav a:hover,
-.mobile-nav nav button:hover {
+.mobile-nav nav button:hover,
+.mobile-nav nav a.active {
   background: var(--pale-green);
 }
 
@@ -415,6 +417,7 @@ button:disabled,
   grid-row: 1 / span 2;
   color: var(--primary-green);
   font-size: clamp(1.8rem, 4vw, 2.6rem);
+  font-variant-numeric: tabular-nums;
   font-weight: 800;
   line-height: 1;
 }
@@ -453,6 +456,7 @@ button:disabled,
   margin: 0;
   color: var(--text);
   font-size: 1.15rem;
+  text-wrap: balance;
 }
 
 .dashboard-preview-list {
@@ -1372,6 +1376,7 @@ button:disabled,
   text-align: center;
 }
 
+.empty-state h2,
 .empty-state h3 {
   margin: 0;
   color: var(--text);
