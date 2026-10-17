@@ -794,6 +794,7 @@ describe("Lab 4 staff dashboard API", () => {
       }),
     });
     const tickets = await prisma.ticket.findMany({
+      orderBy: { ticketNumber: "asc" },
       select: { id: true },
       where: { ticketNumber: { startsWith: "TKT-PERF-" } },
     });
