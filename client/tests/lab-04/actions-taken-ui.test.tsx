@@ -258,6 +258,36 @@ describe("Actions Taken UI", () => {
     expect(screen.getByText("Page 2 of 2", { exact: false })).toBeTruthy();
   });
 
+  it("opens and focuses a linked action that sits on a later page", async () => {
+    const linkedAction = { ...action, id: 42 };
+    getTicketActionsMock
+      .mockResolvedValueOnce({
+        ...emptyPage,
+        items: [action],
+        totalItems: 21,
+        totalPages: 2,
+      })
+      .mockResolvedValueOnce({
+        ...emptyPage,
+        items: [linkedAction],
+        page: 2,
+        totalItems: 21,
+        totalPages: 2,
+      });
+
+    renderSection({ focusActionId: 42 });
+
+    await waitFor(() => {
+      expect(document.activeElement?.id).toBe("action-42");
+    });
+    expect(getTicketActionsMock).toHaveBeenLastCalledWith(
+      11,
+      { page: 2, pageSize: 20 },
+      expect.anything()
+    );
+    expect(screen.getByText("Page 2 of 2", { exact: false })).toBeTruthy();
+  });
+
   it.each([
     [403, "You do not have permission to read Actions Taken for this Ticket."],
     [404, "This Ticket or its Actions Taken list was not found."],

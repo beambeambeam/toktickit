@@ -37,6 +37,8 @@ test("creates an active user and completes that user's first login", async ({
   await page.getByLabel("Email").fill(adminEmail);
   await page.getByRole("textbox", { name: "Password" }).fill(adminPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/dashboard$/u);
+  await page.goto("/users");
   await expect(page).toHaveURL(/\/users$/u);
   await expect(
     page.getByRole("heading", { name: "User Management" })
@@ -122,6 +124,8 @@ test("edits account access and resets the initial password", async ({
   await page.getByLabel("Email").fill(adminEmail);
   await page.getByRole("textbox", { name: "Password" }).fill(adminPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/dashboard$/u);
+  await page.goto("/users");
   await expect(page).toHaveURL(/\/users$/u);
 
   await page.getByRole("button", { exact: true, name: "Create User" }).click();

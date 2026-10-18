@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { ticketActionsQueryOptions } from "@/api/action-query-options";
 import { ActionForm } from "@/components/action-form";
+import { useActionAnchor } from "@/components/actions-taken-anchor";
 import { useActionsTakenCreate } from "@/components/actions-taken-create";
 import { ActionsTakenList } from "@/components/actions-taken-list";
 import type { Owner, UserRole } from "@/generated/hey-api/types.gen";
@@ -13,6 +14,7 @@ const PAGE_SIZE = 20 as const;
 export interface ActionsTakenSectionProps {
   currentStatus: CurrentStatus;
   defaultAssigneeId: number;
+  focusActionId?: number;
   onRefreshTicket: () => Promise<unknown>;
   onRetryAssignees?: () => Promise<unknown>;
   owners: readonly Owner[];
@@ -27,6 +29,7 @@ export interface ActionsTakenSectionProps {
 export const ActionsTakenSection = ({
   currentStatus,
   defaultAssigneeId,
+  focusActionId,
   onRefreshTicket,
   onRetryAssignees,
   owners,
@@ -74,6 +77,12 @@ export const ActionsTakenSection = ({
   }, [createState.formRef, createState.isCreateOpen]);
 
   const actionPage = actionsQuery.data;
+  const changePage = useActionAnchor({
+    actionPage,
+    focusActionId,
+    page,
+    setPage,
+  });
 
   return (
     <section
@@ -163,7 +172,7 @@ export const ActionsTakenSection = ({
         actionsError={actionsQuery.isError ? actionsQuery.error : null}
         actionsFetching={actionsQuery.isFetching}
         actionsPending={actionsQuery.isPending}
-        onPageChange={setPage}
+        onPageChange={changePage}
         onRetry={() => void actionsQuery.refetch()}
         page={page}
       />

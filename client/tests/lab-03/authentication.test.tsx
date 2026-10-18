@@ -86,11 +86,11 @@ describe("authenticated identity screens", () => {
     cleanup();
   });
 
-  it("routes unrestricted IT Staff to the shared Ticket Queue", async () => {
+  it("routes unrestricted IT Staff to the Dashboard landing", async () => {
     authState.user = { ...authUser, role: "IT Staff" };
     render(<LandingPage />);
     await waitFor(() => {
-      expect(navigateMock).toHaveBeenCalledWith({ to: "/staff/tickets" });
+      expect(navigateMock).toHaveBeenCalledWith({ to: "/dashboard" });
     });
     expect(screen.queryByRole("heading", { name: "My Account" })).toBeNull();
   });

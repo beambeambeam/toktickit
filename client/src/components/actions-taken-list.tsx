@@ -1,5 +1,6 @@
 import type { TicketAction, TicketActionsPage } from "@/api/actions";
 import { ApiRequestError } from "@/api/errors";
+import { actionAnchorId } from "@/components/actions-taken-anchor";
 import { ActionControls } from "@/components/actions-taken-controls";
 import type { ActionInteractionContext } from "@/components/actions-taken-edit";
 import { StatusBadge } from "@/components/status-badge";
@@ -32,7 +33,7 @@ const ActionDetails = ({
   action: TicketAction;
   context: ActionInteractionContext;
 }) => (
-  <article className="action-card">
+  <article className="action-card" id={actionAnchorId(action.id)} tabIndex={-1}>
     <div className="action-card-heading">
       <div>
         <h3>Action Taken #{action.id}</h3>

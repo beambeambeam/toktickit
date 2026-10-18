@@ -16,7 +16,7 @@ import type {
   EditActionInput,
 } from "../types/actions.js";
 import { isEligibleTicketOwner } from "../types/ticket-workflow.js";
-import { ticketDetailInclude } from "./tickets.js";
+import { activePrismaStatuses, ticketDetailInclude } from "./tickets.js";
 
 const actionUserSelection = {
   displayName: true,
@@ -38,7 +38,33 @@ const actionEventInclude = {
   actor: { select: { displayName: true, id: true, role: true } },
 } satisfies Prisma.ActionEventInclude;
 
+export const actionSummaryInclude = {
+  assignee: { select: actionUserSelection },
+  ticket: {
+    select: {
+      currentStatus: true,
+      id: true,
+      summary: true,
+      ticketNumber: true,
+    },
+  },
+} satisfies Prisma.ActionTakenInclude;
+
+const myActionStatuses: PrismaActionStatus[] = ["Planned", "InProgress"];
+
+export const myActionsWhere = (
+  userId: number
+): Prisma.ActionTakenWhereInput => ({
+  assigneeId: userId,
+  status: { in: myActionStatuses },
+  ticket: { currentStatus: { in: activePrismaStatuses } },
+});
+
 type ActionDatabase = Prisma.TransactionClient;
+
+type ActionSummaryDatabaseRecord = Prisma.ActionTakenGetPayload<{
+  include: typeof actionSummaryInclude;
+}>;
 
 type ActionDatabaseRecord = Prisma.ActionTakenGetPayload<{
   include: typeof actionInclude;
@@ -580,6 +606,33 @@ export const transitionAction = async (
     };
   });
 };
+
+export const findMyActions = async (
+  userId: number,
+  query: ActionListQuery
+): Promise<{ items: ActionSummaryDatabaseRecord[]; totalItems: number }> =>
+  await prisma.$transaction(
+    async (database) => {
+      const where = myActionsWhere(userId);
+      const totalItems = await database.actionTaken.count({ where });
+      const skip = (query.page - 1) * query.pageSize;
+
+      if (skip >= totalItems) {
+        return { items: [], totalItems };
+      }
+
+      const items = await database.actionTaken.findMany({
+        include: actionSummaryInclude,
+        orderBy: [{ updatedAt: "desc" }, { id: "desc" }],
+        skip,
+        take: query.pageSize,
+        where,
+      });
+
+      return { items, totalItems };
+    },
+    { isolationLevel: Prisma.TransactionIsolationLevel.RepeatableRead }
+  );
 
 export const findActionsForTicket = async (
   ticketId: number,

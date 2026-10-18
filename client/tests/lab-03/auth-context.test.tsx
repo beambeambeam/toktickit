@@ -39,13 +39,16 @@ const createAuthResponse = (id: number): AuthResponse => ({
 });
 
 const AuthProbe = () => {
-  const { refetchAuth, user } = useAuth();
+  const { logout, refetchAuth, user } = useAuth();
 
   return (
     <>
       <span data-testid="identity">{user?.id ?? "signed-out"}</span>
       <button onClick={() => void refetchAuth()} type="button">
         Refresh auth
+      </button>
+      <button onClick={() => void logout()} type="button">
+        Log out
       </button>
     </>
   );
@@ -98,5 +101,49 @@ describe("authentication context identity boundaries", () => {
       expect(screen.getByTestId("identity").textContent).toBe("2");
       expect(queryClient.getQueryData(["tickets", "mine"])).toBeUndefined();
     });
+  });
+
+  it("clears account-scoped staff lists on logout and keeps public lookups", async () => {
+    getCurrentAuthMock.mockResolvedValueOnce(createAuthResponse(10));
+    const queryClient = createQueryClient();
+    queryClient.setQueryData(
+      ["staff-tickets", 10, "IT Staff", { page: 1, pageSize: 20 }],
+      { totalItems: 1 }
+    );
+    queryClient.setQueryData(["staff-my-actions", 10, "IT Staff", 1, 20], {
+      totalItems: 1,
+    });
+    queryClient.setQueryData(["categories"], [{ id: 1, name: "Network" }]);
+
+    render(
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <AuthProbe />
+        </AuthProvider>
+      </QueryClientProvider>
+    );
+
+    await waitFor(() => {
+      expect(screen.getByTestId("identity").textContent).toBe("10");
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Log out" }));
+
+    await waitFor(() => {
+      expect(screen.getByTestId("identity").textContent).toBe("signed-out");
+    });
+    expect(
+      queryClient.getQueryData([
+        "staff-tickets",
+        10,
+        "IT Staff",
+        { page: 1, pageSize: 20 },
+      ])
+    ).toBeUndefined();
+    expect(
+      queryClient.getQueryData(["staff-my-actions", 10, "IT Staff", 1, 20])
+    ).toBeUndefined();
+    expect(queryClient.getQueryData(["categories"])).toEqual([
+      { id: 1, name: "Network" },
+    ]);
   });
 });

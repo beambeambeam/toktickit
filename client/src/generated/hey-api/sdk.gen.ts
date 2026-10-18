@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { ClaimApiTicketData, ClaimApiTicketErrors, ClaimApiTicketResponses, CreateApiTicketActionData, CreateApiTicketActionErrors, CreateApiTicketActionResponses, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsErrors, CreateApiTicketAttachmentsResponses, CreateApiTicketCommentData, CreateApiTicketCommentErrors, CreateApiTicketCommentResponses, CreateApiTicketData, CreateApiTicketErrors, CreateApiTicketInternalNoteData, CreateApiTicketInternalNoteErrors, CreateApiTicketInternalNoteResponses, CreateApiTicketResponses, CreateApiUserData, CreateApiUserErrors, CreateApiUserResponses, GetApiAuthMeData, GetApiAuthMeErrors, GetApiAuthMeResponses, GetApiCategoriesData, GetApiCategoriesErrors, GetApiCategoriesResponses, GetApiHealthData, GetApiHealthErrors, GetApiHealthResponses, GetApiRelatedSystemsData, GetApiRelatedSystemsErrors, GetApiRelatedSystemsResponses, GetApiRequesterDashboardData, GetApiRequesterDashboardErrors, GetApiRequesterDashboardResponses, GetApiStaffOwnersData, GetApiStaffOwnersErrors, GetApiStaffOwnersResponses, GetApiStaffTicketsData, GetApiStaffTicketsErrors, GetApiStaffTicketsResponses, GetApiTicketActionHistoryData, GetApiTicketActionHistoryErrors, GetApiTicketActionHistoryResponses, GetApiTicketActionsData, GetApiTicketActionsErrors, GetApiTicketActionsResponses, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentErrors, GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentsData, GetApiTicketAttachmentsErrors, GetApiTicketAttachmentsResponses, GetApiTicketCommentsData, GetApiTicketCommentsErrors, GetApiTicketCommentsResponses, GetApiTicketData, GetApiTicketErrors, GetApiTicketInternalNotesData, GetApiTicketInternalNotesErrors, GetApiTicketInternalNotesResponses, GetApiTicketResponses, GetApiTicketsData, GetApiTicketsErrors, GetApiTicketsResponses, GetApiTicketStatusHistoryData, GetApiTicketStatusHistoryErrors, GetApiTicketStatusHistoryResponses, GetApiUserData, GetApiUserErrors, GetApiUserResponses, GetApiUsersData, GetApiUsersErrors, GetApiUsersResponses, IndicateApiTicketResolutionData, IndicateApiTicketResolutionErrors, IndicateApiTicketResolutionResponses, PostApiAuthChangePasswordData, PostApiAuthChangePasswordErrors, PostApiAuthChangePasswordResponses, PostApiAuthLoginData, PostApiAuthLoginErrors, PostApiAuthLoginResponses, PostApiAuthLogoutData, PostApiAuthLogoutErrors, PostApiAuthLogoutResponses, PostApiTicketActionTransitionData, PostApiTicketActionTransitionErrors, PostApiTicketActionTransitionResponses, PutApiTicketActionData, PutApiTicketActionErrors, PutApiTicketActionResponses, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentErrors, RemoveApiTicketAttachmentResponses, ResetApiUserInitialPasswordData, ResetApiUserInitialPasswordErrors, ResetApiUserInitialPasswordResponses, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityErrors, UpdateApiTicketItPriorityResponses, UpdateApiTicketOwnerData, UpdateApiTicketOwnerErrors, UpdateApiTicketOwnerResponses, UpdateApiTicketStatusData, UpdateApiTicketStatusErrors, UpdateApiTicketStatusResponses, UpdateApiUserData, UpdateApiUserErrors, UpdateApiUserResponses } from './types.gen';
+import type { ClaimApiTicketData, ClaimApiTicketErrors, ClaimApiTicketResponses, CreateApiTicketActionData, CreateApiTicketActionErrors, CreateApiTicketActionResponses, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsErrors, CreateApiTicketAttachmentsResponses, CreateApiTicketCommentData, CreateApiTicketCommentErrors, CreateApiTicketCommentResponses, CreateApiTicketData, CreateApiTicketErrors, CreateApiTicketInternalNoteData, CreateApiTicketInternalNoteErrors, CreateApiTicketInternalNoteResponses, CreateApiTicketResponses, CreateApiUserData, CreateApiUserErrors, CreateApiUserResponses, GetApiAuthMeData, GetApiAuthMeErrors, GetApiAuthMeResponses, GetApiCategoriesData, GetApiCategoriesErrors, GetApiCategoriesResponses, GetApiHealthData, GetApiHealthErrors, GetApiHealthResponses, GetApiRelatedSystemsData, GetApiRelatedSystemsErrors, GetApiRelatedSystemsResponses, GetApiRequesterDashboardData, GetApiRequesterDashboardErrors, GetApiRequesterDashboardResponses, GetApiStaffActionsData, GetApiStaffActionsErrors, GetApiStaffActionsResponses, GetApiStaffDashboardData, GetApiStaffDashboardErrors, GetApiStaffDashboardResponses, GetApiStaffOwnersData, GetApiStaffOwnersErrors, GetApiStaffOwnersResponses, GetApiStaffTicketsData, GetApiStaffTicketsErrors, GetApiStaffTicketsResponses, GetApiTicketActionHistoryData, GetApiTicketActionHistoryErrors, GetApiTicketActionHistoryResponses, GetApiTicketActionsData, GetApiTicketActionsErrors, GetApiTicketActionsResponses, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentErrors, GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentsData, GetApiTicketAttachmentsErrors, GetApiTicketAttachmentsResponses, GetApiTicketCommentsData, GetApiTicketCommentsErrors, GetApiTicketCommentsResponses, GetApiTicketData, GetApiTicketErrors, GetApiTicketInternalNotesData, GetApiTicketInternalNotesErrors, GetApiTicketInternalNotesResponses, GetApiTicketResponses, GetApiTicketsData, GetApiTicketsErrors, GetApiTicketsResponses, GetApiTicketStatusHistoryData, GetApiTicketStatusHistoryErrors, GetApiTicketStatusHistoryResponses, GetApiUserData, GetApiUserErrors, GetApiUserResponses, GetApiUsersData, GetApiUsersErrors, GetApiUsersResponses, IndicateApiTicketResolutionData, IndicateApiTicketResolutionErrors, IndicateApiTicketResolutionResponses, PostApiAuthChangePasswordData, PostApiAuthChangePasswordErrors, PostApiAuthChangePasswordResponses, PostApiAuthLoginData, PostApiAuthLoginErrors, PostApiAuthLoginResponses, PostApiAuthLogoutData, PostApiAuthLogoutErrors, PostApiAuthLogoutResponses, PostApiTicketActionTransitionData, PostApiTicketActionTransitionErrors, PostApiTicketActionTransitionResponses, PutApiTicketActionData, PutApiTicketActionErrors, PutApiTicketActionResponses, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentErrors, RemoveApiTicketAttachmentResponses, ResetApiUserInitialPasswordData, ResetApiUserInitialPasswordErrors, ResetApiUserInitialPasswordResponses, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityErrors, UpdateApiTicketItPriorityResponses, UpdateApiTicketOwnerData, UpdateApiTicketOwnerErrors, UpdateApiTicketOwnerResponses, UpdateApiTicketStatusData, UpdateApiTicketStatusErrors, UpdateApiTicketStatusResponses, UpdateApiUserData, UpdateApiUserErrors, UpdateApiUserResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -112,7 +112,7 @@ export const getApiRelatedSystems = <ThrowOnError extends boolean = false>(optio
 /**
  * List the shared Ticket Queue
  *
- * Returns operational Ticket summaries for IT Staff and read-only Administrators.
+ * Returns operational Ticket summaries for IT Staff and read-only Administrators. Scope, time bounds, and owner filters combine with the other filters.
  */
 export const getApiStaffTickets = <ThrowOnError extends boolean = false>(options?: Options<GetApiStaffTicketsData, ThrowOnError>): RequestResult<GetApiStaffTicketsResponses, GetApiStaffTicketsErrors, ThrowOnError> => (options?.client ?? client).get<GetApiStaffTicketsResponses, GetApiStaffTicketsErrors, ThrowOnError>({
     security: [{
@@ -134,6 +134,36 @@ export const getApiStaffOwners = <ThrowOnError extends boolean = false>(options?
             type: 'apiKey'
         }],
     url: '/api/staff/owners',
+    ...options
+});
+
+/**
+ * Get the authenticated staff dashboard
+ *
+ * Returns one UTC snapshot of Ticket counts and bounded previews for IT Staff and Administrators. Accepts no query parameters.
+ */
+export const getApiStaffDashboard = <ThrowOnError extends boolean = false>(options?: Options<GetApiStaffDashboardData, ThrowOnError>): RequestResult<GetApiStaffDashboardResponses, GetApiStaffDashboardErrors, ThrowOnError> => (options?.client ?? client).get<GetApiStaffDashboardResponses, GetApiStaffDashboardErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/staff/dashboard',
+    ...options
+});
+
+/**
+ * List My Actions
+ *
+ * Returns Actions Taken assigned to the authenticated user with status Planned or In Progress on an active Ticket.
+ */
+export const getApiStaffActions = <ThrowOnError extends boolean = false>(options?: Options<GetApiStaffActionsData, ThrowOnError>): RequestResult<GetApiStaffActionsResponses, GetApiStaffActionsErrors, ThrowOnError> => (options?.client ?? client).get<GetApiStaffActionsResponses, GetApiStaffActionsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/staff/actions',
     ...options
 });
 

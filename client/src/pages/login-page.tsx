@@ -68,7 +68,7 @@ export const LoginPage = () => {
       if (user.mustChangePassword) {
         void navigate({ to: "/change-password" });
       } else {
-        void navigate({ to: homeRouteForRole(user.role) });
+        void navigate({ to: homeRouteForRole() });
       }
     }
   }, [navigate, user]);
@@ -140,7 +140,7 @@ export const LoginPage = () => {
       if (nextAuth.user.mustChangePassword) {
         void navigate({ to: "/change-password" });
       } else {
-        void navigate({ to: homeRouteForRole(nextAuth.user.role) });
+        void navigate({ to: homeRouteForRole() });
       }
     } catch (error: unknown) {
       setSubmitError(getLoginErrorMessage(error));

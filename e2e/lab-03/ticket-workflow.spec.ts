@@ -15,6 +15,8 @@ test("progresses and reopens a Ticket through the staff workflow", async ({
   await page.getByRole("textbox", { name: "Password" }).fill(staffPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
 
+  await expect(page).toHaveURL(/\/dashboard$/u);
+  await page.goto("/staff/tickets");
   await expect(page).toHaveURL(/\/staff\/tickets$/u);
   await page
     .getByRole("searchbox", { exact: true, name: "Search" })
