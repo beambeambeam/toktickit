@@ -195,7 +195,7 @@ try {
     select: { id: true },
     where: { email: "e2e-staff@example.test" },
   });
-  await prisma.ticket.update({
+  await prisma.ticket.updateMany({
     data: { ownerId: workflowOwner.id },
     where: { ticketNumber: "TKT-20260901-RES001" },
   });
