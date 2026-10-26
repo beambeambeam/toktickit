@@ -188,6 +188,17 @@ try {
       await prisma.session.deleteMany({ where: { userId: existing.id } });
     })
   );
+
+  // Seeded Ticket Owners must change their password before they are eligible,
+  // so the Lab 3 workflow journey needs an eligible owner on its Ticket.
+  const workflowOwner = await prisma.user.findUniqueOrThrow({
+    select: { id: true },
+    where: { email: "e2e-staff@example.test" },
+  });
+  await prisma.ticket.updateMany({
+    data: { ownerId: workflowOwner.id },
+    where: { ticketNumber: "TKT-20260901-RES001" },
+  });
 } finally {
   await prisma.$disconnect();
 }
