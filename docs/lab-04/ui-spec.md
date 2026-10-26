@@ -1,6 +1,6 @@
 # Lab 4 UI Contract
 
-Status: proposed UI behavior, awaiting peer review for Issues #74–#79. Reuse the existing React/TanStack Router, TanStack Query, app shell, Zen Green surfaces, form fields, buttons, badges, error feedback, and authentication context. This file defines visible behavior; API authorization remains authoritative.
+Status: implemented and released to `main` through Issues #74–#79; approved in [PR #80](https://github.com/beambeambeam/toktickit/pull/80) and released in [PR #88](https://github.com/beambeambeam/toktickit/pull/88). Reuse the existing React/TanStack Router, TanStack Query, app shell, Zen Green surfaces, form fields, buttons, badges, error feedback, and authentication context. This file defines visible behavior; API authorization remains authoritative.
 
 ## 1. Navigation and Landing
 
