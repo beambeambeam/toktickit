@@ -149,3 +149,28 @@ Claude Code supported the PR #87 review follow-up for Issue #79. The model was C
 | 2026-10-15 | Rebase PR #87 onto `lab4-staging` and handle the second review. | Rebase onto `78be599` and resolve the conflicts. Fix one test mock that the rebase broke. Add a fixture database guard and a Ticket detail invalidation test, each with a mutation check. Reply to both nits and leave the threads open. |
 
 Automated checks do not imply human approval. The student has not supplied a reflection for this follow-up.
+
+## Release check and documentation cleanup — 2026-10-26 and 2026-10-27
+
+Claude Code in T3 Code supported the final check of `lab4-staging`, the release PRs and the documentation cleanup on branch `clean-up-lab4`. The model was Claude Sonnet 5.5. No delegated agents were used.
+
+These are actual instruction excerpts from the user. They do not count all user or tool messages.
+
+| Date | Prompt excerpt | Observed use |
+| --- | --- | --- |
+| 2026-10-26 | `check if we need any code to changes more as after we release lab4-staging i can't change any code for this labs now` | Run the full checks on `lab4-staging` and look for defects before the release. |
+| 2026-10-26 | `fix them` | Fix the three defects found: the seeded Ticket Owner in the E2E setup, the flaky My Actions navigation check, and the undeclared `InternalNote` index. |
+| 2026-10-26 | `let do it follow this repo and old release MR too!` | Read the repository PR template and the Lab 3 release PRs (#69, #70). Open PR #89 into `lab4-staging` and release PR #88 into `main`. |
+| 2026-10-27 | `CREATE NEW BRANCH CALL clean up lab4` and `FIX ERVERY THIGN YOU DONE WRONG` | Create `clean-up-lab4` and correct the stale Lab 4 documents. |
+| 2026-10-27 | `CHECK REPO PATTERN. CHECK REPO PATTER THER EARE PATTERN FOR THIS` | Read how Lab 3 wrapped up (PR #69 and its small `docs:` commits). Follow it: separate commits for the reviewer record, the status lines, the test plan and the visual checklist. |
+
+The agent found and fixed these mistakes in its own work:
+
+- The first owner fix in `prepare-e2e.ts` used `ticket.update`. It broke `lab-04/e2e-setup.test.ts` because that test has no seeded Ticket. The full CI run caught it, and the fix now uses `updateMany`.
+- The first navigation fix used `primaryNavigation.or(menuToggle)`. It caused a strict-mode violation on desktop and was replaced with a `:visible` locator.
+- The agent pushed `lab4-staging` directly and the push was rejected by the branch rule. The change went through PR #89 instead.
+- The agent told the user that the stale documents could be left or fixed later, and did not say that merging the release first would close the window to fix them in `lab4-staging`. This cleanup is the correction.
+
+The agent read the GitHub review and merge records for PRs #80 to #89 and wrote the [final outcomes](reviewer.md#final-outcomes-and-release) from them. It compared the committed screenshot manifests with the documentation and corrected the Requester dashboard provenance. It did not re-inspect the screenshots. Check results are in [tests.md](tests.md#release-verification--2026-10-26).
+
+This section records observed agent work. The student has not supplied a reflection for this release work. Automated checks do not imply human approval.
