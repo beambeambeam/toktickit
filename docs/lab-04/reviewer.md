@@ -1,5 +1,7 @@
 # Lab 4 Reviewer Record
 
+The per-PR sections below are checkpoints written when each review follow-up was pushed. They describe the state at that time. The [final outcomes](#final-outcomes-and-release) table at the end records the approvals and merges that followed.
+
 ## Earlier review — PR #80
 
 [PR #80 — Sprint 4 engineering contract](https://github.com/beambeambeam/toktickit/pull/80) is open against `lab4-staging`. On 2026-10-02, @Kiatisakk and the Greptile review bot left ten inline review threads. Each finding was addressed in its own commit, answered in its thread, and resolved.
@@ -17,13 +19,13 @@
 | @Kiatisakk | List stable screenshot names and states for each evidence folder. | Added per-folder desktop/tablet/mobile state filenames. [Commit](https://github.com/beambeambeam/toktickit/commit/5bbb7c0); replied and resolved. |
 | @Kiatisakk | Split bundled API test cases into separately verifiable rows. | Split the plan into focused API test IDs and updated traceability. [Commit](https://github.com/beambeambeam/toktickit/commit/8cde49e); replied and resolved. |
 
-No reviewer approval has been received for PR #80 as of 2026-10-02. Do not treat an automated check as peer approval.
+No reviewer approval had been received for PR #80 when this checkpoint was written on 2026-10-02. @Kiatisakk approved later the same day; see the [final outcomes](#final-outcomes-and-release). An automated check is not peer approval.
 
 ## PR #82 — Issue #74 create/view Actions Taken
 
 [PR #82](https://github.com/beambeambeam/toktickit/pull/82) targets `lab4-staging` and closes #74. On 2026-10-03, @Kiatisakk requested changes at `7e96a8a`. The review included 12 human inline threads and two Greptile threads. The general findings requested the `lab-04` label and current AI-use/reviewer records. The label is applied and [ai-use.md](ai-use.md) records actual #74 prompts and models.
 
-All 14 inline findings have responses. Thirteen changed findings have separate commits; the duplicate Resolved test finding was already addressed by the earlier status fix and received a reply without an empty commit. All commits are pushed. Threads remain open for reviewer verification and resolution. No human approval has been received; automated checks are not peer approval. Review request and approval state are tracked on the PR.
+All 14 inline findings have responses. Thirteen changed findings have separate commits; the duplicate Resolved test finding was already addressed by the earlier status fix and received a reply without an empty commit. All commits are pushed. Threads remain open for reviewer verification and resolution. No human approval had been received at this checkpoint. @Kiatisakk approved later; see the [final outcomes](#final-outcomes-and-release). Automated checks are not peer approval.
 
 | Reviewer | Finding | Change | Thread reply / state |
 | --- | --- | --- | --- |
@@ -191,3 +193,31 @@ Mutation checks:
 - A no-op at either invalidation call site fails the new detail case.
 
 The reviewer must verify the replies and resolve the threads.
+
+## Final outcomes and release
+
+@Kiatisakk reviewed, approved and merged every Lab 4 PR in `beambeambeam/toktickit`. Times are UTC and come from the GitHub review and merge records. Each approval followed a `CHANGES_REQUESTED` review, except for the two release PRs. The checkpoint sections above describe the review rounds in between.
+
+| PR | Scope | Approved | Merged | Merge commit |
+| --- | --- | --- | --- | --- |
+| [#80](https://github.com/beambeambeam/toktickit/pull/80) | Sprint 4 engineering contract (#73), into `lab4-staging` | 2026-10-02 16:46 | 2026-10-02 16:48 | `f9eb86a` |
+| [#82](https://github.com/beambeambeam/toktickit/pull/82) | Create and view Actions Taken (#74), into `lab4-staging` | 2026-10-03 19:04 | 2026-10-03 19:06 | `4da687a` |
+| [#83](https://github.com/beambeambeam/toktickit/pull/83) | Edit and assign pending Actions Taken (#75), into `lab4-staging` | 2026-10-07 13:49 | 2026-10-07 13:50 | `a19fd46` |
+| [#84](https://github.com/beambeambeam/toktickit/pull/84) | Action Taken lifecycle (#76), into `lab4-staging` | 2026-10-12 06:59 | 2026-10-12 06:59 | `7f566c4` |
+| [#85](https://github.com/beambeambeam/toktickit/pull/85) | Requester dashboard (#78), into `lab4-staging` | 2026-10-12 07:15 and 09:32 | 2026-10-12 09:32 | `6ad32a5` |
+| [#86](https://github.com/beambeambeam/toktickit/pull/86) | Ticket lifecycle and resolution gate (#77), into `lab4-staging` | 2026-10-15 10:33 | 2026-10-15 10:34 | `78be599` |
+| [#87](https://github.com/beambeambeam/toktickit/pull/87) | Staff dashboard and My Actions (#79), into `lab4-staging` | 2026-10-15 10:35 and 2026-10-18 21:28 | 2026-10-18 21:28 | `225ad8c` |
+| [#89](https://github.com/beambeambeam/toktickit/pull/89) | E2E setup fix and `InternalNote` index declaration, into `lab4-staging` | 2026-10-26 15:39 | 2026-10-26 15:39 | `8781c63` |
+| [#88](https://github.com/beambeambeam/toktickit/pull/88) | Release `lab4-staging` to `main` | 2026-10-26 15:53 | 2026-10-26 15:53 | `bfb1998` |
+
+I could not read the thread resolution state at merge time, so this record does not claim that every thread was resolved. [Issue #72](https://github.com/beambeambeam/toktickit/issues/72) and Issues #73 to #79 are closed.
+
+### Release review — PRs #88 and #89
+
+Before the release, a final check on `lab4-staging` found three defects. None was in application code:
+
+- `lab-03/ticket-workflow.spec.ts` failed on a fresh database. BR-08 rejects a seeded IT Staff Owner who still has `mustChangePassword`. `server/scripts/prepare-e2e.ts` now gives the workflow Ticket an eligible owner.
+- The My Actions navigation check in `e2e/lab-04/staff-dashboard.spec.ts` was flaky. It now waits for the visible navigation control before it acts.
+- `schema.prisma` did not declare the `InternalNote (ticketId, createdAt, id)` index. The Lab 3 migration `20260916180000_internal_notes` already creates it, so the declaration adds no migration. `prisma migrate diff` reports no difference.
+
+The first version of the owner fix used `ticket.update`. The server test `lab-04/e2e-setup.test.ts` failed because that test database has no seeded Ticket. The fix now uses `updateMany` (`26763fc`). Greptile reviewed #89 and found no problem. @Kiatisakk approved and merged both PRs. The verification results are in [tests.md](tests.md#release-verification--2026-10-26).
