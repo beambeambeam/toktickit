@@ -227,6 +227,8 @@ model InternalNote {
   seedKey   String?  @unique
   ticket    Ticket   @relation(fields: [ticketId], references: [id], onDelete: Restrict, onUpdate: Restrict)
   author    User     @relation("InternalNoteAuthor", fields: [authorId], references: [id], onDelete: Restrict, onUpdate: Restrict)
+
+  @@index([ticketId, createdAt, id])
 }
 
 model PublicComment {

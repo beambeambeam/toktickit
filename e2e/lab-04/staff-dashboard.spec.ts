@@ -56,12 +56,14 @@ test("staff opens My Actions from the primary navigation", async ({ page }) => {
   await expect(page).toHaveURL(/\/dashboard$/u);
 
   // Narrow viewports keep the links in a closed mobile menu.
-  if (
-    !(await page
-      .getByRole("navigation", { name: "Primary navigation" })
-      .isVisible())
-  ) {
-    await page.getByLabel("Open navigation").click();
+  const menuToggle = page.getByLabel("Open navigation");
+  await expect(
+    page.locator(
+      'nav[aria-label="Primary navigation"]:visible, summary[aria-label="Open navigation"]:visible'
+    )
+  ).toBeVisible();
+  if (await menuToggle.isVisible()) {
+    await menuToggle.click();
   }
   await page
     .locator("nav:visible")
