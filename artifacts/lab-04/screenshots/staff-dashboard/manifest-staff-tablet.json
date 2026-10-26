@@ -1,7 +1,7 @@
 {
-  "branch": "feature/79-staff-dashboard",
+  "branch": "clean-up-lab4",
   "command": "E2E_CLIENT_PORT=5279 E2E_API_URL=http://localhost:3079 VITE_API_URL=http://localhost:3079 pnpm --filter @toktickit/e2e exec playwright test lab-04/staff-dashboard-evidence.spec.ts",
-  "commit": "41d87c7b156d1feff4e9ac771d612cb3157e356b",
+  "commit": "5adf79a4005c739429526e68b550c8f3b4a9c2f3",
   "files": [
     {
       "path": "artifacts/lab-04/screenshots/staff-dashboard/staff-dashboard-tablet.png",
@@ -42,9 +42,39 @@
         "height": 1024
       },
       "zoom": "default"
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/staff-dashboard/staff-dashboard-empty-tablet.png",
+      "role": "IT Staff",
+      "scenario": "Dashboard with zero counts and empty previews (intercepted response)",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "zoom": "default"
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/staff-dashboard/staff-dashboard-loading-tablet.png",
+      "role": "IT Staff",
+      "scenario": "Dashboard loading while its API response is pending (held request)",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "zoom": "default"
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/staff-dashboard/staff-dashboard-forbidden-tablet.png",
+      "role": "IT Staff",
+      "scenario": "Dashboard safe forbidden response without retry (intercepted 403)",
+      "viewport": {
+        "width": 768,
+        "height": 1024
+      },
+      "zoom": "default"
     }
   ],
-  "generatedAt": "2026-10-14T18:40:31.437Z",
+  "generatedAt": "2026-10-26T17:43:47.413Z",
   "project": "tablet-chromium",
   "sourceDirty": false
 }
