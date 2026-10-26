@@ -139,6 +139,7 @@ Capture each listed state at desktop (1440 × 900), tablet (768 × 1024), and mo
 | `artifacts/lab-04/screenshots/staff-dashboard/` | Staff/Admin dashboard with zero counts and empty previews | `staff-dashboard-empty-{viewport}.png` |
 | `artifacts/lab-04/screenshots/staff-dashboard/` | Dashboard loading state | `staff-dashboard-loading-{viewport}.png` |
 | `artifacts/lab-04/screenshots/staff-dashboard/` | Dashboard safe failure and retry | `staff-dashboard-error-{viewport}.png` |
+| `artifacts/lab-04/screenshots/staff-dashboard/` | Dashboard forbidden response | `staff-dashboard-forbidden-{viewport}.png` |
 | `artifacts/lab-04/screenshots/staff-dashboard/` | My Actions list with parent Ticket links | `staff-my-actions-{viewport}.png` |
 | `artifacts/lab-04/screenshots/staff-dashboard/` | Queue drill-down with matching filters | `staff-dashboard-drilldown-{viewport}.png` |
 

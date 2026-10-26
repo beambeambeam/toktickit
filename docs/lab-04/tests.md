@@ -136,7 +136,7 @@ The Final column records the result of each check. Rows that were “Not run” 
 | A11Y-01 | Accessibility | Keyboard-only create/edit/workflow journeys, labels, field errors, live updates, dialogs, focus return | All action and workflow tasks are operable and announced | e2e/lab-04/actions-taken-flow.spec.ts; e2e/lab-04/actions-edit-flow.spec.ts; axe checks | #74–#77 | #74/#75 keyboard forms, focus, labels, live feedback, and zero axe violations passed. #76 dialogs passed focus and Escape checks. Lifecycle states had zero axe violations. Partial for #77: axe checks and the focus on Next status after a gate failure pass in `ticket-resolution.spec.ts` on all three projects. The reasons list is inside the `role="status"` live region. Not met: no keyboard-only Ticket status journey. |
 | A11Y-02 | Accessibility | Dashboard/card/list navigation, heading order, labels, focus, contrast and empty states | axe has no new serious/critical finding; keyboard flow remains clear | e2e/lab-04/requester-dashboard.spec.ts; axe checks | #78, #79 | Pass for #78: zero axe violations on dashboard and My Tickets; keyboard focus is visible. Pass for #79 (dd04239): zero axe violations at 1440 and 320 CSS px on the staff and Administrator dashboard, Active Unassigned Queue, and My Actions, and on the dashboard error state |
 | VIS-01 | Visual review | Action and Ticket Detail states across desktop/tablet/mobile | Checklist passes and reviewed screenshots show real, complete states | docs/lab-04/ui-spec.md §8 inventory; artifacts/lab-04/screenshots/actions-taken/{state}-{viewport}.png; artifacts/lab-04/screenshots/actions-edit/{state}-{viewport}.png | #74–#77 | #74/#75 canonical and representative screenshots were inspected. #76 lifecycle captures were inspected at all three viewports. Manifests link the clean source SHA and review checks. Pass for #77: the resolution gate captures in `artifacts/lab-04/screenshots/actions-taken/` were inspected at all three viewports and at 320 and 720 CSS px. `manifest-ticket-resolution-gate-{viewport}.json` records the source commit. |
-| VIS-02 | Visual review | Requester/staff dashboard and drill-down states across desktop/tablet/mobile | Checklist passes for counts, layouts, links, errors, empties, and overflow | docs/lab-04/ui-spec.md §8 inventory; artifacts/lab-04/screenshots/requester-dashboard/{state}-{viewport}.png; artifacts/lab-04/screenshots/staff-dashboard/{state}-{viewport}.png | #78, #79 | Pass for #78: six Requester states at desktop/tablet/mobile inspected; Pass for #79: 33 staff and Administrator screenshots (populated, 320 px, 200% reflow proxy, error) at desktop/tablet/mobile with manifests from clean commit dd04239 in artifacts/lab-04/screenshots/staff-dashboard/. Loading, empty, and forbidden staff states are covered by UI-04 only |
+| VIS-02 | Visual review | Requester/staff dashboard and drill-down states across desktop/tablet/mobile | Checklist passes for counts, layouts, links, errors, empties, and overflow | docs/lab-04/ui-spec.md §8 inventory; artifacts/lab-04/screenshots/requester-dashboard/{state}-{viewport}.png; artifacts/lab-04/screenshots/staff-dashboard/{state}-{viewport}.png | #78, #79 | Pass for #78: six Requester states at desktop/tablet/mobile inspected; Pass for #79: 42 staff and Administrator screenshots (populated, 320 px, 200% reflow proxy, error, loading, empty, forbidden) at desktop/tablet/mobile, regenerated on 2026-10-27 with manifests from clean commit 5adf79a in artifacts/lab-04/screenshots/staff-dashboard/. The loading, empty and forbidden states are also covered by UI-04 |
 
 ## 5. Per-Issue Verification Ownership
 
@@ -484,7 +484,7 @@ Environment: same disposable PostgreSQL (port 55479). API on port 3079, client o
 
 The evidence spec creates two Planned Actions for each account in each run, so the My Actions list has rows. The E2E reset does not remove them, so the My Actions counts increase with each run.
 
-Limits: other dashboard cards are not opened in the browser (API-31 covers every card at the API level). Loading, empty, and forbidden staff states have UI tests but no screenshots.
+Limits: other dashboard cards are not opened in the browser (API-31 covers every card at the API level). The loading, empty and forbidden staff states have UI tests. Their screenshots were added on 2026-10-27 (see the end of this document).
 
 ## Release verification — 2026-10-26
 
@@ -507,6 +507,21 @@ Client test timing: while the machine was busy (load average about 16 after conc
 Not run or not re-verified after the final change:
 
 - The OpenAPI parity check was not run again. The final change touches no API, and the check passed in the earlier #79 verification.
-- Staff dashboard loading, empty and forbidden states have UI tests but no screenshots (see [visual-checklist.md](../../artifacts/lab-04/visual-checklist.md)).
 - The partial rows for #77 keep their stated gaps: A11Y-01 has no keyboard-only Ticket status journey, UI-02 does not cover every empty, forbidden, not-found and API-failure state, and API-32 does not include the private-note and session boundaries.
 - No production-scale performance test was run. PERF-01 and PERF-02 remain local smoke measurements.
+
+## Staff dashboard state screenshots — 2026-10-27
+
+Scope: the screenshot gap recorded for #79 and in the release verification above. Commit `5adf79a` extends `e2e/lab-04/staff-dashboard-evidence.spec.ts`. For IT Staff, it captures three more states at desktop (1440×900), tablet (768×1024) and mobile (390×844): loading, empty and forbidden. Each state opens in its own tab. The API response is intercepted: a held request for loading, a zero-count response for empty, and a 403 for forbidden. Each capture also passes an axe scan with no violations and a check for horizontal overflow.
+
+Environment: PostgreSQL 17 container (`postgres:17-alpine`) on port 5433, a fresh database, `prisma migrate deploy`. Command: the one in each manifest.
+
+| Check | Result |
+| --- | --- |
+| `lab-04/staff-dashboard-evidence.spec.ts`, desktop, tablet and mobile | Pass: 6 of 6, run twice. The second run came from a clean tree. |
+| Manifests | `sourceDirty: false` at `5adf79a`. |
+| New PNGs | 9: loading, empty and forbidden at three viewports. I inspected the desktop empty, tablet loading and mobile forbidden captures. |
+
+The spec rewrites every PNG under `staff-dashboard/`, because the seeded Ticket data and the dates differ from the earlier run. The manifests must match their PNGs, so all 42 files were committed from the same run. I inspected one regenerated populated capture (`staff-dashboard-desktop.png`). I did not inspect the other 32 regenerated captures again. Their checks (axe, overflow, Queue count agreement) passed in the same run.
+
+Limit: the three states use intercepted responses, not real server failures, as for the Requester dashboard. Administrator states are not captured.

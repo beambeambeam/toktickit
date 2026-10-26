@@ -1,6 +1,6 @@
 # Lab 4 Visual and Accessibility Checklist
 
-Status: consolidated record of the Lab 4 screenshot evidence, written on 2026-10-26 at release. It summarizes the per-issue visual reviews in [README.md](./README.md) and the results in [tests.md](../../docs/lab-04/tests.md). I did not inspect the PNGs again for this record. It is not a peer approval.
+Status: consolidated record of the Lab 4 screenshot evidence, written on 2026-10-26 at release. It summarizes the per-issue visual reviews in [README.md](./README.md) and the results in [tests.md](../../docs/lab-04/tests.md). On 2026-10-27 the #79 screenshots were regenerated and I inspected four of them (see the provenance notes). I did not inspect the other PNGs again for this record. It is not a peer approval.
 
 ## Evidence basis
 
@@ -11,14 +11,14 @@ Status: consolidated record of the Lab 4 screenshot evidence, written on 2026-10
 | #76 Action lifecycle | `screenshots/actions-taken/lifecycle/` | 19 | `9c8ceb7` | false |
 | #77 Resolution gate | `screenshots/actions-taken/` (`ticket-resolution-gate-*`) | 5 | `25137f3` | not recorded |
 | #78 Requester dashboard | `screenshots/requester-dashboard/` | 21 | `7de0c70` | true |
-| #79 Staff and Administrator dashboard | `screenshots/staff-dashboard/` | 33 | `41d87c7` | false |
+| #79 Staff and Administrator dashboard | `screenshots/staff-dashboard/` | 42 | `5adf79a` | false |
 
 Every capture ran in Chromium at 1440×900 (desktop), 768×1024 (tablet) and 390×844 (mobile). Each folder has one manifest per viewport that records the command, the source commit and the scenario for each PNG. The release run on 2026-10-26 did not change any evidence file.
 
 Provenance notes:
 
 - **#78:** the PR #85 follow-up recaptured the Requester screenshots from `7de0c70` before the evidence files were committed, so the manifests say `sourceDirty: true`. The README and tests.md describe this.
-- **#79:** the manifests record `41d87c7`, the commit after the rebase onto `lab4-staging`. Some tests.md rows cite `dd04239`, the same change before the rebase. The screenshots did not change.
+- **#79:** all 42 PNGs and the six manifests were regenerated on 2026-10-27 from one run on a clean tree at `5adf79a`. The earlier capture was `41d87c7`. The spec rewrites every file in the folder, so a partial update was not possible. I inspected the new desktop empty, tablet loading and mobile forbidden captures and the regenerated desktop populated capture.
 - **#77:** the gate manifests record the source commit but have no `sourceDirty` field.
 
 ## Screen review
@@ -30,7 +30,7 @@ Provenance notes:
 | Action lifecycle (#76) | Start ready, completion and cancellation confirmation, terminal history | Pass at all three viewports. Dialogs keep both choices visible. | None recorded. |
 | Resolution gate (#77) | Gate feedback at desktop, tablet and mobile, 320 px and 720 px reflow | Pass. | None recorded. |
 | Requester dashboard (#78) | Populated, empty, loading, forbidden, API failure, recent drill-down | Pass. The card grid goes from four columns to two to one by viewport. | None recorded. |
-| Staff and Administrator dashboard (#79) | Populated dashboard, Active Unassigned Queue, My Actions, 320 px, 720 px reflow, dashboard error | Pass after the duplicate `(Asia/Bangkok)` label was fixed in `8b5633f`. | **No screenshots for the staff loading, empty and forbidden states.** They have UI tests (UI-04) only. |
+| Staff and Administrator dashboard (#79) | Populated dashboard, Active Unassigned Queue, My Actions, 320 px, 720 px reflow, dashboard error, and for IT Staff the loading, empty and forbidden states | Pass after the duplicate `(Asia/Bangkok)` label was fixed in `8b5633f`. The loading, empty and forbidden captures show the spinner line, zero counts with empty previews, and the Access denied message with no retry. | Loading, empty and forbidden use intercepted API responses. The Administrator role has no captures for these three states. |
 
 ## Cross-cutting checklist
 
@@ -46,6 +46,6 @@ Provenance notes:
 
 ## Known gaps
 
-- Staff loading, empty and forbidden states: UI tests only, no screenshots.
+- Staff loading, empty and forbidden states: captured for IT Staff on 2026-10-27 with intercepted responses. The Administrator role has UI tests only for these states.
 - The #78 manifests record a dirty source tree (see the provenance notes).
 - The release run on 2026-10-26 re-ran the browser tests at all three viewports (142 passed, 8 skipped, 0 failed), but it did not regenerate or re-inspect the screenshots.
