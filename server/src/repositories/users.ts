@@ -2,6 +2,7 @@ import { prisma } from "../db/client.js";
 import { UserEmailConflictError } from "../errors/user-errors.js";
 import { Prisma } from "../generated/prisma/client.js";
 import type { UserListQuery, UserRoleValue } from "../types/users.js";
+import { isStaffRole } from "../types/users.js";
 import { deleteSessionsForUser, publicUserSelection } from "./auth.js";
 
 const escapeLikePattern = (value: string): string =>
@@ -109,11 +110,29 @@ const lockNonterminalTicketsOwnedBy = async (
   );
 };
 
+// BR-18: an owner who loses eligibility leaves nonterminal Tickets unassigned.
+// Call lockNonterminalTicketsOwnedBy first in the same transaction.
+const unassignNonterminalTicketsOwnedBy = async (
+  database: UserDatabase,
+  userId: number
+) => {
+  await database.ticket.updateMany({
+    data: {
+      ownerId: null,
+      updatedAt: new Date(),
+      version: { increment: 1 },
+    },
+    where: {
+      currentStatus: { notIn: [...terminalStatuses] },
+      ownerId: userId,
+    },
+  });
+};
+
 const isEligibleOwner = (user: {
   isActive: boolean;
   role: UserRoleValue;
-}): boolean =>
-  user.isActive && (user.role === "ITStaff" || user.role === "Administrator");
+}): boolean => user.isActive && isStaffRole(user.role);
 
 const getLockedActorAndTarget = async (
   database: UserDatabase,
@@ -226,7 +245,6 @@ export const updateUserAccount = async (input: {
         nextRole,
         nextIsActive
       );
-      const now = new Date();
 
       if (eligibilityLost) {
         await lockNonterminalTicketsOwnedBy(database, target.id);
@@ -243,17 +261,7 @@ export const updateUserAccount = async (input: {
       }
 
       if (eligibilityLost) {
-        await database.ticket.updateMany({
-          data: {
-            ownerId: null,
-            updatedAt: now,
-            version: { increment: 1 },
-          },
-          where: {
-            currentStatus: { notIn: [...terminalStatuses] },
-            ownerId: target.id,
-          },
-        });
+        await unassignNonterminalTicketsOwnedBy(database, target.id);
       }
 
       return {
@@ -300,6 +308,8 @@ export const resetUserInitialPassword = async (input: {
       return { kind: "not-found" };
     }
 
+    // mustChangePassword makes the target an ineligible Ticket Owner.
+    await lockNonterminalTicketsOwnedBy(database, target.id);
     const user = await database.user.update({
       data: {
         mustChangePassword: true,
@@ -309,6 +319,7 @@ export const resetUserInitialPassword = async (input: {
       where: { id: target.id },
     });
     await deleteSessionsForUser(database, target.id);
+    await unassignNonterminalTicketsOwnedBy(database, target.id);
 
     return { kind: "success", sessionRevoked: true, user };
   });

@@ -120,7 +120,10 @@ beforeAll(async () => {
 beforeEach(async () => {
   await prisma.session.deleteMany();
   await prisma.loginAttempt.deleteMany();
+  await prisma.actionEvent.deleteMany();
+  await prisma.actionTaken.deleteMany();
   await prisma.attachment.deleteMany();
+  await prisma.ticketStatusEvent.deleteMany();
   await prisma.ticket.deleteMany();
   await prisma.user.deleteMany();
   await prisma.relatedSystem.deleteMany();

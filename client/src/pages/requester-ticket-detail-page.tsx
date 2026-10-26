@@ -16,6 +16,7 @@ import {
   removeTicketAttachment,
   uploadTicketAttachments,
 } from "@/api/requester";
+import { ActionsTakenSection } from "@/components/actions-taken-section";
 import {
   AppShell,
   AuthRequired,
@@ -26,6 +27,7 @@ import { FormField, ReadOnlyField } from "@/components/form-field";
 import { Icon } from "@/components/icon";
 import { PublicCommentsSection } from "@/components/public-comments-section";
 import { StatusBadge } from "@/components/status-badge";
+import { TicketStatusHistorySection } from "@/components/ticket-status-history-section";
 import { useAuth } from "@/context/auth";
 import { cn } from "@/lib/class-names";
 import { validateSelectedFiles } from "@/lib/ticket-rules";
@@ -339,6 +341,19 @@ export const RequesterTicketDetailPage = ({
               </div>
             </div>
           </section>
+
+          <ActionsTakenSection
+            currentStatus={ticket.currentStatus}
+            defaultAssigneeId={user.id}
+            onRefreshTicket={async () => await ticketQuery.refetch()}
+            owners={[]}
+            principalId={principalId}
+            principalRole={user.role}
+            ticketId={numericTicketId}
+            ticketVersion={ticket.version}
+          />
+
+          <TicketStatusHistorySection ticketId={numericTicketId} />
 
           <PublicCommentsSection
             canPost

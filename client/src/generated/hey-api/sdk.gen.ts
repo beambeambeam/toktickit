@@ -2,7 +2,7 @@
 
 import { type Client, type ClientMeta, formDataBodySerializer, type Options as Options2, type RequestResult, type TDataShape } from './client';
 import { client } from './client.gen';
-import type { ClaimApiTicketData, ClaimApiTicketErrors, ClaimApiTicketResponses, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsErrors, CreateApiTicketAttachmentsResponses, CreateApiTicketCommentData, CreateApiTicketCommentErrors, CreateApiTicketCommentResponses, CreateApiTicketData, CreateApiTicketErrors, CreateApiTicketInternalNoteData, CreateApiTicketInternalNoteErrors, CreateApiTicketInternalNoteResponses, CreateApiTicketResponses, CreateApiUserData, CreateApiUserErrors, CreateApiUserResponses, GetApiAuthMeData, GetApiAuthMeErrors, GetApiAuthMeResponses, GetApiCategoriesData, GetApiCategoriesErrors, GetApiCategoriesResponses, GetApiHealthData, GetApiHealthErrors, GetApiHealthResponses, GetApiRelatedSystemsData, GetApiRelatedSystemsErrors, GetApiRelatedSystemsResponses, GetApiStaffOwnersData, GetApiStaffOwnersErrors, GetApiStaffOwnersResponses, GetApiStaffTicketsData, GetApiStaffTicketsErrors, GetApiStaffTicketsResponses, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentErrors, GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentsData, GetApiTicketAttachmentsErrors, GetApiTicketAttachmentsResponses, GetApiTicketCommentsData, GetApiTicketCommentsErrors, GetApiTicketCommentsResponses, GetApiTicketData, GetApiTicketErrors, GetApiTicketInternalNotesData, GetApiTicketInternalNotesErrors, GetApiTicketInternalNotesResponses, GetApiTicketResponses, GetApiTicketsData, GetApiTicketsErrors, GetApiTicketsResponses, GetApiUserData, GetApiUserErrors, GetApiUserResponses, GetApiUsersData, GetApiUsersErrors, GetApiUsersResponses, IndicateApiTicketResolutionData, IndicateApiTicketResolutionErrors, IndicateApiTicketResolutionResponses, PostApiAuthChangePasswordData, PostApiAuthChangePasswordErrors, PostApiAuthChangePasswordResponses, PostApiAuthLoginData, PostApiAuthLoginErrors, PostApiAuthLoginResponses, PostApiAuthLogoutData, PostApiAuthLogoutErrors, PostApiAuthLogoutResponses, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentErrors, RemoveApiTicketAttachmentResponses, ResetApiUserInitialPasswordData, ResetApiUserInitialPasswordErrors, ResetApiUserInitialPasswordResponses, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityErrors, UpdateApiTicketItPriorityResponses, UpdateApiTicketOwnerData, UpdateApiTicketOwnerErrors, UpdateApiTicketOwnerResponses, UpdateApiTicketStatusData, UpdateApiTicketStatusErrors, UpdateApiTicketStatusResponses, UpdateApiUserData, UpdateApiUserErrors, UpdateApiUserResponses } from './types.gen';
+import type { ClaimApiTicketData, ClaimApiTicketErrors, ClaimApiTicketResponses, CreateApiTicketActionData, CreateApiTicketActionErrors, CreateApiTicketActionResponses, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsErrors, CreateApiTicketAttachmentsResponses, CreateApiTicketCommentData, CreateApiTicketCommentErrors, CreateApiTicketCommentResponses, CreateApiTicketData, CreateApiTicketErrors, CreateApiTicketInternalNoteData, CreateApiTicketInternalNoteErrors, CreateApiTicketInternalNoteResponses, CreateApiTicketResponses, CreateApiUserData, CreateApiUserErrors, CreateApiUserResponses, GetApiAuthMeData, GetApiAuthMeErrors, GetApiAuthMeResponses, GetApiCategoriesData, GetApiCategoriesErrors, GetApiCategoriesResponses, GetApiHealthData, GetApiHealthErrors, GetApiHealthResponses, GetApiRelatedSystemsData, GetApiRelatedSystemsErrors, GetApiRelatedSystemsResponses, GetApiRequesterDashboardData, GetApiRequesterDashboardErrors, GetApiRequesterDashboardResponses, GetApiStaffActionsData, GetApiStaffActionsErrors, GetApiStaffActionsResponses, GetApiStaffDashboardData, GetApiStaffDashboardErrors, GetApiStaffDashboardResponses, GetApiStaffOwnersData, GetApiStaffOwnersErrors, GetApiStaffOwnersResponses, GetApiStaffTicketsData, GetApiStaffTicketsErrors, GetApiStaffTicketsResponses, GetApiTicketActionHistoryData, GetApiTicketActionHistoryErrors, GetApiTicketActionHistoryResponses, GetApiTicketActionsData, GetApiTicketActionsErrors, GetApiTicketActionsResponses, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentErrors, GetApiTicketAttachmentContentResponses, GetApiTicketAttachmentsData, GetApiTicketAttachmentsErrors, GetApiTicketAttachmentsResponses, GetApiTicketCommentsData, GetApiTicketCommentsErrors, GetApiTicketCommentsResponses, GetApiTicketData, GetApiTicketErrors, GetApiTicketInternalNotesData, GetApiTicketInternalNotesErrors, GetApiTicketInternalNotesResponses, GetApiTicketResponses, GetApiTicketsData, GetApiTicketsErrors, GetApiTicketsResponses, GetApiTicketStatusHistoryData, GetApiTicketStatusHistoryErrors, GetApiTicketStatusHistoryResponses, GetApiUserData, GetApiUserErrors, GetApiUserResponses, GetApiUsersData, GetApiUsersErrors, GetApiUsersResponses, IndicateApiTicketResolutionData, IndicateApiTicketResolutionErrors, IndicateApiTicketResolutionResponses, PostApiAuthChangePasswordData, PostApiAuthChangePasswordErrors, PostApiAuthChangePasswordResponses, PostApiAuthLoginData, PostApiAuthLoginErrors, PostApiAuthLoginResponses, PostApiAuthLogoutData, PostApiAuthLogoutErrors, PostApiAuthLogoutResponses, PostApiTicketActionTransitionData, PostApiTicketActionTransitionErrors, PostApiTicketActionTransitionResponses, PutApiTicketActionData, PutApiTicketActionErrors, PutApiTicketActionResponses, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentErrors, RemoveApiTicketAttachmentResponses, ResetApiUserInitialPasswordData, ResetApiUserInitialPasswordErrors, ResetApiUserInitialPasswordResponses, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityErrors, UpdateApiTicketItPriorityResponses, UpdateApiTicketOwnerData, UpdateApiTicketOwnerErrors, UpdateApiTicketOwnerResponses, UpdateApiTicketStatusData, UpdateApiTicketStatusErrors, UpdateApiTicketStatusResponses, UpdateApiUserData, UpdateApiUserErrors, UpdateApiUserResponses } from './types.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -112,7 +112,7 @@ export const getApiRelatedSystems = <ThrowOnError extends boolean = false>(optio
 /**
  * List the shared Ticket Queue
  *
- * Returns operational Ticket summaries for IT Staff and read-only Administrators.
+ * Returns operational Ticket summaries for IT Staff and read-only Administrators. Scope, time bounds, and owner filters combine with the other filters.
  */
 export const getApiStaffTickets = <ThrowOnError extends boolean = false>(options?: Options<GetApiStaffTicketsData, ThrowOnError>): RequestResult<GetApiStaffTicketsResponses, GetApiStaffTicketsErrors, ThrowOnError> => (options?.client ?? client).get<GetApiStaffTicketsResponses, GetApiStaffTicketsErrors, ThrowOnError>({
     security: [{
@@ -138,9 +138,141 @@ export const getApiStaffOwners = <ThrowOnError extends boolean = false>(options?
 });
 
 /**
+ * Get the authenticated staff dashboard
+ *
+ * Returns one UTC snapshot of Ticket counts and bounded previews for IT Staff and Administrators. Accepts no query parameters.
+ */
+export const getApiStaffDashboard = <ThrowOnError extends boolean = false>(options?: Options<GetApiStaffDashboardData, ThrowOnError>): RequestResult<GetApiStaffDashboardResponses, GetApiStaffDashboardErrors, ThrowOnError> => (options?.client ?? client).get<GetApiStaffDashboardResponses, GetApiStaffDashboardErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/staff/dashboard',
+    ...options
+});
+
+/**
+ * List My Actions
+ *
+ * Returns Actions Taken assigned to the authenticated user with status Planned or In Progress on an active Ticket.
+ */
+export const getApiStaffActions = <ThrowOnError extends boolean = false>(options?: Options<GetApiStaffActionsData, ThrowOnError>): RequestResult<GetApiStaffActionsResponses, GetApiStaffActionsErrors, ThrowOnError> => (options?.client ?? client).get<GetApiStaffActionsResponses, GetApiStaffActionsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/staff/actions',
+    ...options
+});
+
+/**
+ * List Actions Taken for a Ticket
+ *
+ * Requesters can read Actions Taken only for their own Tickets. IT Staff and Administrators can read every Ticket's stable chronological action page.
+ */
+export const getApiTicketActions = <ThrowOnError extends boolean = false>(options: Options<GetApiTicketActionsData, ThrowOnError>): RequestResult<GetApiTicketActionsResponses, GetApiTicketActionsErrors, ThrowOnError> => (options.client ?? client).get<GetApiTicketActionsResponses, GetApiTicketActionsErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/tickets/{ticketId}/actions',
+    ...options
+});
+
+/**
+ * Create a Planned Action Taken
+ *
+ * IT Staff and Administrators can create one Planned Action Taken on a Ticket that is not Resolved, Closed or Cancelled. The server supplies creator, timestamps, status, and attribution; requestId retries replay the original result with HTTP 200.
+ */
+export const createApiTicketAction = <ThrowOnError extends boolean = false>(options: Options<CreateApiTicketActionData, ThrowOnError>): RequestResult<CreateApiTicketActionResponses, CreateApiTicketActionErrors, ThrowOnError> => (options.client ?? client).post<CreateApiTicketActionResponses, CreateApiTicketActionErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/tickets/{ticketId}/actions',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Edit a pending Action Taken
+ *
+ * IT Staff and Administrators may replace mutable fields on a Planned or In Progress action on a nonterminal Ticket. Both versions are required. Unchanged replacements return the current result without creating history or advancing versions; changed replacements append an immutable snapshot.
+ */
+export const putApiTicketAction = <ThrowOnError extends boolean = false>(options: Options<PutApiTicketActionData, ThrowOnError>): RequestResult<PutApiTicketActionResponses, PutApiTicketActionErrors, ThrowOnError> => (options.client ?? client).put<PutApiTicketActionResponses, PutApiTicketActionErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/tickets/{ticketId}/actions/{actionId}',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Start, complete, or cancel an Action Taken
+ *
+ * IT Staff and Administrators may apply only Planned to In Progress/Cancelled and In Progress to Completed/Cancelled transitions on nonterminal Tickets. Both current versions are required. Start attribution and terminal actor/times are set by the server; completion requires a nonblank Result, no required follow-up, and an active eligible assignee. Completion and cancellation require confirmed=true. Every successful transition appends one immutable event and advances the Action Taken and parent Ticket versions once.
+ */
+export const postApiTicketActionTransition = <ThrowOnError extends boolean = false>(options: Options<PostApiTicketActionTransitionData, ThrowOnError>): RequestResult<PostApiTicketActionTransitionResponses, PostApiTicketActionTransitionErrors, ThrowOnError> => (options.client ?? client).post<PostApiTicketActionTransitionResponses, PostApiTicketActionTransitionErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/tickets/{ticketId}/actions/{actionId}/transition',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Read Action Taken history
+ *
+ * Requesters may read history only for their own Tickets. IT Staff and Administrators may read history for any Ticket. Events use stable createdAt then ID order and bounded pagination.
+ */
+export const getApiTicketActionHistory = <ThrowOnError extends boolean = false>(options: Options<GetApiTicketActionHistoryData, ThrowOnError>): RequestResult<GetApiTicketActionHistoryResponses, GetApiTicketActionHistoryErrors, ThrowOnError> => (options.client ?? client).get<GetApiTicketActionHistoryResponses, GetApiTicketActionHistoryErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/tickets/{ticketId}/actions/{actionId}/history',
+    ...options
+});
+
+/**
+ * Read Ticket status history
+ *
+ * Requesters may read history only for their own Tickets. IT Staff and Administrators may read history for any Ticket. Events use stable createdAt then ID order and bounded pagination. Legacy terminal Tickets have no synthesized events.
+ */
+export const getApiTicketStatusHistory = <ThrowOnError extends boolean = false>(options: Options<GetApiTicketStatusHistoryData, ThrowOnError>): RequestResult<GetApiTicketStatusHistoryResponses, GetApiTicketStatusHistoryErrors, ThrowOnError> => (options.client ?? client).get<GetApiTicketStatusHistoryResponses, GetApiTicketStatusHistoryErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/tickets/{ticketId}/status-history',
+    ...options
+});
+
+/**
  * Progress a Ticket
  *
- * Applies one approved status transition for IT Staff.
+ * Applies one approved status transition for IT Staff or an Administrator. Resolved, Closed, and Cancelled require `confirmed` true; otherwise the API returns 400 `CONFIRMATION_REQUIRED`. The actor must be an eligible staff account (BR-08); otherwise the API returns 403 `FORBIDDEN`.
  */
 export const updateApiTicketStatus = <ThrowOnError extends boolean = false>(options: Options<UpdateApiTicketStatusData, ThrowOnError>): RequestResult<UpdateApiTicketStatusResponses, UpdateApiTicketStatusErrors, ThrowOnError> => (options.client ?? client).post<UpdateApiTicketStatusResponses, UpdateApiTicketStatusErrors, ThrowOnError>({
     security: [{
@@ -320,6 +452,21 @@ export const resetApiUserInitialPassword = <ThrowOnError extends boolean = false
 });
 
 /**
+ * Get the authenticated Requester's dashboard
+ *
+ * Returns one UTC snapshot of the authenticated Requester's public Ticket metrics and bounded previews.
+ */
+export const getApiRequesterDashboard = <ThrowOnError extends boolean = false>(options?: Options<GetApiRequesterDashboardData, ThrowOnError>): RequestResult<GetApiRequesterDashboardResponses, GetApiRequesterDashboardErrors, ThrowOnError> => (options?.client ?? client).get<GetApiRequesterDashboardResponses, GetApiRequesterDashboardErrors, ThrowOnError>({
+    security: [{
+            in: 'cookie',
+            name: 'toktickit_session',
+            type: 'apiKey'
+        }],
+    url: '/api/requester/dashboard',
+    ...options
+});
+
+/**
  * Check API liveness
  *
  * Returns a static response when the API process is alive.
@@ -394,7 +541,7 @@ export const getApiTicketInternalNotes = <ThrowOnError extends boolean = false>(
 /**
  * Add a private Internal Note
  *
- * IT Staff can append a private Internal Note to any non-terminal Ticket. Administrators and Requesters cannot write notes.
+ * IT Staff and Administrators can append a private Internal Note to any non-terminal Ticket. Requesters cannot write notes.
  */
 export const createApiTicketInternalNote = <ThrowOnError extends boolean = false>(options: Options<CreateApiTicketInternalNoteData, ThrowOnError>): RequestResult<CreateApiTicketInternalNoteResponses, CreateApiTicketInternalNoteErrors, ThrowOnError> => (options.client ?? client).post<CreateApiTicketInternalNoteResponses, CreateApiTicketInternalNoteErrors, ThrowOnError>({
     security: [{
@@ -428,7 +575,7 @@ export const getApiTicketComments = <ThrowOnError extends boolean = false>(optio
 /**
  * Post a public Ticket comment
  *
- * A Requester may post to an owned Ticket and IT Staff may post to any Ticket. Administrators have read-only access.
+ * A Requester may post to an owned Ticket. IT Staff and Administrators may post to any Ticket.
  */
 export const createApiTicketComment = <ThrowOnError extends boolean = false>(options: Options<CreateApiTicketCommentData, ThrowOnError>): RequestResult<CreateApiTicketCommentResponses, CreateApiTicketCommentErrors, ThrowOnError> => (options.client ?? client).post<CreateApiTicketCommentResponses, CreateApiTicketCommentErrors, ThrowOnError>({
     security: [{

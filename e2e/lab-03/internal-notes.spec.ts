@@ -50,7 +50,7 @@ test("keeps Internal Notes private across the staff and requester journey", asyn
   const noteContent = `Private browser note ${uniqueId}`;
 
   await signIn(page, requesterEmail);
-  await expect(page).toHaveURL(/\/tickets$/u);
+  await expect(page).toHaveURL(/\/dashboard$/u);
 
   const authResponse = await page.request.get(`${apiUrl}/api/auth/me`);
   expect(authResponse.ok()).toBeTruthy();
@@ -105,15 +105,12 @@ test("keeps Internal Notes private across the staff and requester journey", asyn
   await expect(page.getByText(noteContent)).toBeVisible();
   await expect(
     page.getByRole("textbox", { name: "Internal Note" })
-  ).toHaveCount(0);
-  await expect(
-    page.getByText("Administrator access is read-only for Internal Notes.")
   ).toBeVisible();
   await captureLab3Evidence(page, testInfo, {
     directory: "staff-ticket-detail",
-    name: "internal-note-admin-read.png",
+    name: "internal-note-admin-write.png",
     role: "Administrator",
-    scenario: "Administrator read-only Internal Note",
+    scenario: "Administrator Internal Note access",
     stateSource: "natural",
   });
 

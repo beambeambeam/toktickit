@@ -4,8 +4,118 @@ export type ClientOptions = {
     baseUrl: 'http://localhost:3000' | (string & {});
 };
 
+export type RequesterDashboardResponse = {
+    generatedAt: string;
+    window: {
+        from: string;
+        through: string;
+    };
+    counts: {
+        activeTickets: number;
+        waitingForRequester: number;
+        recentlyUpdated: number;
+        recentlyResolved: number;
+    };
+    previews: {
+        recentlyUpdated: Array<RequesterTicketPreview>;
+        recentlyResolved: Array<RequesterTicketPreview>;
+    };
+};
+
+export type RequesterTicketPreview = {
+    id: number;
+    ticketNumber: string;
+    summary: string;
+    currentStatus: CurrentStatus;
+    requestedPriority: RequestedPriority;
+    updatedAt: string;
+    resolvedAt: string | null;
+};
+
+export type StaffDashboardResponse = {
+    generatedAt: string;
+    window: {
+        from: string;
+        through: string;
+    };
+    counts: {
+        activeUnassigned: number;
+        activeOwned: number;
+        byStatus: {
+            New: number;
+            Open: number;
+            'In Progress': number;
+            'Waiting for Requester': number;
+            Reopened: number;
+            Resolved: number;
+            Closed: number;
+            Cancelled: number;
+        };
+        activeByPriority: {
+            High: number;
+            Low: number;
+            Medium: number;
+            Urgent: number;
+        };
+        myActions: number;
+    };
+    previews: {
+        myActions: Array<MyActionRow>;
+        recentlyUpdatedTickets: Array<StaffDashboardTicketPreview>;
+        urgentActiveTickets: Array<StaffDashboardTicketPreview>;
+    };
+};
+
+export type StaffDashboardTicketPreview = {
+    id: number;
+    ticketNumber: string;
+    summary: string;
+    currentStatus: CurrentStatus;
+    requestedPriority: RequestedPriority;
+    itPriority: RequestedPriority;
+    owner: Owner | null;
+    updatedAt: string;
+    resolvedAt: string | null;
+};
+
+export type MyActionRow = {
+    id: number;
+    ticketId: number;
+    description: string;
+    followUpRequired: boolean;
+    status: ActionStatus;
+    assignee: Owner;
+    updatedAt: string;
+    ticket: {
+        id: number;
+        ticketNumber: string;
+        summary: string;
+        currentStatus: CurrentStatus;
+    };
+};
+
+export type MyActionListResponse = {
+    items: Array<MyActionRow>;
+    page: number;
+    pageSize: 10 | 20 | 50;
+    totalItems: number;
+    totalPages: number;
+};
+
 export type ApiError = {
     error: ApiErrorBody;
+};
+
+export type ResolutionGateReason = 'OWNER_REQUIRED' | 'OWNER_INELIGIBLE' | 'PENDING_ACTIONS' | 'NO_COMPLETED_ACTION';
+
+export type ResolutionGateFailedError = {
+    error: {
+        code: 'RESOLUTION_GATE_FAILED';
+        message: string;
+        details: {
+            reasons: Array<ResolutionGateReason>;
+        };
+    };
 };
 
 export type ApiErrorBody = {
@@ -145,6 +255,135 @@ export type AttachmentMetadata = {
 
 export type AttachmentListResponse = {
     attachments: Array<AttachmentMetadata>;
+};
+
+export type ActionStatus = 'Planned' | 'In Progress' | 'Completed' | 'Cancelled';
+
+export type ActionUserRef = {
+    id: number;
+    displayName: string;
+    role: UserRole;
+};
+
+export type CreateActionRequest = {
+    requestId: string;
+    version: number;
+    description: string;
+    result?: string | null;
+    assigneeId?: number | null;
+    followUpRequired: boolean;
+    followUpNote?: string | null;
+    attachmentNotes?: string | null;
+};
+
+export type EditActionRequest = {
+    actionVersion: number;
+    ticketVersion: number;
+    description: string;
+    result: string | null;
+    assigneeId: number;
+    followUpRequired: boolean;
+    followUpNote: string | null;
+    attachmentNotes: string | null;
+};
+
+export type ActionTransitionRequest = {
+    actionVersion: number;
+    ticketVersion: number;
+    toStatus: 'In Progress';
+} | {
+    actionVersion: number;
+    ticketVersion: number;
+    toStatus: 'Completed' | 'Cancelled';
+    confirmed: true;
+} | {
+    actionVersion: number;
+    ticketVersion: number;
+    toStatus: 'Planned';
+};
+
+export type ActionEventSnapshot = {
+    description: string;
+    result: string | null;
+    assigneeId: number;
+    followUpRequired: boolean;
+    followUpNote: string | null;
+    attachmentNotes: string | null;
+    status: ActionStatus;
+};
+
+export type ActionEvent = {
+    id: number;
+    actionId: number;
+    actor: ActionUserRef;
+    eventType: 'ActionCreated' | 'ActionEdited' | 'ActionStarted' | 'ActionCompleted' | 'ActionCancelled';
+    actionVersion: number;
+    fromStatus: ActionStatus | null;
+    toStatus: ActionStatus | null;
+    createdAt: string;
+    snapshot: ActionEventSnapshot | null;
+};
+
+export type ActionHistoryListResponse = {
+    items: Array<ActionEvent>;
+    page: number;
+    pageSize: 10 | 20 | 50;
+    totalItems: number;
+    totalPages: number;
+};
+
+export type TicketStatusEvent = {
+    id: number;
+    ticketId: number;
+    actor: ActionUserRef;
+    fromStatus: CurrentStatus;
+    toStatus: CurrentStatus;
+    ticketVersion: number;
+    confirmed: boolean;
+    createdAt: string;
+};
+
+export type TicketStatusHistoryListResponse = {
+    items: Array<TicketStatusEvent>;
+    page: number;
+    pageSize: 10 | 20 | 50;
+    totalItems: number;
+    totalPages: number;
+};
+
+export type ActionTaken = {
+    id: number;
+    ticketId: number;
+    description: string;
+    result: string | null;
+    assignee: Owner;
+    createdBy: ActionUserRef;
+    performedBy: ActionUserRef | null;
+    followUpRequired: boolean;
+    followUpNote: string | null;
+    attachmentNotes: string | null;
+    status: ActionStatus;
+    version: number;
+    createdAt: string;
+    updatedAt: string;
+    startedAt: string | null;
+    completedAt: string | null;
+    completedBy: ActionUserRef | null;
+    cancelledAt: string | null;
+    cancelledBy: ActionUserRef | null;
+};
+
+export type ActionMutationResult = {
+    action: ActionTaken;
+    ticket: TicketDetail;
+};
+
+export type ActionListResponse = {
+    items: Array<ActionTaken>;
+    page: number;
+    pageSize: 10 | 20 | 50;
+    totalItems: number;
+    totalPages: number;
 };
 
 export type TicketSummary = {
@@ -294,6 +533,8 @@ export type UserId = number;
 
 export type AttachmentId = number;
 
+export type ActionId = number;
+
 export type Search = string;
 
 /**
@@ -311,14 +552,34 @@ export type RequestedPriority2 = RequestedPriority;
 
 export type CurrentStatus2 = CurrentStatus;
 
+/**
+ * Exact active, waiting, recently updated, or recently resolved Ticket scope.
+ */
+export type TicketScope = 'active' | 'waiting-for-requester' | 'recently-updated' | 'recently-resolved';
+
+/**
+ * Exact active, recently updated, or urgent active Ticket scope for the shared queue.
+ */
+export type StaffTicketScope = 'active' | 'recently-updated' | 'urgent-active';
+
+/**
+ * Inclusive lower UTC bound. Required with time-based scopes and rejected otherwise.
+ */
+export type From = string;
+
+/**
+ * Inclusive upper UTC bound. Required with time-based scopes and rejected otherwise.
+ */
+export type Through = string;
+
 export type ItPriority = RequestedPriority;
 
 /**
- * Eligible owner ID, me, or unassigned.
+ * Eligible owner ID, me, or unassigned. A specific ID must be currently eligible.
  */
 export type Owner2 = number | 'me' | 'unassigned';
 
-export type SortBy = 'ticketNumber' | 'ticketDate' | 'summary' | 'requestedPriority' | 'currentStatus' | 'updatedAt';
+export type SortBy = 'ticketNumber' | 'ticketDate' | 'summary' | 'requestedPriority' | 'currentStatus' | 'updatedAt' | 'resolvedAt';
 
 export type SortDirection = 'asc' | 'desc';
 
@@ -329,6 +590,8 @@ export type Page = number;
 export type PageSize = 10 | 25 | 50;
 
 export type QueuePageSize = 10 | 20 | 50;
+
+export type ActionPageSize = 10 | 20 | 50;
 
 export type PostApiAuthLoginData = {
     body: LoginRequest;
@@ -535,7 +798,19 @@ export type GetApiStaffTicketsData = {
         itPriority?: RequestedPriority;
         currentStatus?: CurrentStatus;
         /**
-         * Eligible owner ID, me, or unassigned.
+         * Exact active, recently updated, or urgent active Ticket scope for the shared queue.
+         */
+        scope?: 'active' | 'recently-updated' | 'urgent-active';
+        /**
+         * Inclusive lower UTC bound. Required with time-based scopes and rejected otherwise.
+         */
+        from?: string;
+        /**
+         * Inclusive upper UTC bound. Required with time-based scopes and rejected otherwise.
+         */
+        through?: string;
+        /**
+         * Eligible owner ID, me, or unassigned. A specific ID must be currently eligible.
          */
         owner?: number | 'me' | 'unassigned';
         sortBy?: 'ticketDate' | 'updatedAt' | 'itPriority' | 'ticketNumber';
@@ -609,6 +884,387 @@ export type GetApiStaffOwnersResponses = {
 
 export type GetApiStaffOwnersResponse = GetApiStaffOwnersResponses[keyof GetApiStaffOwnersResponses];
 
+export type GetApiStaffDashboardData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/staff/dashboard';
+};
+
+export type GetApiStaffDashboardErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiStaffDashboardError = GetApiStaffDashboardErrors[keyof GetApiStaffDashboardErrors];
+
+export type GetApiStaffDashboardResponses = {
+    /**
+     * The authenticated staff member's dashboard.
+     */
+    200: StaffDashboardResponse;
+};
+
+export type GetApiStaffDashboardResponse = GetApiStaffDashboardResponses[keyof GetApiStaffDashboardResponses];
+
+export type GetApiStaffActionsData = {
+    body?: never;
+    path?: never;
+    query?: {
+        page?: number;
+        pageSize?: 10 | 20 | 50;
+    };
+    url: '/api/staff/actions';
+};
+
+export type GetApiStaffActionsErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiStaffActionsError = GetApiStaffActionsErrors[keyof GetApiStaffActionsErrors];
+
+export type GetApiStaffActionsResponses = {
+    /**
+     * The authenticated user's My Actions page.
+     */
+    200: MyActionListResponse;
+};
+
+export type GetApiStaffActionsResponse = GetApiStaffActionsResponses[keyof GetApiStaffActionsResponses];
+
+export type GetApiTicketActionsData = {
+    body?: never;
+    path: {
+        ticketId: number;
+    };
+    query?: {
+        page?: number;
+        pageSize?: 10 | 20 | 50;
+    };
+    url: '/api/tickets/{ticketId}/actions';
+};
+
+export type GetApiTicketActionsErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiTicketActionsError = GetApiTicketActionsErrors[keyof GetApiTicketActionsErrors];
+
+export type GetApiTicketActionsResponses = {
+    /**
+     * The stable Action Taken page, ordered by creation time then ID.
+     */
+    200: ActionListResponse;
+};
+
+export type GetApiTicketActionsResponse = GetApiTicketActionsResponses[keyof GetApiTicketActionsResponses];
+
+export type CreateApiTicketActionData = {
+    body: CreateActionRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/actions';
+};
+
+export type CreateApiTicketActionErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type CreateApiTicketActionError = CreateApiTicketActionErrors[keyof CreateApiTicketActionErrors];
+
+export type CreateApiTicketActionResponses = {
+    /**
+     * An idempotent replay of an existing Action Taken.
+     */
+    200: ActionMutationResult;
+    /**
+     * The newly created Planned Action Taken and current parent Ticket.
+     */
+    201: ActionMutationResult;
+};
+
+export type CreateApiTicketActionResponse = CreateApiTicketActionResponses[keyof CreateApiTicketActionResponses];
+
+export type PutApiTicketActionData = {
+    body: EditActionRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+        actionId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/actions/{actionId}';
+};
+
+export type PutApiTicketActionErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type PutApiTicketActionError = PutApiTicketActionErrors[keyof PutApiTicketActionErrors];
+
+export type PutApiTicketActionResponses = {
+    /**
+     * The current Action Taken and parent Ticket after the edit or semantic no-op.
+     */
+    200: ActionMutationResult;
+};
+
+export type PutApiTicketActionResponse = PutApiTicketActionResponses[keyof PutApiTicketActionResponses];
+
+export type PostApiTicketActionTransitionData = {
+    body: ActionTransitionRequest;
+    headers: {
+        /**
+         * Synchronizer token returned by login or current-user retrieval.
+         */
+        'X-CSRF-Token': string;
+    };
+    path: {
+        ticketId: number;
+        actionId: number;
+    };
+    query?: never;
+    url: '/api/tickets/{ticketId}/actions/{actionId}/transition';
+};
+
+export type PostApiTicketActionTransitionErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    409: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type PostApiTicketActionTransitionError = PostApiTicketActionTransitionErrors[keyof PostApiTicketActionTransitionErrors];
+
+export type PostApiTicketActionTransitionResponses = {
+    /**
+     * The transitioned Action Taken and current parent Ticket.
+     */
+    200: ActionMutationResult;
+};
+
+export type PostApiTicketActionTransitionResponse = PostApiTicketActionTransitionResponses[keyof PostApiTicketActionTransitionResponses];
+
+export type GetApiTicketActionHistoryData = {
+    body?: never;
+    path: {
+        ticketId: number;
+        actionId: number;
+    };
+    query?: {
+        page?: number;
+        pageSize?: 10 | 20 | 50;
+    };
+    url: '/api/tickets/{ticketId}/actions/{actionId}/history';
+};
+
+export type GetApiTicketActionHistoryErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiTicketActionHistoryError = GetApiTicketActionHistoryErrors[keyof GetApiTicketActionHistoryErrors];
+
+export type GetApiTicketActionHistoryResponses = {
+    /**
+     * The stable paginated ActionEvent history.
+     */
+    200: ActionHistoryListResponse;
+};
+
+export type GetApiTicketActionHistoryResponse = GetApiTicketActionHistoryResponses[keyof GetApiTicketActionHistoryResponses];
+
+export type GetApiTicketStatusHistoryData = {
+    body?: never;
+    path: {
+        ticketId: number;
+    };
+    query?: {
+        page?: number;
+        pageSize?: 10 | 20 | 50;
+    };
+    url: '/api/tickets/{ticketId}/status-history';
+};
+
+export type GetApiTicketStatusHistoryErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    404: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiTicketStatusHistoryError = GetApiTicketStatusHistoryErrors[keyof GetApiTicketStatusHistoryErrors];
+
+export type GetApiTicketStatusHistoryResponses = {
+    /**
+     * The stable paginated TicketStatusEvent history.
+     */
+    200: TicketStatusHistoryListResponse;
+};
+
+export type GetApiTicketStatusHistoryResponse = GetApiTicketStatusHistoryResponses[keyof GetApiTicketStatusHistoryResponses];
+
 export type UpdateApiTicketStatusData = {
     body: StatusMutationRequest;
     headers: {
@@ -642,9 +1298,9 @@ export type UpdateApiTicketStatusErrors = {
      */
     404: ApiError;
     /**
-     * The API could not complete the request.
+     * The status write conflicts with the current Ticket. `error.code` is `VERSION_CONFLICT`, `INVALID_TRANSITION`, `OWNER_REQUIRED`, `TICKET_HAS_PENDING_ACTIONS`, or `RESOLUTION_GATE_FAILED`. `RESOLUTION_GATE_FAILED` lists every unmet reason in `error.details.reasons`, in fixed order.
      */
-    409: ApiError;
+    409: ResolutionGateFailedError | ApiError;
     /**
      * The API could not complete the request.
      */
@@ -1105,6 +1761,43 @@ export type ResetApiUserInitialPasswordResponses = {
 
 export type ResetApiUserInitialPasswordResponse = ResetApiUserInitialPasswordResponses[keyof ResetApiUserInitialPasswordResponses];
 
+export type GetApiRequesterDashboardData = {
+    body?: never;
+    path?: never;
+    query?: never;
+    url: '/api/requester/dashboard';
+};
+
+export type GetApiRequesterDashboardErrors = {
+    /**
+     * The API could not complete the request.
+     */
+    400: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    401: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    403: ApiError;
+    /**
+     * The API could not complete the request.
+     */
+    500: ApiError;
+};
+
+export type GetApiRequesterDashboardError = GetApiRequesterDashboardErrors[keyof GetApiRequesterDashboardErrors];
+
+export type GetApiRequesterDashboardResponses = {
+    /**
+     * The authenticated Requester's dashboard.
+     */
+    200: RequesterDashboardResponse;
+};
+
+export type GetApiRequesterDashboardResponse = GetApiRequesterDashboardResponses[keyof GetApiRequesterDashboardResponses];
+
 export type GetApiHealthData = {
     body?: never;
     path?: never;
@@ -1139,7 +1832,19 @@ export type GetApiTicketsData = {
         relatedSystemId?: number;
         requestedPriority?: RequestedPriority;
         currentStatus?: CurrentStatus;
-        sortBy?: 'ticketNumber' | 'ticketDate' | 'summary' | 'requestedPriority' | 'currentStatus' | 'updatedAt';
+        /**
+         * Exact active, waiting, recently updated, or recently resolved Ticket scope.
+         */
+        scope?: 'active' | 'waiting-for-requester' | 'recently-updated' | 'recently-resolved';
+        /**
+         * Inclusive lower UTC bound. Required with time-based scopes and rejected otherwise.
+         */
+        from?: string;
+        /**
+         * Inclusive upper UTC bound. Required with time-based scopes and rejected otherwise.
+         */
+        through?: string;
+        sortBy?: 'ticketNumber' | 'ticketDate' | 'summary' | 'requestedPriority' | 'currentStatus' | 'updatedAt' | 'resolvedAt';
         sortDirection?: 'asc' | 'desc';
         page?: number;
         pageSize?: 10 | 25 | 50;

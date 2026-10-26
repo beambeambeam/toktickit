@@ -1,6 +1,7 @@
 import { expect, test } from "@playwright/test";
 
 import { captureLab3Evidence } from "./evidence.js";
+import { searchStaffQueue } from "./queue-search.js";
 
 const staffEmail = "e2e-staff@example.test";
 const staffPassword = "correct horse battery staple";
@@ -13,10 +14,13 @@ test("browses the shared queue and opens a read-only Ticket detail", async ({
   await page.getByRole("textbox", { name: "Password" }).fill(staffPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
 
+  await expect(page).toHaveURL(/\/dashboard$/u);
+  await page.goto("/staff/tickets");
   await expect(page).toHaveURL(/\/staff\/tickets$/u);
   await expect(
     page.getByRole("heading", { name: "Ticket Queue" })
   ).toBeVisible();
+  await searchStaffQueue(page, "TKT-20260901-NEW001");
   const visibleQueue = page.locator(
     ".ticket-table-wrap:visible, .ticket-cards:visible"
   );
@@ -62,6 +66,7 @@ test("browses the shared queue and opens a read-only Ticket detail", async ({
   await expect(
     page.getByRole("heading", { name: "Ticket Queue" })
   ).toBeVisible();
+  await searchStaffQueue(page, "TKT-20260901-NEW001");
   const resetQueue = page.locator(
     ".ticket-table-wrap:visible, .ticket-cards:visible"
   );

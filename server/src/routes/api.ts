@@ -1,11 +1,21 @@
 import express, { Router } from "express";
 
+import {
+  createAction,
+  editAction,
+  getActionHistory,
+  getActions,
+  getStaffActions,
+  transitionAction,
+} from "../controllers/actions.js";
 import { changePassword, getMe, login, logout } from "../controllers/auth.js";
 import { getHealth } from "../controllers/health.js";
 import {
   getCategories,
   getRelatedSystems,
 } from "../controllers/reference-data.js";
+import { getRequesterDashboardController } from "../controllers/requester-dashboard.js";
+import { getStaffDashboardController } from "../controllers/staff-dashboard.js";
 import {
   addAttachments,
   createInternalNote,
@@ -15,6 +25,7 @@ import {
   downloadAttachment,
   getAttachments,
   getInternalNotes,
+  getStatusHistory,
   getStaffOwners,
   getStaffTickets,
   getTicket,
@@ -99,12 +110,74 @@ apiRouter.get(
   touchSession,
   getStaffOwners
 );
+apiRouter.get(
+  "/staff/dashboard",
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff", "Administrator"),
+  touchSession,
+  getStaffDashboardController
+);
+apiRouter.get(
+  "/staff/actions",
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff", "Administrator"),
+  touchSession,
+  getStaffActions
+);
+apiRouter.get(
+  "/tickets/:ticketId/actions",
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester", "ITStaff", "Administrator"),
+  touchSession,
+  getActions
+);
+apiRouter.get(
+  "/tickets/:ticketId/actions/:actionId/history",
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester", "ITStaff", "Administrator"),
+  touchSession,
+  getActionHistory
+);
+apiRouter.post(
+  "/tickets/:ticketId/actions",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff", "Administrator"),
+  requireCsrf,
+  touchSession,
+  createAction
+);
+apiRouter.put(
+  "/tickets/:ticketId/actions/:actionId",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff", "Administrator"),
+  requireCsrf,
+  touchSession,
+  editAction
+);
+apiRouter.post(
+  "/tickets/:ticketId/actions/:actionId/transition",
+  requireAllowedOrigin,
+  requireSession,
+  requireUnrestricted,
+  requireRole("ITStaff", "Administrator"),
+  requireCsrf,
+  touchSession,
+  transitionAction
+);
 apiRouter.post(
   "/tickets/:ticketId/status",
   requireAllowedOrigin,
   requireSession,
   requireUnrestricted,
-  requireRole("ITStaff"),
+  requireRole("ITStaff", "Administrator"),
   requireCsrf,
   touchSession,
   updateTicketStatus
@@ -124,7 +197,7 @@ apiRouter.post(
   requireAllowedOrigin,
   requireSession,
   requireUnrestricted,
-  requireRole("ITStaff"),
+  requireRole("ITStaff", "Administrator"),
   requireCsrf,
   touchSession,
   claimTicket
@@ -134,7 +207,7 @@ apiRouter.put(
   requireAllowedOrigin,
   requireSession,
   requireUnrestricted,
-  requireRole("ITStaff"),
+  requireRole("ITStaff", "Administrator"),
   requireCsrf,
   touchSession,
   updateTicketOwner
@@ -144,7 +217,7 @@ apiRouter.patch(
   requireAllowedOrigin,
   requireSession,
   requireUnrestricted,
-  requireRole("ITStaff"),
+  requireRole("ITStaff", "Administrator"),
   requireCsrf,
   touchSession,
   updateTicketItPriority
@@ -208,6 +281,14 @@ apiRouter.post(
   createTicket
 );
 apiRouter.get(
+  "/requester/dashboard",
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester"),
+  touchSession,
+  getRequesterDashboardController
+);
+apiRouter.get(
   "/tickets",
   requireSession,
   requireUnrestricted,
@@ -232,6 +313,14 @@ apiRouter.get(
   getAttachments
 );
 apiRouter.get(
+  "/tickets/:ticketId/status-history",
+  requireSession,
+  requireUnrestricted,
+  requireRole("Requester", "ITStaff", "Administrator"),
+  touchSession,
+  getStatusHistory
+);
+apiRouter.get(
   "/tickets/:ticketId/internal-notes",
   requireSession,
   requireUnrestricted,
@@ -244,7 +333,7 @@ apiRouter.post(
   requireAllowedOrigin,
   requireSession,
   requireUnrestricted,
-  requireRole("ITStaff"),
+  requireRole("ITStaff", "Administrator"),
   requireCsrf,
   touchSession,
   createInternalNote
@@ -262,7 +351,7 @@ apiRouter.post(
   requireAllowedOrigin,
   requireSession,
   requireUnrestricted,
-  requireRole("Requester", "ITStaff"),
+  requireRole("Requester", "ITStaff", "Administrator"),
   requireCsrf,
   touchSession,
   createPublicComment

@@ -97,7 +97,7 @@ export const createInternalNote = async (
       actor === null ||
       !actor.isActive ||
       actor.role !== role ||
-      role !== "ITStaff"
+      (role !== "ITStaff" && role !== "Administrator")
     ) {
       return { kind: "forbidden" };
     }

@@ -120,8 +120,9 @@ For Lab 3 evidence, use a fresh disposable PostgreSQL database and temporary Att
 | --- | --- |
 | Requester | `e2e-desktop@example.test`, `e2e-tablet@example.test`, `e2e-mobile@example.test` |
 | First-login Requester | `e2e-first-login-desktop@example.test`, `e2e-first-login-tablet@example.test`, `e2e-first-login-mobile@example.test` |
-| IT Staff | `e2e-staff@example.test` |
+| IT Staff | `e2e-staff@example.test`, `e2e-staff-second@example.test` |
 | Administrator | `e2e-admin@example.test` |
+| Requester dashboard isolation | `e2e-dashboard-desktop@example.test`, `e2e-dashboard-tablet@example.test`, `e2e-dashboard-mobile@example.test`; foreign: `e2e-dashboard-foreign-desktop@example.test`, `e2e-dashboard-foreign-tablet@example.test`, `e2e-dashboard-foreign-mobile@example.test` |
 
 Run the committed Lab 3 browser journeys with the direct filter used by the evidence manifests:
 
@@ -139,3 +140,46 @@ pnpm test:e2e:ui
 ```
 
 Failure screenshots, traces, videos, and the HTML report are generated under `e2e/test-results/` and `e2e/playwright-report/`; both are ignored by Git. Lab 2 evidence remains under `artifacts/lab-02/`; Lab 3 integrated evidence belongs under `artifacts/lab-03/` and is committed separately from temporary Playwright diagnostics.
+
+## Lab 4 Actions Taken
+
+Apply the committed additive migration with `pnpm --filter @toktickit/server exec prisma migrate deploy`, then run `pnpm db:generate` and `pnpm db:seed`. Existing Tickets receive no synthetic actions. Dedicated Lab 4 fixtures demonstrate zero, one, and multiple Planned actions; seed reruns preserve edited records.
+
+On Ticket Detail, IT Staff and Administrators can add a Planned Action Taken with a description, optional result, eligible assignee, follow-up fields, and Attachment Notes. Assignment defaults to the signed-in user and does not change Ticket Owner. Requesters read the full action list on their own Tickets. Dates show Asia/Bangkok. Creation controls are hidden on Resolved, Closed, and Cancelled Tickets. The API also rejects new actions on those statuses with `409 TICKET_TERMINAL`; an identical saved request still replays without a second write. Staff and Administrators can edit or assign Planned and In Progress actions with explicit Save/Cancel. Completed and Cancelled actions remain read-only; lifecycle transitions belong to #76.
+
+Keep the create form open after a connection failure and retry its original request. The client retains the request ID and payload, so a saved action with a lost response can be recovered without duplication. After a version conflict, refresh and review the latest Ticket before submitting the retained draft again.
+
+Edits submit both the Action and Ticket versions captured when the form opens. A conflict preserves the draft and disables Save until **Refresh and review** loads the latest saved values; review them before explicitly saving again. Refresh never submits the draft. Assignment is independent of Performed by and Ticket Owner. An inactive or demoted current assignee remains visible and may be retained while correcting pending fields; selecting a different assignee requires active staff/Admin eligibility. Starting/completing work with an ineligible assignee is reserved for the lifecycle slice (#76).
+
+Use **View history** on each action for paginated actor/time revisions and saved field snapshots. Requesters can read this history only on their own Tickets. Successful pending changes advance both versions and append one revision; a normalized no-op leaves versions and history unchanged. No additional migration or seed reset is required for edit/history support.
+
+Run focused browser checks against a disposable database and Attachment directory:
+
+```sh
+pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts lab-04/actions-edit-flow.spec.ts
+```
+
+API integration tests require an explicit `TOKTICKIT_TEST_DATABASE_URL`; fixtures create and remove isolated databases using that server. The migration/recovery check also requires PostgreSQL `pg_dump` and `pg_restore` on PATH, or `MIGRATION_POSTGRES_CONTAINER` naming the Docker container for that test server:
+
+```sh
+TOKTICKIT_TEST_DATABASE_URL='postgresql://USER:PASSWORD@localhost:PORT/postgres' \
+  pnpm --filter @toktickit/server exec tsx tests/lab-04/migration-recovery.ts
+```
+
+The check creates disposable databases, populates all earlier resources, verifies failed-migration rollback, successful migration, insert-only seed reruns, database backup restoration, and Attachment byte recovery. Before migrating any preserved environment, stop writes and back up both PostgreSQL and `ATTACHMENT_STORAGE_DIR`. Restore both together for recovery; do not drop the new tables after accepting live actions.
+
+## Lab 4 Requester Dashboard
+
+After sign-in, Requesters land on `/dashboard`. The four cards show active Tickets, Tickets waiting for a Requester response, and Tickets updated or resolved in the latest seven-day UTC window. Dates display in Asia/Bangkok. Open a card or a recent preview to view the matching My Tickets list or Ticket Detail. Recent links keep the dashboard’s UTC time bounds. The dashboard always uses the signed-in Requester’s data.
+
+Run the Requester dashboard browser journey against an isolated database and dedicated ports:
+
+```sh
+E2E_CLIENT_PORT=5278 E2E_API_URL=http://localhost:3078 \
+  E2E_BASE_URL=http://localhost:5278 PORT=3078 \
+  CORS_ORIGIN=http://localhost:5278 API_ORIGIN=http://localhost:3078 \
+  VITE_API_URL=http://localhost:3078 \
+  pnpm --filter @toktickit/e2e exec playwright test lab-04/requester-dashboard.spec.ts
+```
+
+The fixture Requesters use the local-only password `correct horse battery staple`. E2E setup clears prior Tickets with the `E2E requester dashboard` prefix before the run. The journey then creates its own fixtures. Do not point it at a shared development database.

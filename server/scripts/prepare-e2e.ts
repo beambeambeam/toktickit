@@ -36,6 +36,20 @@ const users: readonly E2EUser[] = [
     mustChangePassword: false,
     role: "Requester" as const,
   },
+  ...(["desktop", "tablet", "mobile"] as const).flatMap((viewport) => [
+    {
+      displayName: `E2E Dashboard ${viewport} Requester`,
+      email: `e2e-dashboard-${viewport}@example.test`,
+      mustChangePassword: false,
+      role: "Requester" as const,
+    },
+    {
+      displayName: `E2E Dashboard Foreign ${viewport} Requester`,
+      email: `e2e-dashboard-foreign-${viewport}@example.test`,
+      mustChangePassword: false,
+      role: "Requester" as const,
+    },
+  ]),
   {
     displayName: "E2E Inactive Requester",
     email: "e2e-inactive@example.test",
@@ -95,6 +109,13 @@ try {
       OR: generatedAccountEmailPrefixes.map((prefix) => ({
         email: { startsWith: prefix },
       })),
+      actionEvents: { none: {} },
+      assignedActions: { none: {} },
+      cancelledActions: { none: {} },
+      completedActions: { none: {} },
+      createdActions: { none: {} },
+      performedActions: { none: {} },
+      ticketStatusEvents: { none: {} },
       tickets: { none: {} },
     },
   });
@@ -167,6 +188,17 @@ try {
       await prisma.session.deleteMany({ where: { userId: existing.id } });
     })
   );
+
+  // Seeded Ticket Owners must change their password before they are eligible,
+  // so the Lab 3 workflow journey needs an eligible owner on its Ticket.
+  const workflowOwner = await prisma.user.findUniqueOrThrow({
+    select: { id: true },
+    where: { email: "e2e-staff@example.test" },
+  });
+  await prisma.ticket.updateMany({
+    data: { ownerId: workflowOwner.id },
+    where: { ticketNumber: "TKT-20260901-RES001" },
+  });
 } finally {
   await prisma.$disconnect();
 }

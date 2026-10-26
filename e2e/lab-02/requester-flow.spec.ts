@@ -104,6 +104,8 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
   await capture("login", `${slug}-filled.png`);
   await page.getByRole("button", { name: "Sign in" }).click();
 
+  await expect(page).toHaveURL(/\/dashboard$/u);
+  await page.goto("/tickets");
   await expect(page).toHaveURL(/\/tickets$/u);
   await expect(page.getByRole("heading", { name: "My Tickets" })).toBeVisible();
   await capture("my-tickets", `${slug}-initial.png`);
@@ -377,6 +379,8 @@ test("captures the requester ticket lifecycle and ownership boundary", async ({
   await page.getByLabel("Email").fill(isolationEmail);
   await page.getByRole("textbox", { name: "Password" }).fill(e2ePassword);
   await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).toHaveURL(/\/dashboard$/u);
+  await page.goto("/tickets");
   await expect(page).toHaveURL(/\/tickets$/u);
   await expect(page.getByText("No Tickets yet")).toBeVisible();
   await expect(

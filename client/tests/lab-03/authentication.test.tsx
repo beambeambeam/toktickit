@@ -86,11 +86,11 @@ describe("authenticated identity screens", () => {
     cleanup();
   });
 
-  it("routes unrestricted IT Staff to the shared Ticket Queue", async () => {
+  it("routes unrestricted IT Staff to the Dashboard landing", async () => {
     authState.user = { ...authUser, role: "IT Staff" };
     render(<LandingPage />);
     await waitFor(() => {
-      expect(navigateMock).toHaveBeenCalledWith({ to: "/staff/tickets" });
+      expect(navigateMock).toHaveBeenCalledWith({ to: "/dashboard" });
     });
     expect(screen.queryByRole("heading", { name: "My Account" })).toBeNull();
   });
@@ -165,6 +165,35 @@ describe("authenticated identity screens", () => {
     await waitFor(() => {
       expect(navigateMock).toHaveBeenCalledWith({ to: "/change-password" });
     });
+  });
+
+  it("lands a Requester on Dashboard after sign-in and when already signed in", async () => {
+    render(<LoginPage />);
+    loginMock.mockResolvedValueOnce({
+      csrfToken: "csrf-token",
+      user: authUser,
+    });
+    fireEvent.change(screen.getByLabelText(/Email/u), {
+      target: { value: "ada@example.test" },
+    });
+    fireEvent.change(screen.getByLabelText(/Password/u), {
+      target: { value: "a valid passphrase" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Sign in" }));
+
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledWith({ to: "/dashboard" });
+    });
+    cleanup();
+    navigateMock.mockReset();
+
+    authState.user = authUser;
+    render(<LoginPage />);
+
+    await waitFor(() => {
+      expect(navigateMock).toHaveBeenCalledWith({ to: "/dashboard" });
+    });
+    expect(navigateMock).not.toHaveBeenCalledWith({ to: "/tickets" });
   });
 
   it("enforces Unicode password length and sends only a confirmed replacement", async () => {

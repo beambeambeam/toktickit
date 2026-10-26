@@ -1,4 +1,5 @@
 import assert from "node:assert/strict";
+import { randomUUID } from "node:crypto";
 
 import request from "supertest";
 import { afterAll, beforeAll, beforeEach, describe, it } from "vitest";
@@ -216,6 +217,20 @@ describe("Lab 3 Ticket workflow and resolution indication", () => {
             ? staffId
             : null,
       });
+      if (transition.to === "Resolved") {
+        // oxlint-disable-next-line no-await-in-loop -- Each Ticket needs its own Completed Action (BR-11).
+        await activeFixture.prisma.actionTaken.create({
+          data: {
+            assigneeId: staffId,
+            createdByUserId: staffId,
+            description: "Completed fixture action for the resolution gate.",
+            payloadHash: "0".repeat(64),
+            requestId: randomUUID(),
+            status: "Completed",
+            ticketId: ticket.id,
+          },
+        });
+      }
       // oxlint-disable-next-line no-await-in-loop -- Keep each matrix assertion tied to its created Ticket.
       const response = await request(activeFixture.app)
         .post(`/api/tickets/${ticket.id}/status`)
@@ -289,7 +304,7 @@ describe("Lab 3 Ticket workflow and resolution indication", () => {
       .expect(409);
     assert.equal(errorCode(invalidTerminalEdge), "INVALID_TRANSITION");
 
-    for (const session of [requester, admin]) {
+    for (const session of [requester]) {
       // oxlint-disable-next-line no-await-in-loop -- Verify each protected role independently.
       const response = await request(activeFixture.app)
         .post(`/api/tickets/${ownerRequiredTicket.id}/status`)

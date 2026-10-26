@@ -12,26 +12,36 @@ export type CurrentStatus =
   | "Reopened"
   | "Cancelled";
 
+export type TicketListScope =
+  | "active"
+  | "waiting-for-requester"
+  | "recently-updated"
+  | "recently-resolved";
+
 export type TicketSortField =
   | "ticketNumber"
   | "ticketDate"
   | "summary"
   | "requestedPriority"
   | "currentStatus"
-  | "updatedAt";
+  | "updatedAt"
+  | "resolvedAt";
 
 export type TicketSortDirection = "asc" | "desc";
 
 export interface TicketListQuery {
   categoryId?: number;
   currentStatus?: CurrentStatus;
+  from?: Date;
   page: number;
   pageSize: 10 | 25 | 50;
   relatedSystemId?: number;
   requestedPriority?: RequestedPriority;
+  scope?: TicketListScope;
   search?: string;
   sortBy: TicketSortField;
   sortDirection: TicketSortDirection;
+  through?: Date;
 }
 
 export type StaffTicketSortField =
@@ -42,18 +52,26 @@ export type StaffTicketSortField =
 
 export type StaffTicketOwnerFilter = number | "me" | "unassigned";
 
+export type StaffTicketListScope =
+  | "active"
+  | "recently-updated"
+  | "urgent-active";
+
 export interface StaffTicketListQuery {
   categoryId?: number;
   currentStatus?: CurrentStatus;
+  from?: Date;
   itPriority?: RequestedPriority;
   owner?: StaffTicketOwnerFilter;
   page: number;
   pageSize: 10 | 20 | 50;
   relatedSystemId?: number;
   requestedPriority?: RequestedPriority;
+  scope?: StaffTicketListScope;
   search?: string;
   sortBy: StaffTicketSortField;
   sortDirection: TicketSortDirection;
+  through?: Date;
 }
 
 export interface TicketFields {

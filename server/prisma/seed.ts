@@ -1,4 +1,9 @@
 import { prisma } from "../src/db/client.js";
+import {
+  createActionSnapshot,
+  getActionPayload,
+  hashActionPayload,
+} from "../src/models/action-payload.js";
 
 const categories = [
   {
@@ -134,6 +139,14 @@ const getSeededSystem = async (seedKey: string) => {
     throw new Error(`Missing seeded Related System ${seedKey}.`);
   }
   return system;
+};
+
+const getSeededTicket = async (seedKey: string) => {
+  const ticket = await prisma.ticket.findUnique({ where: { seedKey } });
+  if (ticket === null) {
+    throw new Error(`Missing seeded Ticket ${seedKey}.`);
+  }
+  return ticket;
 };
 
 try {
@@ -313,6 +326,189 @@ try {
       },
       find: async () =>
         await prisma.ticket.findUnique({ where: { seedKey: ticket.seedKey } }),
+    });
+  }
+
+  const actionTickets = [
+    {
+      categoryKey: "lab3:category:network",
+      currentStatus: "New" as const,
+      itPriority: "Low" as const,
+      ownerKey: undefined,
+      relatedSystemKey: "lab3:system:campus-wifi",
+      requestedPriority: "Low" as const,
+      seedKey: "lab4:ticket:actions-empty",
+      summary: "Lab 4 action list with no work yet",
+      ticketNumber: "TKT-20261003-ACT001",
+    },
+    {
+      categoryKey: "lab3:category:hardware",
+      currentStatus: "Open" as const,
+      itPriority: "Medium" as const,
+      ownerKey: "lab3:user:staff-1",
+      relatedSystemKey: "lab3:system:corporate-laptop",
+      requestedPriority: "Medium" as const,
+      seedKey: "lab4:ticket:actions-single",
+      summary: "Lab 4 action list with one planned action",
+      ticketNumber: "TKT-20261003-ACT002",
+    },
+    {
+      categoryKey: "lab3:category:software",
+      currentStatus: "InProgress" as const,
+      itPriority: "High" as const,
+      ownerKey: "lab3:user:staff-2",
+      relatedSystemKey: "lab3:system:leb2-app",
+      requestedPriority: "High" as const,
+      seedKey: "lab4:ticket:actions-multiple",
+      summary: "Lab 4 action list with multiple workers",
+      ticketNumber: "TKT-20261003-ACT003",
+    },
+  ] as const;
+
+  const actionTicketDescription =
+    "Dedicated Lab 4 demonstration Ticket for planned Actions Taken.";
+
+  for (const [index, ticket] of actionTickets.entries()) {
+    // Lab 4 action fixtures use their own Ticket seed keys. Existing Lab 3
+    // Tickets remain legacy rows with no fabricated Actions Taken.
+    // oxlint-disable-next-line no-await-in-loop
+    await insertIfMissing({
+      create: async () => {
+        const requester = await getSeededUser("lab3:user:requester-1");
+        const category = await getSeededCategory(ticket.categoryKey);
+        const relatedSystem = await getSeededSystem(ticket.relatedSystemKey);
+        const owner =
+          ticket.ownerKey === undefined
+            ? null
+            : await getSeededUser(ticket.ownerKey);
+        const ticketDate = new Date(Date.UTC(2026, 9, 3, 8 + index, 0, 0));
+
+        return await prisma.ticket.create({
+          data: {
+            categoryId: category.id,
+            currentStatus: ticket.currentStatus,
+            description: actionTicketDescription,
+            itPriority: ticket.itPriority,
+            ownerId: owner?.id ?? null,
+            relatedSystemId: relatedSystem.id,
+            requestedPriority: ticket.requestedPriority,
+            requesterId: requester.id,
+            seedKey: ticket.seedKey,
+            statusChangedAt: ticketDate,
+            summary: ticket.summary,
+            ticketDate,
+            ticketNumber: ticket.ticketNumber,
+            updatedAt: ticketDate,
+          },
+        });
+      },
+      find: async () =>
+        await prisma.ticket.findUnique({ where: { seedKey: ticket.seedKey } }),
+    });
+  }
+
+  const actions = [
+    {
+      assigneeKey: "lab3:user:staff-1",
+      attachmentNotes: null,
+      createdByKey: "lab3:user:staff-1",
+      description: "Check the laptop network adapter and cable.",
+      followUpNote: null,
+      followUpRequired: false,
+      requestId: "d33d3a4e-6f9c-4ca7-9a22-2a4f5963e001",
+      result: null,
+      seedKey: "lab4:action:single-network-check",
+      ticketKey: "lab4:ticket:actions-single",
+    },
+    {
+      assigneeKey: "lab3:user:staff-2",
+      attachmentNotes: "Look for the screenshot in the Ticket attachments.",
+      createdByKey: "lab3:user:staff-2",
+      description: "Reproduce the grade submission failure.",
+      followUpNote: "Ask the requester to retry after the check.",
+      followUpRequired: true,
+      requestId: "d33d3a4e-6f9c-4ca7-9a22-2a4f5963e002",
+      result: null,
+      seedKey: "lab4:action:multiple-reproduce",
+      ticketKey: "lab4:ticket:actions-multiple",
+    },
+    {
+      assigneeKey: "lab3:user:staff-3",
+      attachmentNotes: null,
+      createdByKey: "lab3:user:staff-3",
+      description: "Review application logs for the failed submission.",
+      followUpNote: null,
+      followUpRequired: false,
+      requestId: "d33d3a4e-6f9c-4ca7-9a22-2a4f5963e003",
+      result: null,
+      seedKey: "lab4:action:multiple-log-review",
+      ticketKey: "lab4:ticket:actions-multiple",
+    },
+  ] as const;
+
+  for (const [index, action] of actions.entries()) {
+    // Stable action keys make reruns insert-only and preserve edited action
+    // records. Each new action receives its immutable initial event together.
+    // oxlint-disable-next-line no-await-in-loop
+    const ticket = await getSeededTicket(action.ticketKey);
+    // oxlint-disable-next-line no-await-in-loop
+    const creator = await getSeededUser(action.createdByKey);
+    // oxlint-disable-next-line no-await-in-loop
+    const assignee = await getSeededUser(action.assigneeKey);
+    const actionDate = new Date(Date.UTC(2026, 9, 3, 12 + index, 0, 0));
+    const payload = getActionPayload(action, assignee.id);
+    const snapshot = createActionSnapshot(payload);
+    const payloadHash = hashActionPayload(payload);
+
+    // oxlint-disable-next-line no-await-in-loop
+    const existing = await prisma.actionTaken.findUnique({
+      where: { seedKey: action.seedKey },
+    });
+    let actionRecord = existing;
+    // oxlint-disable-next-line no-await-in-loop
+    actionRecord ??= await prisma.actionTaken.create({
+      data: {
+        assigneeId: assignee.id,
+        attachmentNotes: action.attachmentNotes,
+        createdAt: actionDate,
+        createdByUserId: creator.id,
+        description: action.description,
+        followUpNote: action.followUpNote,
+        followUpRequired: action.followUpRequired,
+        payloadHash,
+        requestId: action.requestId,
+        result: action.result,
+        seedKey: action.seedKey,
+        ticketId: ticket.id,
+        updatedAt: actionDate,
+      },
+    });
+
+    // Repair only a missing initial event; never update an existing action or
+    // event so seed reruns preserve user edits and historical rows.
+    // oxlint-disable-next-line no-await-in-loop
+    await insertIfMissing({
+      create: async () =>
+        await prisma.actionEvent.create({
+          data: {
+            actionId: actionRecord.id,
+            actionVersion: actionRecord.version,
+            actorId: actionRecord.createdByUserId,
+            createdAt: actionDate,
+            eventType: "ActionCreated",
+            snapshot,
+            toStatus: "Planned",
+          },
+        }),
+      find: async () =>
+        await prisma.actionEvent.findUnique({
+          where: {
+            actionId_actionVersion: {
+              actionId: actionRecord.id,
+              actionVersion: actionRecord.version,
+            },
+          },
+        }),
     });
   }
 } finally {

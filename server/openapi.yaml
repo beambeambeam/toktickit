@@ -150,7 +150,7 @@ paths:
     get:
       operationId: getApiStaffTickets
       summary: List the shared Ticket Queue
-      description: Returns operational Ticket summaries for IT Staff and read-only Administrators.
+      description: Returns operational Ticket summaries for IT Staff and read-only Administrators. Scope, time bounds, and owner filters combine with the other filters.
       security:
         - sessionCookie: []
       parameters:
@@ -160,6 +160,9 @@ paths:
         - $ref: "#/components/parameters/RequestedPriority"
         - $ref: "#/components/parameters/ItPriority"
         - $ref: "#/components/parameters/CurrentStatus"
+        - $ref: "#/components/parameters/StaffTicketScope"
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/Through"
         - $ref: "#/components/parameters/Owner"
         - $ref: "#/components/parameters/QueueSortBy"
         - $ref: "#/components/parameters/SortDirection"
@@ -199,11 +202,255 @@ paths:
           $ref: "#/components/responses/ApiErrorResponse"
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
+  /api/staff/dashboard:
+    get:
+      operationId: getApiStaffDashboard
+      summary: Get the authenticated staff dashboard
+      description: Returns one UTC snapshot of Ticket counts and bounded previews for IT Staff and Administrators. Accepts no query parameters.
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: The authenticated staff member's dashboard.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/StaffDashboardResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/staff/actions:
+    get:
+      operationId: getApiStaffActions
+      summary: List My Actions
+      description: Returns Actions Taken assigned to the authenticated user with status Planned or In Progress on an active Ticket.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/ActionPageSize"
+      responses:
+        "200":
+          description: The authenticated user's My Actions page.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MyActionListResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/actions:
+    get:
+      operationId: getApiTicketActions
+      summary: List Actions Taken for a Ticket
+      description: Requesters can read Actions Taken only for their own Tickets. IT Staff and Administrators can read every Ticket's stable chronological action page.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/ActionPageSize"
+      responses:
+        "200":
+          description: The stable Action Taken page, ordered by creation time then ID.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionListResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+    post:
+      operationId: createApiTicketAction
+      summary: Create a Planned Action Taken
+      description: IT Staff and Administrators can create one Planned Action Taken on a Ticket that is not Resolved, Closed or Cancelled. The server supplies creator, timestamps, status, and attribution; requestId retries replay the original result with HTTP 200.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/CreateActionRequest"
+      responses:
+        "200":
+          description: An idempotent replay of an existing Action Taken.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionMutationResult"
+        "201":
+          description: The newly created Planned Action Taken and current parent Ticket.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionMutationResult"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/actions/{actionId}:
+    put:
+      operationId: putApiTicketAction
+      summary: Edit a pending Action Taken
+      description: IT Staff and Administrators may replace mutable fields on a Planned or In Progress action on a nonterminal Ticket. Both versions are required. Unchanged replacements return the current result without creating history or advancing versions; changed replacements append an immutable snapshot.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+        - $ref: "#/components/parameters/ActionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/EditActionRequest"
+      responses:
+        "200":
+          description: The current Action Taken and parent Ticket after the edit or semantic no-op.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionMutationResult"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/actions/{actionId}/transition:
+    post:
+      operationId: postApiTicketActionTransition
+      summary: Start, complete, or cancel an Action Taken
+      description: IT Staff and Administrators may apply only Planned to In Progress/Cancelled and In Progress to Completed/Cancelled transitions on nonterminal Tickets. Both current versions are required. Start attribution and terminal actor/times are set by the server; completion requires a nonblank Result, no required follow-up, and an active eligible assignee. Completion and cancellation require confirmed=true. Every successful transition appends one immutable event and advances the Action Taken and parent Ticket versions once.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/CsrfToken"
+        - $ref: "#/components/parameters/TicketId"
+        - $ref: "#/components/parameters/ActionId"
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: "#/components/schemas/ActionTransitionRequest"
+      responses:
+        "200":
+          description: The transitioned Action Taken and current parent Ticket.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionMutationResult"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "409":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/actions/{actionId}/history:
+    get:
+      operationId: getApiTicketActionHistory
+      summary: Read Action Taken history
+      description: Requesters may read history only for their own Tickets. IT Staff and Administrators may read history for any Ticket. Events use stable createdAt then ID order and bounded pagination.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+        - $ref: "#/components/parameters/ActionId"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/ActionPageSize"
+      responses:
+        "200":
+          description: The stable paginated ActionEvent history.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ActionHistoryListResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
+  /api/tickets/{ticketId}/status-history:
+    get:
+      operationId: getApiTicketStatusHistory
+      summary: Read Ticket status history
+      description: Requesters may read history only for their own Tickets. IT Staff and Administrators may read history for any Ticket. Events use stable createdAt then ID order and bounded pagination. Legacy terminal Tickets have no synthesized events.
+      security:
+        - sessionCookie: []
+      parameters:
+        - $ref: "#/components/parameters/TicketId"
+        - $ref: "#/components/parameters/Page"
+        - $ref: "#/components/parameters/ActionPageSize"
+      responses:
+        "200":
+          description: The stable paginated TicketStatusEvent history.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/TicketStatusHistoryListResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "404":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
   /api/tickets/{ticketId}/status:
     post:
       operationId: updateApiTicketStatus
       summary: Progress a Ticket
-      description: Applies one approved status transition for IT Staff.
+      description: Applies one approved status transition for IT Staff or an Administrator. Resolved, Closed, and Cancelled require `confirmed` true; otherwise the API returns 400 `CONFIRMATION_REQUIRED`. The actor must be an eligible staff account (BR-08); otherwise the API returns 403 `FORBIDDEN`.
       security:
         - sessionCookie: []
       parameters:
@@ -231,7 +478,7 @@ paths:
         "404":
           $ref: "#/components/responses/ApiErrorResponse"
         "409":
-          $ref: "#/components/responses/ApiErrorResponse"
+          $ref: "#/components/responses/TicketStatusConflictResponse"
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
   /api/tickets/{ticketId}/resolution-indication:
@@ -521,6 +768,28 @@ paths:
           $ref: "#/components/responses/ApiErrorResponse"
         "500":
           $ref: "#/components/responses/ApiErrorResponse"
+  /api/requester/dashboard:
+    get:
+      operationId: getApiRequesterDashboard
+      summary: Get the authenticated Requester's dashboard
+      description: Returns one UTC snapshot of the authenticated Requester's public Ticket metrics and bounded previews.
+      security:
+        - sessionCookie: []
+      responses:
+        "200":
+          description: The authenticated Requester's dashboard.
+          content:
+            application/json:
+              schema:
+                $ref: "#/components/schemas/RequesterDashboardResponse"
+        "400":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "401":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "403":
+          $ref: "#/components/responses/ApiErrorResponse"
+        "500":
+          $ref: "#/components/responses/ApiErrorResponse"
   /api/health:
     get:
       operationId: getApiHealth
@@ -590,6 +859,9 @@ paths:
         - $ref: "#/components/parameters/RelatedSystemId"
         - $ref: "#/components/parameters/RequestedPriority"
         - $ref: "#/components/parameters/CurrentStatus"
+        - $ref: "#/components/parameters/TicketScope"
+        - $ref: "#/components/parameters/From"
+        - $ref: "#/components/parameters/Through"
         - $ref: "#/components/parameters/SortBy"
         - $ref: "#/components/parameters/SortDirection"
         - $ref: "#/components/parameters/Page"
@@ -656,7 +928,7 @@ paths:
     post:
       operationId: createApiTicketInternalNote
       summary: Add a private Internal Note
-      description: IT Staff can append a private Internal Note to any non-terminal Ticket. Administrators and Requesters cannot write notes.
+      description: IT Staff and Administrators can append a private Internal Note to any non-terminal Ticket. Requesters cannot write notes.
       security:
         - sessionCookie: []
       parameters:
@@ -716,7 +988,7 @@ paths:
     post:
       operationId: createApiTicketComment
       summary: Post a public Ticket comment
-      description: A Requester may post to an owned Ticket and IT Staff may post to any Ticket. Administrators have read-only access.
+      description: A Requester may post to an owned Ticket. IT Staff and Administrators may post to any Ticket.
       security:
         - sessionCookie: []
       parameters:
@@ -901,6 +1173,13 @@ components:
       schema:
         type: integer
         minimum: 1
+    ActionId:
+      name: actionId
+      in: path
+      required: true
+      schema:
+        type: integer
+        minimum: 1
     Search:
       name: search
       in: query
@@ -948,6 +1227,41 @@ components:
       required: false
       schema:
         $ref: "#/components/schemas/CurrentStatus"
+    TicketScope:
+      name: scope
+      in: query
+      required: false
+      description: Exact active, waiting, recently updated, or recently resolved Ticket scope.
+      schema:
+        type: string
+        enum:
+          [active, waiting-for-requester, recently-updated, recently-resolved]
+    StaffTicketScope:
+      name: scope
+      in: query
+      required: false
+      description: Exact active, recently updated, or urgent active Ticket scope for the shared queue.
+      schema:
+        type: string
+        enum: [active, recently-updated, urgent-active]
+    From:
+      name: from
+      in: query
+      required: false
+      description: Inclusive lower UTC bound. Required with time-based scopes and rejected otherwise.
+      schema:
+        type: string
+        format: date-time
+        pattern: "Z$"
+    Through:
+      name: through
+      in: query
+      required: false
+      description: Inclusive upper UTC bound. Required with time-based scopes and rejected otherwise.
+      schema:
+        type: string
+        format: date-time
+        pattern: "Z$"
     ItPriority:
       name: itPriority
       in: query
@@ -958,7 +1272,7 @@ components:
       name: owner
       in: query
       required: false
-      description: Eligible owner ID, me, or unassigned.
+      description: Eligible owner ID, me, or unassigned. A specific ID must be currently eligible.
       schema:
         oneOf:
           - type: integer
@@ -979,6 +1293,7 @@ components:
             requestedPriority,
             currentStatus,
             updatedAt,
+            resolvedAt,
           ]
         default: updatedAt
     SortDirection:
@@ -1021,6 +1336,14 @@ components:
         type: integer
         enum: [10, 20, 50]
         default: 20
+    ActionPageSize:
+      name: pageSize
+      in: query
+      required: false
+      schema:
+        type: integer
+        enum: [10, 20, 50]
+        default: 20
   securitySchemes:
     sessionCookie:
       type: apiKey
@@ -1033,7 +1356,304 @@ components:
         application/json:
           schema:
             $ref: "#/components/schemas/ApiError"
+    TicketStatusConflictResponse:
+      description: >-
+        The status write conflicts with the current Ticket. `error.code` is `VERSION_CONFLICT`, `INVALID_TRANSITION`, `OWNER_REQUIRED`, `TICKET_HAS_PENDING_ACTIONS`, or `RESOLUTION_GATE_FAILED`. `RESOLUTION_GATE_FAILED` lists every unmet reason in `error.details.reasons`, in fixed order.
+      content:
+        application/json:
+          schema:
+            anyOf:
+              - $ref: "#/components/schemas/ResolutionGateFailedError"
+              - $ref: "#/components/schemas/ApiError"
   schemas:
+    RequesterDashboardResponse:
+      type: object
+      additionalProperties: false
+      required: [generatedAt, window, counts, previews]
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+        window:
+          type: object
+          additionalProperties: false
+          required: [from, through]
+          properties:
+            from:
+              type: string
+              format: date-time
+            through:
+              type: string
+              format: date-time
+        counts:
+          type: object
+          additionalProperties: false
+          required:
+            [
+              activeTickets,
+              waitingForRequester,
+              recentlyUpdated,
+              recentlyResolved,
+            ]
+          properties:
+            activeTickets:
+              type: integer
+              minimum: 0
+            waitingForRequester:
+              type: integer
+              minimum: 0
+            recentlyUpdated:
+              type: integer
+              minimum: 0
+            recentlyResolved:
+              type: integer
+              minimum: 0
+        previews:
+          type: object
+          additionalProperties: false
+          required: [recentlyUpdated, recentlyResolved]
+          properties:
+            recentlyUpdated:
+              type: array
+              maxItems: 5
+              items:
+                $ref: "#/components/schemas/RequesterTicketPreview"
+            recentlyResolved:
+              type: array
+              maxItems: 5
+              items:
+                $ref: "#/components/schemas/RequesterTicketPreview"
+    RequesterTicketPreview:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          ticketNumber,
+          summary,
+          currentStatus,
+          requestedPriority,
+          updatedAt,
+          resolvedAt,
+        ]
+      properties:
+        id:
+          type: integer
+        ticketNumber:
+          type: string
+          pattern: "^TKT-[0-9]{8}-[A-Z0-9]{6}$"
+        summary:
+          type: string
+        currentStatus:
+          $ref: "#/components/schemas/CurrentStatus"
+        requestedPriority:
+          $ref: "#/components/schemas/RequestedPriority"
+        updatedAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: [string, "null"]
+          format: date-time
+    StaffDashboardResponse:
+      type: object
+      additionalProperties: false
+      required: [generatedAt, window, counts, previews]
+      properties:
+        generatedAt:
+          type: string
+          format: date-time
+        window:
+          type: object
+          additionalProperties: false
+          required: [from, through]
+          properties:
+            from:
+              type: string
+              format: date-time
+            through:
+              type: string
+              format: date-time
+        counts:
+          type: object
+          additionalProperties: false
+          required:
+            [
+              activeUnassigned,
+              activeOwned,
+              byStatus,
+              activeByPriority,
+              myActions,
+            ]
+          properties:
+            activeUnassigned:
+              type: integer
+              minimum: 0
+            activeOwned:
+              type: integer
+              minimum: 0
+            byStatus:
+              type: object
+              additionalProperties: false
+              required:
+                [
+                  New,
+                  Open,
+                  In Progress,
+                  Waiting for Requester,
+                  Reopened,
+                  Resolved,
+                  Closed,
+                  Cancelled,
+                ]
+              properties:
+                New: { type: integer, minimum: 0 }
+                Open: { type: integer, minimum: 0 }
+                In Progress: { type: integer, minimum: 0 }
+                Waiting for Requester: { type: integer, minimum: 0 }
+                Reopened: { type: integer, minimum: 0 }
+                Resolved: { type: integer, minimum: 0 }
+                Closed: { type: integer, minimum: 0 }
+                Cancelled: { type: integer, minimum: 0 }
+            activeByPriority:
+              type: object
+              additionalProperties: false
+              required: [High, Low, Medium, Urgent]
+              properties:
+                High: { type: integer, minimum: 0 }
+                Low: { type: integer, minimum: 0 }
+                Medium: { type: integer, minimum: 0 }
+                Urgent: { type: integer, minimum: 0 }
+            myActions:
+              type: integer
+              minimum: 0
+        previews:
+          type: object
+          additionalProperties: false
+          required: [myActions, recentlyUpdatedTickets, urgentActiveTickets]
+          properties:
+            myActions:
+              type: array
+              maxItems: 5
+              items:
+                $ref: "#/components/schemas/MyActionRow"
+            recentlyUpdatedTickets:
+              type: array
+              maxItems: 5
+              items:
+                $ref: "#/components/schemas/StaffDashboardTicketPreview"
+            urgentActiveTickets:
+              type: array
+              maxItems: 5
+              items:
+                $ref: "#/components/schemas/StaffDashboardTicketPreview"
+    StaffDashboardTicketPreview:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          ticketNumber,
+          summary,
+          currentStatus,
+          requestedPriority,
+          itPriority,
+          owner,
+          updatedAt,
+          resolvedAt,
+        ]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        ticketNumber:
+          type: string
+          pattern: "^TKT-[0-9]{8}-[A-Z0-9]{6}$"
+        summary:
+          type: string
+        currentStatus:
+          $ref: "#/components/schemas/CurrentStatus"
+        requestedPriority:
+          $ref: "#/components/schemas/RequestedPriority"
+        itPriority:
+          $ref: "#/components/schemas/RequestedPriority"
+        owner:
+          oneOf:
+            - $ref: "#/components/schemas/Owner"
+            - type: "null"
+        updatedAt:
+          type: string
+          format: date-time
+        resolvedAt:
+          type: [string, "null"]
+          format: date-time
+    MyActionRow:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          ticketId,
+          description,
+          followUpRequired,
+          status,
+          assignee,
+          updatedAt,
+          ticket,
+        ]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        ticketId:
+          type: integer
+          minimum: 1
+        description:
+          type: string
+        followUpRequired:
+          type: boolean
+        status:
+          $ref: "#/components/schemas/ActionStatus"
+        assignee:
+          $ref: "#/components/schemas/Owner"
+        updatedAt:
+          type: string
+          format: date-time
+        ticket:
+          type: object
+          additionalProperties: false
+          required: [id, ticketNumber, summary, currentStatus]
+          properties:
+            id:
+              type: integer
+              minimum: 1
+            ticketNumber:
+              type: string
+              pattern: "^TKT-[0-9]{8}-[A-Z0-9]{6}$"
+            summary:
+              type: string
+            currentStatus:
+              $ref: "#/components/schemas/CurrentStatus"
+    MyActionListResponse:
+      type: object
+      additionalProperties: false
+      required: [items, page, pageSize, totalItems, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/MyActionRow"
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          enum: [10, 20, 50]
+        totalItems:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
     ApiError:
       type: object
       additionalProperties: false
@@ -1041,6 +1661,35 @@ components:
       properties:
         error:
           $ref: "#/components/schemas/ApiErrorBody"
+    ResolutionGateReason:
+      type: string
+      enum:
+        [OWNER_REQUIRED, OWNER_INELIGIBLE, PENDING_ACTIONS, NO_COMPLETED_ACTION]
+    ResolutionGateFailedError:
+      type: object
+      additionalProperties: false
+      required: [error]
+      properties:
+        error:
+          type: object
+          additionalProperties: false
+          required: [code, message, details]
+          properties:
+            code:
+              type: string
+              enum: [RESOLUTION_GATE_FAILED]
+            message:
+              type: string
+            details:
+              type: object
+              additionalProperties: false
+              required: [reasons]
+              properties:
+                reasons:
+                  type: array
+                  minItems: 1
+                  items:
+                    $ref: "#/components/schemas/ResolutionGateReason"
     ApiErrorBody:
       type: object
       additionalProperties: false
@@ -1354,6 +2003,413 @@ components:
           type: array
           items:
             $ref: "#/components/schemas/AttachmentMetadata"
+    ActionStatus:
+      type: string
+      enum: [Planned, In Progress, Completed, Cancelled]
+    ActionUserRef:
+      type: object
+      additionalProperties: false
+      required: [id, displayName, role]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        displayName:
+          type: string
+        role:
+          $ref: "#/components/schemas/UserRole"
+    CreateActionRequest:
+      type: object
+      additionalProperties: false
+      required: [requestId, version, description, followUpRequired]
+      properties:
+        requestId:
+          type: string
+          format: uuid
+        version:
+          type: integer
+          minimum: 1
+        description:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        result:
+          oneOf:
+            - type: string
+              maxLength: 5000
+            - type: "null"
+        assigneeId:
+          oneOf:
+            - type: integer
+              minimum: 1
+            - type: "null"
+        followUpRequired:
+          type: boolean
+        followUpNote:
+          oneOf:
+            - type: string
+              maxLength: 5000
+            - type: "null"
+        attachmentNotes:
+          oneOf:
+            - type: string
+              maxLength: 2000
+            - type: "null"
+    EditActionRequest:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          actionVersion,
+          ticketVersion,
+          description,
+          result,
+          assigneeId,
+          followUpRequired,
+          followUpNote,
+          attachmentNotes,
+        ]
+      properties:
+        actionVersion:
+          type: integer
+          minimum: 1
+        ticketVersion:
+          type: integer
+          minimum: 1
+        description:
+          type: string
+          minLength: 1
+          maxLength: 5000
+        result:
+          oneOf:
+            - type: string
+              maxLength: 5000
+            - type: "null"
+        assigneeId:
+          type: integer
+          minimum: 1
+        followUpRequired:
+          type: boolean
+        followUpNote:
+          oneOf:
+            - type: string
+              maxLength: 5000
+            - type: "null"
+        attachmentNotes:
+          oneOf:
+            - type: string
+              maxLength: 2000
+            - type: "null"
+    ActionTransitionRequest:
+      oneOf:
+        - type: object
+          additionalProperties: false
+          required: [actionVersion, ticketVersion, toStatus]
+          properties:
+            actionVersion:
+              type: integer
+              minimum: 1
+            ticketVersion:
+              type: integer
+              minimum: 1
+            toStatus:
+              type: string
+              const: "In Progress"
+        - type: object
+          additionalProperties: false
+          required: [actionVersion, ticketVersion, toStatus, confirmed]
+          properties:
+            actionVersion:
+              type: integer
+              minimum: 1
+            ticketVersion:
+              type: integer
+              minimum: 1
+            toStatus:
+              type: string
+              enum: [Completed, Cancelled]
+            confirmed:
+              type: boolean
+              const: true
+        - type: object
+          additionalProperties: false
+          required: [actionVersion, ticketVersion, toStatus]
+          properties:
+            actionVersion:
+              type: integer
+              minimum: 1
+            ticketVersion:
+              type: integer
+              minimum: 1
+            toStatus:
+              type: string
+              const: Planned
+    ActionEventSnapshot:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          description,
+          result,
+          assigneeId,
+          followUpRequired,
+          followUpNote,
+          attachmentNotes,
+          status,
+        ]
+      properties:
+        description:
+          type: string
+        result:
+          type: [string, "null"]
+        assigneeId:
+          type: integer
+          minimum: 1
+        followUpRequired:
+          type: boolean
+        followUpNote:
+          type: [string, "null"]
+        attachmentNotes:
+          type: [string, "null"]
+        status:
+          $ref: "#/components/schemas/ActionStatus"
+    ActionEvent:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          actionId,
+          actor,
+          eventType,
+          actionVersion,
+          fromStatus,
+          toStatus,
+          createdAt,
+          snapshot,
+        ]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        actionId:
+          type: integer
+          minimum: 1
+        actor:
+          $ref: "#/components/schemas/ActionUserRef"
+        eventType:
+          type: string
+          enum:
+            [
+              ActionCreated,
+              ActionEdited,
+              ActionStarted,
+              ActionCompleted,
+              ActionCancelled,
+            ]
+        actionVersion:
+          type: integer
+          minimum: 1
+        fromStatus:
+          oneOf:
+            - $ref: "#/components/schemas/ActionStatus"
+            - type: "null"
+        toStatus:
+          oneOf:
+            - $ref: "#/components/schemas/ActionStatus"
+            - type: "null"
+        createdAt:
+          type: string
+          format: date-time
+        snapshot:
+          oneOf:
+            - $ref: "#/components/schemas/ActionEventSnapshot"
+            - type: "null"
+    ActionHistoryListResponse:
+      type: object
+      additionalProperties: false
+      required: [items, page, pageSize, totalItems, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActionEvent"
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          enum: [10, 20, 50]
+        totalItems:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+    TicketStatusEvent:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          ticketId,
+          actor,
+          fromStatus,
+          toStatus,
+          ticketVersion,
+          confirmed,
+          createdAt,
+        ]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        ticketId:
+          type: integer
+          minimum: 1
+        actor:
+          $ref: "#/components/schemas/ActionUserRef"
+        fromStatus:
+          $ref: "#/components/schemas/CurrentStatus"
+        toStatus:
+          $ref: "#/components/schemas/CurrentStatus"
+        ticketVersion:
+          type: integer
+          minimum: 1
+        confirmed:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+    TicketStatusHistoryListResponse:
+      type: object
+      additionalProperties: false
+      required: [items, page, pageSize, totalItems, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/TicketStatusEvent"
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          enum: [10, 20, 50]
+        totalItems:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
+    ActionTaken:
+      type: object
+      additionalProperties: false
+      required:
+        [
+          id,
+          ticketId,
+          description,
+          result,
+          assignee,
+          createdBy,
+          performedBy,
+          followUpRequired,
+          followUpNote,
+          attachmentNotes,
+          status,
+          version,
+          createdAt,
+          updatedAt,
+          startedAt,
+          completedAt,
+          completedBy,
+          cancelledAt,
+          cancelledBy,
+        ]
+      properties:
+        id:
+          type: integer
+          minimum: 1
+        ticketId:
+          type: integer
+          minimum: 1
+        description:
+          type: string
+        result:
+          type: [string, "null"]
+        assignee:
+          $ref: "#/components/schemas/Owner"
+        createdBy:
+          $ref: "#/components/schemas/ActionUserRef"
+        performedBy:
+          oneOf:
+            - $ref: "#/components/schemas/ActionUserRef"
+            - type: "null"
+        followUpRequired:
+          type: boolean
+        followUpNote:
+          type: [string, "null"]
+        attachmentNotes:
+          type: [string, "null"]
+        status:
+          $ref: "#/components/schemas/ActionStatus"
+        version:
+          type: integer
+          minimum: 1
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        startedAt:
+          type: [string, "null"]
+          format: date-time
+        completedAt:
+          type: [string, "null"]
+          format: date-time
+        completedBy:
+          oneOf:
+            - $ref: "#/components/schemas/ActionUserRef"
+            - type: "null"
+        cancelledAt:
+          type: [string, "null"]
+          format: date-time
+        cancelledBy:
+          oneOf:
+            - $ref: "#/components/schemas/ActionUserRef"
+            - type: "null"
+    ActionMutationResult:
+      type: object
+      additionalProperties: false
+      required: [action, ticket]
+      properties:
+        action:
+          $ref: "#/components/schemas/ActionTaken"
+        ticket:
+          $ref: "#/components/schemas/TicketDetail"
+    ActionListResponse:
+      type: object
+      additionalProperties: false
+      required: [items, page, pageSize, totalItems, totalPages]
+      properties:
+        items:
+          type: array
+          items:
+            $ref: "#/components/schemas/ActionTaken"
+        page:
+          type: integer
+          minimum: 1
+        pageSize:
+          type: integer
+          enum: [10, 20, 50]
+        totalItems:
+          type: integer
+          minimum: 0
+        totalPages:
+          type: integer
+          minimum: 0
     TicketSummary:
       type: object
       additionalProperties: false

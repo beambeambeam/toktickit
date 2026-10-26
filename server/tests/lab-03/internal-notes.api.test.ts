@@ -289,12 +289,17 @@ describe("Lab 3 private Ticket Internal Notes", () => {
       1
     );
 
-    const adminWrite = await request(activeFixture.app)
+    await request(activeFixture.app)
       .post(`/api/tickets/${ticket.id}/internal-notes`)
       .set(authHeaders(admin))
-      .send({ content: "Administrators are read-only." })
-      .expect(403);
-    assert.equal(errorCode(adminWrite), "FORBIDDEN");
+      .send({ content: "Administrators may write notes." })
+      .expect(201);
+    assert.equal(
+      await activeFixture.prisma.internalNote.count({
+        where: { ticketId: ticket.id },
+      }),
+      2
+    );
   });
 
   it("enforces exact content bounds and backend resource errors", async () => {

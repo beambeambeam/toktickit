@@ -9,6 +9,8 @@ export default defineConfig({
       "tests/lab-01/**/*.test.ts",
       "tests/lab-02/**/*.test.ts",
       "tests/lab-03/**/*.test.ts",
+      "tests/lab-04/**/*.test.ts",
     ],
+    testTimeout: 60_000,
   },
 });

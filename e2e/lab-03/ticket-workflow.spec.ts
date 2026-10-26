@@ -1,5 +1,6 @@
 import { expect, test } from "@playwright/test";
 
+import { addCompletedAction } from "../lab-04/resolution-gate.js";
 import { captureLab3Evidence } from "./evidence.js";
 
 const staffEmail = "e2e-staff@example.test";
@@ -14,7 +15,13 @@ test("progresses and reopens a Ticket through the staff workflow", async ({
   await page.getByRole("textbox", { name: "Password" }).fill(staffPassword);
   await page.getByRole("button", { name: "Sign in" }).click();
 
+  await expect(page).toHaveURL(/\/dashboard$/u);
+  await page.goto("/staff/tickets");
   await expect(page).toHaveURL(/\/staff\/tickets$/u);
+  await page
+    .getByRole("searchbox", { exact: true, name: "Search" })
+    .fill(workflowTicketNumber);
+  await page.getByRole("button", { exact: true, name: "Search" }).click();
   const queue = page.locator(
     ".ticket-table-wrap:visible, .ticket-cards:visible"
   );
@@ -77,6 +84,14 @@ test("progresses and reopens a Ticket through the staff workflow", async ({
   }
 
   expect(status).toBe("In Progress");
+  const ticketId = Number(new URL(page.url()).pathname.split("/").at(-1));
+  await addCompletedAction(page, ticketId);
+  await page.reload();
+  await expect(
+    page.getByRole("heading", { name: "Progress Ticket" })
+  ).toBeVisible();
+  await expect(statusLine).toContainText("Current status: In Progress");
+
   await statusSelect.selectOption("Resolved");
   await page.getByRole("button", { name: "Apply Status" }).click();
   const confirmation = page.getByRole("alertdialog");

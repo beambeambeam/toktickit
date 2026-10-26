@@ -1,0 +1,142 @@
+# Issue #74 visual evidence
+
+The owned Playwright journey writes fresh evidence to `screenshots/actions-taken/` with one real PNG per state and viewport. The capture helper also rewrites `manifest-desktop.json`, `manifest-tablet.json`, and `manifest-mobile.json` at the start of each project run, so a fresh run does not inherit stale entries.
+
+PR #82 review-follow-up production run: **12/12 journeys passed** on 2026-10-03. All 44 PNGs were recaptured from clean, pushed source commit [`6dd2571551464a89c546236c63cb8b43a3e6233d`](https://github.com/beambeambeam/toktickit/commit/6dd2571551464a89c546236c63cb8b43a3e6233d) on `feature/74-create-view-actions-taken`. This source includes the reviewed UI, focus and API fixes. All 15 canonical PNGs and representative narrow, reflow, native-scale, error and uncertain-write captures were visually inspected. Each PNG has exactly one entry, and every canonical state is present at each viewport.
+
+Manifests: [desktop](screenshots/actions-taken/manifest-desktop.json), [tablet](screenshots/actions-taken/manifest-tablet.json), [mobile](screenshots/actions-taken/manifest-mobile.json). Each entry links to [STYLE-01](../../docs/lab-04/tests.md#style-01) and [VIS-01](../../docs/lab-04/tests.md#vis-01), with actual UTC capture time, command, role and provenance. All three report `sourceDirty: false`. Subsequent evidence/record commits retain this reachable source SHA; a capture commit cannot include its own generated images.
+
+The earlier `0ca28d4` SHA was a pre-regroup local commit, unavailable in a fresh clone. The current captures replace that evidence and no longer rely on local history. The final checkpoint passed 134 client tests, 140 server tests and 18 affected earlier-lab browser journeys. Runtime environment and commands are in [the test record](../../docs/lab-04/tests.md#pr-82-review-follow-up-checkpoint--2026-10-03).
+
+```sh
+pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts
+```
+
+## Applicable #74 inventory
+
+The fresh run targets each canonical state at desktop (1440 × 900), tablet (768 × 1024), and mobile (390 × 844).
+
+| State | Stable filename | Provenance and scope |
+| --- | --- | --- |
+| Requester detail with no actions | `requester-actions-empty-{viewport}.png` | Natural own-Ticket Requester read. |
+| Requester detail with multiple actions | `requester-actions-populated-{viewport}.png` | Natural own-Ticket read after real staff/Admin creation; this is a partial populated read because the history API is not available in #74. |
+| Staff/Admin action list and attribution | `staff-actions-populated-{viewport}.png` | Natural Administrator read after multiple real action writes. |
+| Create form with conditional follow-up validation | `action-create-validation-{viewport}.png` | Natural keyboard submit; blank Description focuses first, then true `Follow-Up Required` validation focuses the missing Follow-up Note. |
+| Version conflict with recoverable draft | `action-conflict-draft-{viewport}.png` | Natural concurrent create; the stale draft remains visible before refresh and retry. |
+
+## Supplementary captures
+
+The fresh run also writes these supplementary states; they are not substitutes for the canonical inventory names:
+
+- `actions-taken-loading-{viewport}.png`
+- `actions-taken-error-{viewport}.png`
+- `actions-taken-forbidden-{viewport}.png`
+- `actions-taken-not-found-{viewport}.png`
+- `action-create-uncertain-draft-{viewport}.png`
+- `action-create-form-minimum-width-320-css-pixels-{viewport}.png`
+- `action-create-form-css-reflow-200-percent-{viewport}.png`
+- `action-create-form-native-page-scale-200-percent-desktop.png`
+- `requester-actions-populated-minimum-width-320-css-pixels-{viewport}.png`
+- `requester-actions-populated-css-reflow-200-percent-{viewport}.png`
+- `requester-actions-populated-native-page-scale-200-percent-desktop.png`
+
+The 320px entries record the fixed 320 CSS-pixel viewport. The reflow entries record the 720 CSS-pixel proxy used for the 200% check. Native page-scale entries are desktop-only and record Chromium page scale 2. The manifest records the observed viewport, zoom result, scenario, role, branch, full commit SHA, UTC capture time, exact command, provenance, and STYLE-01/VIS-01 links for every entry.
+
+## Visual checklist — Pass for #74
+
+| Check | Observed result |
+| --- | --- |
+| Zen Green layout and controls | Ticket cards, form controls, status badges and feedback match existing detail screens. |
+| Wrapping and spacing | Long descriptions, literal HTML, multiline results and attribution remain inside their cards; no clipping or overlap in reviewed views. Empty and one-line action output no longer inherits the 6rem form-field minimum height. |
+| Shared/private content | Requester action reads contain attribution and public fields, without write controls or Internal Notes. Staff private notes remain in a distinct section. |
+| Validation and recovery | Conditional follow-up error is visible with field focus; conflict and uncertain-write captures retain the entered draft and expose recovery controls. |
+| Responsive layout | Desktop and tablet fields fit their columns; mobile and 320px fields stack with usable controls. Automated overflow checks pass. |
+| Accessibility | Opening focuses Description; Cancel and successful Save return focus to Add. Invalid-field focus passes; tested states have zero axe violations. |
+| 200% checks | 720 CSS-pixel reflow and desktop Chromium page scale 2 pass; these are documented separately and do not claim browser-toolbar zoom. |
+
+## Unavailable sibling states
+
+This evidence set does not invent or duplicate screenshots for edit/reassign, start confirmation, completion confirmation, cancellation confirmation, terminal event history, or Ticket resolution-gate feedback. Those states belong to the unfinished #75–#77 journeys. The populated Requester image shows shared action fields and attribution only; it does not claim action history coverage because the history API is not present in #74.
+
+## Issue #75 visual evidence
+
+The earlier #74 record remains historical. Edit/assignment and revision history evidence is under `screenshots/actions-edit/`. The PR #83 follow-up run on 2026-10-07 passed all **6 cases**. Viewports were desktop (1440 × 900), tablet (768 × 1024) and mobile (390 × 844).
+
+The run captured **28 PNGs** from clean source [`a5abb9b8c6d924085ef0e22c35c700b1818f26da`](https://github.com/beambeambeam/toktickit/commit/a5abb9b8c6d924085ef0e22c35c700b1818f26da). The source branch was `feature/75-edit-and-assign-pending-action-taken-safely`. The evidence commit follows this source commit. Its manifests retain the original capture SHA.
+
+Manifests: [desktop](screenshots/actions-edit/manifest-desktop.json), [tablet](screenshots/actions-edit/manifest-tablet.json), [mobile](screenshots/actions-edit/manifest-mobile.json). All report `sourceDirty: false`, the full source SHA, command, actual UTC capture times, scenario, role, viewport/zoom, state provenance, and STYLE-01/VIS-01 references. Each PNG has exactly one manifest entry. Final capture replaced the developmental dirty-source evidence.
+
+| State | Filename | Provenance |
+| --- | --- | --- |
+| Pending edit/reassignment | `action-edit-reassign-{viewport}.png` | Natural second-worker assignment form. |
+| Recoverable edit conflict | `action-conflict-draft-{viewport}.png` | Natural concurrent saved change; draft retained and Save blocked pending explicit refresh/review. |
+| Historical ineligible assignee | `action-edit-historical-assignee-{viewport}.png` | Real Administrator account deactivation; original identity retained for pending correction. |
+| Assignee loading/failure/empty | `action-edit-assignee-{loading,error,empty}-{viewport}.png` | Controlled lookup responses, declared in each manifest; real edit draft retained. |
+| Requester paginated history | `action-edit-requester-history-page-two-{viewport}.png` | Natural own-Ticket read after 21 real revisions; second page shows actor/time and immutable snapshot fields. |
+| Minimum width and reflow | `action-edit-minimum-width-320-{viewport}.png`, `action-edit-css-reflow-200-percent-{viewport}.png` | Saved long description at 320 CSS pixels and the 720 CSS-pixel reflow proxy. |
+| Native Chromium scale | `action-edit-native-page-scale-200-percent-desktop.png` | Chromium page scale 2; separate from the CSS reflow check, with no browser-toolbar zoom claim. |
+
+### Visual checklist — Pass for #75
+
+All six canonical edit/conflict images and representative history, historical-assignee, failure, 320px, CSS reflow and native-scale images were inspected after final capture.
+
+| Check | Observed result |
+| --- | --- |
+| Zen Green controls/layout | Cards, buttons, field labels and feedback match existing Ticket Detail. Wide form columns fit; mobile controls stack. |
+| Wrapping/spacing | Long saved descriptions and revisions wrap inside cards. Reviewed views show no clipping, overlap or page-wide horizontal overflow. |
+| Shared/private boundary | Requester history shows actor/time and public snapshots. Assignees show permitted current names or a former-assignee label with the ID. No edit controls or Internal Notes appear. |
+| Draft recovery | Conflict and lookup failure retain entered text. Save stays blocked until explicit review or successful lookup retry. Historical assignee copy explains reassignment eligibility. |
+| Accessibility | Keyboard entry, field errors, Save/Cancel focus and live feedback pass. UI regressions check focus after refresh and server errors. Tested browser states have zero axe violations. |
+| Responsive/zoom | Three standard viewports, 320px, CSS reflow and native page scale pass their automated checks. |
+
+Start/complete/cancel confirmations, terminal transition history and new Ticket workflow gates remain #76/#77. This evidence does not claim those unavailable endpoints. Commands, regression totals and separate code-review results are in [the #75 verification record](../../docs/lab-04/tests.md#issue-75-verification--2026-10-04).
+
+## Issue #76 visual evidence
+
+The lifecycle browser run passed **3/3 cases** on 2026-10-11 at desktop (1440 × 900), tablet (768 × 1024) and mobile (390 × 844). It captured **19 PNGs** from clean source commit `a71b4588ca9a5763975005115912ba76f0d4803a` on `feature/76-action-lifecycle`. The evidence commit follows this source commit.
+
+Manifests: [desktop](screenshots/actions-taken/lifecycle/manifest-desktop.json), [tablet](screenshots/actions-taken/lifecycle/manifest-tablet.json), [mobile](screenshots/actions-taken/lifecycle/manifest-mobile.json). All three report `sourceDirty: false`. Each entry records the source SHA, command, UTC capture time, state, role, viewport/zoom, natural-state provenance and STYLE-01/VIS-01 links.
+
+| State | Filename | Provenance |
+| --- | --- | --- |
+| Planned action with Start and Cancel | `action-start-ready-{viewport}.png` | Natural staff view after real create and assignment. |
+| Completion confirmation | `action-complete-confirmation-{viewport}.png` | Natural staff view with a saved Result. |
+| Cancellation confirmation | `action-cancel-confirmation-{viewport}.png` | Natural staff view before a Planned action is cancelled. |
+| Terminal event history | `action-terminal-history-{viewport}.png` | Natural Requester read after completion and cancellation. |
+| 320 CSS pixels and 200% CSS reflow | `action-lifecycle-minimum-width-320-css-pixels-{viewport}.png`, `action-lifecycle-css-reflow-200-percent-{viewport}.png` | Completion dialog at 320 CSS pixels and the 720 CSS-pixel reflow proxy. |
+| Native Chromium page scale | `action-lifecycle-native-page-scale-200-percent-desktop.png` | Desktop Chromium page scale 2. This check is separate from CSS reflow. |
+
+### Visual checklist — Pass for #76
+
+All four lifecycle states were inspected at all three standard viewports. The narrow-width, reflow and native-scale captures were also inspected.
+
+| Check | Observed result |
+| --- | --- |
+| Zen Green controls/layout | Start, Complete and Cancel controls match existing Ticket Detail cards. Confirmation dialogs show the requested action and keep both choices visible. |
+| Wrapping and spacing | Action text, Result, actor and time fit their cards. Reviewed views show no clipping, overlap or page-wide horizontal overflow. |
+| Shared/private boundary | Requester reads retain terminal events with actor and time. Requester screens have no lifecycle or edit controls and no Internal Notes. |
+| Keyboard/accessibility | Dialog focus, Escape, confirmation focus and Requester history pass. The three E2E projects report zero axe violations. |
+| Responsive/zoom | Desktop, tablet, mobile, 320 CSS pixels, 200% CSS reflow and desktop native page scale 2 pass automated overflow checks. |
+
+The run command and complete check results are in the [#76 verification record](../../docs/lab-04/tests.md#issue-76-verification--2026-10-11).
+
+## Issue #78 visual evidence
+
+The Requester dashboard journey captures the populated dashboard, zero/empty state, loading state, forbidden response, recoverable API failure, and recent-list drill-down at desktop (1440×900), tablet (768×1024), and mobile (390×844). Each screenshot is stored once in `screenshots/requester-dashboard/`; its viewport manifest records the scenario, Requester role, natural or intercepted source, UTC capture time, command, source branch and commit, and STYLE-02/VIS-02 review links.
+
+The final capture contains 21 PNGs from clean source [`b73908c31c068b37a71592dba9e40870c57d18ac`](https://github.com/beambeambeam/toktickit/commit/b73908c31c068b37a71592dba9e40870c57d18ac). All three viewport manifests report `sourceDirty: false`; each PNG has one provenance entry. The evidence commit follows this source commit.
+
+The desktop manifest also records the 320 CSS-pixel check, a 720 CSS-pixel reflow proxy for 200% zoom, and native Chromium page scale 2. These are separate viewport checks. The browser journey checks page overflow at each size, keyboard focus, axe on the dashboard and My Tickets list, exact dashboard-to-list bounds, and Ticket Detail navigation.
+
+### Visual checklist — Pass for #78
+
+| Check | Observed result |
+| --- | --- |
+| Zen Green layout | The four metric cards and two recent-preview cards align on desktop; the grid reduces to two columns on tablet and one column on mobile. |
+| Wrapping and spacing | Ticket summaries, identifiers, bounds, and Bangkok timestamps wrap inside their cards. No clipping, overlap, or page-wide horizontal overflow appears at the reviewed sizes. |
+| Ownership boundary | Dashboard previews and the drill-down show the signed-in Requester’s Tickets. The foreign Requester screenshot shows only that account’s own data. No Internal Note text appears. |
+| Empty and failure states | Zero counts remain visible. Empty previews, loading, forbidden, and network-failure feedback have clear text and available recovery links or buttons. |
+| Accessibility | Dashboard and My Tickets axe checks report zero violations. Keyboard focus is visible on the dashboard. Labels and status/priority text remain visible with color. |
+| Responsive and zoom | Desktop, tablet, mobile, 320px, 720px reflow proxy, and native page scale 2 checks pass. |
+
+The full Ticket lifecycle and staff dashboard evidence remains under #76/#79. These Requester captures do not claim those sibling screens.

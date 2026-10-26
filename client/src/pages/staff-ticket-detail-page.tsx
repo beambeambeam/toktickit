@@ -18,7 +18,12 @@ import {
   updateStaffTicketOwner,
   updateStaffTicketStatus,
 } from "@/api/staff";
-import { staffOwnersQueryOptions } from "@/api/staff-query-options";
+import {
+  invalidateStaffWorkQueries,
+  staffOwnersQueryOptions,
+} from "@/api/staff-query-options";
+import type { UserRole } from "@/api/users";
+import { ActionsTakenSection } from "@/components/actions-taken-section";
 import {
   AccessDenied,
   AppShell,
@@ -30,6 +35,7 @@ import { Icon } from "@/components/icon";
 import { InternalNotesSection } from "@/components/internal-notes-section";
 import { PublicCommentsSection } from "@/components/public-comments-section";
 import { StatusBadge } from "@/components/status-badge";
+import { TicketStatusHistorySection } from "@/components/ticket-status-history-section";
 import { useAuth } from "@/context/auth";
 import { cn } from "@/lib/class-names";
 import { isRequestedPriority } from "@/lib/ticket-priorities";
@@ -59,16 +65,21 @@ const getDetailErrorMessage = (error: unknown): string => {
   return "This Ticket could not be loaded. Try again.";
 };
 
+const getOwnerQueryError = (error: unknown): Error =>
+  error instanceof Error
+    ? error
+    : new Error("Unable to load eligible assignees.");
+
 const getStatusConfirmationMessage = (status: CurrentStatus): string => {
   if (status === "Resolved") {
-    return "This formally marks the Ticket resolved. No Actions Taken entry is required. Staff can reopen it if the problem returns.";
+    return "This formally marks the Ticket resolved. Resolving requires at least one Completed Action Taken, no Planned or In Progress Action Taken, and an active eligible Ticket Owner. Staff can reopen it if the problem returns.";
   }
 
   if (status === "Closed") {
     return "This closes the resolved Ticket. Closed Tickets have no further workflow transitions.";
   }
 
-  return "This cancels the Ticket. Cancelled Tickets have no further workflow transitions.";
+  return "Complete or cancel every Planned and In Progress Action Taken before cancelling this Ticket. Cancelled Tickets have no further workflow transitions.";
 };
 
 interface StatusConfirmation {
@@ -76,14 +87,53 @@ interface StatusConfirmation {
   version: number;
 }
 
+const isStaffRole = (role: UserRole | undefined): boolean =>
+  role === "IT Staff" || role === "Administrator";
+
+type ResolutionReasonCode =
+  | "NO_COMPLETED_ACTION"
+  | "OWNER_INELIGIBLE"
+  | "OWNER_REQUIRED"
+  | "PENDING_ACTIONS";
+
+const ownerRequirementLabel =
+  "Assign an active eligible IT Staff or Administrator Ticket Owner.";
+
+const resolutionReasonLabels: Record<ResolutionReasonCode, string> = {
+  NO_COMPLETED_ACTION: "Record at least one Completed Action Taken.",
+  OWNER_INELIGIBLE: ownerRequirementLabel,
+  OWNER_REQUIRED: ownerRequirementLabel,
+  PENDING_ACTIONS:
+    "Complete or cancel every Planned and In Progress Action Taken.",
+};
+
+const isResolutionReasonCode = (
+  reason: unknown
+): reason is ResolutionReasonCode =>
+  typeof reason === "string" && Object.hasOwn(resolutionReasonLabels, reason);
+
+const getResolutionReasons = (
+  error: ApiRequestError
+): ResolutionReasonCode[] => {
+  const reasons = error.details?.reasons;
+
+  if (error.code !== "RESOLUTION_GATE_FAILED" || !Array.isArray(reasons)) {
+    return [];
+  }
+
+  return reasons.filter(isResolutionReasonCode);
+};
+
 const focusableDialogSelector =
   'button:not([disabled]), [href], input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
 // oxlint-disable-next-line complexity -- this page renders documented read-only detail and attachment states.
 const StaffTicketDetailContent = ({
+  focusActionId,
   onAccessError,
   ticketId,
 }: {
+  focusActionId: number | undefined;
   onAccessError: (error: ApiRequestError) => void;
   ticketId: string;
 }) => {
@@ -94,16 +144,15 @@ const StaffTicketDetailContent = ({
     /^[1-9]\d*$/u.test(ticketId) &&
     Number.isSafeInteger(numericTicketId) &&
     numericTicketId <= 2_147_483_647;
+  const isStaff = isStaffRole(user?.role);
+  const canLoadStaffData = isStaff && user !== null && !user.mustChangePassword;
   const ticketQuery = useQuery({
     ...ticketQueryOptions(numericTicketId, user?.id ?? 0),
-    enabled:
-      (user?.role === "IT Staff" || user?.role === "Administrator") &&
-      !user.mustChangePassword &&
-      hasValidTicketId,
+    enabled: canLoadStaffData && hasValidTicketId,
   });
   const ownersQuery = useQuery({
     ...staffOwnersQueryOptions(),
-    enabled: user?.role === "IT Staff" && !user.mustChangePassword,
+    enabled: canLoadStaffData,
   });
   const [operationError, setOperationError] = useState<string | null>(null);
   const [operationSuccess, setOperationSuccess] = useState<string | null>(null);
@@ -112,6 +161,9 @@ const StaffTicketDetailContent = ({
     null
   );
   const [statusError, setStatusError] = useState<string | null>(null);
+  const [statusReasons, setStatusReasons] = useState<ResolutionReasonCode[]>(
+    []
+  );
   const [statusSuccess, setStatusSuccess] = useState<string | null>(null);
   const [selectedStatus, setSelectedStatus] = useState<CurrentStatus | "">("");
   const [statusConfirmation, setStatusConfirmation] =
@@ -119,7 +171,9 @@ const StaffTicketDetailContent = ({
   const statusTriggerRef = useRef<HTMLButtonElement | null>(null);
   const statusDialogRef = useRef<HTMLDivElement | null>(null);
   const statusCancelRef = useRef<HTMLButtonElement | null>(null);
+  const statusSelectRef = useRef<HTMLSelectElement | null>(null);
   const wasStatusConfirmationOpen = useRef(false);
+  const shouldRestoreStatusFocus = useRef(false);
 
   useEffect(() => {
     let cleanup: (() => void) | undefined;
@@ -127,7 +181,7 @@ const StaffTicketDetailContent = ({
     if (statusConfirmation === null) {
       if (wasStatusConfirmationOpen.current) {
         wasStatusConfirmationOpen.current = false;
-        statusTriggerRef.current?.focus();
+        shouldRestoreStatusFocus.current = true;
       }
     } else {
       wasStatusConfirmationOpen.current = true;
@@ -197,7 +251,10 @@ const StaffTicketDetailContent = ({
       ["ticket", user?.id ?? 0, numericTicketId],
       nextTicket
     );
-    void queryClient.invalidateQueries({ queryKey: ["staff-tickets"] });
+    void invalidateStaffWorkQueries(queryClient);
+    void queryClient.invalidateQueries({
+      queryKey: ["ticket-status-history", numericTicketId],
+    });
     setOperationError(null);
     setOperationSuccess(message);
     setSelectedOwnerId(nextTicket.owner?.id.toString() ?? "");
@@ -232,6 +289,9 @@ const StaffTicketDetailContent = ({
           ? error.message
           : "Unable to update the Ticket status."
       );
+      setStatusReasons(
+        error instanceof ApiRequestError ? getResolutionReasons(error) : []
+      );
       if (error instanceof ApiRequestError && error.status === 409) {
         setSelectedStatus("");
         void ticketQuery.refetch();
@@ -242,12 +302,36 @@ const StaffTicketDetailContent = ({
         ["ticket", user?.id ?? 0, numericTicketId],
         nextTicket
       );
-      void queryClient.invalidateQueries({ queryKey: ["staff-tickets"] });
+      void invalidateStaffWorkQueries(queryClient);
+      void queryClient.invalidateQueries({
+        queryKey: ["ticket-status-history", numericTicketId],
+      });
       setSelectedStatus("");
       setStatusError(null);
+      setStatusReasons([]);
       setStatusSuccess(`Ticket status changed to ${nextTicket.currentStatus}.`);
     },
   });
+
+  useEffect(() => {
+    if (
+      !shouldRestoreStatusFocus.current ||
+      statusConfirmation !== null ||
+      statusMutation.isPending
+    ) {
+      return;
+    }
+
+    shouldRestoreStatusFocus.current = false;
+    const trigger = statusTriggerRef.current;
+
+    if (trigger !== null && !trigger.disabled) {
+      trigger.focus();
+      return;
+    }
+
+    statusSelectRef.current?.focus();
+  }, [selectedStatus, statusConfirmation, statusMutation.isPending]);
 
   const claimMutation = useMutation({
     mutationFn: async (version: number) =>
@@ -306,7 +390,7 @@ const StaffTicketDetailContent = ({
     return <AuthRequired />;
   }
 
-  if (user.role !== "IT Staff" && user.role !== "Administrator") {
+  if (!isStaff) {
     return <AccessDenied />;
   }
 
@@ -315,13 +399,14 @@ const StaffTicketDetailContent = ({
   const ownerValue = selectedOwnerId ?? ticket?.owner?.id.toString() ?? "";
   const itPriorityValue = selectedItPriority ?? ticket?.itPriority ?? "Low";
   const canOperate =
-    user.role === "IT Staff" &&
+    isStaff &&
     ticket !== undefined &&
     !["Resolved", "Closed", "Cancelled"].includes(ticket.currentStatus);
   const operationBusy =
     claimMutation.isPending ||
     ownerMutation.isPending ||
     priorityMutation.isPending;
+  const showStatusReasons = statusError !== null && statusReasons.length > 0;
 
   const download = async (attachmentId: number) => {
     try {
@@ -362,8 +447,8 @@ const StaffTicketDetailContent = ({
     >
       <div className="page-actions">
         <p className="page-description">
-          Submitted Ticket data and evidence stay read-only. IT Staff can manage
-          workflow, ownership, and IT Priority below.
+          Submitted Ticket data and evidence stay read-only. IT Staff and
+          Administrators can manage workflow, ownership, and IT Priority below.
         </p>
         <Link className="button button-secondary" to="/staff/tickets">
           <Icon icon={ArrowLeft01Icon} /> Back to Ticket Queue
@@ -473,7 +558,24 @@ const StaffTicketDetailContent = ({
             </div>
           </section>
 
-          {user.role === "IT Staff" ? (
+          <ActionsTakenSection
+            currentStatus={ticket.currentStatus}
+            defaultAssigneeId={user.id}
+            focusActionId={focusActionId}
+            onRefreshTicket={async () => await ticketQuery.refetch()}
+            onRetryAssignees={async () => await ownersQuery.refetch()}
+            owners={ownersQuery.data ?? []}
+            ownersError={
+              ownersQuery.isError ? getOwnerQueryError(ownersQuery.error) : null
+            }
+            ownersLoading={ownersQuery.isPending}
+            principalId={user.id}
+            principalRole={user.role}
+            ticketId={numericTicketId}
+            ticketVersion={ticket.version}
+          />
+
+          {isStaff ? (
             <>
               <section
                 aria-labelledby="staff-status-heading"
@@ -501,6 +603,7 @@ const StaffTicketDetailContent = ({
                       <select
                         disabled={statusMutation.isPending}
                         id="ticket-next-status"
+                        ref={statusSelectRef}
                         onChange={(event) => {
                           if (isCurrentStatus(event.target.value)) {
                             setSelectedStatus(event.target.value);
@@ -545,6 +648,7 @@ const StaffTicketDetailContent = ({
 
                           setStatusError(null);
                           setStatusSuccess(null);
+                          shouldRestoreStatusFocus.current = true;
                           statusMutation.mutate({
                             currentStatus: selectedStatus,
                             version: ticket.version,
@@ -573,6 +677,16 @@ const StaffTicketDetailContent = ({
                       {statusError}
                     </span>
                   )}
+                  {showStatusReasons ? (
+                    <ul
+                      aria-label="Resolution requirements not met"
+                      className="list-disc pl-5 error-message"
+                    >
+                      {statusReasons.map((reason) => (
+                        <li key={reason}>{resolutionReasonLabels[reason]}</li>
+                      ))}
+                    </ul>
+                  ) : null}
                 </div>
               </section>
 
@@ -776,15 +890,17 @@ const StaffTicketDetailContent = ({
             </section>
           ) : null}
 
+          <TicketStatusHistorySection ticketId={numericTicketId} />
+
           <PublicCommentsSection
-            canPost={user.role === "IT Staff"}
+            canPost={isStaff}
             currentStatus={ticket.currentStatus}
             principalId={user.id}
             ticketId={numericTicketId}
           />
 
           <InternalNotesSection
-            canPost={user.role === "IT Staff"}
+            canPost={isStaff}
             currentStatus={ticket.currentStatus}
             principalId={user.id}
             ticketId={numericTicketId}
@@ -947,7 +1063,13 @@ const StaffTicketDetailContent = ({
   );
 };
 
-export const StaffTicketDetailPage = ({ ticketId }: { ticketId: string }) => {
+export const StaffTicketDetailPage = ({
+  focusActionId,
+  ticketId,
+}: {
+  focusActionId?: number;
+  ticketId: string;
+}) => {
   const { refetchAuth, user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -980,12 +1102,13 @@ export const StaffTicketDetailPage = ({ ticketId }: { ticketId: string }) => {
     return <AuthRequired />;
   }
 
-  if (user.role !== "IT Staff" && user.role !== "Administrator") {
+  if (!isStaffRole(user.role)) {
     return <AccessDenied />;
   }
 
   return (
     <StaffTicketDetailContent
+      focusActionId={focusActionId}
       key={user.id}
       onAccessError={setAccessError}
       ticketId={ticketId}

@@ -11,6 +11,7 @@ import type { PropsWithChildren } from "react";
 import type { AuthUser } from "@/api/auth";
 import { Icon } from "@/components/icon";
 import { useAuth } from "@/context/auth";
+import { isStaffRole } from "@/lib/staff-roles";
 
 type AppShellProps = PropsWithChildren<{
   allowedRoles?: readonly AuthUser["role"][];
@@ -86,19 +87,8 @@ export const RequesterAccessDenied = () => (
   <AccessDeniedMessage message="This client currently provides the Requester workspace. Your account role cannot open this page." />
 );
 
-export const homeRouteForRole = (
-  role: AuthUser["role"]
-): "/" | "/tickets" | "/staff/tickets" | "/users" => {
-  if (role === "Requester") {
-    return "/tickets";
-  }
-
-  if (role === "Administrator") {
-    return "/users";
-  }
-
-  return "/staff/tickets";
-};
+// Every role lands on Dashboard; DashboardPage selects the role-specific view.
+export const homeRouteForRole = (): "/dashboard" => "/dashboard";
 
 export const AppShell = ({
   allowedRoles,
@@ -139,8 +129,7 @@ export const AppShell = ({
     return <AccessDenied />;
   }
 
-  const isQueueReader =
-    user.role === "IT Staff" || user.role === "Administrator";
+  const isQueueReader = isStaffRole(user.role);
 
   const handleLogout = async () => {
     setLogoutError(null);
@@ -166,25 +155,41 @@ export const AppShell = ({
     <div className="app-shell">
       <header className="app-header">
         <div className="app-header-inner">
-          <Link className="brand" to={homeRouteForRole(user.role)}>
+          <Link className="brand" to={homeRouteForRole()}>
             <span aria-hidden="true" className="brand-mark">
               <Icon icon={Clock01Icon} />
             </span>
             <span>TokTickIT</span>
           </Link>
           <nav aria-label="Primary navigation" className="desktop-nav">
+            <Link
+              activeProps={{ className: "nav-link active" }}
+              className="nav-link"
+              to="/dashboard"
+            >
+              Dashboard
+            </Link>
             {isQueueReader ? (
-              <Link
-                activeOptions={{ exact: false }}
-                activeProps={{ className: "nav-link active" }}
-                className="nav-link"
-                to="/staff/tickets"
-              >
-                <span aria-hidden="true">
-                  <Icon icon={Ticket01Icon} />
-                </span>{" "}
-                Ticket Queue
-              </Link>
+              <>
+                <Link
+                  activeProps={{ className: "nav-link active" }}
+                  className="nav-link"
+                  to="/staff/actions"
+                >
+                  My Actions
+                </Link>
+                <Link
+                  activeOptions={{ exact: false }}
+                  activeProps={{ className: "nav-link active" }}
+                  className="nav-link"
+                  to="/staff/tickets"
+                >
+                  <span aria-hidden="true">
+                    <Icon icon={Ticket01Icon} />
+                  </span>{" "}
+                  Ticket Queue
+                </Link>
+              </>
             ) : null}
             {user.role === "Requester" ? (
               <>
@@ -257,19 +262,43 @@ export const AppShell = ({
           <details className="mobile-nav">
             <summary aria-label="Open navigation">Menu</summary>
             <nav aria-label="Mobile navigation">
+              <Link activeProps={{ className: "active" }} to="/dashboard">
+                Dashboard
+              </Link>
               {isQueueReader ? (
-                <Link to="/staff/tickets">Ticket Queue</Link>
+                <>
+                  <Link
+                    activeProps={{ className: "active" }}
+                    to="/staff/actions"
+                  >
+                    My Actions
+                  </Link>
+                  <Link
+                    activeProps={{ className: "active" }}
+                    to="/staff/tickets"
+                  >
+                    Ticket Queue
+                  </Link>
+                </>
               ) : null}
               {user.role === "Requester" ? (
                 <>
-                  <Link to="/tickets">My Tickets</Link>
-                  <Link to="/create">Create Ticket</Link>
+                  <Link activeProps={{ className: "active" }} to="/tickets">
+                    My Tickets
+                  </Link>
+                  <Link activeProps={{ className: "active" }} to="/create">
+                    Create Ticket
+                  </Link>
                 </>
               ) : null}
               {user.role === "Administrator" ? (
-                <Link to="/users">User Management</Link>
+                <Link activeProps={{ className: "active" }} to="/users">
+                  User Management
+                </Link>
               ) : null}
-              <Link to="/change-password">Change Password</Link>
+              <Link activeProps={{ className: "active" }} to="/change-password">
+                Change Password
+              </Link>
               <button
                 disabled={isLoggingOut}
                 onClick={() => void handleLogout()}

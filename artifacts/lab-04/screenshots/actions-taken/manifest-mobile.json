@@ -1,0 +1,332 @@
+{
+  "branch": "feature/74-create-view-actions-taken",
+  "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+  "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
+  "files": [
+    {
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:45.283Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
+      "path": "artifacts/lab-04/screenshots/actions-taken/actions-taken-loading-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Actions Taken loading state",
+      "stateSource": "intercepted",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 390×844; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:47.567Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
+      "path": "artifacts/lab-04/screenshots/actions-taken/actions-taken-error-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Actions Taken safe 503 failure with retry",
+      "stateSource": "intercepted",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 390×844; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:49.005Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
+      "path": "artifacts/lab-04/screenshots/actions-taken/actions-taken-forbidden-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Actions Taken forbidden response with retry",
+      "stateSource": "intercepted",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 390×844; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:50.430Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
+      "path": "artifacts/lab-04/screenshots/actions-taken/actions-taken-not-found-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Actions Taken not-found response with retry",
+      "stateSource": "intercepted",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 390×844; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:52.129Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
+      "path": "artifacts/lab-04/screenshots/actions-taken/requester-actions-empty-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "Requester",
+      "scenario": "Requester Ticket Detail with no Actions Taken",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 390×844; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:57.271Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
+      "path": "artifacts/lab-04/screenshots/actions-taken/action-create-validation-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Create form with conditional Follow-up Note validation and keyboard focus",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 390×844; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:50:58.643Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
+      "path": "artifacts/lab-04/screenshots/actions-taken/action-create-form-minimum-width-320-css-pixels-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Create form at 320 CSS pixels with conditional validation",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 320
+      },
+      "zoom": {
+        "mode": "minimum-width-320-css-pixels",
+        "result": "320 CSS-pixel minimum-width check passed with no page overflow; observed viewport 320×844; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:51:00.145Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
+      "path": "artifacts/lab-04/screenshots/actions-taken/action-create-form-css-reflow-200-percent-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Create form at the 200% CSS reflow proxy",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 450,
+        "name": "mobile",
+        "width": 720
+      },
+      "zoom": {
+        "mode": "css-reflow-200-percent",
+        "result": "720 CSS-pixel reflow proxy passed with no page overflow; observed viewport 720×450; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:51:04.399Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
+      "path": "artifacts/lab-04/screenshots/actions-taken/staff-actions-populated-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "Administrator",
+      "scenario": "Staff/Admin action list with multiple actions and attribution",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 390×844; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:51:05.952Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
+      "path": "artifacts/lab-04/screenshots/actions-taken/requester-actions-populated-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "Requester",
+      "scenario": "Requester Ticket Detail with multiple Actions Taken and attribution",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 390×844; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:51:06.966Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
+      "path": "artifacts/lab-04/screenshots/actions-taken/requester-actions-populated-minimum-width-320-css-pixels-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "Requester",
+      "scenario": "Requester populated Actions Taken at 320 CSS pixels",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 320
+      },
+      "zoom": {
+        "mode": "minimum-width-320-css-pixels",
+        "result": "320 CSS-pixel minimum-width check passed with no page overflow; observed viewport 320×844; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:51:07.922Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
+      "path": "artifacts/lab-04/screenshots/actions-taken/requester-actions-populated-css-reflow-200-percent-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "Requester",
+      "scenario": "Requester populated Actions Taken at the 200% CSS reflow proxy",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 450,
+        "name": "mobile",
+        "width": 720
+      },
+      "zoom": {
+        "mode": "css-reflow-200-percent",
+        "result": "720 CSS-pixel reflow proxy passed with no page overflow; observed viewport 720×450; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:51:09.872Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
+      "path": "artifacts/lab-04/screenshots/actions-taken/action-create-uncertain-draft-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Uncertain action create retains a recoverable draft",
+      "stateSource": "intercepted",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 390×844; visualViewport.scale=1"
+      }
+    },
+    {
+      "branch": "feature/74-create-view-actions-taken",
+      "capturedAt": "2026-10-03T14:51:11.589Z",
+      "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/actions-taken-flow.spec.ts",
+      "commit": "6dd2571551464a89c546236c63cb8b43a3e6233d",
+      "path": "artifacts/lab-04/screenshots/actions-taken/action-conflict-draft-mobile.png",
+      "review": {
+        "style": "docs/lab-04/tests.md#style-01",
+        "visual": "docs/lab-04/tests.md#vis-01"
+      },
+      "role": "IT Staff",
+      "scenario": "Version conflict preserves the recoverable action draft",
+      "stateSource": "natural",
+      "viewport": {
+        "height": 844,
+        "name": "mobile",
+        "width": 390
+      },
+      "zoom": {
+        "mode": "default",
+        "result": "Default project viewport; observed viewport 390×844; visualViewport.scale=1"
+      }
+    }
+  ],
+  "generatedAt": "2026-10-03T14:50:43.934Z",
+  "project": "mobile-chromium",
+  "sourceDirty": false
+}

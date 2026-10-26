@@ -50,7 +50,6 @@ describe("Lab 3 Ticket ownership and IT Priority operations", () => {
   let requester: AuthenticatedFixtureSession;
   let staff: AuthenticatedFixtureSession;
   let secondStaff: AuthenticatedFixtureSession;
-  let admin: AuthenticatedFixtureSession;
   let requesterId: number;
   let staffId: number;
   let secondStaffId: number;
@@ -145,7 +144,6 @@ describe("Lab 3 Ticket ownership and IT Priority operations", () => {
     requester = await activeFixture.authenticate(requesterEmail);
     staff = await activeFixture.authenticate(staffEmail);
     secondStaff = await activeFixture.authenticate(secondStaffEmail);
-    admin = await activeFixture.authenticate(adminEmail);
   });
 
   afterAll(async () => {
@@ -227,12 +225,12 @@ describe("Lab 3 Ticket ownership and IT Priority operations", () => {
       .expect(403);
     assert.equal(errorCode(requesterResponse), "FORBIDDEN");
 
-    const adminResponse = await request(activeFixture.app)
+    const requesterPriorityResponse = await request(activeFixture.app)
       .patch(`/api/tickets/${ticket.id}/it-priority`)
-      .set(authHeaders(admin))
+      .set(authHeaders(requester))
       .send({ itPriority: "High", version: 1 })
       .expect(403);
-    assert.equal(errorCode(adminResponse), "FORBIDDEN");
+    assert.equal(errorCode(requesterPriorityResponse), "FORBIDDEN");
 
     const invalidOwner = await request(activeFixture.app)
       .put(`/api/tickets/${ticket.id}/owner`)
@@ -287,6 +285,39 @@ describe("Lab 3 Ticket ownership and IT Priority operations", () => {
       where: { id: ticket.id },
     });
     assert.deepEqual(stored, { itPriority: "Low", ownerId: null, version: 1 });
+  });
+
+  it("rejects a Ticket Owner who must change password, in the picker and as target", async () => {
+    const activeFixture = getFixture();
+    const ticket = await createTicket({
+      ticketNumber: "TKT-20260916-OWN006",
+    });
+    const { findEligibleOwners } =
+      await import("../../src/repositories/tickets.js");
+
+    await activeFixture.prisma.user.update({
+      data: { mustChangePassword: true },
+      where: { id: secondStaffId },
+    });
+
+    const owners = await findEligibleOwners();
+    assert.equal(
+      owners.some((owner) => owner.id === secondStaffId),
+      false
+    );
+
+    const response = await request(activeFixture.app)
+      .put(`/api/tickets/${ticket.id}/owner`)
+      .set(authHeaders(staff))
+      .send({ ownerId: secondStaffId, version: 1 })
+      .expect(409);
+    assert.equal(errorCode(response), "OWNER_INELIGIBLE");
+
+    const stored = await activeFixture.prisma.ticket.findUniqueOrThrow({
+      select: { ownerId: true, version: true },
+      where: { id: ticket.id },
+    });
+    assert.deepEqual(stored, { ownerId: null, version: 1 });
   });
 
   it("allows one winner when two Staff members claim the same Ticket", async () => {

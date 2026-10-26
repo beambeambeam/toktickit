@@ -3,8 +3,8 @@
 import { type InfiniteData, infiniteQueryOptions, queryOptions, type UseMutationOptions } from '@tanstack/react-query';
 
 import { client } from '../client.gen';
-import { claimApiTicket, createApiTicket, createApiTicketAttachments, createApiTicketComment, createApiTicketInternalNote, createApiUser, getApiAuthMe, getApiCategories, getApiHealth, getApiRelatedSystems, getApiStaffOwners, getApiStaffTickets, getApiTicket, getApiTicketAttachmentContent, getApiTicketAttachments, getApiTicketComments, getApiTicketInternalNotes, getApiTickets, getApiUser, getApiUsers, indicateApiTicketResolution, type Options, postApiAuthChangePassword, postApiAuthLogin, postApiAuthLogout, removeApiTicketAttachment, resetApiUserInitialPassword, updateApiTicketItPriority, updateApiTicketOwner, updateApiTicketStatus, updateApiUser } from '../sdk.gen';
-import type { ClaimApiTicketData, ClaimApiTicketError, ClaimApiTicketResponse, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsError, CreateApiTicketAttachmentsResponse, CreateApiTicketCommentData, CreateApiTicketCommentError, CreateApiTicketCommentResponse, CreateApiTicketData, CreateApiTicketError, CreateApiTicketInternalNoteData, CreateApiTicketInternalNoteError, CreateApiTicketInternalNoteResponse, CreateApiTicketResponse, CreateApiUserData, CreateApiUserError, CreateApiUserResponse, GetApiAuthMeData, GetApiAuthMeError, GetApiAuthMeResponse, GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse, GetApiRelatedSystemsData, GetApiRelatedSystemsError, GetApiRelatedSystemsResponse, GetApiStaffOwnersData, GetApiStaffOwnersError, GetApiStaffOwnersResponse, GetApiStaffTicketsData, GetApiStaffTicketsError, GetApiStaffTicketsResponse, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentsData, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, GetApiTicketCommentsData, GetApiTicketCommentsError, GetApiTicketCommentsResponse, GetApiTicketData, GetApiTicketError, GetApiTicketInternalNotesData, GetApiTicketInternalNotesError, GetApiTicketInternalNotesResponse, GetApiTicketResponse, GetApiTicketsData, GetApiTicketsError, GetApiTicketsResponse, GetApiUserData, GetApiUserError, GetApiUserResponse, GetApiUsersData, GetApiUsersError, GetApiUsersResponse, IndicateApiTicketResolutionData, IndicateApiTicketResolutionError, IndicateApiTicketResolutionResponse, PostApiAuthChangePasswordData, PostApiAuthChangePasswordError, PostApiAuthChangePasswordResponse, PostApiAuthLoginData, PostApiAuthLoginError, PostApiAuthLoginResponse, PostApiAuthLogoutData, PostApiAuthLogoutError, PostApiAuthLogoutResponse, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentError, RemoveApiTicketAttachmentResponse, ResetApiUserInitialPasswordData, ResetApiUserInitialPasswordError, ResetApiUserInitialPasswordResponse, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityError, UpdateApiTicketItPriorityResponse, UpdateApiTicketOwnerData, UpdateApiTicketOwnerError, UpdateApiTicketOwnerResponse, UpdateApiTicketStatusData, UpdateApiTicketStatusError, UpdateApiTicketStatusResponse, UpdateApiUserData, UpdateApiUserError, UpdateApiUserResponse } from '../types.gen';
+import { claimApiTicket, createApiTicket, createApiTicketAction, createApiTicketAttachments, createApiTicketComment, createApiTicketInternalNote, createApiUser, getApiAuthMe, getApiCategories, getApiHealth, getApiRelatedSystems, getApiRequesterDashboard, getApiStaffActions, getApiStaffDashboard, getApiStaffOwners, getApiStaffTickets, getApiTicket, getApiTicketActionHistory, getApiTicketActions, getApiTicketAttachmentContent, getApiTicketAttachments, getApiTicketComments, getApiTicketInternalNotes, getApiTickets, getApiTicketStatusHistory, getApiUser, getApiUsers, indicateApiTicketResolution, type Options, postApiAuthChangePassword, postApiAuthLogin, postApiAuthLogout, postApiTicketActionTransition, putApiTicketAction, removeApiTicketAttachment, resetApiUserInitialPassword, updateApiTicketItPriority, updateApiTicketOwner, updateApiTicketStatus, updateApiUser } from '../sdk.gen';
+import type { ClaimApiTicketData, ClaimApiTicketError, ClaimApiTicketResponse, CreateApiTicketActionData, CreateApiTicketActionError, CreateApiTicketActionResponse, CreateApiTicketAttachmentsData, CreateApiTicketAttachmentsError, CreateApiTicketAttachmentsResponse, CreateApiTicketCommentData, CreateApiTicketCommentError, CreateApiTicketCommentResponse, CreateApiTicketData, CreateApiTicketError, CreateApiTicketInternalNoteData, CreateApiTicketInternalNoteError, CreateApiTicketInternalNoteResponse, CreateApiTicketResponse, CreateApiUserData, CreateApiUserError, CreateApiUserResponse, GetApiAuthMeData, GetApiAuthMeError, GetApiAuthMeResponse, GetApiCategoriesData, GetApiCategoriesError, GetApiCategoriesResponse, GetApiHealthData, GetApiHealthError, GetApiHealthResponse, GetApiRelatedSystemsData, GetApiRelatedSystemsError, GetApiRelatedSystemsResponse, GetApiRequesterDashboardData, GetApiRequesterDashboardError, GetApiRequesterDashboardResponse, GetApiStaffActionsData, GetApiStaffActionsError, GetApiStaffActionsResponse, GetApiStaffDashboardData, GetApiStaffDashboardError, GetApiStaffDashboardResponse, GetApiStaffOwnersData, GetApiStaffOwnersError, GetApiStaffOwnersResponse, GetApiStaffTicketsData, GetApiStaffTicketsError, GetApiStaffTicketsResponse, GetApiTicketActionHistoryData, GetApiTicketActionHistoryError, GetApiTicketActionHistoryResponse, GetApiTicketActionsData, GetApiTicketActionsError, GetApiTicketActionsResponse, GetApiTicketAttachmentContentData, GetApiTicketAttachmentContentError, GetApiTicketAttachmentContentResponse, GetApiTicketAttachmentsData, GetApiTicketAttachmentsError, GetApiTicketAttachmentsResponse, GetApiTicketCommentsData, GetApiTicketCommentsError, GetApiTicketCommentsResponse, GetApiTicketData, GetApiTicketError, GetApiTicketInternalNotesData, GetApiTicketInternalNotesError, GetApiTicketInternalNotesResponse, GetApiTicketResponse, GetApiTicketsData, GetApiTicketsError, GetApiTicketsResponse, GetApiTicketStatusHistoryData, GetApiTicketStatusHistoryError, GetApiTicketStatusHistoryResponse, GetApiUserData, GetApiUserError, GetApiUserResponse, GetApiUsersData, GetApiUsersError, GetApiUsersResponse, IndicateApiTicketResolutionData, IndicateApiTicketResolutionError, IndicateApiTicketResolutionResponse, PostApiAuthChangePasswordData, PostApiAuthChangePasswordError, PostApiAuthChangePasswordResponse, PostApiAuthLoginData, PostApiAuthLoginError, PostApiAuthLoginResponse, PostApiAuthLogoutData, PostApiAuthLogoutError, PostApiAuthLogoutResponse, PostApiTicketActionTransitionData, PostApiTicketActionTransitionError, PostApiTicketActionTransitionResponse, PutApiTicketActionData, PutApiTicketActionError, PutApiTicketActionResponse, RemoveApiTicketAttachmentData, RemoveApiTicketAttachmentError, RemoveApiTicketAttachmentResponse, ResetApiUserInitialPasswordData, ResetApiUserInitialPasswordError, ResetApiUserInitialPasswordResponse, UpdateApiTicketItPriorityData, UpdateApiTicketItPriorityError, UpdateApiTicketItPriorityResponse, UpdateApiTicketOwnerData, UpdateApiTicketOwnerError, UpdateApiTicketOwnerResponse, UpdateApiTicketStatusData, UpdateApiTicketStatusError, UpdateApiTicketStatusResponse, UpdateApiUserData, UpdateApiUserError, UpdateApiUserResponse } from '../types.gen';
 
 /**
  * Sign in
@@ -155,7 +155,7 @@ export const getApiStaffTicketsQueryKey = (options?: Options<GetApiStaffTicketsD
 /**
  * List the shared Ticket Queue
  *
- * Returns operational Ticket summaries for IT Staff and read-only Administrators.
+ * Returns operational Ticket summaries for IT Staff and read-only Administrators. Scope, time bounds, and owner filters combine with the other filters.
  */
 export const getApiStaffTicketsOptions = (options?: Options<GetApiStaffTicketsData>) => queryOptions<GetApiStaffTicketsResponse, GetApiStaffTicketsError, GetApiStaffTicketsResponse, ReturnType<typeof getApiStaffTicketsQueryKey>>({
     queryFn: async ({ queryKey, signal }) => {
@@ -204,7 +204,7 @@ export const getApiStaffTicketsInfiniteQueryKey = (options?: Options<GetApiStaff
 /**
  * List the shared Ticket Queue
  *
- * Returns operational Ticket summaries for IT Staff and read-only Administrators.
+ * Returns operational Ticket summaries for IT Staff and read-only Administrators. Scope, time bounds, and owner filters combine with the other filters.
  */
 export const getApiStaffTicketsInfiniteOptions = (options?: Options<GetApiStaffTicketsData>) => {
     const opts = infiniteQueryOptions<GetApiStaffTicketsResponse, GetApiStaffTicketsError, InfiniteData<GetApiStaffTicketsResponse>, QueryKey<Options<GetApiStaffTicketsData>>, number | Pick<QueryKey<Options<GetApiStaffTicketsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
@@ -249,10 +249,295 @@ export const getApiStaffOwnersOptions = (options?: Options<GetApiStaffOwnersData
     queryKey: getApiStaffOwnersQueryKey(options)
 });
 
+export const getApiStaffDashboardQueryKey = (options?: Options<GetApiStaffDashboardData>) => createQueryKey('getApiStaffDashboard', options);
+
+/**
+ * Get the authenticated staff dashboard
+ *
+ * Returns one UTC snapshot of Ticket counts and bounded previews for IT Staff and Administrators. Accepts no query parameters.
+ */
+export const getApiStaffDashboardOptions = (options?: Options<GetApiStaffDashboardData>) => queryOptions<GetApiStaffDashboardResponse, GetApiStaffDashboardError, GetApiStaffDashboardResponse, ReturnType<typeof getApiStaffDashboardQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiStaffDashboard({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiStaffDashboardQueryKey(options)
+});
+
+export const getApiStaffActionsQueryKey = (options?: Options<GetApiStaffActionsData>) => createQueryKey('getApiStaffActions', options);
+
+/**
+ * List My Actions
+ *
+ * Returns Actions Taken assigned to the authenticated user with status Planned or In Progress on an active Ticket.
+ */
+export const getApiStaffActionsOptions = (options?: Options<GetApiStaffActionsData>) => queryOptions<GetApiStaffActionsResponse, GetApiStaffActionsError, GetApiStaffActionsResponse, ReturnType<typeof getApiStaffActionsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiStaffActions({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiStaffActionsQueryKey(options)
+});
+
+export const getApiStaffActionsInfiniteQueryKey = (options?: Options<GetApiStaffActionsData>): QueryKey<Options<GetApiStaffActionsData>> => createQueryKey('getApiStaffActions', options, true);
+
+/**
+ * List My Actions
+ *
+ * Returns Actions Taken assigned to the authenticated user with status Planned or In Progress on an active Ticket.
+ */
+export const getApiStaffActionsInfiniteOptions = (options?: Options<GetApiStaffActionsData>) => {
+    const opts = infiniteQueryOptions<GetApiStaffActionsResponse, GetApiStaffActionsError, InfiniteData<GetApiStaffActionsResponse>, QueryKey<Options<GetApiStaffActionsData>>, number | Pick<QueryKey<Options<GetApiStaffActionsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetApiStaffActionsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getApiStaffActions({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getApiStaffActionsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+export const getApiTicketActionsQueryKey = (options: Options<GetApiTicketActionsData>) => createQueryKey('getApiTicketActions', options);
+
+/**
+ * List Actions Taken for a Ticket
+ *
+ * Requesters can read Actions Taken only for their own Tickets. IT Staff and Administrators can read every Ticket's stable chronological action page.
+ */
+export const getApiTicketActionsOptions = (options: Options<GetApiTicketActionsData>) => queryOptions<GetApiTicketActionsResponse, GetApiTicketActionsError, GetApiTicketActionsResponse, ReturnType<typeof getApiTicketActionsQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiTicketActions({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiTicketActionsQueryKey(options)
+});
+
+export const getApiTicketActionsInfiniteQueryKey = (options: Options<GetApiTicketActionsData>): QueryKey<Options<GetApiTicketActionsData>> => createQueryKey('getApiTicketActions', options, true);
+
+/**
+ * List Actions Taken for a Ticket
+ *
+ * Requesters can read Actions Taken only for their own Tickets. IT Staff and Administrators can read every Ticket's stable chronological action page.
+ */
+export const getApiTicketActionsInfiniteOptions = (options: Options<GetApiTicketActionsData>) => {
+    const opts = infiniteQueryOptions<GetApiTicketActionsResponse, GetApiTicketActionsError, InfiniteData<GetApiTicketActionsResponse>, QueryKey<Options<GetApiTicketActionsData>>, number | Pick<QueryKey<Options<GetApiTicketActionsData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetApiTicketActionsData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getApiTicketActions({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getApiTicketActionsInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+/**
+ * Create a Planned Action Taken
+ *
+ * IT Staff and Administrators can create one Planned Action Taken on a Ticket that is not Resolved, Closed or Cancelled. The server supplies creator, timestamps, status, and attribution; requestId retries replay the original result with HTTP 200.
+ */
+export const createApiTicketActionMutation = (options?: Partial<Options<CreateApiTicketActionData>>): UseMutationOptions<CreateApiTicketActionResponse, CreateApiTicketActionError, Options<CreateApiTicketActionData>> => {
+    const mutationOptions: UseMutationOptions<CreateApiTicketActionResponse, CreateApiTicketActionError, Options<CreateApiTicketActionData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await createApiTicketAction({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Edit a pending Action Taken
+ *
+ * IT Staff and Administrators may replace mutable fields on a Planned or In Progress action on a nonterminal Ticket. Both versions are required. Unchanged replacements return the current result without creating history or advancing versions; changed replacements append an immutable snapshot.
+ */
+export const putApiTicketActionMutation = (options?: Partial<Options<PutApiTicketActionData>>): UseMutationOptions<PutApiTicketActionResponse, PutApiTicketActionError, Options<PutApiTicketActionData>> => {
+    const mutationOptions: UseMutationOptions<PutApiTicketActionResponse, PutApiTicketActionError, Options<PutApiTicketActionData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await putApiTicketAction({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+/**
+ * Start, complete, or cancel an Action Taken
+ *
+ * IT Staff and Administrators may apply only Planned to In Progress/Cancelled and In Progress to Completed/Cancelled transitions on nonterminal Tickets. Both current versions are required. Start attribution and terminal actor/times are set by the server; completion requires a nonblank Result, no required follow-up, and an active eligible assignee. Completion and cancellation require confirmed=true. Every successful transition appends one immutable event and advances the Action Taken and parent Ticket versions once.
+ */
+export const postApiTicketActionTransitionMutation = (options?: Partial<Options<PostApiTicketActionTransitionData>>): UseMutationOptions<PostApiTicketActionTransitionResponse, PostApiTicketActionTransitionError, Options<PostApiTicketActionTransitionData>> => {
+    const mutationOptions: UseMutationOptions<PostApiTicketActionTransitionResponse, PostApiTicketActionTransitionError, Options<PostApiTicketActionTransitionData>> = {
+        mutationFn: async (fnOptions) => {
+            const { data } = await postApiTicketActionTransition({
+                ...options,
+                ...fnOptions,
+                throwOnError: true
+            });
+            return data;
+        }
+    };
+    return mutationOptions;
+};
+
+export const getApiTicketActionHistoryQueryKey = (options: Options<GetApiTicketActionHistoryData>) => createQueryKey('getApiTicketActionHistory', options);
+
+/**
+ * Read Action Taken history
+ *
+ * Requesters may read history only for their own Tickets. IT Staff and Administrators may read history for any Ticket. Events use stable createdAt then ID order and bounded pagination.
+ */
+export const getApiTicketActionHistoryOptions = (options: Options<GetApiTicketActionHistoryData>) => queryOptions<GetApiTicketActionHistoryResponse, GetApiTicketActionHistoryError, GetApiTicketActionHistoryResponse, ReturnType<typeof getApiTicketActionHistoryQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiTicketActionHistory({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiTicketActionHistoryQueryKey(options)
+});
+
+export const getApiTicketActionHistoryInfiniteQueryKey = (options: Options<GetApiTicketActionHistoryData>): QueryKey<Options<GetApiTicketActionHistoryData>> => createQueryKey('getApiTicketActionHistory', options, true);
+
+/**
+ * Read Action Taken history
+ *
+ * Requesters may read history only for their own Tickets. IT Staff and Administrators may read history for any Ticket. Events use stable createdAt then ID order and bounded pagination.
+ */
+export const getApiTicketActionHistoryInfiniteOptions = (options: Options<GetApiTicketActionHistoryData>) => {
+    const opts = infiniteQueryOptions<GetApiTicketActionHistoryResponse, GetApiTicketActionHistoryError, InfiniteData<GetApiTicketActionHistoryResponse>, QueryKey<Options<GetApiTicketActionHistoryData>>, number | Pick<QueryKey<Options<GetApiTicketActionHistoryData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetApiTicketActionHistoryData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getApiTicketActionHistory({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getApiTicketActionHistoryInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
+export const getApiTicketStatusHistoryQueryKey = (options: Options<GetApiTicketStatusHistoryData>) => createQueryKey('getApiTicketStatusHistory', options);
+
+/**
+ * Read Ticket status history
+ *
+ * Requesters may read history only for their own Tickets. IT Staff and Administrators may read history for any Ticket. Events use stable createdAt then ID order and bounded pagination. Legacy terminal Tickets have no synthesized events.
+ */
+export const getApiTicketStatusHistoryOptions = (options: Options<GetApiTicketStatusHistoryData>) => queryOptions<GetApiTicketStatusHistoryResponse, GetApiTicketStatusHistoryError, GetApiTicketStatusHistoryResponse, ReturnType<typeof getApiTicketStatusHistoryQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiTicketStatusHistory({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiTicketStatusHistoryQueryKey(options)
+});
+
+export const getApiTicketStatusHistoryInfiniteQueryKey = (options: Options<GetApiTicketStatusHistoryData>): QueryKey<Options<GetApiTicketStatusHistoryData>> => createQueryKey('getApiTicketStatusHistory', options, true);
+
+/**
+ * Read Ticket status history
+ *
+ * Requesters may read history only for their own Tickets. IT Staff and Administrators may read history for any Ticket. Events use stable createdAt then ID order and bounded pagination. Legacy terminal Tickets have no synthesized events.
+ */
+export const getApiTicketStatusHistoryInfiniteOptions = (options: Options<GetApiTicketStatusHistoryData>) => {
+    const opts = infiniteQueryOptions<GetApiTicketStatusHistoryResponse, GetApiTicketStatusHistoryError, InfiniteData<GetApiTicketStatusHistoryResponse>, QueryKey<Options<GetApiTicketStatusHistoryData>>, number | Pick<QueryKey<Options<GetApiTicketStatusHistoryData>>[0], 'body' | 'headers' | 'path' | 'query'>>(
+    // @ts-ignore
+    {
+        queryFn: async ({ pageParam, queryKey, signal }) => {
+            // @ts-ignore
+            const page: Pick<QueryKey<Options<GetApiTicketStatusHistoryData>>[0], 'body' | 'headers' | 'path' | 'query'> = typeof pageParam === 'object' ? pageParam : {
+                query: {
+                    page: pageParam
+                }
+            };
+            const params = createInfiniteParams(queryKey, page);
+            const { data } = await getApiTicketStatusHistory({
+                ...options,
+                ...params,
+                signal,
+                throwOnError: true
+            });
+            return data;
+        },
+        queryKey: getApiTicketStatusHistoryInfiniteQueryKey(options)
+    });
+    return opts as Omit<typeof opts, 'initialData'>;
+};
+
 /**
  * Progress a Ticket
  *
- * Applies one approved status transition for IT Staff.
+ * Applies one approved status transition for IT Staff or an Administrator. Resolved, Closed, and Cancelled require `confirmed` true; otherwise the API returns 400 `CONFIRMATION_REQUIRED`. The actor must be an eligible staff account (BR-08); otherwise the API returns 403 `FORBIDDEN`.
  */
 export const updateApiTicketStatusMutation = (options?: Partial<Options<UpdateApiTicketStatusData>>): UseMutationOptions<UpdateApiTicketStatusResponse, UpdateApiTicketStatusError, Options<UpdateApiTicketStatusData>> => {
     const mutationOptions: UseMutationOptions<UpdateApiTicketStatusResponse, UpdateApiTicketStatusError, Options<UpdateApiTicketStatusData>> = {
@@ -441,6 +726,26 @@ export const resetApiUserInitialPasswordMutation = (options?: Partial<Options<Re
     return mutationOptions;
 };
 
+export const getApiRequesterDashboardQueryKey = (options?: Options<GetApiRequesterDashboardData>) => createQueryKey('getApiRequesterDashboard', options);
+
+/**
+ * Get the authenticated Requester's dashboard
+ *
+ * Returns one UTC snapshot of the authenticated Requester's public Ticket metrics and bounded previews.
+ */
+export const getApiRequesterDashboardOptions = (options?: Options<GetApiRequesterDashboardData>) => queryOptions<GetApiRequesterDashboardResponse, GetApiRequesterDashboardError, GetApiRequesterDashboardResponse, ReturnType<typeof getApiRequesterDashboardQueryKey>>({
+    queryFn: async ({ queryKey, signal }) => {
+        const { data } = await getApiRequesterDashboard({
+            ...options,
+            ...queryKey[0],
+            signal,
+            throwOnError: true
+        });
+        return data;
+    },
+    queryKey: getApiRequesterDashboardQueryKey(options)
+});
+
 export const getApiHealthQueryKey = (options?: Options<GetApiHealthData>) => createQueryKey('getApiHealth', options);
 
 /**
@@ -575,7 +880,7 @@ export const getApiTicketInternalNotesOptions = (options: Options<GetApiTicketIn
 /**
  * Add a private Internal Note
  *
- * IT Staff can append a private Internal Note to any non-terminal Ticket. Administrators and Requesters cannot write notes.
+ * IT Staff and Administrators can append a private Internal Note to any non-terminal Ticket. Requesters cannot write notes.
  */
 export const createApiTicketInternalNoteMutation = (options?: Partial<Options<CreateApiTicketInternalNoteData>>): UseMutationOptions<CreateApiTicketInternalNoteResponse, CreateApiTicketInternalNoteError, Options<CreateApiTicketInternalNoteData>> => {
     const mutationOptions: UseMutationOptions<CreateApiTicketInternalNoteResponse, CreateApiTicketInternalNoteError, Options<CreateApiTicketInternalNoteData>> = {
@@ -614,7 +919,7 @@ export const getApiTicketCommentsOptions = (options: Options<GetApiTicketComment
 /**
  * Post a public Ticket comment
  *
- * A Requester may post to an owned Ticket and IT Staff may post to any Ticket. Administrators have read-only access.
+ * A Requester may post to an owned Ticket. IT Staff and Administrators may post to any Ticket.
  */
 export const createApiTicketCommentMutation = (options?: Partial<Options<CreateApiTicketCommentData>>): UseMutationOptions<CreateApiTicketCommentResponse, CreateApiTicketCommentError, Options<CreateApiTicketCommentData>> => {
     const mutationOptions: UseMutationOptions<CreateApiTicketCommentResponse, CreateApiTicketCommentError, Options<CreateApiTicketCommentData>> = {

@@ -118,7 +118,7 @@ export const createPublicComment = async (
       actor === null ||
       !actor.isActive ||
       actor.role !== role ||
-      (role !== "Requester" && role !== "ITStaff")
+      (role !== "Requester" && role !== "ITStaff" && role !== "Administrator")
     ) {
       return { kind: "forbidden" };
     }

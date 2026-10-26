@@ -7,7 +7,9 @@ import { prisma } from "../src/db/client.js";
 import { removeAttachmentFiles } from "../src/services/attachment-storage.js";
 
 const E2E_SUMMARY_PREFIXES = [
+  "E2E actions taken ",
   "E2E boundary ",
+  "E2E requester dashboard ",
   "E2E internal note ",
   "E2E public comments flow ",
   "E2E requester flow ",
@@ -25,10 +27,19 @@ const tickets = await prisma.ticket.findMany({
 const ticketIds = tickets.map((ticket) => ticket.id);
 
 if (ticketIds.length > 0) {
+  await prisma.actionEvent.deleteMany({
+    where: { action: { ticketId: { in: ticketIds } } },
+  });
+  await prisma.actionTaken.deleteMany({
+    where: { ticketId: { in: ticketIds } },
+  });
   await prisma.internalNote.deleteMany({
     where: { ticketId: { in: ticketIds } },
   });
   await prisma.publicComment.deleteMany({
+    where: { ticketId: { in: ticketIds } },
+  });
+  await prisma.ticketStatusEvent.deleteMany({
     where: { ticketId: { in: ticketIds } },
   });
   const attachments = await prisma.attachment.findMany({

@@ -4,6 +4,7 @@ import {
   claimApiTicket,
   getApiStaffOwners,
   getApiStaffTickets,
+  getApiTicketStatusHistory,
   updateApiTicketStatus,
   updateApiTicketItPriority,
   updateApiTicketOwner,
@@ -19,8 +20,10 @@ import type {
   QueueSortBy,
   RequestedPriority,
   StaffTicketListResponse,
+  StaffTicketScope,
   StatusMutationRequest,
   TicketDetail,
+  TicketStatusHistoryListResponse,
   TicketVersionRequest,
 } from "@/generated/hey-api/types.gen";
 import { isRequestedPriority } from "@/lib/ticket-priorities";
@@ -31,15 +34,18 @@ export type StaffTicketOwnerFilter = number | "me" | "unassigned";
 export interface StaffTicketListParams {
   categoryId?: number;
   currentStatus?: CurrentStatus;
+  from?: string;
   itPriority?: RequestedPriority;
   owner?: StaffTicketOwnerFilter;
   page?: number;
   pageSize?: QueuePageSize;
   relatedSystemId?: number;
   requestedPriority?: RequestedPriority;
+  scope?: StaffTicketScope;
   search?: string;
   sortBy?: QueueSortBy;
   sortDirection?: "asc" | "desc";
+  through?: string;
 }
 
 const isRecord = (value: unknown): value is Record<string, unknown> =>
@@ -117,6 +123,33 @@ const isStaffTicketListResponse = (
 const isOwnerListResponse = (value: unknown): value is OwnerListResponse =>
   isRecord(value) && Array.isArray(value.items) && value.items.every(isOwner);
 
+const isTicketStatusEvent = (
+  value: unknown
+): value is TicketStatusHistoryListResponse["items"][number] =>
+  isRecord(value) &&
+  isPositiveSafeInteger(value.id) &&
+  isPositiveSafeInteger(value.ticketId) &&
+  isRecord(value.actor) &&
+  isPositiveSafeInteger(value.actor.id) &&
+  typeof value.actor.displayName === "string" &&
+  isOwnerRole(value.actor.role) &&
+  isCurrentStatus(value.fromStatus) &&
+  isCurrentStatus(value.toStatus) &&
+  isPositiveSafeInteger(value.ticketVersion) &&
+  typeof value.confirmed === "boolean" &&
+  typeof value.createdAt === "string";
+
+const isTicketStatusHistoryListResponse = (
+  value: unknown
+): value is TicketStatusHistoryListResponse =>
+  isRecord(value) &&
+  Array.isArray(value.items) &&
+  value.items.every(isTicketStatusEvent) &&
+  isPositiveSafeInteger(value.page) &&
+  isPageSize(value.pageSize) &&
+  isNonNegativeSafeInteger(value.totalItems) &&
+  isNonNegativeSafeInteger(value.totalPages);
+
 export const getStaffTickets = async (
   params: StaffTicketListParams,
   signal?: AbortSignal
@@ -132,6 +165,29 @@ export const getStaffTickets = async (
   if (!isStaffTicketListResponse(body)) {
     throw invalidApiResponse(
       "The API returned an invalid shared Ticket Queue response."
+    );
+  }
+
+  return body;
+};
+
+export const getTicketStatusHistory = async (
+  ticketId: number,
+  params: { page: number; pageSize: QueuePageSize },
+  signal?: AbortSignal
+): Promise<TicketStatusHistoryListResponse> => {
+  const body = await unwrap(
+    getApiTicketStatusHistory({
+      client: apiClient,
+      path: { ticketId },
+      query: params,
+      signal,
+    })
+  );
+
+  if (!isTicketStatusHistoryListResponse(body)) {
+    throw invalidApiResponse(
+      "The API returned an invalid Ticket status history response."
     );
   }
 

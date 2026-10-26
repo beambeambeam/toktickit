@@ -178,6 +178,16 @@ export const createUsersAdminFixture = async (): Promise<UsersAdminFixture> => {
 
     const importedDatabase = await import("../../src/db/client.js");
     database = importedDatabase.prisma;
+    // A static import of src/db/client.js loads Prisma before DATABASE_URL
+    // changes, so reset() would delete rows in the ambient database.
+    const [{ current_database: connectedDatabase }] = await database.$queryRaw<
+      { current_database: string }[]
+    >`SELECT current_database()`;
+    if (connectedDatabase !== databaseName) {
+      throw new Error(
+        `Prisma is connected to ${connectedDatabase}, not ${databaseName}. Import src modules dynamically after createUsersAdminFixture().`
+      );
+    }
     const importedApp = await import("../../src/app.js");
     const getDatabase = (): PrismaClient => {
       if (database === undefined) {
@@ -191,9 +201,12 @@ export const createUsersAdminFixture = async (): Promise<UsersAdminFixture> => {
       const activeDatabase = getDatabase();
       await activeDatabase.session.deleteMany();
       await activeDatabase.loginAttempt.deleteMany();
+      await activeDatabase.actionEvent.deleteMany();
+      await activeDatabase.actionTaken.deleteMany();
       await activeDatabase.internalNote.deleteMany();
       await activeDatabase.publicComment.deleteMany();
       await activeDatabase.attachment.deleteMany();
+      await activeDatabase.ticketStatusEvent.deleteMany();
       await activeDatabase.ticket.deleteMany();
       await activeDatabase.user.deleteMany();
       await activeDatabase.relatedSystem.deleteMany();

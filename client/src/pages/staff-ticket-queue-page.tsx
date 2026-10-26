@@ -1,6 +1,5 @@
 import {
   ArrowLeft01Icon,
-  ArrowRight01Icon,
   RefreshIcon,
   Search01Icon,
   Ticket01Icon,
@@ -31,9 +30,14 @@ import {
   AuthRequired,
 } from "@/components/app-shell";
 import { Icon } from "@/components/icon";
+import { PaginationNav } from "@/components/pagination-nav";
 import { StatusBadge } from "@/components/status-badge";
 import { useAuth } from "@/context/auth";
+import { formatBangkokDate } from "@/lib/action-format";
+import { isStaffRole, STAFF_ROLES } from "@/lib/staff-roles";
 import { isRequestedPriority } from "@/lib/ticket-priorities";
+import { isStaffTicketScope } from "@/lib/ticket-search";
+import type { StaffTicketSearch } from "@/lib/ticket-search";
 import { currentStatuses, isCurrentStatus } from "@/lib/ticket-statuses";
 
 const initialParams: StaffTicketListParams = {
@@ -110,45 +114,8 @@ const hasTicketFilters = (params: StaffTicketListParams) =>
   params.requestedPriority !== undefined ||
   params.itPriority !== undefined ||
   params.currentStatus !== undefined ||
-  params.owner !== undefined;
-
-type PageToken = number | "ellipsis-before" | "ellipsis-after";
-
-const getPageTokens = (
-  totalPages: number,
-  currentPage: number
-): PageToken[] => {
-  if (totalPages <= 0) {
-    return [];
-  }
-
-  if (totalPages <= 7) {
-    return Array.from({ length: totalPages }, (_, index) => index + 1);
-  }
-
-  const firstVisiblePage = Math.max(2, currentPage - 1);
-  const lastVisiblePage = Math.min(totalPages - 1, currentPage + 1);
-  const pages: PageToken[] = [1];
-
-  if (firstVisiblePage > 2) {
-    pages.push("ellipsis-before");
-  }
-
-  for (
-    let pageNumber = firstVisiblePage;
-    pageNumber <= lastVisiblePage;
-    pageNumber += 1
-  ) {
-    pages.push(pageNumber);
-  }
-
-  if (lastVisiblePage < totalPages - 1) {
-    pages.push("ellipsis-after");
-  }
-
-  pages.push(totalPages);
-  return pages;
-};
+  params.owner !== undefined ||
+  params.scope !== undefined;
 
 const formatDate = (value: string) =>
   new Intl.DateTimeFormat(undefined, {
@@ -173,20 +140,30 @@ const getQueueErrorMessage = (
 
 // oxlint-disable-next-line complexity -- this page renders documented queue filters and data states.
 const StaffTicketQueueContent = ({
+  ignoredTimeWindow,
+  initialFilters,
   onAccessError,
   user,
 }: {
+  ignoredTimeWindow: boolean;
+  initialFilters: StaffTicketSearch;
   onAccessError: (error: ApiRequestError) => void;
   user: AuthUser;
 }) => {
-  const [params, setParams] = useState<StaffTicketListParams>(initialParams);
+  const [params, setParams] = useState<StaffTicketListParams>(() => ({
+    ...initialParams,
+    ...initialFilters,
+  }));
   const [searchDraft, setSearchDraft] = useState("");
   const handledOwnerError = useRef<ApiRequestError | null>(null);
+  const navigate = useNavigate();
 
   const categoriesQuery = useQuery(activeCategoriesQueryOptions());
   const relatedSystemsQuery = useQuery(relatedSystemsQueryOptions());
   const ownersQuery = useQuery(staffOwnersQueryOptions());
-  const ticketsQuery = useQuery(staffTicketsQueryOptions(params));
+  const ticketsQuery = useQuery(
+    staffTicketsQueryOptions(user.id, user.role, params)
+  );
   const refetchOwners = ownersQuery.refetch;
 
   useEffect(() => {
@@ -239,6 +216,8 @@ const StaffTicketQueueContent = ({
   const clearFilters = () => {
     setSearchDraft("");
     setParams({ ...initialParams });
+    // Drop drill-down filters from the URL so a reload does not restore them.
+    void navigate({ search: {}, to: "/staff/tickets" });
   };
 
   const submitSearch = (event: SubmitEvent<HTMLFormElement>) => {
@@ -269,7 +248,6 @@ const StaffTicketQueueContent = ({
     data !== undefined && !ticketsQuery.isError && data.items.length > 0;
   const page = data?.page ?? params.page ?? 1;
   const totalPages = data?.totalPages ?? 0;
-  const pageTokens = getPageTokens(totalPages, page);
   const hasFilterDataError =
     categoriesQuery.isError ||
     relatedSystemsQuery.isError ||
@@ -290,7 +268,7 @@ const StaffTicketQueueContent = ({
     <AppShell
       eyebrow={workspaceLabel}
       title="Ticket Queue"
-      allowedRoles={["IT Staff", "Administrator"]}
+      allowedRoles={STAFF_ROLES}
     >
       <div className="page-actions">
         <p className="page-description">
@@ -331,6 +309,35 @@ const StaffTicketQueueContent = ({
                 value={searchDraft}
               />
             </div>
+          </div>
+          <div className="filter-field">
+            <label htmlFor="staff-ticket-scope-filter">Scope</label>
+            <select
+              id="staff-ticket-scope-filter"
+              onChange={(event) => {
+                const scope = isStaffTicketScope(event.target.value)
+                  ? event.target.value
+                  : undefined;
+                updateParams(
+                  scope === "recently-updated"
+                    ? { scope }
+                    : { from: undefined, scope, through: undefined }
+                );
+              }}
+              value={params.scope ?? ""}
+            >
+              <option value="">All Tickets</option>
+              <option value="active">Active</option>
+              <option value="urgent-active">Urgent active</option>
+              <option
+                disabled={
+                  params.from === undefined || params.through === undefined
+                }
+                value="recently-updated"
+              >
+                Recently updated
+              </option>
+            </select>
           </div>
           <div className="filter-field">
             <label htmlFor="staff-ticket-category-filter">Category</label>
@@ -501,6 +508,19 @@ const StaffTicketQueueContent = ({
             Search
           </button>
         </form>
+        {ignoredTimeWindow ? (
+          <p className="filter-window" role="status">
+            The date range in the link was invalid and was ignored.
+          </p>
+        ) : null}
+        {params.scope === "recently-updated" &&
+        params.from !== undefined &&
+        params.through !== undefined ? (
+          <p className="filter-window">
+            Updated between {formatBangkokDate(params.from)} and{" "}
+            {formatBangkokDate(params.through)}
+          </p>
+        ) : null}
         {hasFilterDataError ? (
           <div
             className="feedback feedback-warning filter-feedback"
@@ -728,60 +748,14 @@ const StaffTicketQueueContent = ({
                 </article>
               ))}
             </div>
-            <nav className="pagination" aria-label="Ticket Queue pages">
-              <button
-                className="button button-secondary"
-                disabled={page <= 1}
-                onClick={() => {
-                  setParams((current) => ({ ...current, page: page - 1 }));
-                }}
-                type="button"
-              >
-                <Icon icon={ArrowLeft01Icon} /> Previous
-              </button>
-              <span>
-                Page {page} of {totalPages > 0 ? totalPages : 1}
-              </span>
-              <div className="pagination-pages">
-                {pageTokens.map((pageToken) =>
-                  typeof pageToken === "number" ? (
-                    <button
-                      aria-current={pageToken === page ? "page" : undefined}
-                      aria-label={`Go to page ${pageToken}`}
-                      className="button button-secondary pagination-page"
-                      key={pageToken}
-                      onClick={() => {
-                        setParams((current) => ({
-                          ...current,
-                          page: pageToken,
-                        }));
-                      }}
-                      type="button"
-                    >
-                      {pageToken}
-                    </button>
-                  ) : (
-                    <span
-                      aria-hidden="true"
-                      className="pagination-ellipsis"
-                      key={pageToken}
-                    >
-                      …
-                    </span>
-                  )
-                )}
-              </div>
-              <button
-                className="button button-secondary"
-                disabled={page >= totalPages}
-                onClick={() => {
-                  setParams((current) => ({ ...current, page: page + 1 }));
-                }}
-                type="button"
-              >
-                Next <Icon icon={ArrowRight01Icon} />
-              </button>
-            </nav>
+            <PaginationNav
+              label="Ticket Queue pages"
+              onPageChange={(nextPage) => {
+                setParams((current) => ({ ...current, page: nextPage }));
+              }}
+              page={page}
+              totalPages={totalPages}
+            />
           </>
         ) : null}
       </section>
@@ -789,7 +763,15 @@ const StaffTicketQueueContent = ({
   );
 };
 
-export const StaffTicketQueuePage = () => {
+const noInitialFilters: StaffTicketSearch = {};
+
+export const StaffTicketQueuePage = ({
+  ignoredTimeWindow = false,
+  initialFilters = noInitialFilters,
+}: {
+  ignoredTimeWindow?: boolean;
+  initialFilters?: StaffTicketSearch;
+}) => {
   const { refetchAuth, user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -828,13 +810,15 @@ export const StaffTicketQueuePage = () => {
     return <AuthRequired />;
   }
 
-  if (user.role !== "IT Staff" && user.role !== "Administrator") {
+  if (!isStaffRole(user.role)) {
     return <AccessDenied />;
   }
 
   return (
     <StaffTicketQueueContent
-      key={user.id}
+      ignoredTimeWindow={ignoredTimeWindow}
+      initialFilters={initialFilters}
+      key={`${user.id}:${JSON.stringify(initialFilters)}`}
       onAccessError={setAccessError}
       user={user}
     />

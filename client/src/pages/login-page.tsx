@@ -5,6 +5,7 @@ import type { SubmitEvent } from "react";
 
 import { ApiConnectionError } from "@/api/client";
 import { ApiRequestError } from "@/api/errors";
+import { homeRouteForRole } from "@/components/app-shell";
 import { fieldDescribedBy, FormField } from "@/components/form-field";
 import { Icon } from "@/components/icon";
 import { useAuth } from "@/context/auth";
@@ -66,10 +67,8 @@ export const LoginPage = () => {
     if (user !== null) {
       if (user.mustChangePassword) {
         void navigate({ to: "/change-password" });
-      } else if (user.role === "Requester") {
-        void navigate({ to: "/tickets" });
       } else {
-        void navigate({ to: "/" });
+        void navigate({ to: homeRouteForRole() });
       }
     }
   }, [navigate, user]);
@@ -140,10 +139,8 @@ export const LoginPage = () => {
       setPassword("");
       if (nextAuth.user.mustChangePassword) {
         void navigate({ to: "/change-password" });
-      } else if (nextAuth.user.role === "Requester") {
-        void navigate({ to: "/tickets" });
       } else {
-        void navigate({ to: "/" });
+        void navigate({ to: homeRouteForRole() });
       }
     } catch (error: unknown) {
       setSubmitError(getLoginErrorMessage(error));

@@ -1,0 +1,588 @@
+import { execFileSync } from "node:child_process";
+import { randomUUID } from "node:crypto";
+import { mkdir, writeFile } from "node:fs/promises";
+import path from "node:path";
+
+import { AxeBuilder } from "@axe-core/playwright";
+import { expect, test } from "@playwright/test";
+import type { Browser, Page } from "@playwright/test";
+
+const apiUrl = process.env.E2E_API_URL ?? "http://localhost:3000";
+const appOrigin = process.env.E2E_BASE_URL ?? "http://localhost:5173";
+const password = "correct horse battery staple";
+const requesterEmail = "e2e-desktop@example.test";
+const staffEmail = "e2e-staff@example.test";
+const secondStaffEmail = "e2e-staff-second@example.test";
+
+const repositoryRoot = path.resolve(import.meta.dirname, "..", "..");
+const screenshotsRoot = path.join(
+  repositoryRoot,
+  "artifacts",
+  "lab-04",
+  "screenshots",
+  "actions-taken"
+);
+const viewportByProject = new Map([
+  ["desktop-chromium", "desktop"],
+  ["tablet-chromium", "tablet"],
+  ["mobile-chromium", "mobile"],
+]);
+
+type JsonObject = Record<string, unknown>;
+
+interface ActionRef {
+  id: number;
+  version: number;
+}
+
+const isRecord = (value: unknown): value is JsonObject =>
+  typeof value === "object" && value !== null && !Array.isArray(value);
+
+const asRecord = (value: unknown, label: string): JsonObject => {
+  if (!isRecord(value)) {
+    throw new TypeError(`Expected ${label} to be an object.`);
+  }
+  return value;
+};
+
+const signIn = async (page: Page, email: string): Promise<void> => {
+  await page.goto("/login");
+  await page.getByLabel("Email").fill(email);
+  await page.getByRole("textbox", { name: "Password" }).fill(password);
+  await page.getByRole("button", { name: "Sign in" }).click();
+  await expect(page).not.toHaveURL(/\/login$/u);
+};
+
+const logOut = async (page: Page): Promise<void> => {
+  const mobileNavigation = page.locator(".mobile-nav");
+  if (await mobileNavigation.isVisible()) {
+    await mobileNavigation.locator("summary").click();
+    await mobileNavigation.getByRole("button", { name: "Log out" }).click();
+  } else {
+    await page
+      .locator(".account-chip")
+      .getByRole("button", { name: "Log out" })
+      .click();
+  }
+  await expect(page).toHaveURL(/\/login$/u);
+};
+
+const readSession = async (
+  page: Page
+): Promise<{ csrfToken: string; userId: number }> => {
+  const response = await page.request.get(`${apiUrl}/api/auth/me`);
+  expect(response.status()).toBe(200);
+  const body = asRecord(await response.json(), "session response");
+  const user = asRecord(body.user, "session user");
+  if (typeof body.csrfToken !== "string" || typeof user.id !== "number") {
+    throw new TypeError("Expected a CSRF token and user ID.");
+  }
+  return { csrfToken: body.csrfToken, userId: user.id };
+};
+
+const apiGet = async (page: Page, apiPath: string): Promise<JsonObject> => {
+  const response = await page.request.get(`${apiUrl}${apiPath}`);
+  expect(response.status(), await response.text()).toBe(200);
+  return asRecord(await response.json(), `GET ${apiPath}`);
+};
+
+const apiPost = async (
+  page: Page,
+  apiPath: string,
+  data: JsonObject,
+  expectedStatus = 200
+): Promise<JsonObject> => {
+  const { csrfToken } = await readSession(page);
+  const response = await page.request.post(`${apiUrl}${apiPath}`, {
+    data,
+    headers: { Origin: appOrigin, "X-CSRF-Token": csrfToken },
+  });
+  expect(response.status(), await response.text()).toBe(expectedStatus);
+  return asRecord(await response.json(), `POST ${apiPath}`);
+};
+
+const ticketVersion = async (page: Page, ticketId: number): Promise<number> => {
+  const ticket = await apiGet(page, `/api/tickets/${ticketId}`);
+  if (typeof ticket.version !== "number") {
+    throw new TypeError("Expected a Ticket version.");
+  }
+  return ticket.version;
+};
+
+const createTicket = async (page: Page): Promise<number> => {
+  const { csrfToken } = await readSession(page);
+  const response = await page.request.post(`${apiUrl}/api/tickets`, {
+    headers: { Origin: appOrigin, "X-CSRF-Token": csrfToken },
+    multipart: {
+      categoryId: "1",
+      description: "Ticket for the resolution gate browser flow.",
+      relatedSystemId: "1",
+      requestedPriority: "Low",
+      summary: `E2E ticket resolution ${Date.now()}`,
+    },
+  });
+  expect(response.status()).toBe(201);
+  const ticket = asRecord(
+    asRecord(await response.json(), "Ticket response").ticket,
+    "created Ticket"
+  );
+  if (typeof ticket.id !== "number") {
+    throw new TypeError("Expected a Ticket ID.");
+  }
+  return ticket.id;
+};
+
+const claimTicket = async (page: Page, ticketId: number): Promise<void> => {
+  await apiPost(page, `/api/tickets/${ticketId}/claim`, {
+    version: await ticketVersion(page, ticketId),
+  });
+};
+
+const setStatusByApi = async (
+  page: Page,
+  ticketId: number,
+  currentStatus: string
+): Promise<void> => {
+  await apiPost(page, `/api/tickets/${ticketId}/status`, {
+    currentStatus,
+    version: await ticketVersion(page, ticketId),
+  });
+};
+
+const createAction = async (
+  page: Page,
+  ticketId: number,
+  input: { assigneeId: number; description: string; result: string | null }
+): Promise<ActionRef> => {
+  const body = await apiPost(
+    page,
+    `/api/tickets/${ticketId}/actions`,
+    {
+      assigneeId: input.assigneeId,
+      description: input.description,
+      followUpRequired: false,
+      requestId: randomUUID(),
+      result: input.result,
+      version: await ticketVersion(page, ticketId),
+    },
+    201
+  );
+  const action = asRecord(body.action, "Action Taken");
+  if (typeof action.id !== "number" || typeof action.version !== "number") {
+    throw new TypeError("Expected an Action Taken ID and version.");
+  }
+  return { id: action.id, version: action.version };
+};
+
+const transitionAction = async (
+  page: Page,
+  ticketId: number,
+  action: ActionRef,
+  toStatus: "In Progress" | "Completed" | "Cancelled",
+  confirmed: boolean
+): Promise<ActionRef> => {
+  const body = await apiPost(
+    page,
+    `/api/tickets/${ticketId}/actions/${action.id}/transition`,
+    {
+      actionVersion: action.version,
+      ticketVersion: await ticketVersion(page, ticketId),
+      toStatus,
+      ...(confirmed ? { confirmed: true } : {}),
+    }
+  );
+  const updated = asRecord(body.action, "transitioned Action Taken");
+  if (typeof updated.id !== "number" || typeof updated.version !== "number") {
+    throw new TypeError("Expected an Action Taken ID and version.");
+  }
+  return { id: updated.id, version: updated.version };
+};
+
+const requestStatusChange = async (
+  page: Page,
+  status: string
+): Promise<void> => {
+  await page.getByLabel("Next status").selectOption(status);
+  await page.getByRole("button", { name: "Apply Status" }).click();
+};
+
+const confirmStatusChange = async (
+  page: Page,
+  status: string
+): Promise<void> => {
+  await requestStatusChange(page, status);
+  await page
+    .getByRole("alertdialog", { name: `Mark Ticket ${status}?` })
+    .getByRole("button", { name: `Confirm ${status}` })
+    .click();
+};
+
+const checkLayoutAndAccessibility = async (page: Page): Promise<void> => {
+  expect(
+    await page.evaluate(
+      () => document.documentElement.scrollWidth <= window.innerWidth
+    )
+  ).toBe(true);
+  const results = await new AxeBuilder({ page }).analyze();
+  expect(results.violations).toEqual([]);
+};
+
+const checkReflowAt = async (
+  page: Page,
+  ticketId: number,
+  width: number
+): Promise<void> => {
+  await page.setViewportSize({ height: 900, width });
+  await page.goto(`/tickets/${ticketId}`);
+  await confirmStatusChange(page, "Resolved");
+  await expect(
+    page.getByRole("list", { name: "Resolution requirements not met" })
+  ).toBeVisible();
+  await expect(
+    page.getByRole("region", { name: "Status history" })
+  ).toBeVisible();
+  await checkLayoutAndAccessibility(page);
+};
+
+test("resolution is gated, indicated, resolved, and reopened", async ({
+  page,
+}) => {
+  await signIn(page, requesterEmail);
+  const ticketId = await createTicket(page);
+  await logOut(page);
+
+  await signIn(page, staffEmail);
+  const { userId: staffId } = await readSession(page);
+  await claimTicket(page, ticketId);
+  await setStatusByApi(page, ticketId, "Open");
+  await setStatusByApi(page, ticketId, "In Progress");
+  const planned = await createAction(page, ticketId, {
+    assigneeId: staffId,
+    description: "Restart the print spooler.",
+    result: "Spooler restarted.",
+  });
+  const inProgress = await transitionAction(
+    page,
+    ticketId,
+    planned,
+    "In Progress",
+    false
+  );
+  await logOut(page);
+
+  await signIn(page, requesterEmail);
+  await page.goto(`/tickets/${ticketId}`);
+  await page.getByRole("button", { name: "Problem Appears Resolved" }).click();
+  await expect(
+    page.getByText(
+      "Your apparent-resolution indication was recorded for Staff."
+    )
+  ).toBeVisible();
+  await logOut(page);
+
+  await signIn(page, staffEmail);
+  await page.goto(`/tickets/${ticketId}`);
+  await confirmStatusChange(page, "Resolved");
+  const reasons = page.getByRole("list", {
+    name: "Resolution requirements not met",
+  });
+  await expect(reasons.getByRole("listitem")).toHaveCount(2);
+  await expect(reasons).toContainText(
+    "Complete or cancel every Planned and In Progress Action Taken."
+  );
+  await expect(reasons).toContainText(
+    "Record at least one Completed Action Taken."
+  );
+  await expect(page.getByText("Current status: In Progress")).toBeVisible();
+  await checkLayoutAndAccessibility(page);
+
+  await apiPost(
+    page,
+    `/api/tickets/${ticketId}/actions/${inProgress.id}/transition`,
+    {
+      actionVersion: inProgress.version,
+      confirmed: true,
+      ticketVersion: await ticketVersion(page, ticketId),
+      toStatus: "Completed",
+    }
+  );
+  await page.reload();
+  await confirmStatusChange(page, "Resolved");
+  await expect(
+    page.getByText("Ticket status changed to Resolved.")
+  ).toBeVisible();
+
+  const history = page.getByRole("region", { name: "Status history" });
+  await expect(
+    history
+      .getByRole("listitem")
+      .filter({ hasText: /In Progress\s*→\s*Resolved/u })
+  ).toHaveCount(1);
+
+  await requestStatusChange(page, "Reopened");
+  await expect(
+    page.getByText("Ticket status changed to Reopened.")
+  ).toBeVisible();
+  await expect(
+    history
+      .getByRole("listitem")
+      .filter({ hasText: /Resolved\s*→\s*Reopened/u })
+  ).toHaveCount(1);
+  await logOut(page);
+
+  await signIn(page, requesterEmail);
+  await page.goto(`/tickets/${ticketId}`);
+  await expect(
+    page.getByRole("button", { name: "Problem Appears Resolved" })
+  ).toBeVisible();
+  await logOut(page);
+});
+
+test("cancellation waits for pending Action Taken", async ({ page }) => {
+  await signIn(page, requesterEmail);
+  const ticketId = await createTicket(page);
+  await logOut(page);
+
+  await signIn(page, staffEmail);
+  const { userId: staffId } = await readSession(page);
+  await claimTicket(page, ticketId);
+  await setStatusByApi(page, ticketId, "Open");
+  await setStatusByApi(page, ticketId, "In Progress");
+  const planned = await createAction(page, ticketId, {
+    assigneeId: staffId,
+    description: "Replace the toner cartridge.",
+    result: null,
+  });
+
+  await page.goto(`/tickets/${ticketId}`);
+  await confirmStatusChange(page, "Cancelled");
+  await expect(
+    page
+      .getByRole("alert")
+      .filter({ hasText: "Finish or cancel every Planned and In Progress" })
+  ).toBeVisible();
+  await expect(page.getByText("Current status: In Progress")).toBeVisible();
+
+  await transitionAction(page, ticketId, planned, "Cancelled", true);
+  await page.reload();
+  await confirmStatusChange(page, "Cancelled");
+  await expect(
+    page.getByText("Ticket status changed to Cancelled.")
+  ).toBeVisible();
+  await expect(
+    page.getByText("This Ticket has no available next status.")
+  ).toBeVisible();
+  await logOut(page);
+});
+
+test("status controls reflow at 320 and 640 CSS px", async ({
+  page,
+}, testInfo) => {
+  test.skip(
+    testInfo.project.name !== "desktop-chromium",
+    "Reflow checks set their own viewport width."
+  );
+  await signIn(page, requesterEmail);
+  const ticketId = await createTicket(page);
+  await logOut(page);
+
+  await signIn(page, staffEmail);
+  await claimTicket(page, ticketId);
+  await setStatusByApi(page, ticketId, "Open");
+  await setStatusByApi(page, ticketId, "In Progress");
+
+  // 320 CSS px is the WCAG 1.4.10 reflow width. 640 CSS px matches 200% zoom on a 1280 px desktop.
+  await checkReflowAt(page, ticketId, 320);
+  await checkReflowAt(page, ticketId, 640);
+  await logOut(page);
+});
+
+const openStaffPage = async (
+  browser: Browser,
+  email: string
+): Promise<Page> => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await signIn(page, email);
+  return page;
+};
+
+test("serializes a Resolved request against a concurrent Action Taken from other staff", async ({
+  browser,
+  page,
+}) => {
+  await signIn(page, requesterEmail);
+  const ticketId = await createTicket(page);
+  await logOut(page);
+
+  await signIn(page, staffEmail);
+  const { userId: staffId } = await readSession(page);
+  await claimTicket(page, ticketId);
+  await setStatusByApi(page, ticketId, "Open");
+  await setStatusByApi(page, ticketId, "In Progress");
+  const planned = await createAction(page, ticketId, {
+    assigneeId: staffId,
+    description: "Reseat the network cable.",
+    result: "Cable reseated.",
+  });
+  const started = await transitionAction(
+    page,
+    ticketId,
+    planned,
+    "In Progress",
+    false
+  );
+  await transitionAction(page, ticketId, started, "Completed", true);
+
+  const secondStaff = await openStaffPage(browser, secondStaffEmail);
+  try {
+    const secondSession = await readSession(secondStaff);
+    const firstSession = await readSession(page);
+    const version = await ticketVersion(page, ticketId);
+    const [resolveResponse, actionResponse] = await Promise.all([
+      page.request.post(`${apiUrl}/api/tickets/${ticketId}/status`, {
+        data: { confirmed: true, currentStatus: "Resolved", version },
+        headers: { Origin: appOrigin, "X-CSRF-Token": firstSession.csrfToken },
+      }),
+      secondStaff.request.post(`${apiUrl}/api/tickets/${ticketId}/actions`, {
+        data: {
+          assigneeId: secondSession.userId,
+          description: "Check the switch port.",
+          followUpRequired: false,
+          requestId: randomUUID(),
+          result: null,
+          version,
+        },
+        headers: {
+          Origin: appOrigin,
+          "X-CSRF-Token": secondSession.csrfToken,
+        },
+      }),
+    ]);
+    const statuses = [resolveResponse.status(), actionResponse.status()];
+
+    // Both writes use the same Ticket version, so exactly one can win.
+    expect([
+      [200, 409],
+      [409, 201],
+    ]).toContainEqual(statuses);
+
+    const ticket = await apiGet(page, `/api/tickets/${ticketId}`);
+    const actions = await apiGet(page, `/api/tickets/${ticketId}/actions`);
+
+    if (resolveResponse.status() === 200) {
+      expect(ticket.currentStatus).toBe("Resolved");
+      expect(actions.totalItems).toBe(1);
+    } else {
+      expect(ticket.currentStatus).toBe("In Progress");
+      expect(actions.totalItems).toBe(2);
+    }
+  } finally {
+    await secondStaff.context().close();
+  }
+  await logOut(page);
+});
+
+const gitOutput = (args: string[]): string =>
+  execFileSync("git", args, { cwd: repositoryRoot, encoding: "utf-8" }).trim();
+
+test("captures resolution gate feedback at every viewport", async ({
+  page,
+}, testInfo) => {
+  const viewportName = viewportByProject.get(testInfo.project.name);
+  const initialViewport = page.viewportSize();
+  if (viewportName === undefined || initialViewport === null) {
+    throw new Error(`Unexpected project: ${testInfo.project.name}`);
+  }
+  await signIn(page, requesterEmail);
+  const ticketId = await createTicket(page);
+  await logOut(page);
+
+  await signIn(page, staffEmail);
+  const { userId: staffId } = await readSession(page);
+  await claimTicket(page, ticketId);
+  await setStatusByApi(page, ticketId, "Open");
+  await setStatusByApi(page, ticketId, "In Progress");
+  await createAction(page, ticketId, {
+    assigneeId: staffId,
+    description: "Replace the faulty access point.",
+    result: null,
+  });
+
+  await page.goto(`/tickets/${ticketId}`);
+  await confirmStatusChange(page, "Resolved");
+  const progress = page.getByRole("region", { name: "Progress Ticket" });
+  await expect(
+    progress.getByRole("list", { name: "Resolution requirements not met" })
+  ).toBeVisible();
+  await expect(progress.getByLabel("Next status")).toBeFocused();
+  await checkLayoutAndAccessibility(page);
+
+  await mkdir(screenshotsRoot, { recursive: true });
+  const files: { path: string; viewport: { height: number; width: number } }[] =
+    [];
+  const capture = async (name: string): Promise<void> => {
+    const absolutePath = path.join(screenshotsRoot, `${name}.png`);
+    await progress.screenshot({ path: absolutePath });
+    files.push({
+      path: path.relative(repositoryRoot, absolutePath),
+      viewport: page.viewportSize() ?? initialViewport,
+    });
+  };
+  await capture(`ticket-resolution-gate-${viewportName}`);
+
+  if (viewportName === "desktop") {
+    // 320 CSS px is the minimum width. 720 CSS px matches 200% zoom on a 1440 px desktop.
+    // oxlint-disable no-await-in-loop -- Resize and capture each width in order.
+    for (const { name, width } of [
+      { name: "minimum-width-320-css-pixels", width: 320 },
+      { name: "css-reflow-200-percent", width: 720 },
+    ]) {
+      await page.setViewportSize({ height: initialViewport.height, width });
+      await checkLayoutAndAccessibility(page);
+      await capture(`ticket-resolution-gate-${name}-desktop`);
+    }
+    // oxlint-enable no-await-in-loop
+    await page.setViewportSize(initialViewport);
+    const cdpSession = await page.context().newCDPSession(page);
+    try {
+      await cdpSession.send("Emulation.setPageScaleFactor", {
+        pageScaleFactor: 2,
+      });
+      await expect
+        .poll(async () => await page.evaluate(() => visualViewport?.scale ?? 0))
+        .toBe(2);
+      expect(
+        await page.evaluate(
+          () =>
+            document.documentElement.scrollWidth <=
+            document.documentElement.clientWidth
+        )
+      ).toBe(true);
+    } finally {
+      await cdpSession.send("Emulation.resetPageScaleFactor");
+    }
+  }
+
+  await writeFile(
+    path.join(
+      screenshotsRoot,
+      `manifest-ticket-resolution-gate-${viewportName}.json`
+    ),
+    `${JSON.stringify(
+      {
+        branch: gitOutput(["branch", "--show-current"]),
+        command:
+          "pnpm --filter @toktickit/e2e exec playwright test lab-04/ticket-resolution.spec.ts -g 'captures resolution gate'",
+        commit: gitOutput(["rev-parse", "HEAD"]),
+        files,
+        generatedAt: new Date().toISOString(),
+        project: testInfo.project.name,
+        scenario:
+          "IT Staff requests Resolved with a Planned Action Taken and no Completed Action Taken",
+      },
+      null,
+      2
+    )}\n`
+  );
+});

@@ -2,6 +2,7 @@ export interface ApiErrorDetails {
   field?: string;
   reason?: string;
   fields?: Record<string, string>;
+  reasons?: string[];
 }
 
 export class ApiError extends Error {

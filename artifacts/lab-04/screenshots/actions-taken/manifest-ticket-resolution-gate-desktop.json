@@ -1,0 +1,31 @@
+{
+  "branch": "feature/77-ticket-lifecycle-gate",
+  "command": "pnpm --filter @toktickit/e2e exec playwright test lab-04/ticket-resolution.spec.ts -g 'captures resolution gate'",
+  "commit": "25137f39000d6656a5cf4021d0badc8618192407",
+  "files": [
+    {
+      "path": "artifacts/lab-04/screenshots/actions-taken/ticket-resolution-gate-desktop.png",
+      "viewport": {
+        "width": 1440,
+        "height": 900
+      }
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/actions-taken/ticket-resolution-gate-minimum-width-320-css-pixels-desktop.png",
+      "viewport": {
+        "width": 320,
+        "height": 900
+      }
+    },
+    {
+      "path": "artifacts/lab-04/screenshots/actions-taken/ticket-resolution-gate-css-reflow-200-percent-desktop.png",
+      "viewport": {
+        "width": 720,
+        "height": 900
+      }
+    }
+  ],
+  "generatedAt": "2026-10-15T08:01:25.458Z",
+  "project": "desktop-chromium",
+  "scenario": "IT Staff requests Resolved with a Planned Action Taken and no Completed Action Taken"
+}
