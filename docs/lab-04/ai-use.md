@@ -63,7 +63,9 @@ The human review found two focus defects and a gap in Ticket-lock test evidence.
 
 The agent used the pr-review-followup skill for separate commits and thread replies. It used the ASD-STE100 skill for new review text. Replies leave the threads open for reviewer verification. Test results and response links are recorded in [tests.md](tests.md) and [reviewer.md](reviewer.md).
 
-This section records observed agent work. The student did not provide an Issue #75 reflection. Automated checks do not imply human approval.
+**My Reflection**
+
+For Issue #75 I used the agent to build editing, reassignment and revision history on top of the #74 Action Taken records. I accepted the split between a backend task, a browser task and two independent reviews, because each review looked at a different risk: the Standards review found the duplicated create and edit validation, and the Spec review checked that nothing outside #75 was built. I did not accept the work on the agent's word. The human review on PR #83 still found two focus defects and a gap in the Ticket-lock test, so the passing automated tests had not covered everything. I learned that a test only counts if it fails when the behavior is removed, and the lock test now does. Automated checks do not imply human approval.
 
 ## Issue #76 Action Taken lifecycle — 2026-10-11
 
@@ -95,7 +97,9 @@ This is an actual instruction summary from the launching request. It does not co
 
 The shared PostgreSQL server was down, so the agent ran its own container for the isolated database. The first mutation check changed the wrong code location and stayed green. The agent detected the invalid check and repeated it at the correct location. Results are in [tests.md](tests.md) and [reviewer.md](reviewer.md).
 
-This section records observed agent work. The student did not provide a reflection. Automated checks do not imply human approval.
+**My Reflection**
+
+For PR #84 I asked the agent to fix the nine review threads one commit per defect and to leave every thread open for the reviewer. I accepted that process because it keeps each review reason next to its change. The record shows that the first mutation check changed the wrong code location and stayed green, and the agent caught it and repeated the check. That showed me that a mutation check can pass for the wrong reason, so I read the results instead of trusting the word "verified". The shared database was also down, so the agent used its own container, which I would not have noticed without the record. Automated checks do not imply human approval.
 
 ## Issue #78 implementation — 2026-10-11
 
@@ -111,7 +115,11 @@ These excerpts are actual instructions from the Issue #78 task:
 | 2026-10-11 | `Work ONLY in this git worktree: /Users/beam/.cache/toktickit-72/wt/78` | Keep commands and edits in the assigned worktree. |
 | 2026-10-11 | `Run the existing earlier-lab regression tests and this feature’s unit/rule, API/integration, UI and browser E2E tests as applicable` | Use the repository’s rule, API, UI, full client/server, and Requester browser test seams. |
 
-The implementation used test-first rule, API, UI, and browser checks. The API derives the Requester from the session. The tests check ownership, private-note isolation, exact UTC bounds, zero results, list parity, role restrictions, preview limits, and performance measurements. The browser journey checks the generated links, Ticket detail, account switch, focus, axe, viewport overflow, and zoom. Verification outcomes are recorded in [tests.md](tests.md). The student has not supplied an Issue #78 reflection.
+The implementation used test-first rule, API, UI, and browser checks. The API derives the Requester from the session. The tests check ownership, private-note isolation, exact UTC bounds, zero results, list parity, role restrictions, preview limits, and performance measurements. The browser journey checks the generated links, Ticket detail, account switch, focus, axe, viewport overflow, and zoom. Verification outcomes are recorded in [tests.md](tests.md).
+
+**My Reflection**
+
+For Issue #78 I gave the agent one issue, one worktree and a clear limit: do not implement other tickets. That kept the Requester dashboard separate from the lifecycle and staff dashboard work. I accepted the rule that the API derives the Requester from the session, because it removes a whole class of cross-Requester mistakes, and the tests for ownership and private-note isolation prove it. The later PR #85 review showed what the first pass missed, mostly in the test record and in screenshot provenance, so a finished feature was not the same as finished evidence. Automated checks do not imply human approval.
 
 ## PR #85 review follow-up — 2026-10-12
 
@@ -123,7 +131,9 @@ Claude Code supported the PR #85 review follow-up. The model was Claude Sonnet 5
 | 2026-10-12 | Never resolve a thread. Use one commit for a shared defect. Run a mutation check for each test-gap finding. | Leave threads open. Share one commit across the four test-record threads. Confirm new tests fail without the fix. |
 | 2026-10-12 | Update the reviewer, AI-use, and test records. Run every check before the last push. | Record the commits and the actual test results. Request re-review from @Kiatisakk only. |
 
-Automated checks do not imply human approval. The student has not supplied a reflection for this follow-up.
+**My Reflection**
+
+For PR #85 I used the agent to work through 16 review threads, one commit per defect, with no thread resolved by the agent. I required a mutation check for every test-gap finding. I did this because a new test that never fails proves nothing, and the first version of the Lab 4 tests had that weakness. I accepted sharing one commit across the four test-record threads, because they were one defect. I still decided when the work was done: I asked for re-review from the reviewer and did not treat the agent's report as approval. Automated checks do not imply human approval.
 
 ## PR #86 review follow-up — 2026-10-15
 
@@ -135,7 +145,9 @@ Claude Code supported the PR #86 review follow-up for Issue #77. The model was C
 | 2026-10-15 | Never resolve a thread. Request re-review at the end. | Leave threads open. Request re-review from @Kiatisakk only. |
 | 2026-10-15 | Record actual outcomes only in the test record. | Run the API, UI, two-staff race, axe, reflow, and screenshot checks. Inspect the captures. Record the measured results and the remaining limits. |
 
-Automated checks do not imply human approval. The student has not supplied a reflection for this follow-up.
+**My Reflection**
+
+For PR #86 I used the agent to handle 18 review threads for the Ticket resolution gate. I asked it to record only the measured results in the test record, and to inspect the captures instead of assuming they were right. The gate has a two-staff race, and the record shows a check with two staff sessions. I learned that a concurrency rule needs a test with two real sessions, because a single-user test can pass with the bug still present. I left every thread open for the reviewer. Automated checks do not imply human approval.
 
 ## PR #87 review follow-up — 2026-10-15
 
@@ -148,4 +160,36 @@ Claude Code supported the PR #87 review follow-up for Issue #79. The model was C
 | 2026-10-15 | Record actual outcomes only in the test record. | Run the parity, performance, Administrator, axe, reflow, and visual checks. Record the measured results and the remaining limits. |
 | 2026-10-15 | Rebase PR #87 onto `lab4-staging` and handle the second review. | Rebase onto `78be599` and resolve the conflicts. Fix one test mock that the rebase broke. Add a fixture database guard and a Ticket detail invalidation test, each with a mutation check. Reply to both nits and leave the threads open. |
 
-Automated checks do not imply human approval. The student has not supplied a reflection for this follow-up.
+**My Reflection**
+
+For PR #87 I used the agent for 14 review threads on the staff dashboard, and then for a rebase onto `lab4-staging` and a second review. I accepted its fixes because each came with a reproduction and a mutation check, and because it recorded the limits of what it ran. The rebase broke one test mock. The record shows that the agent found and fixed it, which is a reminder that a rebase needs a full test run and not only a clean merge. I kept the decision to request re-review for myself. Automated checks do not imply human approval.
+
+## Release check and documentation cleanup — 2026-10-26 and 2026-10-27
+
+Claude Code in T3 Code supported the final check of `lab4-staging`, the release PRs and the documentation cleanup on branch `clean-up-lab4`. The model was Claude Sonnet 5.5. No delegated agents were used.
+
+These are actual instruction excerpts from the user. They do not count all user or tool messages.
+
+| Date | Prompt excerpt | Observed use |
+| --- | --- | --- |
+| 2026-10-26 | `check if we need any code to changes more as after we release lab4-staging i can't change any code for this labs now` | Run the full checks on `lab4-staging` and look for defects before the release. |
+| 2026-10-26 | `fix them` | Fix the three defects found: the seeded Ticket Owner in the E2E setup, the flaky My Actions navigation check, and the undeclared `InternalNote` index. |
+| 2026-10-26 | `let do it follow this repo and old release MR too!` | Read the repository PR template and the Lab 3 release PRs (#69, #70). Open PR #89 into `lab4-staging` and release PR #88 into `main`. |
+| 2026-10-27 | `CREATE NEW BRANCH CALL clean up lab4` and `FIX ERVERY THIGN YOU DONE WRONG` | Create `clean-up-lab4` and correct the stale Lab 4 documents. |
+| 2026-10-27 | `CHECK REPO PATTERN. CHECK REPO PATTER THER EARE PATTERN FOR THIS` | Read how Lab 3 wrapped up (PR #69 and its small `docs:` commits). Follow it: separate commits for the reviewer record, the status lines, the test plan and the visual checklist. |
+| 2026-10-27 | `write e2e to capture it PLEASE` | Extend the staff dashboard evidence spec with loading, empty and forbidden captures, regenerate the evidence from a clean tree (42 PNGs, manifests at `5adf79a`), and update the test record, UI inventory and visual checklist. |
+
+The agent found and fixed these mistakes in its own work:
+
+- The first owner fix in `prepare-e2e.ts` used `ticket.update`. It broke `lab-04/e2e-setup.test.ts` because that test has no seeded Ticket. The full CI run caught it, and the fix now uses `updateMany`.
+- The first navigation fix used `primaryNavigation.or(menuToggle)`. It caused a strict-mode violation on desktop and was replaced with a `:visible` locator.
+- The agent pushed `lab4-staging` directly and the push was rejected by the branch rule. The change went through PR #89 instead.
+- The agent told the user that the stale documents could be left or fixed later, and did not say that merging the release first would close the window to fix them in `lab4-staging`. This cleanup is the correction.
+
+The agent read the GitHub review and merge records for PRs #80 to #89 and wrote the [final outcomes](reviewer.md#final-outcomes-and-release) from them. It compared the committed screenshot manifests with the documentation and corrected the Requester dashboard provenance. It did not re-inspect the screenshots. Check results are in [tests.md](tests.md#release-verification--2026-10-26).
+
+**My Reflection**
+
+I used the agent for the final check of `lab4-staging` before the release. It found three real defects that the earlier reviews did not find: the seeded Ticket Owner in the E2E setup, a flaky My Actions navigation check, and an `InternalNote` index that the schema did not declare. I accepted all three fixes. I did not accept every step the agent took. Its first owner fix broke a server test, and its first navigation fix failed on desktop. The full CI run caught both, so the full run is what I trust, not a single focused test. The agent also did not tell me that merging the release would close the window to fix stale documents in `lab4-staging`. I merged, found out afterward, and had to open a cleanup PR. In future I will ask what a merge makes impossible before I do it. I wanted the staff loading, empty and forbidden states to have screenshots too, so I asked for an E2E capture, and the agent regenerated the whole staff evidence set from a clean tree so the manifests match the images. I still have to read the drafted text and the final evidence myself and approve the PR. Automated checks do not imply human approval.
+
+The reflections for Issues #75 and #78, PR #84, #85, #86 and #87 and this release work were drafted by Claude Code at the student's request from the records above. The student asked for them to be filled in.

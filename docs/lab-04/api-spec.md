@@ -1,6 +1,6 @@
 # Lab 4 REST API Contract
 
-Status: proposed API contract, awaiting peer review for Issues #74–#79. Paths below are relative to /api. The existing Express error middleware, sessions, CSRF protection, role checks, no-store response policy, PostgreSQL/Prisma, OpenAPI document, and generated Hey API client remain canonical. Lab 4 adds no new package or authentication mechanism.
+Status: implemented and released to `main` through Issues #74–#79; approved in [PR #80](https://github.com/beambeambeam/toktickit/pull/80) and released in [PR #88](https://github.com/beambeambeam/toktickit/pull/88). Paths below are relative to /api. The existing Express error middleware, sessions, CSRF protection, role checks, no-store response policy, PostgreSQL/Prisma, OpenAPI document, and generated Hey API client remain canonical. Lab 4 adds no new package or authentication mechanism.
 
 ## 1. Wire Conventions
 

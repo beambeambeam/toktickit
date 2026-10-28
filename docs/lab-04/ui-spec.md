@@ -1,6 +1,6 @@
 # Lab 4 UI Contract
 
-Status: proposed UI behavior, awaiting peer review for Issues #74–#79. Reuse the existing React/TanStack Router, TanStack Query, app shell, Zen Green surfaces, form fields, buttons, badges, error feedback, and authentication context. This file defines visible behavior; API authorization remains authoritative.
+Status: implemented and released to `main` through Issues #74–#79; approved in [PR #80](https://github.com/beambeambeam/toktickit/pull/80) and released in [PR #88](https://github.com/beambeambeam/toktickit/pull/88). Reuse the existing React/TanStack Router, TanStack Query, app shell, Zen Green surfaces, form fields, buttons, badges, error feedback, and authentication context. This file defines visible behavior; API authorization remains authoritative.
 
 ## 1. Navigation and Landing
 
@@ -139,6 +139,7 @@ Capture each listed state at desktop (1440 × 900), tablet (768 × 1024), and mo
 | `artifacts/lab-04/screenshots/staff-dashboard/` | Staff/Admin dashboard with zero counts and empty previews | `staff-dashboard-empty-{viewport}.png` |
 | `artifacts/lab-04/screenshots/staff-dashboard/` | Dashboard loading state | `staff-dashboard-loading-{viewport}.png` |
 | `artifacts/lab-04/screenshots/staff-dashboard/` | Dashboard safe failure and retry | `staff-dashboard-error-{viewport}.png` |
+| `artifacts/lab-04/screenshots/staff-dashboard/` | Dashboard forbidden response | `staff-dashboard-forbidden-{viewport}.png` |
 | `artifacts/lab-04/screenshots/staff-dashboard/` | My Actions list with parent Ticket links | `staff-my-actions-{viewport}.png` |
 | `artifacts/lab-04/screenshots/staff-dashboard/` | Queue drill-down with matching filters | `staff-dashboard-drilldown-{viewport}.png` |
 

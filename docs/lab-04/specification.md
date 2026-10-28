@@ -1,6 +1,6 @@
 # Sprint 4 Engineering Contract
 
-Status: proposed product contract, awaiting peer review. This document resolves the implementation choices left open by [Issue #72](https://github.com/beambeambeam/toktickit/issues/72) for feature implementation under Issues #74–#79. It does not claim that any feature or planned check is complete.
+Status: implemented and released to `main` through Issues #74–#79. The contract was approved and merged in [PR #80](https://github.com/beambeambeam/toktickit/pull/80); the release is [PR #88](https://github.com/beambeambeam/toktickit/pull/88). This document resolved the implementation choices left open by [Issue #72](https://github.com/beambeambeam/toktickit/issues/72). Each check's result is recorded in [tests.md](./tests.md) and the review outcomes in [reviewer.md](./reviewer.md#final-outcomes-and-release).
 
 ## 1. Sprint Goal
 

@@ -4,7 +4,7 @@ import path from "node:path";
 
 import { AxeBuilder } from "@axe-core/playwright";
 import { expect, test } from "@playwright/test";
-import type { Page } from "@playwright/test";
+import type { Page, Route } from "@playwright/test";
 
 const password = "correct horse battery staple";
 const repositoryRoot = path.resolve(import.meta.dirname, "..", "..");
@@ -144,11 +144,12 @@ for (const account of accounts) {
     const capture = async (
       name: string,
       scenario: string,
-      zoom: ZoomMode
+      zoom: ZoomMode,
+      target: Page = page
     ): Promise<void> => {
       const absolutePath = path.join(screenshotsRoot, `${name}.png`);
-      await page.screenshot({ fullPage: true, path: absolutePath });
-      const viewport = page.viewportSize() ?? initialViewport;
+      await target.screenshot({ fullPage: true, path: absolutePath });
+      const viewport = target.viewportSize() ?? initialViewport;
       files.push({
         path: path.relative(repositoryRoot, absolutePath),
         role: account.role,
@@ -251,6 +252,119 @@ for (const account of accounts) {
         "default"
       );
       await page.unroute("**/api/staff/dashboard");
+
+      // Each state opens in its own tab so the intercepted response never leaks.
+      const openStatePage = async (): Promise<Page> => {
+        const statePage = await page.context().newPage();
+        await statePage.setViewportSize(initialViewport);
+        return statePage;
+      };
+      const generatedAt = new Date();
+      const emptyDashboard = {
+        counts: {
+          activeByPriority: { High: 0, Low: 0, Medium: 0, Urgent: 0 },
+          activeOwned: 0,
+          activeUnassigned: 0,
+          byStatus: {
+            Cancelled: 0,
+            Closed: 0,
+            "In Progress": 0,
+            New: 0,
+            Open: 0,
+            Reopened: 0,
+            Resolved: 0,
+            "Waiting for Requester": 0,
+          },
+          myActions: 0,
+        },
+        generatedAt: generatedAt.toISOString(),
+        previews: {
+          myActions: [],
+          recentlyUpdatedTickets: [],
+          urgentActiveTickets: [],
+        },
+        window: {
+          from: new Date(
+            generatedAt.getTime() - 7 * 24 * 60 * 60 * 1000
+          ).toISOString(),
+          through: generatedAt.toISOString(),
+        },
+      };
+
+      const emptyPage = await openStatePage();
+      await emptyPage.route("**/api/staff/dashboard", async (route) => {
+        await route.fulfill({
+          body: JSON.stringify(emptyDashboard),
+          contentType: "application/json",
+          status: 200,
+        });
+      });
+      await emptyPage.goto("/dashboard");
+      await expect(
+        emptyPage.getByText("No active Urgent Tickets right now.")
+      ).toBeVisible();
+      await expectNoAxeViolations(emptyPage);
+      await expectNoHorizontalOverflow(emptyPage);
+      await capture(
+        `staff-dashboard-empty-${projectViewport}`,
+        "Dashboard with zero counts and empty previews (intercepted response)",
+        "default",
+        emptyPage
+      );
+      await emptyPage.close();
+
+      const loadingPage = await openStatePage();
+      let pendingRoute: Route | undefined;
+      await loadingPage.route("**/api/staff/dashboard", (route) => {
+        pendingRoute = route;
+      });
+      await loadingPage.goto("/dashboard");
+      await expect(
+        loadingPage.getByText("Loading your dashboard…")
+      ).toBeVisible();
+      await expectNoAxeViolations(loadingPage);
+      await expectNoHorizontalOverflow(loadingPage);
+      await capture(
+        `staff-dashboard-loading-${projectViewport}`,
+        "Dashboard loading while its API response is pending (held request)",
+        "default",
+        loadingPage
+      );
+      if (pendingRoute === undefined) {
+        throw new Error("Expected the dashboard request to remain pending.");
+      }
+      await pendingRoute.fulfill({
+        body: JSON.stringify(emptyDashboard),
+        contentType: "application/json",
+        status: 200,
+      });
+      await loadingPage.close();
+
+      const forbiddenPage = await openStatePage();
+      await forbiddenPage.route("**/api/staff/dashboard", async (route) => {
+        await route.fulfill({
+          body: JSON.stringify({
+            error: { code: "FORBIDDEN", message: "Forbidden" },
+          }),
+          contentType: "application/json",
+          status: 403,
+        });
+      });
+      await forbiddenPage.goto("/dashboard");
+      await expect(
+        forbiddenPage.getByText(
+          "You do not have permission to view this dashboard."
+        )
+      ).toBeVisible();
+      await expectNoAxeViolations(forbiddenPage);
+      await expectNoHorizontalOverflow(forbiddenPage);
+      await capture(
+        `staff-dashboard-forbidden-${projectViewport}`,
+        "Dashboard safe forbidden response without retry (intercepted 403)",
+        "default",
+        forbiddenPage
+      );
+      await forbiddenPage.close();
     }
 
     const status = gitOutput([
